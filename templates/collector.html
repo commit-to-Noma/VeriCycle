@@ -24,7 +24,9 @@
             <h3>Your Wallet</h3>
             <p class="balance">1,250 ECO</p>
             <p>Ready to make a drop-off?</p>
-            <button class="btn-primary">Generate Drop-off QR Code</button>
+            <button class="btn-primary" id="generate-btn">Generate Drop-off QR Code</button>
+            
+            <div id="qr-code-container"></div>
         </div>
 
         <div class="card">
@@ -33,5 +35,29 @@
             <p>+ 120 ECO from Roodepoort Recycling</p>
         </div>
     </main>
+
+    <script>
+        // Find the button and the container
+        const generateButton = document.getElementById('generate-btn');
+        const qrContainer = document.getElementById('qr-code-container');
+
+        // Add a "click" listener to the button
+        generateButton.addEventListener('click', function() {
+            console.log('Button clicked!');
+            
+            // 1. Clear any old QR code
+            qrContainer.innerHTML = ''; 
+            
+            // 2. Create a new image element
+            const qrImage = document.createElement('img');
+            
+            // 3. Set the image "source" to our new Flask route.
+            // We add a timestamp to prevent the browser from using an old, cached image.
+            qrImage.src = '/generate-qr?' + new Date().getTime();
+            
+            // 4. Add the new image to the page
+            qrContainer.appendChild(qrImage);
+        });
+    </script>
 </body>
 </html>
