@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -18,6 +18,12 @@ def collector_dashboard():
 @app.route('/center')
 def center_dashboard():
     return render_template('center.html')
+
+# --- ADD THIS NEW TEST CODE ---
+@app.route('/hello')
+def hello_world():
+    return "Hello Noma! The server is loading my new file!"
+# --- END OF NEW TEST CODE ---
 
 # (The application will be started at the bottom after all routes are defined)
 
@@ -60,6 +66,50 @@ def generate_qr():
 
 # --- END OF NEW CODE ---
 
-# Start the Flask development server when this file is executed directly
+# Debug helper: return the list of registered routes as JSON
+@app.route('/_routes')
+def _routes():
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'rule': str(rule),
+            'methods': sorted([m for m in rule.methods if m not in ('HEAD','OPTIONS')])
+        })
+    return jsonify(routes)
+
+# --- ADD THIS NEW CODE AT THE BOTTOM OF APP.PY ---
+
+# This new route "catches" the data sent by our new form.
+# It only accepts "POST" requests, which is how forms send data.
+@app.route('/confirm-dropoff', methods=['GET', 'POST'])
+def confirm_dropoff():
+    """Accept GET for quick debugging and POST for real form submissions."""
+    if request.method == 'POST':
+        # 1. Read the data that came from the form
+        collector_id = request.form.get('collector_id')
+        weight = request.form.get('weight')
+
+        # 2. THIS IS THE "WOW" MOMENT!
+        # For now, we'll just print it to the terminal to prove it works.
+        print("--- CONFIRMATION RECEIVED! ---")
+        print(f"Collector ID: {collector_id}")
+        print(f"Weight (kg): {weight}")
+        print("--- (Next step: Call Hedera JavaScript functions!) ---")
+
+        # 3. (LATER, we will call your Hedera scripts here)
+
+        # 4. Send the user back to the center's dashboard
+        return redirect(url_for('center_dashboard'))
+
+    # If someone visits the URL in a browser (GET), show a short debug message
+    return "confirm_dropoff endpoint: send a POST with 'collector_id' and 'weight'"
+
+# --- END OF NEW CODE ---
+
+
+# Print the registered routes to help debugging and then start the server
 if __name__ == '__main__':
+    print("Registered routes:")
+    for rule in app.url_map.iter_rules():
+        print(f"{rule.methods} -> {rule}")
     app.run(debug=True, use_reloader=False)

@@ -20,10 +20,30 @@
         <h2>Center Dashboard</h2>
         <p>Welcome, Pikitup Marlboro!</p>
         
+        <!-- 
+          HERE IS THE NEW PART!
+          Instead of just a button, we now have a <form>.
+          This form will send its data to a new URL called "/confirm-dropoff"
+          using the "POST" method.
+        -->
         <div class="card">
             <h3>Verify a Drop-off</h3>
-            <p>Scan the collector's QR code to begin.</p>
-            <button class="btn-primary">Scan QR Code</button>
+            <p>Enter the Collector's ID and the weight to confirm the transaction.</p>
+            
+            <form action="/confirm-dropoff" method="POST" class="verify-form">
+                
+                <!-- Input for the Collector's ID (the "scan") -->
+                <label for="collector-id">Collector ID:</label>
+                <input type="text" id="collector-id" name="collector_id" placeholder="e.g., 0.0.7191569">
+                
+                <!-- Input for the Weight -->
+                <label for="weight">Weight (kg):</label>
+                <input type="text" id="weight" name="weight" placeholder="e.g., 1.5">
+                
+                <!-- The "Confirm" button -->
+                <button type="submit" class="btn-primary">Confirm & Pay Collector</button>
+            
+            </form>
         </div>
 
         <div class="card">
@@ -32,5 +52,26 @@
             <p>Verified 2.1kg for John D.</p>
         </div>
     </main>
+
+    <!-- We add a little extra style for the form -->
+    <style>
+        .verify-form label {
+            display: block;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        .verify-form input {
+            width: 95%;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+        .verify-form button {
+            margin-top: 1.5rem;
+            width: 100%;
+        }
+    </style>
 </body>
 </html>
