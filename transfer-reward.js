@@ -1,22 +1,37 @@
-// This script sends your first EcoCoin reward!
+// This script is now a tool that accepts arguments from the command line
 
 import "dotenv/config";
 import {
   Client,
   PrivateKey,
   TransferTransaction,
-  AccountId, // Import AccountId
+  AccountId,
 } from "@hashgraph/sdk";
 
+// This is the main function
 async function main() {
-  // 1. LOAD ALL YOUR SAVED KEYS AND IDs
+  
+  // --- THIS IS THE NEW PART ---
+  // Read arguments from the command line
+  // process.argv[0] is "node"
+  // process.argv[1] is "4-transfer-reward.js"
+  // process.argv[2] is the Collector ID (e.g., "0.0.7191569")
+  // process.argv[3] is the Amount (e.g., "250")
+  const collectorId = process.argv[2];
+  const rewardAmount = parseInt(process.argv[3]); // Convert text "250" to number 250
+  
+  if (!collectorId || !rewardAmount) {
+    throw new Error("Error: Missing Collector ID or Reward Amount. Usage: node 4-transfer-reward.js [COLLECTOR_ID] [AMOUNT]");
+  }
+  // --- END OF NEW PART ---
+
+
+  // 1. LOAD YOUR KEYS AND IDs
   const operatorId = process.env.OPERATOR_ID; // This is the Treasury Account
   const operatorKey = PrivateKey.fromStringDer(process.env.OPERATOR_KEY); // Treasury's key
-  
   const ecoCoinTokenId = process.env.ECOCOIN_TOKEN_ID;
-  const collectorId = process.env.COLLECTOR_ID;
 
-  if (!operatorId || !operatorKey || !ecoCoinTokenId || !collectorId) {
+  if (!operatorId || !operatorKey || !ecoCoinTokenId) {
     throw new Error("Error: Please check your .env file. All variables must be set.");
   }
   
@@ -24,12 +39,9 @@ async function main() {
   const client = Client.forTestnet();
   client.setOperator(operatorId, operatorKey);
 
-  // This is the reward amount (e.g., 500 = 5.00 ECO)
-  const rewardAmount = 500;
+  console.log(`Connecting to Hedera and sending ${rewardAmount} ECO to ${collectorId}...`);
 
-  console.log(`Connecting to Hedera and sending ${rewardAmount} ECO...`);
-
-  // 3. BUILD THE TRANSACTION
+  // 3. BUILD THE TRANSACTION (using our new variables)
   const transaction = await new TransferTransaction()
     .addTokenTransfer(ecoCoinTokenId, operatorId, -rewardAmount) // From Treasury
     .addTokenTransfer(ecoCoinTokenId, collectorId, rewardAmount) // To Collector
