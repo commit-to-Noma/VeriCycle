@@ -58,26 +58,95 @@
     </main>
 
     <script>
-        // Find the button and the container
-        const generateButton = document.getElementById('generate-btn');
-        const qrContainer = document.getElementById('qr-code-container');
+        // --- This function runs when the page is fully loaded ---
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // --- 1. FIRE THE CELEBRATION ---
+            // We'll fire confetti right away!
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
 
-        // Add a "click" listener to the button
-        generateButton.addEventListener('click', function() {
-            console.log('Button clicked!');
+            // --- 2. YOUR ORIGINAL QR CODE LOGIC (UNCHANGED) ---
+            const generateButton = document.getElementById('generate-btn');
+            const qrContainer = document.getElementById('qr-code-container');
+
+            generateButton.addEventListener('click', function() {
+                qrContainer.innerHTML = ''; 
+                const qrImage = document.createElement('img');
+                qrImage.src = '/generate-qr?' + new Date().getTime();
+                qrContainer.appendChild(qrImage);
+            });
+
+            // --- 3. NEW DASHBOARD LOGIC (FETCH DATA & BUILD CHARTS) ---
             
-            // 1. Clear any old QR code
-            qrContainer.innerHTML = ''; 
-            
-            // 2. Create a new image element
-            const qrImage = document.createElement('img');
-            
-            // 3. Set the image "source" to our new Flask route.
-            // We add a timestamp to prevent the browser from using an old, cached image.
-            qrImage.src = '/generate-qr?' + new Date().getTime();
-            
-            // 4. Add the new image to the page
-            qrContainer.appendChild(qrImage);
+            // This function fetches data from your new API route
+            async function loadDashboardData() {
+                try {
+                    const response = await fetch('/api/my-dashboard-data');
+                    const data = await response.json();
+
+                    // A. Populate the KPI Cards
+                    document.getElementById('kpi-ecocoin').textContent = data.total_eco;
+                    document.getElementById('kpi-kg').textContent = `${data.total_kg} kg`;
+
+                    // B. Populate the Chart Labels
+                    document.getElementById('personal-goal-label').textContent = `${data.current_kg} / ${data.weekly_goal} kg`;
+                    document.getElementById('neighborhood-goal-label').textContent = `${data.neighborhood_goal_percent}%`;
+                    
+                    // C. Draw the Personal Goal Chart
+                    const personalCtx = document.getElementById('personalGoalChart').getContext('2d');
+                    new Chart(personalCtx, {
+                        type: 'doughnut',
+                        data: {
+                            datasets: [{
+                                data: [data.current_kg, data.weekly_goal - data.current_kg],
+                                backgroundColor: ['#4CAF50', '#333'], // Green for progress, dark grey for remaining
+                                borderColor: ['#1e1e1e'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            cutout: '80%', // This makes it an "Apple Ring"
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false }
+                            }
+                        }
+                    });
+
+                    // D. Draw the Neighborhood Goal Chart
+                    const neighborhoodCtx = document.getElementById('neighborhoodGoalChart').getContext('2d');
+                    new Chart(neighborhoodCtx, {
+                        type: 'doughnut',
+                        data: {
+                            datasets: [{
+                                data: [data.neighborhood_goal_percent, 100 - data.neighborhood_goal_percent],
+                                backgroundColor: ['#0D47A1', '#333'], // Blue for progress, dark grey for remaining
+                                borderColor: ['#1e1e1e'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            cutout: '80%', // This makes it an "Apple Ring"
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false }
+                            }
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Error fetching dashboard data:', error);
+                }
+            }
+
+            // Call the function to load everything!
+            loadDashboardData();
         });
     </script>
 </body>
