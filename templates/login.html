@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In - VeriCycle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark-theme"> <!-- Dark theme body -->
+
+    <header class="navbar">
+        <div class="container">
+            <h1 class="logo">VeriCycle</h1>
+            <nav>
+                <a href="{{ url_for('index') }}" class="nav-button">Home</a>
+                <a href="{{ url_for('signup') }}" class="nav-button">Sign Up</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card auth-card">
+            <h2>Welcome Back</h2>
+
+            <!-- This is where the "Login Unsuccessful" message will appear -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('login') }}" method="POST" class="verify-form">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn-primary-large btn-form">Log In</button>
+            </form>
+            <p>
+                Don't have an account? 
+                <a href="{{ url_for('signup') }}" class="link-secondary">Sign Up here</a>
+            </p>
+        </div>
+    </main>
+</body>
+</html>

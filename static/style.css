@@ -1,6 +1,6 @@
 /* VeriCycle Stylesheet
    Colors based on your logo:
-   - Main Green: #4CAF50 (a bright, accessible green)
+   - Main Green: #4CAF50
    - Dark Blue: #0D47A1
    - Dark Green (for accents): #1B5E20
    - Text: #333
@@ -121,4 +121,230 @@ body {
     font-weight: 700;
     color: #1B5E20; /* Dark Green */
     margin: 0.5rem 0;
+}
+
+/* --- LANDING PAGE CTA STYLES --- */
+
+.nav-button-primary {
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background-color: #4CAF50; /* Main Green */
+    color: #fff;
+    transition: background-color 0.2s;
+}
+.nav-button-primary:hover {
+    background-color: #1B5E20; /* Dark Green */
+}
+
+.cta-section {
+    background-color: #ffffff;
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.cta-section h2 {
+    font-size: 2rem;
+    color: #0D47A1; /* Dark Blue */
+    margin-top: 0;
+}
+
+.cta-subtitle {
+    font-size: 1.15rem;
+    color: #555;
+    max-width: 600px;
+    margin: 1rem auto 3rem auto;
+}
+
+.advantages {
+    display: flex;
+    justify-content: space-around;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    flex-wrap: wrap; 
+}
+
+.advantage-card {
+    flex-basis: 22%; 
+    min-width: 220px; 
+    background-color: #f9f9f9;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.advantage-card h3 {
+    margin-top: 0;
+    color: #1B5E20; /* Dark Green */
+}
+
+.cta-buttons {
+    margin-top: 2rem;
+}
+
+.btn-primary-large {
+    display: inline-block;
+    background-color: #4CAF50; /* Main Green */
+    color: #fff;
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-primary-large:hover {
+    background-color: #1B5E20; /* Dark Green */
+}
+
+.cta-buttons p {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: #666;
+}
+
+.link-secondary {
+    color: #0D47A1; /* Dark Blue */
+    font-weight: 600;
+    text-decoration: none;
+}
+.link-secondary:hover {
+    text-decoration: underline;
+}
+
+/* --- STYLES FOR LOGIN/SIGNUP (MODAL & FORMS) --- */
+
+.verify-form label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: 500;
+    text-align: left; /* Aligns labels to the left */
+}
+
+.verify-form input {
+    width: 95%; /* Reduced width to match */
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    box-sizing: border-box; /* Important! */
+}
+
+.verify-form button {
+    margin-top: 1.5rem;
+    width: 100%;
+}
+
+.btn-form {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.auth-card p {
+    text-align: center;
+}
+
+/* This is for your green/red "flash" messages */
+.flash-message {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.flash-message.success {
+    background-color: #E8F5E9; /* Light green */
+    color: #1B5E20; /* Dark Green */
+}
+
+.flash-message.error {
+    background-color: #FFEBEE; /* Light red */
+    color: #B71C1C; /* Dark Red */
+}
+
+/* --- MODAL (POP-UP) STYLES --- */
+
+.modal-overlay {
+    display: none; /* Hidden by default */
+    position: fixed; 
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; 
+    background-color: rgba(0, 0, 0, 0.6); 
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    position: relative;
+    max-width: 400px;
+    width: 90%;
+    animation: fadeIn 0.3s;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: #aaa;
+    font-size: 2rem;
+    font-weight: bold;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+.modal-close:hover {
+    color: #333;
+}
+
+.modal-content .verify-form {
+    margin-top: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    text-align: left;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box; /* Important! */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ensure the auth modal is hidden by default to prevent unprovoked flashes */
+#auth-modal {
+    display: none;
 }
