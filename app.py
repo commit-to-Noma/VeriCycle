@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv() 
 
-from flask import Flask, render_template, request, redirect, url_for, send_file, flash
+from flask import Flask, render_template, request, redirect, url_for, send_file, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
@@ -190,6 +190,24 @@ def confirm_dropoff():
         print("--- !!! HEDERA ENGINE FAILED !!! ---")
         print(e.stderr) 
     return redirect(url_for('center_dashboard'))
+
+# -----------------------------------------------------------------
+# 6. (NEW) API FOR OUR "WOW" DASHBOARD
+# -----------------------------------------------------------------
+@app.route('/api/my-dashboard-data')
+@login_required
+def get_dashboard_data():
+    # In the future, we will get this data from the database.
+    # For now, we send "fake" data to build our "wow" features,
+    # just like the GreenTrace winners did.
+    data = {
+        "total_kg": 21.5,
+        "total_eco": 1850,
+        "weekly_goal": 10,
+        "current_kg": 5,
+        "neighborhood_goal_percent": 15
+    }
+    return jsonify(data)
 
 # -----------------------------------------------------------------
 # 7. RUN THE APP
