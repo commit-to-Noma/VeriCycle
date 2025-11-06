@@ -205,7 +205,9 @@ def get_dashboard_data():
         "total_eco": 1850,
         "weekly_goal": 10,
         "current_kg": 5,
-        "neighborhood_goal_percent": 15
+        "neighborhood_current_kg": 150,  # <-- NEW
+        "neighborhood_goal_kg": 1000     # <-- NEW
+        # "neighborhood_goal_percent" is no longer needed
     }
     return jsonify(data)
 

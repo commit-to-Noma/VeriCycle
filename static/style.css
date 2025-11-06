@@ -398,39 +398,24 @@ body.dark-theme {
     margin: 0;
 }
 
-.kpi-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
 .kpi-card {
     background-color: #1e1e1e;
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    justify-content: flex-start; /* keep KPI items stacked tightly */
+    gap: 0.25rem;
 }
 
-.kpi-card .kpi-label {
-    font-size: 1rem;
-    color: #aaa; /* Lighter text */
-    display: block;
-    margin-bottom: 0.5rem;
-}
+/* .kpi-card .kpi-label removed to match new HTML (labels are now headings) */
 
-.kpi-card h3 {
-    font-size: 2.5rem;
-    font-weight: 700;
+.kpi-value {
+    /* This rule styles the big green number */
+    font-size: 3rem;
+    font-weight: 800;
     margin: 0;
+    margin-top: 0.5rem;
     color: #4CAF50; /* Main Green */
-}
-
-.chart-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
 }
 
 .chart-card {
@@ -440,7 +425,7 @@ body.dark-theme {
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     text-align: center;
 }
-.chart-card h3 {
+.kpi-card h3, .chart-card h3 {
     margin-top: 0;
     margin-bottom: 0.5rem;
     color: #f4f4f4; /* White text */
@@ -451,4 +436,168 @@ body.dark-theme {
     font-weight: 600;
     color: #aaa;
     margin: 0 0 1rem 0;
+}
+
+/* --- NEW: Dashboard Grid (Replaces old grids) --- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 columns of equal size */
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* For the KPI Cards (EcoCoin, Kilograms) */
+.kpi-card {
+    display: flex; 
+    flex-direction: column;
+    justify-content: flex-start; /* THIS IS THE FIX: Stacks items at the top */
+    align-self: stretch;
+}
+
+/* For the Chart Cards (Personal, Neighborhood) */
+.chart-card {
+    display: flex; 
+    flex-direction: column;
+    justify-content: space-between; /* Keeps pushing the chart to the bottom */
+    align-self: stretch;
+}
+
+/* Adjust chart card styling for flexbox */
+.chart-card {
+    justify-content: flex-start; /* Align from the top */
+    text-align: center;
+}
+
+/* This is the new container for the chart */
+.chart-canvas-container {
+    position: relative; /* Required for Chart.js responsiveness */
+    width: 100%;
+}
+
+/* --- FIX: Improve spacing, sizing and responsiveness for dashboard cards --- */
+.dashboard-grid {
+    gap: 2rem; /* slightly larger gap to avoid crowding */
+    /* Ensure items align to the top and rows have sensible height so cards don't overlap */
+    align-items: start;
+    grid-auto-rows: minmax(200px, auto);
+}
+
+/* Give cards a consistent minimum height so they don't overlap */
+.kpi-card, .chart-card {
+    min-height: 220px;
+    padding: 1.75rem;
+    box-sizing: border-box;
+}
+
+.chart-card h3 {
+    font-size: 1.4rem;
+}
+
+.chart-label {
+    font-size: 1.2rem;
+}
+
+/* Force the chart container to a fixed height so Chart.js can size correctly */
+.chart-canvas-container {
+    height: 220px; /* controls the visible ring size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-canvas-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+/* Smaller screens: stack cards vertically and scale text down a bit */
+@media (max-width: 700px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .kpi-card, .chart-card {
+        min-height: 180px;
+    }
+    .kpi-card h3 {
+        font-size: 2.2rem;
+    }
+    .chart-card h3 {
+        font-size: 1.2rem;
+    }
+    .dashboard-header h2 { font-size: 2rem; }
+}
+
+/* --- NEW: Success Pop-up Modal --- */
+#success-modal {
+    display: none; /* Hidden by default */
+}
+
+/* This is the pop-up card itself */
+.success-modal-content {
+    text-align: center;
+    padding: 2rem;
+    position: relative; /* Needed for the confetti canvas */
+}
+
+/* This is the confetti canvas, stretches to fill the pop-up */
+#confetti-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1001;
+    pointer-events: none; /* Lets you click "through" it */
+}
+
+.success-modal-content h2 {
+    font-size: 2.5rem;
+    color: #4CAF50; /* Green */
+    margin: 0;
+}
+.success-subtitle {
+    font-size: 1.1rem;
+    color: #aaa;
+    margin: 0.5rem 0 2rem 0;
+}
+
+.success-kpis {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+.success-kpi {
+    background-color: #333; /* Darker box */
+    padding: 1rem;
+    border-radius: 8px;
+    flex-grow: 1;
+}
+.success-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-bottom: 0.5rem;
+}
+.success-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* --- NEW: Style for the HTML Percentage Text --- */
+.chart-percentage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* This is the key to centering */
+    
+    font-size: 2rem;
+    font-weight: bold;
+    color: #FFFFFF;
+    
+    pointer-events: none; /* Allows clicks to go "through" it */
+    z-index: 10; /* Ensures it's on top of the chart */
 }

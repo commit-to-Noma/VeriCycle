@@ -24,33 +24,47 @@
             <p>Here is your recycling progress.</p>
         </div>
 
-        <div class="kpi-grid">
+        <div class="dashboard-grid">
+            
             <div class="kpi-card">
-                <span class="kpi-label">Total EcoCoin Earned</span>
-                <h3 id="kpi-ecocoin">--</h3>
+                <h3>Total EcoCoin Earned</h3>
+                <p class="kpi-value" id="kpi-ecocoin">--</p>
             </div>
+            
             <div class="kpi-card">
-                <span class="kpi-label">Total Kilograms Recycled</span>
-                <h3 id="kpi-kg">--</h3>
+                <h3>Total Kilograms Recycled</h3>
+                <p class="kpi-value" id="kpi-kg">--</p>
             </div>
-        </div>
 
-        <div class="chart-grid">
             <div class="chart-card">
                 <h3>Personal Goal</h3>
                 <p class="chart-label" id="personal-goal-label">-- / -- kg</p>
-                <canvas id="personalGoalChart"></canvas>
+                
+                <div class="chart-canvas-container">
+                    <span class="chart-percentage" id="personal-percent">--%</span>
+                    <canvas id="personalGoalChart"></canvas>
+                </div>
             </div>
+            
             <div class="chart-card">
                 <h3>Neighborhood Goal</h3>
-                <p class="chart-label" id="neighborhood-goal-label">--%</p>
-                <canvas id="neighborhoodGoalChart"></canvas>
+                <p class="chart-label" id="neighborhood-goal-label">-- / -- kg</p>
+                
+                <div class="chart-canvas-container">
+                    <span class="chart-percentage" id="neighborhood-percent">--%</span>
+                    <canvas id="neighborhoodGoalChart"></canvas>
+                </div>
             </div>
+            
         </div>
         
         <div class="card">
             <h3>Your Drop-off QR Code</h3>
             <p>Generate a unique code for the recycling center to scan.</p>
+            
+            <button class="btn-primary" id="simulate-deposit-btn" style="background-color: #0D47A1; margin-bottom: 1rem;">
+                Simulate New Deposit
+            </button>
             <button class="btn-primary" id="generate-btn">Generate Drop-off QR Code</button>
             <div id="qr-code-container"></div>
         </div>
@@ -58,21 +72,35 @@
     </main>
 
     <script>
-        // --- This function runs when the page is fully loaded ---
         document.addEventListener('DOMContentLoaded', function() {
             
-            // --- 1. FIRE THE CELEBRATION ---
-            // We'll fire confetti right away!
-            confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 }
-            });
-
-            // --- 2. YOUR ORIGINAL QR CODE LOGIC (UNCHANGED) ---
+            // --- 1. GLOBAL VARIABLES ---
             const generateButton = document.getElementById('generate-btn');
             const qrContainer = document.getElementById('qr-code-container');
+            
+            let personalChart = null;
+            let neighborhoodChart = null;
+            let currentData = {}; // Holds the current state of all data
 
+            // --- 2. UPGRADED "SCROLLING NUMBER" ANIMATION FUNCTION ---
+            function animateValue(element, start, end, duration, suffix = '', decimals = 0) {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    
+                    let currentValue = progress * (end - start) + start;
+                    
+                    element.textContent = currentValue.toFixed(decimals) + suffix;
+
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            // --- 3. QR CODE LOGIC (UNCHANGED) ---
             generateButton.addEventListener('click', function() {
                 qrContainer.innerHTML = ''; 
                 const qrImage = document.createElement('img');
@@ -80,63 +108,63 @@
                 qrContainer.appendChild(qrImage);
             });
 
-            // --- 3. NEW DASHBOARD LOGIC (FETCH DATA & BUILD CHARTS) ---
-            
-            // This function fetches data from your new API route
+            // --- 4. MAIN DATA LOADER & CHART BUILDER (UPDATED) ---
             async function loadDashboardData() {
                 try {
                     const response = await fetch('/api/my-dashboard-data');
-                    const data = await response.json();
+                    currentData = await response.json(); 
 
-                    // A. Populate the KPI Cards
-                    document.getElementById('kpi-ecocoin').textContent = data.total_eco;
-                    document.getElementById('kpi-kg').textContent = `${data.total_kg} kg`;
+                    // A. Populate the KPI Cards (format to 1 decimal)
+                    document.getElementById('kpi-ecocoin').textContent = currentData.total_eco;
+                    document.getElementById('kpi-kg').textContent = `${currentData.total_kg.toFixed(1)} kg`;
 
-                    // B. Populate the Chart Labels
-                    document.getElementById('personal-goal-label').textContent = `${data.current_kg} / ${data.weekly_goal} kg`;
-                    document.getElementById('neighborhood-goal-label').textContent = `${data.neighborhood_goal_percent}%`;
+                    // B. Populate the Chart Labels (format to 1 decimal)
+                    document.getElementById('personal-goal-label').textContent = `${currentData.current_kg.toFixed(1)} / ${currentData.weekly_goal.toFixed(1)} kg`;
+                    document.getElementById('neighborhood-goal-label').textContent = `${currentData.neighborhood_current_kg.toFixed(1)} / ${currentData.neighborhood_goal_kg.toFixed(1)} kg`;
                     
-                    // C. Draw the Personal Goal Chart
+                    // C. Populate the new Percentage text
+                    let personalPercent = (currentData.current_kg / currentData.weekly_goal) * 100;
+                    let neighborhoodPercent = (currentData.neighborhood_current_kg / currentData.neighborhood_goal_kg) * 100;
+                    document.getElementById('personal-percent').textContent = `${personalPercent.toFixed(0)}%`; // e.g., "50%"
+                    document.getElementById('neighborhood-percent').textContent = `${neighborhoodPercent.toFixed(0)}%`; // e.g., "15%"
+
+                    // D. Draw the Personal Goal Chart
                     const personalCtx = document.getElementById('personalGoalChart').getContext('2d');
-                    new Chart(personalCtx, {
+                    if (personalChart) personalChart.destroy(); 
+                    personalChart = new Chart(personalCtx, {
                         type: 'doughnut',
                         data: {
                             datasets: [{
-                                data: [data.current_kg, data.weekly_goal - data.current_kg],
-                                backgroundColor: ['#4CAF50', '#333'], // Green for progress, dark grey for remaining
+                                data: [currentData.current_kg, Math.max(0, currentData.weekly_goal - currentData.current_kg)],
+                                backgroundColor: ['#4CAF50', '#333'],
                                 borderColor: ['#1e1e1e'],
                                 borderWidth: 0
                             }]
                         },
                         options: {
-                            responsive: true,
-                            cutout: '80%', // This makes it an "Apple Ring"
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: { enabled: false }
-                            }
+                            responsive: true, maintainAspectRatio: false, cutout: '80%',
+                            animation: { duration: 0 }, // <-- ADD THIS LINE
+                            plugins: { legend: { display: false }, tooltip: { enabled: false } }
                         }
                     });
 
-                    // D. Draw the Neighborhood Goal Chart
+                    // E. Draw the Neighborhood Goal Chart
                     const neighborhoodCtx = document.getElementById('neighborhoodGoalChart').getContext('2d');
-                    new Chart(neighborhoodCtx, {
+                    if (neighborhoodChart) neighborhoodChart.destroy();
+                    neighborhoodChart = new Chart(neighborhoodCtx, {
                         type: 'doughnut',
                         data: {
                             datasets: [{
-                                data: [data.neighborhood_goal_percent, 100 - data.neighborhood_goal_percent],
-                                backgroundColor: ['#0D47A1', '#333'], // Blue for progress, dark grey for remaining
+                                data: [currentData.neighborhood_current_kg, Math.max(0, currentData.neighborhood_goal_kg - currentData.neighborhood_current_kg)],
+                                backgroundColor: ['#0D47A1', '#333'],
                                 borderColor: ['#1e1e1e'],
                                 borderWidth: 0
                             }]
                         },
                         options: {
-                            responsive: true,
-                            cutout: '80%', // This makes it an "Apple Ring"
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: { enabled: false }
-                            }
+                            responsive: true, maintainAspectRatio: false, cutout: '80%',
+                            animation: { duration: 0 }, // <-- ADD THIS LINE
+                            plugins: { legend: { display: false }, tooltip: { enabled: false } }
                         }
                     });
 
@@ -145,9 +173,106 @@
                 }
             }
 
-            // Call the function to load everything!
+            // --- 5. SUCCESS MODAL FUNCTIONS ---
+            const successModal = document.getElementById('success-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const simulateBtn = document.getElementById('simulate-deposit-btn');
+            const confettiCanvas = document.getElementById('confetti-canvas');
+            
+            const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
+
+            function showSuccessModal(eco, kg) {
+                document.getElementById('modal-eco-value').textContent = `+${eco}`;
+                document.getElementById('modal-kg-value').textContent = `+${kg.toFixed(1)} kg`; // Format modal kg
+                successModal.style.display = 'flex';
+                
+                modalConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+            function hideSuccessModal() {
+                successModal.style.display = 'none';
+            }
+
+            // --- 6. EVENT LISTENERS FOR THE SIMULATION ---
+
+            // A. Listen for clicks on the "Simulate" button
+            simulateBtn.addEventListener('click', function() {
+                const newEco = 75;
+                const newKg = 1.5;
+                showSuccessModal(newEco, newKg);
+            });
+
+            // B. Listen for clicks on the modal's "Awesome!" button
+            modalCloseBtn.addEventListener('click', function() {
+                hideSuccessModal();
+
+                const newEco = 75;
+                const newKg = 1.5;
+
+                // 1. Get current values
+                let oldEco = currentData.total_eco;
+                let oldKg = currentData.total_kg;
+                let oldPersonalKg = currentData.current_kg;
+                let oldNeighborhoodKg = currentData.neighborhood_current_kg;
+                let oldPersonalPercent = (oldPersonalKg / currentData.weekly_goal) * 100;
+                let oldNeighborhoodPercent = (oldNeighborhoodKg / currentData.neighborhood_goal_kg) * 100;
+
+                // 2. Calculate new totals
+                let newTotalEco = oldEco + newEco;
+                let newTotalKg = oldKg + newKg;
+                let newPersonalKg = oldPersonalKg + newKg;
+                let newNeighborhoodKg = oldNeighborhoodKg + newKg;
+                let newPersonalPercent = (newPersonalKg / currentData.weekly_goal) * 100;
+                let newNeighborhoodPercent = (newNeighborhoodKg / currentData.neighborhood_goal_kg) * 100;
+
+                // 3. Animate the KPI cards
+                animateValue(document.getElementById('kpi-ecocoin'), oldEco, newTotalEco, 1500, '', 0); // No decimals
+                animateValue(document.getElementById('kpi-kg'), oldKg, newTotalKg, 1500, ' kg', 1); // 1 decimal
+
+                // 4. Animate the Percentage text
+                animateValue(document.getElementById('personal-percent'), oldPersonalPercent, newPersonalPercent, 1500, '%', 0); // No decimals
+                animateValue(document.getElementById('neighborhood-percent'), oldNeighborhoodPercent, newNeighborhoodPercent, 1500, '%', 1); // 1 decimal for neighborhood
+
+                // 5. Update the chart labels (instantly, format to 1 decimal)
+                document.getElementById('personal-goal-label').textContent = `${newPersonalKg.toFixed(1)} / ${currentData.weekly_goal.toFixed(1)} kg`;
+                document.getElementById('neighborhood-goal-label').textContent = `${newNeighborhoodKg.toFixed(1)} / ${currentData.neighborhood_goal_kg.toFixed(1)} kg`;
+
+                // 6. Update the charts with new data (this animates the rings)
+                personalChart.data.datasets[0].data = [newPersonalKg, Math.max(0, currentData.weekly_goal - newPersonalKg)];
+                neighborhoodChart.data.datasets[0].data = [newNeighborhoodKg, Math.max(0, currentData.neighborhood_goal_kg - newNeighborhoodKg)];
+                personalChart.update();
+                neighborhoodChart.update();
+
+                // 7. Save the new totals to our global data
+                currentData.total_eco = newTotalEco;
+                currentData.total_kg = newTotalKg;
+                currentData.current_kg = newPersonalKg;
+                currentData.neighborhood_current_kg = newNeighborhoodKg;
+            });
+
+            // --- 7. INITIAL PAGE LOAD ---
             loadDashboardData();
         });
     </script>
-</body>
+
+    <div class="modal-overlay" id="success-modal">
+        <div class="card modal-content success-modal-content">
+            <canvas id="confetti-canvas"></canvas>
+            <h2>Success!</h2>
+            <p class="success-subtitle">A new drop-off has been verified.</p>
+            
+            <div class="success-kpis">
+                <div class="success-kpi">
+                    <span class="success-label">EcoCoin Earned</span>
+                    <span class="success-value" id="modal-eco-value">+0</span>
+                </div>
+                <div class="success-kpi">
+                    <span class="success-label">Kilograms Recycled</span>
+                    <span class="success-value" id="modal-kg-value">+0 kg</span>
+                </div>
+            </div>
+
+            <button class="btn-primary-large btn-form" id="modal-close-btn">Awesome!</button>
+        </div>
+    </div>
+    </body>
 </html>
