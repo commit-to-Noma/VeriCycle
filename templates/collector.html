@@ -19,23 +19,42 @@
     </header>
 
     <main class="container app-dashboard">
-        <h2>Collector Dashboard</h2>
-        <p>Welcome, Nomathemba!</p>
+        <div class="dashboard-header">
+            <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
+            <p>Here is your recycling progress.</p>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Total EcoCoin Earned</span>
+                <h3 id="kpi-ecocoin">--</h3>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Total Kilograms Recycled</span>
+                <h3 id="kpi-kg">--</h3>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="chart-card">
+                <h3>Personal Goal</h3>
+                <p class="chart-label" id="personal-goal-label">-- / -- kg</p>
+                <canvas id="personalGoalChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Neighborhood Goal</h3>
+                <p class="chart-label" id="neighborhood-goal-label">--%</p>
+                <canvas id="neighborhoodGoalChart"></canvas>
+            </div>
+        </div>
         
         <div class="card">
-            <h3>Your Wallet</h3>
-            <p class="balance">1,250 ECO</p>
-            <p>Ready to make a drop-off?</p>
+            <h3>Your Drop-off QR Code</h3>
+            <p>Generate a unique code for the recycling center to scan.</p>
             <button class="btn-primary" id="generate-btn">Generate Drop-off QR Code</button>
-            
             <div id="qr-code-container"></div>
         </div>
 
-        <div class="card">
-            <h3>Recent Activity</h3>
-            <p>+ 75 ECO from Pikitup Marlboro</p>
-            <p>+ 120 ECO from Roodepoort Recycling</p>
-        </div>
     </main>
 
     <script>
