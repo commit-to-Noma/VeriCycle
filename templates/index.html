@@ -12,8 +12,9 @@
             <h1 class="logo">VeriCycle</h1>
             <nav>
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button">Collector Dashboard</a>
-                    <a href="{{ url_for('center_dashboard') }}" class="nav-button">Center Dashboard</a>
+                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button">Dashboard</a>
+                    <a href="{{ url_for('network') }}" class="nav-button">Network</a>
+                    <a href="#" class="nav-button">Rewards</a> <a href="{{ url_for('center_dashboard') }}" class="nav-button">Center Dashboard</a>
                     <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
                 {% else %}
                     <a href="#" class="nav-button js-open-auth" data-form="login">Collector Dashboard</a>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verified Network - VeriCycle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark-theme">
+    <header class="navbar">
+        <div class="container">
+            <h1 class="logo">VeriCycle</h1>
+            <nav>
+                <a href="{{ url_for('collector_dashboard') }}" class="nav-button">Dashboard</a>
+                <a href="#" class="nav-button">Rewards</a>
+                <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container app-dashboard">
+        <div class="dashboard-header">
+            <h2>Our Verified Network</h2>
+            <p>We partner with trusted, registered centers to ensure your recycling is processed fairly.</p>
+        </div>
+
+        <div class="network-grid">
+
+            <div class="partner-card">
+                <div class="partner-card-image" style="background-image: url('https://via.placeholder.com/400x180.png?text=Mpact+Background');">
+                    <img src="https://www.mpact.co.za/images/mpact-logo-std.svg" alt="Mpact Logo" class="partner-card-logo">
+                </div>
+                
+                <div class="partner-card-content">
+                    <h3>Mpact Recycling</h3>
+                    <p class="tagline">"Your tagline for Mpact goes here..."</p>
+                    
+                    <p><strong>Specializes in:</strong></p>
+                    <ul class="specialties">
+                        <li>Paper (Newspaper, Cardboard)</li>
+                        <li>Plastics (PET, HDPE)</li>
+                    </ul>
+                    
+                    <div class="partner-card-info">
+                        <p><strong>Location:</strong> (Mpact's Location)</p>
+                        <p><strong>Contact:</strong> (Mpact's Phone)</p>
+                    </div>
+
+                    <a href="https://www.mpact.co.za/our-businesses/recycling" target="_blank" class="btn-primary">Visit Website</a>
+                </div>
+            </div>
+
+            <div class="partner-card">
+                <div class="partner-card-image" style="background-image: url('https://via.placeholder.com/400x180.png?text=FMSA+Background');">
+                    <img src="https://fmsa.co.za/wp-content/uploads/2021/03/fmsa-logo-slogan.png" alt="FMSA Logo" class="partner-card-logo">
+                </div>
+                
+                <div class="partner-card-content">
+                    <h3>FMSA (Ford Motor Company SA)</h3>
+                    <p class="tagline">"Your tagline for FMSA goes here..."</p>
+
+                    <p><strong>Specializes in:</strong></p>
+                    <ul class="specialties">
+                        <li>Community Education</li>
+                        <li>School-based recycling drives</li>
+                    </ul>
+
+                    <div class="partner-card-info">
+                        <p><strong>Location:</strong> (FMSA's Location)</p>
+                        <p><strong>Contact:</strong> (FMSA's Phone)</p>
+                    </div>
+
+                    <a href="https://fmsa.co.za/recycling-for-education/" target="_blank" class="btn-primary">Visit Website</a>
+                </div>
+            </div>
+
+            <div class="partner-card">
+                <div class="partner-card-image" style="background-image: url('https://via.placeholder.com/400x180.png?text=Roodepoort+Background');">
+                    <img src="https://via.placeholder.com/200x60.png?text=Roodepoort+Recycling" alt="Roodepoort Recycling Logo" class="partner-card-logo">
+                </div>
+                
+                <div class="partner-card-content">
+                    <h3>Roodepoort Recycling</h3>
+                    <p class="tagline">"Your tagline for Roodepoort goes here..."</p>
+
+                    <p><strong>Specializes in:</strong></p>
+                    <ul class="specialties">
+                        <li>Glass</li>
+                        <li>Aluminum Cans</li>
+                    </ul>
+                    
+                    <div class="partner-card-info">
+                        <p><strong>Location:</strong> Roodepoort, JHB</p>
+                        <p><strong>Contact:</strong> (Their Phone)</p>
+                    </div>
+
+                    <a href="#" class="btn-primary">Visit Website</a>
+                </div>
+            </div>
+
+        </div> ```
+
+            <div class="partner-card">
+                <img src="https://www.mpact.co.za/images/mpact-logo-std.svg" alt="Mpact Logo" class="partner-logo">
+                <h3>Mpact Recycling</h3>
+                <p>A leading paper and plastics recycler in South Africa, Mpact operates a national network, making recycling accessible to millions.</p>
+                <a href="https://www.mpact.co.za/our-businesses/recycling" target="_blank" class="btn-primary">Visit Website</a>
+            </div>
+
+            <div class="partner-card">
+                <img src="https://fmsa.co.za/wp-content/uploads/2021/03/fmsa-logo-slogan.png" alt="FMSA Logo" class="partner-logo" style="background-color: #fff; padding: 10px; border-radius: 8px;">
+                <h3>FMSA (Ford Motor Company SA)</h3>
+                <p>FMSA's "Recycling for Education" initiative shows a commitment to community upliftment, turning waste into value for local schools.</p>
+                <a href="https://fmsa.co.za/recycling-for-education/" target="_blank" class="btn-primary">Visit Website</a>
+            </div>
+
+            <div class="partner-card">
+                <img src="https://via.placeholder.com/200x60.png?text=Roodepoort+Recycling" alt="Roodepoort Recycling Logo" class="partner-logo" style="background-color: #fff; padding: 10px; border-radius: 8px;">
+                <h3>Roodepoort Recycling</h3>
+                <p>A key local center, Roodepoort Recycling (a demo partner) serves the community by processing a wide range of materials.</p>
+                <a href="#" class="btn-primary">Visit Website</a>
+            </div>
+
+        </div> </main>
+</body>
+</html>

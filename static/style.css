@@ -601,3 +601,134 @@ body.dark-theme {
     pointer-events: none; /* Allows clicks to go "through" it */
     z-index: 10; /* Ensures it's on top of the chart */
 }
+
+/* --- NEW: Verified Network Page Styles --- */
+.network-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns across */
+    gap: 1.5rem;
+}
+
+/* On smaller screens, stack to 1 column */
+@media (max-width: 900px) {
+    .network-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.partner-card {
+    background-color: #1e1e1e;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Align content to the left */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.partner-logo {
+    height: 60px; /* Fixed height for logos */
+    max-width: 200px;
+    object-fit: contain; /* Prevents stretching */
+    margin-bottom: 1rem;
+}
+
+.partner-card h3 {
+    font-size: 1.5rem;
+    color: #f4f4f4; /* White text */
+    margin-bottom: 0.5rem;
+}
+
+.partner-card p {
+    color: #aaa;
+    margin-bottom: 1.5rem;
+    flex-grow: 1; /* Pushes the button to the bottom */
+}
+
+.partner-card .btn-primary {
+    text-decoration: none;
+}
+
+/* --- NEW: Upgraded Partner Card Styles --- */
+
+/* This makes the card clickable and adds the border-radius */
+.partner-card {
+    background-color: #1e1e1e;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    overflow: hidden; /* This is key to making the image look right */
+    display: flex;
+    flex-direction: column;
+}
+
+/* This is the new div for the background image */
+.partner-card-image {
+    height: 180px;
+    width: 100%;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: flex-end; /* Aligns logo to the right */
+    padding: 0.75rem;
+    box-sizing: border-box; /* Includes padding in the size */
+}
+
+/* This is the logo inside the image div */
+.partner-card-logo {
+    width: 80px;
+    height: 80px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 0.5rem;
+    object-fit: contain;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* This holds all the text content */
+.partner-card-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* This makes all cards the same height */
+}
+
+.partner-card-content h3 {
+    font-size: 1.5rem;
+    color: #f4f4f4;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.partner-card-content .tagline {
+    font-size: 1rem;
+    color: #aaa;
+    margin-bottom: 1rem;
+    font-style: italic;
+}
+
+/* This is for the new "specializes in" list */
+.partner-card-content .specialties {
+    margin: 0;
+    padding: 0 0 0 1.2rem;
+    color: #ccc;
+    font-size: 0.9rem;
+    flex-grow: 1; /* Pushes the button to the bottom */
+    margin-bottom: 1.5rem;
+}
+
+/* This holds the new Location/Phone info */
+.partner-card-info {
+    font-size: 0.85rem;
+    color: #aaa;
+    margin-bottom: 1.5rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+}
+.partner-card-info p {
+    margin: 0.25rem 0;
+}
+
+.partner-card-content .btn-primary {
+    text-decoration: none;
+    text-align: center;
+}

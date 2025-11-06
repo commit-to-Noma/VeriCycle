@@ -158,6 +158,11 @@ def collector_dashboard():
 def center_dashboard():
     return render_template('center.html')
 
+@app.route('/network')
+@login_required 
+def network():
+    return render_template('network.html')
+
 @app.route('/generate-qr')
 @login_required 
 def generate_qr():
