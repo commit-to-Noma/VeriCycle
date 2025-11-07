@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Collector Dashboard - VeriCycle</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
@@ -11,7 +12,10 @@
 <body class="dark-theme">
     <header class="navbar">
         <div class="container">
-            <h1 class="logo">VeriCycle</h1>
+            <div class="brand">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="VeriCycle Logo" class="logo">
+                <span class="logo-text">VeriCycle</span>
+            </div>
             <nav>
                 <a href="{{ url_for('network') }}" class="nav-button">Network</a>
                 <a href="{{ url_for('rewards') }}" class="nav-button">Rewards</a>

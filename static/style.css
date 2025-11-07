@@ -110,6 +110,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 95%; /* This pushes the logo to the left */
+    max-width: none; /* This overrides the 1000px limit */
 }
 
 .logo {
@@ -117,6 +119,47 @@ body {
     font-weight: 700;
     color: #1B5E20; /* Dark Green */
     margin: 0;
+}
+
+/* Rename the old text-logo selector to only target the H1 text logo */
+h1.logo {
+    /* This is the new "distinct" style */
+    color: #4CAF50; /* Your Main Green */
+    background-color: #333;
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px; /* Rounded */
+    font-size: 1.4rem; /* A specific size */
+    margin: 0;
+    transition: all 0.2s;
+}
+
+h1.logo:hover {
+    background-color: #444; /* Add a little hover effect */
+    color: #fff;
+}
+
+/* --- NEW: Day 5 - Navbar Logo Style --- */
+img.logo {
+    height: 55px; /* <-- A bit larger */
+    width: auto;
+    margin: 0;
+    display: block; /* Fixes small layout issues */
+}
+
+/* Brand wrapper (logo + text) */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem; /* tighter spacing */
+}
+
+.logo-text {
+    font-size: 1.05rem; /* smaller, more professional */
+    font-weight: 700;
+    color: inherit; /* match surrounding text for a neutral look */
+    line-height: 1;
+    font-family: inherit;
+    letter-spacing: 0.2px;
 }
 
 .nav-button {
@@ -820,18 +863,18 @@ body.dark-theme {
     width: 64px;
     height: 64px;
 
-    /* CSS white rounded-square backing */
-    background-color: #ffffff;
-    border-radius: 10px; /* rounded square */
-    padding: 6px; /* smaller pad so the white area is tighter around the artwork */
-    box-sizing: content-box;
-    border: 1px solid rgba(0,0,0,0.06);
+    /* Make sure we don't force a white backing — allow transparency in the image to show through */
+    background-color: transparent; /* allow transparent PNG/SVG logos to render without a white box */
+    border-radius: 0; /* don't force a rounded backing */
+    padding: 0; /* no extra backing padding */
+    box-sizing: border-box;
+    border: none;
 
-    /* Keep the artwork centered and contained */
+    /* Keep the artwork contained and visible */
     object-fit: contain;
     display: block;
     z-index: 2; /* above image and overlay */
-    box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+    box-shadow: none; /* remove shadow that can create a white-ish halo */
 }
 
 /* 4. This creates the text distinction */
@@ -1536,4 +1579,20 @@ body.dark-theme {
         /* This value is set by the JavaScript in home.html */
         transform: translateY(-50%); 
     }
+}
+
+/* --- NEW: Day 5 - Navbar Logo & Layout Fix --- */
+
+/* 1. This makes the logo BIGGER */
+img.logo {
+    height: 55px; /* A bit larger to fill space consistently */
+    width: auto;
+    margin: 0;
+    display: block;
+}
+
+/* 2. This REMOVES the empty space on the left */
+.navbar .container {
+    max-width: none; /* Removes the 1000px limit */
+    width: 95%;      /* Pushes the logo 95% to the edge */
 }
