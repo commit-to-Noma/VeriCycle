@@ -85,6 +85,56 @@
             {% endif %}
         </div>
     </section>
+    <section class="activity-feed-section">
+        <div class="container">
+            <div class="live-grid">
+
+                <div class="leaderboard-column">
+                    <h2>Top Neighborhoods</h2>
+                    <p class="activity-subtitle">Well done to these areas for leading the way in Joburg!</p>
+
+                    <div class="leaderboard-chart">
+                        <div class="column-chart-container">
+                            
+                            <div class="chart-column-item">
+                                <div class="chart-bar-viz" style="height: 92%;"></div>
+                                <span class="chart-bar-label">Sandton</span>
+                            </div>
+                            
+                            <div class="chart-column-item">
+                                <div class="chart-bar-viz" style="height: 81%;"></div>
+                                <span class="chart-bar-label">Randburg</span>
+                            </div>
+
+                            <div class="chart-column-item">
+                                <div class="chart-bar-viz" style="height: 65%;"></div>
+                                <span class="chart-bar-label">Soweto</span>
+                            </div>
+
+                            <div class="chart-column-item">
+                                <div class="chart-bar-viz" style="height: 50%;"></div>
+                                <span class="chart-bar-label">Roodepoort</span>
+                            </div>
+
+                        </div>
+                    </div>
+                    <p class="leaderboard-note">
+                        🏆 A huge congrats to <strong>Sandton</strong> for recycling <strong>12.4k kg</strong> and leading the charge!
+                    </p>
+                </div>
+
+                <div class="live-feed-column">
+                    <h2>Live Community Activity</h2>
+                    <p class="activity-subtitle">See the latest verified drop-offs from Green Members.</p>
+                    
+                    <div class="activity-feed-container">
+                        <div class="activity-feed" id="activity-feed">
+                            </div>
+                    </div>
+                </div>
+
+            </div> </div>
+    </section>
 
     <!-- 
       =====================================================
@@ -220,6 +270,47 @@
             }
         }
         // --- END OF THE FIX ---
+    </script>
+    <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const feedElement = document.getElementById('activity-feed');
+                
+                // 1. Our fake data
+                const fakeData = [
+                    { icon: '♻️', text: '<strong>1.5kg</strong> of Cans verified at <strong>Pikitup Marlboro</strong>' },
+                    { icon: '♻️', text: '<strong>2.1kg</strong> of Paper verified at <strong>Mpact Randburg</strong>' },
+                    { icon: '♻️', text: '<strong>0.8kg</strong> of Glass verified at <strong>Roodepoort Recycling</strong>' },
+                    { icon: '♻️', text: '<strong>3.0kg</strong> of Cardboard verified at <strong>Mpact Germiston</strong>' },
+                    { icon: '♻️', text: '<strong>1.2kg</strong> of PET Bottles verified at <strong>FMSA Waltloo</strong>' },
+                ];
+                
+                // 2. We need to double the data to make the scroll loop seamless
+                const allData = [...fakeData, ...fakeData];
+                
+                // 3. Create the HTML for each item
+                allData.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'activity-item';
+                    itemElement.innerHTML = `
+                        <span class="activity-icon">${item.icon}</span>
+                        <span class="activity-text">${item.text}</span>
+                    `;
+                    feedElement.appendChild(itemElement);
+                });
+                
+                // 4. Update the animation to scroll the correct distance
+                const itemHeight = 61; // The height of one .activity-item (padding + text)
+                const totalScrollHeight = fakeData.length * itemHeight;
+                
+                // We update the 'scroll-up' animation in the CSS
+                // This is a bit advanced, but it works!
+                document.styleSheets[0].insertRule(`
+                    @keyframes scroll-up {
+                        0% { transform: translateY(0); }
+                        100% { transform: translateY(-${totalScrollHeight}px); }
+                    }
+                `, document.styleSheets[0].cssRules.length);
+            });
     </script>
 </body>
 </html>

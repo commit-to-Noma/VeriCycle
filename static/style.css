@@ -1,3 +1,81 @@
+/* --- NEW: Day 5 - Leaderboard Styles --- */
+
+/* 1. This creates the 2-column grid */
+.live-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: flex-start;
+}
+
+/* 2. On mobile, stack the columns */
+@media (max-width: 900px) {
+    .live-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 3. Style the new leaderboard card */
+.leaderboard-chart {
+    background-color: #1e1e1e; /* Dark card background */
+    padding: 1.5rem;
+    border-radius: 12px;
+}
+
+/* 4. Style the bar chart elements */
+.chart-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+.chart-item:last-child {
+    margin-bottom: 0;
+}
+
+.chart-label {
+    color: #ccc;
+    font-size: 0.95rem;
+    width: 100px; /* Aligns the bars */
+    flex-shrink: 0;
+}
+
+.chart-bar-container {
+    flex-grow: 1; /* Makes the bar take up remaining space */
+    background-color: #333;
+    border-radius: 4px;
+    height: 10px;
+}
+
+.chart-bar {
+    height: 10px;
+    background-color: #4CAF50; /* Green */
+    border-radius: 4px;
+    /* This adds a "pop" animation on load */
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: grow-bar 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.chart-value {
+    color: #f4f4f4;
+    font-weight: 600;
+    font-size: 0.95rem;
+    width: 70px; /* Aligns the values */
+    text-align: right;
+}
+
+/* 5. This is the "pop" animation */
+@keyframes grow-bar {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+/* Stagger the animation for each bar */
+.chart-item:nth-child(1) .chart-bar { animation-delay: 0.1s; }
+.chart-item:nth-child(2) .chart-bar { animation-delay: 0.2s; }
+.chart-item:nth-child(3) .chart-bar { animation-delay: 0.3s; }
+.chart-item:nth-child(4) .chart-bar { animation-delay: 0.4s; }
 /* VeriCycle Stylesheet
    Colors based on your logo:
    - Main Green: #4CAF50
@@ -56,7 +134,7 @@ body {
 
 /* --- Hero Section (Landing Page) --- */
 .hero {
-    background-color: #0D47A1; /* Dark Blue */
+    background-color: #0f2463; /* NEW: Dark, solid navy blue (updated) */
     color: #fff;
     padding: 4rem 0;
     text-align: center;
@@ -1213,4 +1291,249 @@ body.dark-theme {
 /* This class triggers the "swoop down" animation */
 #splash-page.slide-out {
     transform: translateY(100%);
+}
+
+/* --- NEW: Day 5 - Live Activity Feed --- */
+
+.activity-feed-section {
+    background-color: #1e1e1e; /* Dark background */
+    padding: 4rem 0;
+    text-align: center;
+    border-top: 1px solid #333;
+}
+
+.activity-feed-section h2 {
+    font-size: 2rem;
+    color: #f4f4f4; /* White */
+    margin-top: 0;
+    margin-bottom: 2rem;
+}
+
+.activity-feed-container {
+    height: 200px; /* Fixed height for the scrolling box */
+    overflow: hidden; /* This hides the non-visible items */
+    position: relative;
+    width: 100%; /* ensure it fills the column */
+    max-width: 600px;
+    min-width: 240px; /* prevent collapsing to a thin line */
+    margin: 0 auto;
+    border: 1px solid #333;
+    border-radius: 12px;
+    background-color: #121212;
+}
+
+.activity-feed {
+    position: absolute;
+    width: 100%;
+    /* This animation is what makes it scroll */
+    animation: scroll-up 20s linear infinite;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    box-sizing: border-box;
+    border-bottom: 1px solid #333;
+    text-align: left;
+}
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.activity-text {
+    color: #ccc;
+    font-size: 0.95rem;
+}
+.activity-text strong {
+    color: #4CAF50; /* Green */
+    font-weight: 600;
+}
+
+/* This is the scrolling animation */
+@keyframes scroll-up {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        /* This value needs to be adjusted based on the number of items */
+        /* (Number of items) * (Height of one item) */
+        /* We'll set it based on the JS data */
+        transform: translateY(-50%); /* This will be updated by JS */
+    }
+}
+
+/* --- NEW: Day 5 - Activity Feed Polish --- */
+
+/* 1. Use a deep, dark navy blue for the background */
+.activity-feed-section {
+    background-color: #0f2463; /* This is a deep, dark blue (updated) */
+}
+
+/* 2. Make the title green (livelier) */
+.activity-feed-section h2 {
+    color: #4CAF50; /* Main Green */
+}
+
+/* 3. Style the new subtitle */
+.activity-subtitle {
+    font-size: 1.15rem;
+    color: #aaa;
+    max-width: 600px;
+    margin: -1.5rem auto 2rem auto; /* Pulls it up under the title */
+}
+
+/* 4. Make the scrolling box transparent */
+.activity-feed-container {
+    background-color: transparent; /* This is the fix */
+    border: 1px solid #1a4a8a; /* A border that fits the new blue */
+}
+
+/* --- NEW: Day 5 - Final Homepage Polish --- */
+
+/* 1. Fix the "Sandwich" Color */
+.activity-feed-section {
+    background-color: #0f2463; /* NEW: Dark, solid navy blue (Matches .hero) */
+}
+
+/* 2. Fix the "Weird" Green Text */
+.activity-feed-section h2 {
+    color: #f4f4f4; /* White text looks cleaner */
+}
+
+/* 3. Fix the Ratio (3:2) and Proportions (Equal Height) */
+.live-grid {
+    grid-template-columns: 3fr 2fr; /* 3:2 Ratio (Leaderboard gets 3) */
+    align-items: stretch; /* This makes both columns equal height */
+}
+.live-feed-column, .leaderboard-column {
+    display: flex;
+    flex-direction: column;
+}
+/* This makes the inner boxes fill the new height */
+.activity-feed-container, .leaderboard-chart {
+    flex-grow: 1; /* This is the key to proportional boxes */
+    height: 100%;
+}
+.activity-feed-container {
+    height: 250px; /* Give the feed a fixed height */
+}
+
+/* 4. Remove Old Leaderboard Styles */
+.chart-item, .chart-label, .chart-bar-container, .chart-bar, .chart-value {
+    /* These old rules are no longer needed visually; hide them safely. */
+    display: none;
+}
+
+/* 5. Build the NEW Vertical Column Chart */
+.leaderboard-chart {
+    background-color: #1e1e1e;
+    padding: 1.5rem;
+    border-radius: 12px;
+    height: 250px; /* Match the feed height */
+    box-sizing: border-box;
+}
+
+.column-chart-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end; /* This makes the bars grow from the bottom */
+    height: 100%;
+    width: 100%;
+    gap: 1rem;
+}
+
+.chart-column-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20%;
+    height: 100%;
+    justify-content: flex-end; /* Aligns label to bottom */
+}
+
+.chart-bar-viz {
+    width: 100%;
+    background-color: rgba(76, 175, 80, 0.4); /* TRANSPARENT Green */
+    border: 2px solid #4CAF50; /* SOLID Green border */
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    
+    /* Animation */
+    transform: scaleY(0);
+    transform-origin: bottom;
+    animation: grow-column 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.chart-bar-label {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+/* 6. Animate the new chart */
+@keyframes grow-column {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+}
+
+/* Stagger the animation for each bar */
+.chart-column-item:nth-child(1) .chart-bar-viz { animation-delay: 0.1s; }
+.chart-column-item:nth-child(2) .chart-bar-viz { animation-delay: 0.2s; }
+.chart-column-item:nth-child(3) .chart-bar-viz { animation-delay: 0.3s; }
+.chart-column-item:nth-child(4) .chart-bar-viz { animation-delay: 0.4s; }
+
+/* 7. Style the new Encouragement Message */
+.leaderboard-note {
+    font-size: 0.95rem;
+    color: #aaa;
+    text-align: center;
+    margin-top: 1rem;
+    font-style: italic;
+}
+.leaderboard-note strong {
+    color: #f4f4f4;
+    font-weight: 600;
+}
+
+/* --- NEW: Day 5 - Live Feed Animation FIX --- */
+
+.activity-feed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    /* This animation is what makes it scroll */
+    animation: scroll-up 20s linear infinite;
+}
+
+.activity-item {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.activity-text {
+    display: block;
+    flex: 1 1 auto;
+}
+
+/* This is the scrolling animation */
+@keyframes scroll-up {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        /* This value is set by the JavaScript in home.html */
+        transform: translateY(-50%); 
+    }
 }
