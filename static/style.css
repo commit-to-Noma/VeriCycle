@@ -819,3 +819,128 @@ body.dark-theme {
 .partner-card {
     background-color: #1a1a1a; /* slightly lighter than pure black */
 }
+
+/* --- NEW: Location Link & Modal Styles --- */
+.location-link {
+    display: block;
+    padding: 0.5rem 0;
+    /* Keep the card 'View' link visibly blue so users know it's clickable */
+    color: #2196F3; /* blue */
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.15s;
+}
+.location-link:hover {
+    /* Subtle hover: slightly darker blue and underline */
+    color: #1976D2;
+    text-decoration: underline;
+}
+
+.location-modal {
+    display: none; /* Hidden by default */
+}
+
+.location-modal .modal-content {
+    max-width: 600px; /* Wider modal for lists */
+}
+
+.location-modal h3 {
+    font-size: 1.75rem;
+    color: #f4f4f4;
+    margin-bottom: 1.5rem;
+}
+
+.location-list {
+    max-height: 400px; /* Makes the list scrollable */
+    overflow-y: auto;
+    text-align: left;
+    background-color: #121212; /* Darker background */
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+}
+
+.location-list h4 {
+    color: #4CAF50; /* Main Green */
+    font-size: 1.2rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.25rem;
+}
+
+.location-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.location-list li {
+    color: #ccc;
+    font-size: 0.95rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #222;
+}
+
+.location-list li:last-child {
+    border-bottom: none;
+}
+
+/* --- NEW: Location Modal List 2-Column --- */
+
+.location-list li {
+    color: #ccc;
+    font-size: 0.95rem;
+    padding: 0.75rem 0.5rem; /* Added padding */
+    border-bottom: 1px solid #222;
+    
+    /* This creates the 2-column layout */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem; /* Space between columns */
+}
+
+/* This is the left column (Name & Address) */
+.loc-name-address {
+    flex-grow: 1; /* Takes up available space */
+    /* Neutral color to match modal text */
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+/* Keep hover subtle: underline, but no color change */
+.loc-name-address:hover {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.loc-name-address strong {
+    color: #f4f4f4; /* White */
+    display: block; /* Puts address on new line */
+    font-size: 1.05rem;
+}
+
+/* This is the right column (Phone) */
+.loc-phone {
+    flex-shrink: 0; /* Prevents it from shrinking */
+    font-weight: 600;
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+/* Ensure modal location links are neutral gray while the card-level
+   `.location-link` remains blue for affordance. Keep strong/title white. */
+.location-list a {
+    color: #ccc; /* neutral gray */
+    text-decoration: none;
+}
+.location-list a:hover {
+    color: #ccc; /* keep hover subtle */
+    text-decoration: underline;
+}
+.location-list a strong {
+    color: #f4f4f4; /* keep the location name/title white */
+    display: block;
+}
