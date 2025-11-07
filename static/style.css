@@ -158,16 +158,13 @@ body {
 }
 
 .advantages {
-    display: flex;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* This creates the 2x2 grid */
     gap: 1.5rem;
     margin-bottom: 3rem;
-    flex-wrap: wrap; 
 }
 
 .advantage-card {
-    flex-basis: 22%; 
-    min-width: 220px; 
     background-color: #f9f9f9;
     padding: 1.5rem;
     border-radius: 12px;
@@ -1097,4 +1094,123 @@ body.dark-theme {
 #proof-mockup .btn-primary-large {
     width: 100%;
     box-sizing: border-box; /* Ensures padding doesn't break width */
+}
+
+/* --- NEW: Day 5 - Full Dark Theme (Homepage & Modals) --- */
+
+/* 1. Homepage Hero (The blue section) */
+.dark-theme .hero {
+    /* We keep the blue, but make the text white */
+    color: #fff;
+}
+.dark-theme .hero h2 {
+    color: #4CAF50; /* Main Green */
+}
+
+/* 2. Homepage CTA Section (The "Join" section) */
+.dark-theme .cta-section {
+    background-color: #121212; /* Dark background */
+    color: #e0e0e0;
+}
+.dark-theme .cta-section h2 {
+    color: #4CAF50; /* Main Green */
+}
+.dark-theme .cta-subtitle {
+    color: #aaa;
+}
+.dark-theme .cta-buttons p {
+    color: #aaa;
+}
+.dark-theme .link-secondary {
+    color: #2196F3; /* Bright Blue */
+}
+
+/* 3. Homepage Advantage Cards */
+.dark-theme .advantage-card {
+    background-color: #1e1e1e; /* Dark card */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.dark-theme .advantage-card h3 {
+    color: #4CAF50; /* Main Green */
+}
+.dark-theme .advantage-card p {
+    color: #aaa;
+}
+
+/* 4. Auth Modal (Pop-up) */
+.dark-theme .modal-content {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.dark-theme .modal-close {
+    color: #aaa;
+}
+.dark-theme .modal-close:hover {
+    color: #fff;
+}
+.dark-theme .modal-content h2 {
+    color: #f4f4f4; /* White */
+}
+.dark-theme .auth-card p,
+.dark-theme .modal-content p {
+    color: #aaa;
+}
+
+/* 5. Auth Forms */
+.dark-theme .form-group label {
+    color: #e0e0e0;
+}
+.dark-theme .form-group input,
+.dark-theme .verify-form input {
+    background-color: #333;
+    border: 1px solid #555;
+    color: #fff;
+}
+
+/* 6. Flash Messages (Error/Success) */
+.dark-theme .flash-message.success {
+    background-color: #1B5E20; /* Dark Green */
+    color: #E8F5E9; /* Light green text */
+}
+.dark-theme .flash-message.error {
+    background-color: #B71C1C; /* Dark Red */
+    color: #FFEBEE; /* Light red text */
+}
+
+/* --- NEW: Day 5 - Splash Screen Styles --- */
+
+#splash-page {
+    background-color: #121212;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden; /* Important for the slide animation */
+    transition: transform 1s cubic-bezier(0.86, 0, 0.07, 1); /* The slide animation */
+}
+
+.splash-terminal {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.5rem;
+    color: #f4f4f4;
+}
+
+.splash-terminal .prompt {
+    color: #4CAF50; /* Green */
+    margin-right: 0.5rem;
+}
+
+/* This is the blinking cursor from Typed.js */
+.typed-cursor {
+    color: #f4f4f4;
+    opacity: 1;
+    animation: typed-blink 0.7s infinite;
+}
+@keyframes typed-blink {
+    50% { opacity: 0.0; }
+}
+
+/* This class triggers the "swoop down" animation */
+#splash-page.slide-out {
+    transform: translateY(100%);
 }

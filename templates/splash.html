@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeriCycle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
+</head>
+<body id="splash-page">
+
+    <div class="splash-terminal">
+        <span class="prompt">$</span>
+        <span id="typed-text"></span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var options = {
+                strings: ['git commit -m "commit_to_Noma"'],
+                typeSpeed: 60,
+                startDelay: 500,
+                showCursor: true,
+                cursorChar: '█',
+                autoInsertCss: false,
+                
+                // This function runs when typing is complete
+                onComplete: (self) => {
+                    // 1. Pause for 1 second so the user can read it
+                    setTimeout(() => {
+                        // 2. Add the 'slide-out' class to trigger the CSS animation
+                        document.body.classList.add('slide-out');
+                    }, 1000);
+                    
+                    // 3. Wait for the animation to finish (1s), then redirect
+                    setTimeout(() => {
+                        window.location.href = '/home';
+                    }, 2000); // 1s pause + 1s animation = 2s
+                }
+            };
+
+            var typed = new Typed('#typed-text', options);
+        });
+    </script>
+
+</body>
+</html>

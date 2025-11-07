@@ -31,7 +31,7 @@ login_manager = LoginManager(app)
 # We intentionally do NOT set login_manager.login_message so Flask-Login
 # won't flash a message on redirect. That prevents the homepage from
 # auto-opening the auth modal when a user directly loads '/'.
-login_manager.login_view = 'index'
+login_manager.login_view = 'home'
 login_manager.login_message = None
 login_manager.login_message_category = None
 # --- END LOGIN BEHAVIOR ---
@@ -65,7 +65,7 @@ def signup():
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         flash('That email is already taken. Please log in.', 'error')
-        return redirect(url_for('index', _anchor='auth-modal')) # Redirect back to homepage
+        return redirect(url_for('home', _anchor='auth-modal')) # Redirect back to homepage
 
     print("--- CALLING HEDERA ENGINE: Creating new collector account... ---")
     try:
@@ -101,7 +101,7 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
 
-        return redirect(url_for('index', _anchor='auth-modal')) # Redirect back to homepage
+        return redirect(url_for('home', _anchor='auth-modal')) # Redirect back to homepage
 
     except Exception as e:
         print(f"--- HEDERA/PYTHON SIGNUP FAILED ---")
@@ -127,26 +127,31 @@ def login():
             return redirect(next_page)
         else:
             # If they just logged in from the homepage, send them back to the homepage.
-            return redirect(url_for('index'))
+            return redirect(url_for('home'))
         # --- END OF THE FIX ---
             
     else:
         flash('Login Unsuccessful. Please check email and password.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('home'))
 
 @app.route("/logout")
 @login_required 
 def logout():
     logout_user()
-    return redirect(url_for('index'))
+    return redirect(url_for('home'))
 
 # -----------------------------------------------------------------
 # 6. ALL YOUR OTHER ROUTES (These are perfect)
 # -----------------------------------------------------------------
 
 @app.route('/')
-def index():
-    return render_template('index.html')
+def splash():
+    return render_template('splash.html')
+
+
+@app.route('/home')
+def home():
+    return render_template('home.html')
 
 @app.route('/collector')
 @login_required 
