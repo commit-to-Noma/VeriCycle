@@ -944,3 +944,157 @@ body.dark-theme {
     color: #f4f4f4; /* keep the location name/title white */
     display: block;
 }
+
+/* --- NEW: Rewards Page Styles --- */
+
+.rewards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+/* On wider screens, show 2 columns */
+@media (min-width: 900px) {
+    .rewards-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    /* Make the bank mockup span both columns */
+    #bank-mockup {
+        grid-column: 1 / -1; 
+    }
+}
+
+.mockup-subtitle {
+    font-size: 1rem;
+    color: #aaa;
+    margin-top: -0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* 1. Bank Mockup Styles */
+.bank-app {
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid #333;
+    max-width: 400px;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.bank-header {
+    background-color: #0D47A1; /* Standard Bank Blue */
+    color: #fff;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.bank-body {
+    padding: 1.5rem;
+}
+.bank-body h4 {
+    color: #f4f4f4;
+    font-size: 1.25rem;
+    text-align: center;
+    margin: 0 0 1.5rem 0;
+}
+.bank-account {
+    background-color: #333;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+}
+.bank-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #aaa;
+}
+.bank-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+}
+.bank-conversion {
+    text-align: center;
+    margin: 1.5rem 0;
+}
+.bank-total {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #4CAF50; /* Green */
+    margin-top: 0.5rem;
+}
+.bank-button {
+    background-color: #4CAF50;
+    color: #fff;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.75rem;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* 2. Bonus Chart Styles */
+.bonus-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+.bonus-bar {
+    background-color: #333;
+    padding: 1rem;
+    border-radius: 8px;
+}
+.bonus-label {
+    font-weight: 600;
+    color: #f4f4f4;
+    display: block;
+}
+.bonus-value {
+    font-size: 0.9rem;
+    color: #aaa;
+    display: block;
+    margin-bottom: 0.75rem;
+}
+.bar-viz {
+    height: 20px;
+    border-radius: 4px;
+    background-color: #555;
+}
+.bonus-bar.vericycle-bulk .bar-viz {
+    background-color: #4CAF50; /* Green */
+}
+.bonus-note {
+    font-size: 0.9rem;
+    color: #aaa;
+    text-align: center;
+}
+
+/* 3. Proof Mockup Styles */
+#proof-mockup {
+    text-align: center;
+}
+.pdf-icon {
+    font-size: 4rem;
+    line-height: 1;
+}
+#proof-mockup h4 {
+    color: #f4f4f4;
+    font-size: 1.25rem;
+    margin: 1rem 0 0.5rem 0;
+}
+.proof-note {
+    font-size: 0.9rem;
+    color: #aaa;
+    max-width: 300px;
+    margin: 0 auto 2rem auto;
+}
+#proof-mockup .btn-primary-large {
+    width: 100%;
+    box-sizing: border-box; /* Ensures padding doesn't break width */
+}

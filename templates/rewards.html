@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewards & Proof - VeriCycle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark-theme">
+    <header class="navbar">
+        <div class="container">
+            <h1 class="logo">VeriCycle</h1>
+            <nav>
+                <a href="{{ url_for('collector_dashboard') }}" class="nav-button">Dashboard</a>
+                <a href="{{ url_for('network') }}" class="nav-button">Network</a>
+                <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container app-dashboard">
+        <div class="dashboard-header">
+            <h2>Rewards & Proof of Income</h2>
+            <p>See the value of your EcoCoin and create verifiable records of your hard work.</p>
+        </div>
+
+        <div class="rewards-grid">
+
+            <div class="card" id="bank-mockup">
+                <h3>EcoCoin-to-Rand Bridge</h3>
+                <p class="mockup-subtitle">Redeem your EcoCoin directly to your bank account. (Pitch Mockup)</p>
+                
+                <div class="bank-app">
+                    <div class="bank-header">
+                        <span class="bank-logo">Standard Bank</span>
+                        <span class="bank-time">11:45</span>
+                    </div>
+                    <div class="bank-body">
+                        <h4>Redeem from VeriCycle</h4>
+                        
+                        <div class="bank-account">
+                            <span class="bank-label">From Wallet</span>
+                            <span class="bank-value">ECO 1925.00</span>
+                        </div>
+                        <div class="bank-account">
+                            <span class="bank-label">To Account (Cheque)</span>
+                            <span class="bank-value">... 1337</span>
+                        </div>
+                        
+                        <div class="bank-conversion">
+                            <span class="bank-label">Exchange Rate: 1 ECO = R0.02 ZAR</span>
+                            <span class="bank-total">ZAR 38.50</span>
+                        </div>
+
+                        <button class="bank-button">Confirm Redemption</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="bonus-mockup">
+                <h3>Green Member Bonus</h3>
+                <p class="mockup-subtitle">Earn more than the standard cash rate by recycling in bulk.</p>
+
+                <div class="bonus-chart">
+                    <div class="bonus-bar cash">
+                        <span class="bonus-label">Standard Cash Rate</span>
+                        <span class="bonus-value">R1.50 / kg</span>
+                        <div class="bar-viz" style="width: 60%;"></div>
+                    </div>
+                    <div class="bonus-bar vericycle">
+                        <span class="bonus-label">VeriCycle Base Rate</span>
+                        <span class="bonus-value">R1.50 / kg</span>
+                        <div class="bar-viz" style="width: 60%;"></div>
+                    </div>
+                    <div class="bonus-bar vericycle-bulk">
+                        <span class="bonus-label">VeriCycle Bulk Bonus (10kg+)</span>
+                        <span class="bonus-value">R1.80 / kg (+20%)</span>
+                        <div class="bar-viz" style="width: 80%;"></div>
+                    </div>
+                </div>
+                <p class="bonus-note">By verifying your bulk deposits, VeriCycle guarantees you a higher payout than standard cash-for-scrap.</p>
+            </div>
+
+            <div class="card" id="proof-mockup">
+                <h3>Verifiable Proof of Income</h3>
+                <p class="mockup-subtitle">Download a formal PDF report of your income history for banks or credit applications.</p>
+                
+                <div class="pdf-icon">
+                    <span>📄</span>
+                </div>
+                <h4>EcoCoin Income Report: Nov 2025</h4>
+                <p class="proof-note">This report contains all your HCS-verified transactions, providing an immutable, trustworthy record of your earnings.</p>
+                
+                <a href="{{ url_for('static', filename='sample_report.pdf') }}" target="_blank" class="btn-primary-large btn-form">Download PDF Report</a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

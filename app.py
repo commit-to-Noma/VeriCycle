@@ -163,6 +163,12 @@ def center_dashboard():
 def network():
     return render_template('network.html')
 
+
+@app.route('/rewards')
+@login_required 
+def rewards():
+    return render_template('rewards.html')
+
 @app.route('/generate-qr')
 @login_required 
 def generate_qr():
