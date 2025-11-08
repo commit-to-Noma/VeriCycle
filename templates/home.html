@@ -170,6 +170,15 @@
             <div id="signup-form">
                 <h2>Create Your Account</h2>
                 <form action="{{ url_for('signup') }}" method="POST" class="verify-form">
+
+                        <div class="form-group">
+                            <label>Register as:</label>
+                            <div class="role-selector">
+                                <button type="button" class="role-btn active" data-role="collector">Collector</button>
+                                <button type="button" class="role-btn" data-role="center">Center</button>
+                            </div>
+                            <input type="hidden" id="role-input" name="role" value="collector">
+                        </div>
                     <div class="form-group">
                         <label for="signup-email">Email:</label>
                         <input type="email" id="signup-email" name="email" required>
@@ -178,6 +187,7 @@
                         <label for="signup-password">Password:</label>
                         <input type="password" id="signup-password" name="password" required>
                     </div>
+                    
                     <button type="submit" class="btn-primary-large btn-form">Create Account</button>
                 </form>
                 <p>
@@ -263,6 +273,22 @@
         allCloseButtons.forEach(btn => btn.addEventListener('click', closeModal));
         allToggleLinks.forEach(link => link.addEventListener('click', toggleForms));
 
+        // --- NEW: Role Button Select ---
+        const roleButtons = document.querySelectorAll('.role-btn');
+        const roleInput = document.getElementById('role-input');
+        roleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // 1. Remove 'active' from all buttons
+                roleButtons.forEach(btn => btn.classList.remove('active'));
+
+                // 2. Add 'active' to the one clicked
+                this.classList.add('active');
+
+                // 3. Update the hidden input's value
+                if (roleInput) roleInput.value = this.dataset.role;
+            });
+        });
+
         // --- THIS IS THE FIX FOR BUG 1 (THE "UNPROVOKED POP-UP") ---
         // We only want to check for ERROR messages.
         const errorMessages = flashContainer.querySelectorAll('.flash-message.error'); // <--- THIS IS THE FIX
@@ -280,6 +306,12 @@
             }
         }
         // --- END OF THE FIX ---
+        // If the URL contains #signup, open the signup modal automatically
+        if (window.location.hash === '#signup') {
+            modal.style.display = 'flex';
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
+        }
     </script>
     <script>
             document.addEventListener('DOMContentLoaded', function() {

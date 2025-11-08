@@ -1,90 +1,19 @@
-/* --- NEW: Day 5 - Leaderboard Styles --- */
+/* ================================================================================
+VeriCycle Main Stylesheet (style.css)
+================================================================================
+This file contains all styles for the entire VeriCycle application.
 
-/* 1. This creates the 2-column grid */
-.live-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2.5rem;
-    align-items: flex-start;
-}
-
-/* 2. On mobile, stack the columns */
-@media (max-width: 900px) {
-    .live-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* 3. Style the new leaderboard card */
-.leaderboard-chart {
-    background-color: #1e1e1e; /* Dark card background */
-    padding: 1.5rem;
-    border-radius: 12px;
-}
-
-/* 4. Style the bar chart elements */
-.chart-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-}
-.chart-item:last-child {
-    margin-bottom: 0;
-}
-
-.chart-label {
-    color: #ccc;
-    font-size: 0.95rem;
-    width: 100px; /* Aligns the bars */
-    flex-shrink: 0;
-}
-
-.chart-bar-container {
-    flex-grow: 1; /* Makes the bar take up remaining space */
-    background-color: #333;
-    border-radius: 4px;
-    height: 10px;
-}
-
-.chart-bar {
-    height: 10px;
-    background-color: #4CAF50; /* Green */
-    border-radius: 4px;
-    /* This adds a "pop" animation on load */
-    transform: scaleX(0);
-    transform-origin: left;
-    animation: grow-bar 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-
-.chart-value {
-    color: #f4f4f4;
-    font-weight: 600;
-    font-size: 0.95rem;
-    width: 70px; /* Aligns the values */
-    text-align: right;
-}
-
-/* 5. This is the "pop" animation */
-@keyframes grow-bar {
-    from { transform: scaleX(0); }
-    to { transform: scaleX(1); }
-}
-
-/* Stagger the animation for each bar */
-.chart-item:nth-child(1) .chart-bar { animation-delay: 0.1s; }
-.chart-item:nth-child(2) .chart-bar { animation-delay: 0.2s; }
-.chart-item:nth-child(3) .chart-bar { animation-delay: 0.3s; }
-.chart-item:nth-child(4) .chart-bar { animation-delay: 0.4s; }
-/* VeriCycle Stylesheet
-   Colors based on your logo:
-   - Main Green: #4CAF50
-   - Dark Blue: #0D47A1
-   - Dark Green (for accents): #1B5E20
-   - Text: #333
-   - Background: #f4f4f4
+Core Color Palette:
+- Dark BG: #121212
+- Dark Card: #1e1e1e
+- Dark Blue: #0f2463
+- Main Green: #4CAF50
+- White Text: #f4f4f4
+- Grey Text: #aaa
+================================================================================
 */
 
+/* --- Base Styles --- */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
@@ -110,200 +39,131 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 95%; /* This pushes the logo to the left */
-    max-width: none; /* This overrides the 1000px limit */
+    width: 95%;
+    max-width: none;
 }
 
-.logo {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1B5E20; /* Dark Green */
-    margin: 0;
-}
-
-/* Rename the old text-logo selector to only target the H1 text logo */
 h1.logo {
-    /* This is the new "distinct" style */
-    color: #4CAF50; /* Your Main Green */
+    color: #4CAF50;
     background-color: #333;
     padding: 0.3rem 0.8rem;
-    border-radius: 8px; /* Rounded */
-    font-size: 1.4rem; /* A specific size */
+    border-radius: 8px;
+    font-size: 1.4rem;
     margin: 0;
     transition: all 0.2s;
 }
-
 h1.logo:hover {
-    background-color: #444; /* Add a little hover effect */
+    background-color: #444;
     color: #fff;
 }
 
-/* --- NEW: Day 5 - Navbar Logo Style --- */
 img.logo {
-    height: 55px; /* <-- A bit larger */
+    height: 55px;
     width: auto;
     margin: 0;
-    display: block; /* Fixes small layout issues */
-}
-
-/* Brand wrapper (logo + text) */
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem; /* tighter spacing */
-}
-
-.logo-text {
-    font-size: 1.05rem; /* smaller, more professional */
-    font-weight: 700;
-    color: inherit; /* match surrounding text for a neutral look */
-    line-height: 1;
-    font-family: inherit;
-    letter-spacing: 0.2px;
+    display: block;
 }
 
 .nav-button {
     text-decoration: none;
-    color: #0D47A1; /* Dark Blue */
+    color: #0D47A1;
     font-weight: 500;
     padding: 0.5rem 1rem;
     border-radius: 8px;
     transition: background-color 0.2s;
 }
-
 .nav-button:hover {
     background-color: #f4f4f4;
 }
 
-/* --- Hero Section (Landing Page) --- */
+/* --- "Halo" Active Tab Style --- */
+.nav-button.active {
+    color: #4CAF50;
+    font-weight: 700;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+    border: 1px solid #4CAF50;
+}
+
+/* --- Homepage Hero Section --- */
 .hero {
-    background-color: #0f2463; /* NEW: Dark, solid navy blue (updated) */
+    background-color: #0f2463; /* Dark Navy Blue */
     color: #fff;
     padding: 4rem 0;
     text-align: center;
 }
-
 .hero h1 {
     font-size: 3rem;
     margin: 0;
 }
-
 .hero h2 {
     font-size: 1.5rem;
-    color: #4CAF50; /* Main Green */
+    color: #4CAF50;
     margin: 0;
 }
-
 .hero .subtitle {
     font-size: 1.1rem;
     max-width: 600px;
     margin: 1rem auto;
     opacity: 0.9;
 }
-
-.btn-primary {
+.btn-secondary {
     display: inline-block;
-    background-color: #4CAF50; /* Main Green */
+    background-color: transparent;
+    border: 2px solid #fff;
     color: #fff;
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
     font-weight: 600;
     text-decoration: none;
-    border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    margin-top: 2rem;
 }
-
-.btn-primary:hover {
-    background-color: #1B5E20; /* Dark Green */
-}
-
-/* --- App Dashboard --- */
-.app-dashboard {
-    padding-top: 2rem;
-}
-
-.card {
+.btn-secondary:hover {
     background-color: #fff;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    color: #0d2c54;
 }
 
-.card h3 {
-    margin-top: 0;
-    color: #0D47A1; /* Dark Blue */
-}
-
-.balance {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #1B5E20; /* Dark Green */
-    margin: 0.5rem 0;
-}
-
-/* --- LANDING PAGE CTA STYLES --- */
-
-.nav-button-primary {
-    text-decoration: none;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    background-color: #4CAF50; /* Main Green */
-    color: #fff;
-    transition: background-color 0.2s;
-}
-.nav-button-primary:hover {
-    background-color: #1B5E20; /* Dark Green */
-}
-
+/* --- Homepage CTA Section ("Join") --- */
 .cta-section {
     background-color: #ffffff;
     padding: 4rem 0;
     text-align: center;
 }
-
 .cta-section h2 {
     font-size: 2rem;
-    color: #0D47A1; /* Dark Blue */
+    color: #0D47A1;
     margin-top: 0;
 }
-
 .cta-subtitle {
     font-size: 1.15rem;
     color: #555;
     max-width: 600px;
     margin: 1rem auto 3rem auto;
 }
-
 .advantages {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* This creates the 2x2 grid */
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
     margin-bottom: 3rem;
 }
-
 .advantage-card {
     background-color: #f9f9f9;
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-
 .advantage-card h3 {
     margin-top: 0;
-    color: #1B5E20; /* Dark Green */
+    color: #1B5E20;
 }
-
 .cta-buttons {
     margin-top: 2rem;
 }
-
 .btn-primary-large {
     display: inline-block;
-    background-color: #4CAF50; /* Main Green */
+    background-color: #4CAF50;
     color: #fff;
     padding: 1rem 2.5rem;
     font-size: 1.2rem;
@@ -314,19 +174,16 @@ img.logo {
     cursor: pointer;
     transition: background-color 0.2s;
 }
-
 .btn-primary-large:hover {
-    background-color: #1B5E20; /* Dark Green */
+    background-color: #1B5E20;
 }
-
 .cta-buttons p {
     margin-top: 1rem;
     font-size: 1rem;
     color: #666;
 }
-
 .link-secondary {
-    color: #0D47A1; /* Dark Blue */
+    color: #0D47A1;
     font-weight: 600;
     text-decoration: none;
 }
@@ -334,42 +191,245 @@ img.logo {
     text-decoration: underline;
 }
 
-/* --- STYLES FOR LOGIN/SIGNUP (MODAL & FORMS) --- */
+/* --- Homepage Live Activity Section --- */
+.activity-feed-section {
+    background-color: #0f2463;
+    padding: 4rem 0;
+    text-align: center;
+    border-top: 1px solid #333;
+}
+.activity-feed-section h2 {
+    color: #f4f4f4;
+    font-size: 2rem;
+    margin-top: 0;
+    margin-bottom: 2rem;
+}
+.activity-subtitle {
+    font-size: 1.15rem;
+    color: #aaa;
+    max-width: 600px;
+    margin: -1.5rem auto 2rem auto;
+}
+.live-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 2.5rem;
+    align-items: stretch;
+}
+.live-feed-column, .leaderboard-column {
+    display: flex;
+    flex-direction: column;
+}
+.activity-feed-container, .leaderboard-chart {
+    flex-grow: 1;
+    height: 100%;
+}
+.activity-feed-container {
+    height: 250px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    min-width: 240px;
+    margin: 0 auto;
+/* Toggle Switch removed: replaced by .role-selector */
+    color: #ccc;
+    font-size: 0.95rem;
+}
 
+/* --- NEW: Role "Button Select" Style --- */
+.role-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+.role-btn {
+    background-color: #333;
+    color: #aaa;
+    border: 2px solid #555;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.role-btn:hover {
+    background-color: #444;
+}
+.role-btn.active {
+    background-color: #4CAF50; /* Main Green */
+    color: #fff;
+    border-color: #4CAF50;
+}
+.activity-text strong {
+    color: #4CAF50;
+    font-weight: 600;
+}
+@keyframes scroll-up {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+}
+
+/* Leaderboard Column Chart */
+.leaderboard-chart {
+    background-color: #1e1e1e;
+    padding: 1.5rem;
+    border-radius: 12px;
+    height: 250px;
+    box-sizing: border-box;
+}
+.column-chart-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 100%;
+    width: 100%;
+    gap: 1rem;
+}
+.chart-column-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20%;
+    height: 100%;
+    justify-content: flex-end;
+}
+.chart-bar-viz {
+    width: 100%;
+    background-color: rgba(76, 175, 80, 0.4);
+    border: 2px solid #4CAF50;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    transform: scaleY(0);
+    transform-origin: bottom;
+    animation: grow-column 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.chart-bar-label {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+@keyframes grow-column {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+}
+.chart-column-item:nth-child(1) .chart-bar-viz { animation-delay: 0.1s; }
+.chart-column-item:nth-child(2) .chart-bar-viz { animation-delay: 0.2s; }
+.chart-column-item:nth-child(3) .chart-bar-viz { animation-delay: 0.3s; }
+.chart-column-item:nth-child(4) .chart-bar-viz { animation-delay: 0.4s; }
+
+.leaderboard-note {
+    font-size: 0.95rem;
+    color: #aaa;
+    text-align: center;
+    margin-top: 1rem;
+    font-style: italic;
+}
+.leaderboard-note strong {
+    color: #f4f4f4;
+    font-weight: 600;
+}
+
+/* --- Homepage Mission Section --- */
+.mission-section {
+    position: relative;
+    z-index: 1;
+    background-color: #121212;
+    padding: 4rem 0;
+    text-align: center;
+}
+.mission-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("/static/logo.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 600px;
+    opacity: 0.1;
+    z-index: -1;
+}
+.mission-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+.mission-card {
+    background-color: #1e1e1e;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #333;
+    text-align: left;
+}
+.mission-icon {
+    font-size: 2.5rem;
+}
+.mission-card h3 {
+    color: #4CAF50;
+    font-size: 1.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+.mission-card p {
+    color: #aaa;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+@media (max-width: 900px) {
+    .mission-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- App Dashboard --- */
+.app-dashboard {
+    padding-top: 2rem;
+}
+.card {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.card h3 {
+    margin-top: 0;
+    color: #0D47A1;
+}
+
+/* --- General Form Styles --- */
 .verify-form label {
     display: block;
     margin-top: 1rem;
     font-weight: 500;
-    text-align: left; /* Aligns labels to the left */
+    text-align: left;
 }
-
 .verify-form input {
-    width: 95%; /* Reduced width to match */
+    width: 95%;
     padding: 0.75rem;
     margin-top: 0.5rem;
     border-radius: 8px;
-         flex-grow: 1; /* This makes all cards the same height */
-         /* This adds space at the top for the overlapping logo. Increased to
-             prevent the logo from covering the card headings/text. */
-         padding-top: 3rem; 
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    box-sizing: border-box;
 }
-
 .verify-form button {
     margin-top: 1.5rem;
     width: 100%;
 }
-
 .btn-form {
     width: 100%;
     padding: 0.75rem;
     font-size: 1.1rem;
 }
 
-.auth-card p {
-    text-align: center;
-}
-
-/* This is for your green/red "flash" messages */
+/* --- Flash Messages (Error/Success) --- */
 .flash-message {
     padding: 1rem;
     margin-bottom: 1rem;
@@ -377,42 +437,36 @@ img.logo {
     text-align: center;
     font-weight: 500;
 }
-
 .flash-message.success {
-    background-color: #E8F5E9; /* Light green */
-    color: #1B5E20; /* Dark Green */
+    background-color: #E8F5E9;
+    color: #1B5E20;
 }
-
 .flash-message.error {
-    background-color: #FFEBEE; /* Light red */
-    color: #B71C1C; /* Dark Red */
+    background-color: #FFEBEE;
+    color: #B71C1C;
 }
 
-/* --- MODAL (POP-UP) STYLES --- */
-
+/* --- Modal (Pop-up) Styles --- */
 .modal-overlay {
-    display: none; /* Hidden by default */
-    position: fixed; 
-    z-index: 1000; 
+    display: none;
+    position: fixed;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto; 
-    background-color: rgba(0, 0, 0, 0.6); 
-    
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
 }
-
 .modal-content {
     position: relative;
     max-width: 400px;
     width: 90%;
     animation: fadeIn 0.3s;
 }
-
 .modal-close {
     position: absolute;
     top: 10px;
@@ -427,81 +481,139 @@ img.logo {
 .modal-close:hover {
     color: #333;
 }
-
 .modal-content .verify-form {
     margin-top: 1rem;
 }
-
 .form-group {
     margin-bottom: 1rem;
 }
-
 .form-group label {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;
     text-align: left;
 }
-
 .form-group input {
     width: 100%;
     padding: 0.75rem;
     font-size: 1rem;
     border: 1px solid #ccc;
     border-radius: 8px;
-    box-sizing: border-box; /* Important! */
+    box-sizing: border-box;
 }
-
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
-
-/* Ensure the auth modal is hidden by default to prevent unprovoked flashes */
 #auth-modal {
     display: none;
 }
 
-/* --- NEW DARK THEME STYLES --- */
+/* --- Dark Theme Styles --- */
 body.dark-theme {
     background-color: #121212;
     color: #e0e0e0;
 }
-
 .dark-theme .navbar {
     background-color: #1e1e1e;
     border-bottom-color: #333;
 }
-
 .dark-theme .nav-button {
     color: #f4f4f4;
 }
-
 .dark-theme .nav-button:hover {
     background-color: #333;
 }
-
 .dark-theme .card {
     background-color: #1e1e1e;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
-
 .dark-theme .card h3 {
-    color: #4CAF50; /* Main Green */
+    color: #4CAF50;
 }
 
-.dark-theme .balance {
+/* Dark Theme - Homepage CTA */
+.dark-theme .cta-section {
+    position: relative;
+    z-index: 1;
+    background-color: #121212;
+    color: #e0e0e0;
+}
+.dark-theme .cta-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("/static/logo.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 600px;
+    opacity: 0.1;
+    z-index: -1;
+}
+.dark-theme .cta-section h2 {
+    color: #4CAF50;
+}
+.dark-theme .cta-subtitle {
+    color: #aaa;
+}
+.dark-theme .cta-buttons p {
+    color: #aaa;
+}
+.dark-theme .link-secondary {
+    color: #2196F3;
+}
+.dark-theme .advantage-card {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border: 1px solid #333;
+}
+.dark-theme .advantage-card h3 {
+    color: #4CAF50;
+}
+.dark-theme .advantage-card p {
+    color: #aaa;
+}
+
+/* Dark Theme - Auth Modal */
+.dark-theme .modal-content {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.dark-theme .modal-close {
+    color: #aaa;
+}
+.dark-theme .modal-close:hover {
     color: #fff;
 }
+.dark-theme .modal-content h2 {
+    color: #f4f4f4;
+}
+.dark-theme .auth-card p,
+.dark-theme .modal-content p {
+    color: #aaa;
+}
+.dark-theme .form-group label {
+    color: #e0e0e0;
+}
+.dark-theme .form-group input,
+.dark-theme .verify-form input {
+    background-color: #333;
+    border: 1px solid #555;
+    color: #fff;
+}
+.dark-theme .flash-message.success {
+    background-color: #1B5E20;
+    color: #E8F5E9;
+}
+.dark-theme .flash-message.error {
+    background-color: #B71C1C;
+    color: #FFEBEE;
+}
 
-/* --- NEW: Collector Dashboard Styles --- */
-
+/* --- Collector Dashboard Styles --- */
 .dashboard-header {
     margin-bottom: 2rem;
 }
@@ -513,124 +625,79 @@ body.dark-theme {
 }
 .dashboard-header p {
     font-size: 1.25rem;
-    color: #aaa; /* Lighter text for subtitle */
-    margin: 0;
-}
-
-.kpi-card {
-    background-color: #1e1e1e;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    justify-content: flex-start; /* keep KPI items stacked tightly */
-    gap: 0.25rem;
-}
-
-/* .kpi-card .kpi-label removed to match new HTML (labels are now headings) */
-
-.kpi-value {
-    /* This rule styles the big green number */
-    font-size: 3rem;
-    font-weight: 800;
-    margin: 0;
-    margin-top: 0.5rem;
-    color: #4CAF50; /* Main Green */
-}
-
-.chart-card {
-    background-color: #1e1e1e;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    text-align: center;
-}
-.kpi-card h3, .chart-card h3 {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    color: #f4f4f4; /* White text */
-}
-
-.chart-label {
-    font-size: 1.1rem;
-    font-weight: 600;
     color: #aaa;
-    margin: 0 0 1rem 0;
+    margin: 0;
 }
-
-/* --- NEW: Dashboard Grid (Replaces old grids) --- */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 columns of equal size */
-    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
     margin-bottom: 1.5rem;
-}
-
-/* For the KPI Cards (EcoCoin, Kilograms) */
-.kpi-card {
-    display: flex; 
-    flex-direction: column;
-    justify-content: flex-start; /* THIS IS THE FIX: Stacks items at the top */
-    align-self: stretch;
-}
-
-/* For the Chart Cards (Personal, Neighborhood) */
-.chart-card {
-    display: flex; 
-    flex-direction: column;
-    justify-content: space-between; /* Keeps pushing the chart to the bottom */
-    align-self: stretch;
-}
-
-/* Adjust chart card styling for flexbox */
-.chart-card {
-    justify-content: flex-start; /* Align from the top */
-    text-align: center;
-}
-
-/* This is the new container for the chart */
-.chart-canvas-container {
-    position: relative; /* Required for Chart.js responsiveness */
-    width: 100%;
-}
-
-/* --- FIX: Improve spacing, sizing and responsiveness for dashboard cards --- */
-.dashboard-grid {
-    gap: 2rem; /* slightly larger gap to avoid crowding */
-    /* Ensure items align to the top and rows have sensible height so cards don't overlap */
     align-items: start;
     grid-auto-rows: minmax(200px, auto);
 }
-
-/* Give cards a consistent minimum height so they don't overlap */
 .kpi-card, .chart-card {
     min-height: 220px;
     padding: 1.75rem;
     box-sizing: border-box;
 }
-
-.chart-card h3 {
+.kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-self: stretch;
+}
+.kpi-value {
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0;
+    margin-top: 0.5rem;
+    color: #4CAF50;
+}
+.chart-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-self: stretch;
+    justify-content: flex-start;
+    text-align: center;
+}
+.kpi-card h3, .chart-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #f4f4f4;
     font-size: 1.4rem;
 }
-
 .chart-label {
     font-size: 1.2rem;
+    font-weight: 600;
+    color: #aaa;
+    margin: 0 0 1rem 0;
 }
-
-/* Force the chart container to a fixed height so Chart.js can size correctly */
 .chart-canvas-container {
-    height: 220px; /* controls the visible ring size */
+    position: relative;
+    width: 100%;
+    height: 220px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-
 .chart-canvas-container canvas {
     width: 100% !important;
     height: 100% !important;
     display: block;
 }
-
-/* Smaller screens: stack cards vertically and scale text down a bit */
+.chart-percentage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: bold;
+    color: #FFFFFF;
+    pointer-events: none;
+    z-index: 10;
+}
 @media (max-width: 700px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
@@ -647,19 +714,15 @@ body.dark-theme {
     .dashboard-header h2 { font-size: 2rem; }
 }
 
-/* --- NEW: Success Pop-up Modal --- */
+/* Success Pop-up Modal */
 #success-modal {
-    display: none; /* Hidden by default */
+    display: none;
 }
-
-/* This is the pop-up card itself */
 .success-modal-content {
     text-align: center;
     padding: 2rem;
-    position: relative; /* Needed for the confetti canvas */
+    position: relative;
 }
-
-/* This is the confetti canvas, stretches to fill the pop-up */
 #confetti-canvas {
     position: absolute;
     top: 0;
@@ -667,12 +730,11 @@ body.dark-theme {
     width: 100%;
     height: 100%;
     z-index: 1001;
-    pointer-events: none; /* Lets you click "through" it */
+    pointer-events: none;
 }
-
 .success-modal-content h2 {
     font-size: 2.5rem;
-    color: #4CAF50; /* Green */
+    color: #4CAF50;
     margin: 0;
 }
 .success-subtitle {
@@ -680,7 +742,6 @@ body.dark-theme {
     color: #aaa;
     margin: 0.5rem 0 2rem 0;
 }
-
 .success-kpis {
     display: flex;
     justify-content: space-around;
@@ -688,7 +749,7 @@ body.dark-theme {
     margin-bottom: 2.5rem;
 }
 .success-kpi {
-    background-color: #333; /* Darker box */
+    background-color: #333;
     padding: 1rem;
     border-radius: 8px;
     flex-grow: 1;
@@ -706,118 +767,94 @@ body.dark-theme {
     color: #fff;
 }
 
-/* --- NEW: Style for the HTML Percentage Text --- */
-.chart-percentage {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* This is the key to centering */
-    
-    font-size: 2rem;
-    font-weight: bold;
-    color: #FFFFFF;
-    
-    pointer-events: none; /* Allows clicks to go "through" it */
-    z-index: 10; /* Ensures it's on top of the chart */
-}
-
-/* --- NEW: Verified Network Page Styles --- */
+/* --- Verified Network Page --- */
 .network-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 columns across */
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
 }
-
-/* On smaller screens, stack to 1 column */
 @media (max-width: 900px) {
     .network-grid {
         grid-template-columns: 1fr;
     }
 }
-
-.partner-card {
-    background-color: #1e1e1e;
-    border-radius: 12px;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start; /* Align content to the left */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.partner-card h3 {
-    font-size: 1.5rem;
-    color: #f4f4f4; /* White text */
-    margin-bottom: 0.5rem;
-}
-
-.partner-card p {
-    color: #aaa;
-    margin-bottom: 1.5rem;
-    flex-grow: 1; /* Pushes the button to the bottom */
-}
-
-.partner-card .btn-primary {
-    text-decoration: none;
-}
-
-/* --- NEW: Upgraded Partner Card Styles --- */
-
-/* This makes the card clickable and adds the border-radius */
 .partner-card {
     background-color: #1e1e1e;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    overflow: hidden; /* This is key to making the image look right */
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
-
-/* This is the new div for the background image */
 .partner-card-image {
     height: 180px;
     width: 100%;
     background-size: cover;
     background-position: center;
-    display: flex;
-    justify-content: flex-end; /* Aligns logo to the right */
-    padding: 0.75rem;
-    box-sizing: border-box; /* Includes padding in the size */
+    position: relative;
 }
-
-/* logo styling consolidated later in the file (smaller, tighter backing) */
-
-/* This holds all the text content */
+.partner-card-image .partner-card-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    z-index: 0;
+    filter: contrast(1.02) saturate(0.95) brightness(0.95);
+}
+.partner-card-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 100%);
+    z-index: 1;
+    pointer-events: none;
+}
+.partner-card-logo {
+    position: absolute;
+    bottom: -30px;
+    right: 25px;
+    width: 100px;
+    height: 100px;
+    background-color: #fff;
+    border-radius: 12px;
+    border: 4px solid #121212;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    object-fit: contain;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    z-index: 2;
+}
 .partner-card-content {
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    flex-grow: 1; /* This makes all cards the same height */
-    /* Reserve space for the overlapping logo so text doesn't flow behind it */
-    padding-top: 56px;
+    flex-grow: 1;
+    padding-top: 2.5rem;
 }
-
-.partner-card-content {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1; /* This makes all cards the same height */
-    /* Reserve space for the overlapping logo so headings/text don't sit
-       underneath it. Matches the backing size (64 + 2*6 + border) / 2 + cushion. */
-    padding-top: 56px;
+.partner-card-content h3 {
+    font-size: 1.75rem;
+    color: #ffffff;
+    margin-top: 0;
+    margin-bottom: 0.25rem;
 }
-
-/* This is for the new "specializes in" list */
+.partner-card-content .tagline {
+    font-size: 1.1rem;
+    color: #aaa;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+    font-weight: 400;
+}
 .partner-card-content .specialties {
     margin: 0;
     padding: 0 0 0 1.2rem;
     color: #ccc;
     font-size: 0.9rem;
-    flex-grow: 1; /* Pushes the button to the bottom */
+    flex-grow: 1;
     margin-bottom: 1.5rem;
 }
-
-/* This holds the new Location/Phone info */
 .partner-card-info {
     font-size: 0.85rem;
     color: #aaa;
@@ -828,268 +865,110 @@ body.dark-theme {
 .partner-card-info p {
     margin: 0.25rem 0;
 }
-
 .partner-card-content .btn-primary {
     text-decoration: none;
     text-align: center;
 }
-
-/* --- NEW: Phase 1 Visual Overhaul --- */
-
-/* 1. This makes the image div a positioning "anchor" */
-.partner-card-image {
-    height: 180px;
-    width: 100%;
-    background-size: cover;
-    background-position: center;
-    position: relative; /* This is the anchor */
-}
-
-/* 2. This is the new logo styling */
-
-
-/* Contingency style: if transparent logo gets lost, add a circular white background
-   Use by adding the class `partner-card-logo--circle` to the <img> element */
-.partner-card-logo {
-    position: absolute; /* positioned relative to .partner-card-image (which is relative) */
-    /* Vertical overlap: sit halfway on the header and halfway on the body.
-       Adjusted sizing so rounded-square backing is more proportional to the logo artwork.
-       Outer height = inner height + 2*padding + 2*border = 64 + 2*6 + 2*1 = 78px → half ≈ 39px
-    */
-    bottom: -39px; /* overlap half of the logo/backing */
-    right: 16px; /* aligned to the right with a comfortable gap */
-
-    /* Inner image size (logo artwork) — reduced so less empty white space */
-    width: 64px;
-    height: 64px;
-
-    /* Make sure we don't force a white backing — allow transparency in the image to show through */
-    background-color: transparent; /* allow transparent PNG/SVG logos to render without a white box */
-    border-radius: 0; /* don't force a rounded backing */
-    padding: 0; /* no extra backing padding */
-    box-sizing: border-box;
-    border: none;
-
-    /* Keep the artwork contained and visible */
-    object-fit: contain;
-    display: block;
-    z-index: 2; /* above image and overlay */
-    box-shadow: none; /* remove shadow that can create a white-ish halo */
-}
-
-/* 4. This creates the text distinction */
-.partner-card-content h3 {
-    font-size: 1.75rem; /* Bigger and bolder */
-    color: #ffffff;
-    margin-top: 0;
-    margin-bottom: 0.25rem;
-}
-
-.partner-card-content .tagline {
-    font-size: 1.1rem;
-    color: #aaa; /* Lighter color */
-    margin-bottom: 1.5rem;
-    font-style: italic;
-    font-weight: 400;
-}
-
-/* --- FIX: Display background images correctly --- */
-.partner-card-image {
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center;
-    background-color: transparent !important;
-}
-
-/* Ensure an <img> inside the image container fills the area and sits under the logo */
-.partner-card-image .partner-card-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    z-index: 0; /* sit under overlay and logo */
-}
-
-/* Make sure the logo sits on top of the background image */
-.partner-card-logo {
-    z-index: 2;
-}
-
-/* Cinematic overlay to improve contrast and create depth */
-.partner-card-image::after {
-    content: "";
-    position: absolute;
-    inset: 0; /* top/right/bottom/left = 0 */
-    background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 100%);
-    z-index: 1; /* sits above the image but under the logo */
-    pointer-events: none;
-}
-
-/* Slightly reduce brightness of images for a cinematic feel */
-.partner-card-image .partner-card-bg {
-    filter: contrast(1.02) saturate(0.95) brightness(0.95);
-}
-
-/* Optional: brighten card backgrounds slightly for contrast */
-.partner-card {
-    background-color: #1a1a1a; /* slightly lighter than pure black */
-}
-
-/* --- NEW: Location Link & Modal Styles --- */
 .location-link {
     display: block;
     padding: 0.5rem 0;
-    /* Keep the card 'View' link visibly blue so users know it's clickable */
-    color: #2196F3; /* blue */
+    color: #2196F3;
     text-decoration: none;
     font-weight: 600;
     font-size: 0.9rem;
-    transition: color 0.15s;
+    transition: color 0.2s;
 }
 .location-link:hover {
-    /* Subtle hover: slightly darker blue and underline */
-    color: #1976D2;
+    color: #fff;
     text-decoration: underline;
 }
-
 .location-modal {
-    display: none; /* Hidden by default */
+    display: none;
 }
-
 .location-modal .modal-content {
-    max-width: 600px; /* Wider modal for lists */
+    max-width: 600px;
 }
-
 .location-modal h3 {
     font-size: 1.75rem;
     color: #f4f4f4;
     margin-bottom: 1.5rem;
 }
-
 .location-list {
-    max-height: 400px; /* Makes the list scrollable */
+    max-height: 400px;
     overflow-y: auto;
     text-align: left;
-    background-color: #121212; /* Darker background */
+    background-color: #121212;
     padding: 0.5rem 1.5rem;
     border-radius: 8px;
 }
-
 .location-list h4 {
-    color: #4CAF50; /* Main Green */
+    color: #4CAF50;
     font-size: 1.2rem;
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
     border-bottom: 1px solid #333;
     padding-bottom: 0.25rem;
 }
-
 .location-list ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
-
 .location-list li {
     color: #ccc;
     font-size: 0.95rem;
-    padding: 0.5rem 0;
+    padding: 0.75rem 0.5rem;
     border-bottom: 1px solid #222;
-}
-
-.location-list li:last-child {
-    border-bottom: none;
-}
-
-/* --- NEW: Location Modal List 2-Column --- */
-
-.location-list li {
-    color: #ccc;
-    font-size: 0.95rem;
-    padding: 0.75rem 0.5rem; /* Added padding */
-    border-bottom: 1px solid #222;
-    
-    /* This creates the 2-column layout */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem; /* Space between columns */
+    gap: 1rem;
 }
-
-/* This is the left column (Name & Address) */
+.location-list li:last-child {
+    border-bottom: none;
+}
 .loc-name-address {
-    flex-grow: 1; /* Takes up available space */
-    /* Neutral color to match modal text */
-    color: inherit;
+    flex-grow: 1;
+    color: #ccc;
     text-decoration: none;
     transition: color 0.2s;
 }
-
-/* Keep hover subtle: underline, but no color change */
 .loc-name-address:hover {
-    color: inherit;
+    color: #2196F3;
     text-decoration: underline;
 }
-
 .loc-name-address strong {
-    color: #f4f4f4; /* White */
-    display: block; /* Puts address on new line */
+    color: #f4f4f4;
+    display: block;
     font-size: 1.05rem;
 }
-
-/* This is the right column (Phone) */
 .loc-phone {
-    flex-shrink: 0; /* Prevents it from shrinking */
+    flex-shrink: 0;
     font-weight: 600;
     color: #aaa;
     font-size: 0.9rem;
 }
 
-/* Ensure modal location links are neutral gray while the card-level
-   `.location-link` remains blue for affordance. Keep strong/title white. */
-.location-list a {
-    color: #ccc; /* neutral gray */
-    text-decoration: none;
-}
-.location-list a:hover {
-    color: #ccc; /* keep hover subtle */
-    text-decoration: underline;
-}
-.location-list a strong {
-    color: #f4f4f4; /* keep the location name/title white */
-    display: block;
-}
-
-/* --- NEW: Rewards Page Styles --- */
-
+/* --- Rewards Page --- */
 .rewards-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 1.5rem;
 }
-
-/* On wider screens, show 2 columns */
 @media (min-width: 900px) {
     .rewards-grid {
         grid-template-columns: 1fr 1fr;
     }
-    /* Make the bank mockup span both columns */
     #bank-mockup {
-        grid-column: 1 / -1; 
+        grid-column: 1 / -1;
     }
 }
-
 .mockup-subtitle {
     font-size: 1rem;
     color: #aaa;
     margin-top: -0.5rem;
     margin-bottom: 1.5rem;
 }
-
-/* 1. Bank Mockup Styles */
 .bank-app {
     background-color: #1a1a1a;
     border-radius: 12px;
@@ -1099,7 +978,7 @@ body.dark-theme {
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 .bank-header {
-    background-color: #0D47A1; /* Standard Bank Blue */
+    background-color: #0D47A1;
     color: #fff;
     font-weight: 600;
     padding: 0.75rem 1rem;
@@ -1141,7 +1020,7 @@ body.dark-theme {
     display: block;
     font-size: 2rem;
     font-weight: 700;
-    color: #4CAF50; /* Green */
+    color: #4CAF50;
     margin-top: 0.5rem;
 }
 .bank-button {
@@ -1155,10 +1034,11 @@ body.dark-theme {
     border-radius: 8px;
     cursor: pointer;
 }
-
-/* Bonus chart styles removed — replaced by the new tier-list styles appended at the end of the file. */
-
-/* 3. Proof Mockup Styles */
+.bonus-note {
+    font-size: 0.9rem;
+    color: #aaa;
+    text-align: center;
+}
 #proof-mockup {
     text-align: center;
 }
@@ -1179,169 +1059,82 @@ body.dark-theme {
 }
 #proof-mockup .btn-primary-large {
     width: 100%;
-    box-sizing: border-box; /* Ensures padding doesn't break width */
+    box-sizing: border-box;
 }
 
-/* --- NEW: Day 5 - Full Dark Theme (Homepage & Modals) --- */
-
-/* 1. Homepage Hero (The blue section) */
-.dark-theme .hero {
-    /* We keep the blue, but make the text white */
-    color: #fff;
+/* Tier List (Rewards Page) */
+.tier-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0;
 }
-.dark-theme .hero h2 {
-    color: #4CAF50; /* Main Green */
-}
-
-/* 2. Homepage CTA Section (The "Join" section) */
-.dark-theme .cta-section {
-    background-color: #121212; /* Dark background */
-    color: #e0e0e0;
-}
-.dark-theme .cta-section h2 {
-    color: #4CAF50; /* Main Green */
-}
-.dark-theme .cta-subtitle {
-    color: #aaa;
-}
-.dark-theme .cta-buttons p {
-    color: #aaa;
-}
-.dark-theme .link-secondary {
-    color: #2196F3; /* Bright Blue */
-}
-
-/* 3. Homepage Advantage Cards */
-.dark-theme .advantage-card {
-    background-color: #1e1e1e; /* Dark card */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-.dark-theme .advantage-card h3 {
-    color: #4CAF50; /* Main Green */
-}
-.dark-theme .advantage-card p {
-    color: #aaa;
-}
-
-/* --- NEW: Day 5 - Mission Section Watermark & Style --- */
-
-.dark-theme .mission-section {
-    position: relative; /* Anchor for the watermark */
-    z-index: 1;
-    background-color: #121212; /* Your new black background */
-    padding: 4rem 0;
-    text-align: center;
-}
-
-/* This creates the watermark BEHIND the text */
-.dark-theme .mission-section::before {
-    content: ""; 
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    
-    background-image: url("/static/logo.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 1250px; /* Large watermark dont chnage size no matter what  */
-    
-    opacity: 0.1; /* 10% opacity */
-    
-    z-index: -1; /* Puts it BEHIND the cards */
-}
-
-.dark-theme .mission-card {
-    background-color: #1e1e1e;
-}
-
-/* --- NEW: Day 5 - Mission Section Button --- */
-
-/* This is your new "Learn More" button */
-.btn-secondary {
-    display: inline-block;
-    background-color: transparent;
-    border: 2px solid #fff;
-    color: #fff;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    text-decoration: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 2rem;
-}
-.btn-secondary:hover {
-    background-color: #fff;
-    color: #0d2c54; /* Your dark blue */
-}
-
-/* 4. Auth Modal (Pop-up) */
-.dark-theme .modal-content {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-.dark-theme .modal-close {
-    color: #aaa;
-}
-.dark-theme .modal-close:hover {
-    color: #fff;
-}
-.dark-theme .modal-content h2 {
-    color: #f4f4f4; /* White */
-}
-.dark-theme .auth-card p,
-.dark-theme .modal-content p {
-    color: #aaa;
-}
-
-/* 5. Auth Forms */
-.dark-theme .form-group label {
-    color: #e0e0e0;
-}
-.dark-theme .form-group input,
-.dark-theme .verify-form input {
+.tier-item {
+    display: flex;
+    align-items: center;
     background-color: #333;
-    border: 1px solid #555;
-    color: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    border: 2px solid #333;
+    transition: all 0.2s;
+}
+.tier-item.active {
+    border-color: #4CAF50;
+    background-color: #1e1e1e;
+}
+.tier-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+}
+.tier-details {
+    flex-grow: 1;
+}
+.tier-name {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f4f4f4;
+}
+.tier-item.active .tier-name {
+    color: #4CAF50;
+}
+.tier-desc {
+    display: block;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+.tier-rate {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4CAF50;
+}
+.tier-rate.base-rate {
+    color: #aaa;
+    font-weight: 500;
 }
 
-/* 6. Flash Messages (Error/Success) */
-.dark-theme .flash-message.success {
-    background-color: #1B5E20; /* Dark Green */
-    color: #E8F5E9; /* Light green text */
-}
-.dark-theme .flash-message.error {
-    background-color: #B71C1C; /* Dark Red */
-    color: #FFEBEE; /* Light red text */
-}
-
-/* --- NEW: Day 5 - Splash Screen Styles --- */
-
+/* --- Splash Screen --- */
 #splash-page {
     background-color: #121212;
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100vh;
-    overflow: hidden; /* Important for the slide animation */
-    transition: transform 1s cubic-bezier(0.86, 0, 0.07, 1); /* The slide animation */
+    overflow: hidden;
+    transition: transform 1s cubic-bezier(0.86, 0, 0.07, 1);
 }
-
+#splash-page.slide-out {
+    transform: translateY(100%);
+}
 .splash-terminal {
     font-family: 'Courier New', Courier, monospace;
     font-size: 1.5rem;
     color: #f4f4f4;
 }
-
 .splash-terminal .prompt {
-    color: #4CAF50; /* Green */
+    color: #4CAF50;
     margin-right: 0.5rem;
 }
-
-/* This is the blinking cursor from Typed.js */
 .typed-cursor {
     color: #f4f4f4;
     opacity: 1;
@@ -1351,362 +1144,18 @@ body.dark-theme {
     50% { opacity: 0.0; }
 }
 
-/* This class triggers the "swoop down" animation */
-#splash-page.slide-out {
-    transform: translateY(100%);
-}
-
-/* --- NEW: Day 5 - Live Activity Feed --- */
-
-.activity-feed-section {
-    background-color: #1e1e1e; /* Dark background */
-    padding: 4rem 0;
-    text-align: center;
-    border-top: 1px solid #333;
-}
-
-.activity-feed-section h2 {
-    font-size: 2rem;
-    color: #f4f4f4; /* White */
-    margin-top: 0;
-    margin-bottom: 2rem;
-}
-
-.activity-feed-container {
-    height: 200px; /* Fixed height for the scrolling box */
-    overflow: hidden; /* This hides the non-visible items */
-    position: relative;
-    width: 100%; /* ensure it fills the column */
-    max-width: 600px;
-    min-width: 240px; /* prevent collapsing to a thin line */
-    margin: 0 auto;
-    border: 1px solid #333;
-    border-radius: 12px;
-    background-color: #121212;
-}
-
-.activity-feed {
-    position: absolute;
-    width: 100%;
-    /* This animation is what makes it scroll */
-    animation: scroll-up 20s linear infinite;
-}
-
-.activity-item {
-    display: flex;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    box-sizing: border-box;
-    border-bottom: 1px solid #333;
-    text-align: left;
-}
-.activity-item:last-child {
-    border-bottom: none;
-}
-
-.activity-icon {
-    font-size: 1.5rem;
-    margin-right: 1rem;
-}
-
-.activity-text {
-    color: #ccc;
-    font-size: 0.95rem;
-}
-.activity-text strong {
-    color: #4CAF50; /* Green */
-    font-weight: 600;
-}
-
-/* This is the scrolling animation */
-@keyframes scroll-up {
-    0% {
-        transform: translateY(0);
-    }
-    100% {
-        /* This value needs to be adjusted based on the number of items */
-        /* (Number of items) * (Height of one item) */
-        /* We'll set it based on the JS data */
-        transform: translateY(-50%); /* This will be updated by JS */
-    }
-}
-
-/* --- NEW: Day 5 - Activity Feed Polish --- */
-
-/* 1. Use a deep, dark navy blue for the background */
-.activity-feed-section {
-    background-color: #0f2463; /* This is a deep, dark blue (updated) */
-}
-
-/* 2. Make the title green (livelier) */
-.activity-feed-section h2 {
-    color: #4CAF50; /* Main Green */
-}
-
-/* 3. Style the new subtitle */
-.activity-subtitle {
-    font-size: 1.15rem;
-    color: #aaa;
-    max-width: 600px;
-    margin: -1.5rem auto 2rem auto; /* Pulls it up under the title */
-}
-
-/* 4. Make the scrolling box transparent */
-.activity-feed-container {
-    background-color: transparent; /* This is the fix */
-    border: 1px solid #1a4a8a; /* A border that fits the new blue */
-}
-
-/* --- NEW: Day 5 - Final Homepage Polish --- */
-
-/* 1. Fix the "Sandwich" Color */
-.activity-feed-section {
-    background-color: #0f2463; /* NEW: Dark, solid navy blue (Matches .hero) */
-}
-
-/* 2. Fix the "Weird" Green Text */
-.activity-feed-section h2 {
-    color: #f4f4f4; /* White text looks cleaner */
-}
-
-/* 3. Fix the Ratio (3:2) and Proportions (Equal Height) */
-.live-grid {
-    grid-template-columns: 3fr 2fr; /* 3:2 Ratio (Leaderboard gets 3) */
-    align-items: stretch; /* This makes both columns equal height */
-}
-.live-feed-column, .leaderboard-column {
-    display: flex;
-    flex-direction: column;
-}
-/* This makes the inner boxes fill the new height */
-.activity-feed-container, .leaderboard-chart {
-    flex-grow: 1; /* This is the key to proportional boxes */
-    height: 100%;
-}
-.activity-feed-container {
-    height: 250px; /* Give the feed a fixed height */
-}
-
-/* 4. Remove Old Leaderboard Styles */
-.chart-item, .chart-label, .chart-bar-container, .chart-bar, .chart-value {
-    /* These old rules are no longer needed visually; hide them safely. */
-    display: none;
-}
-
-/* 5. Build the NEW Vertical Column Chart */
-.leaderboard-chart {
-    background-color: #1e1e1e;
-    padding: 1.5rem;
-    border-radius: 12px;
-    height: 250px; /* Match the feed height */
-    box-sizing: border-box;
-}
-
-.column-chart-container {
-    display: flex;
-    justify-content: space-around;
-    align-items: flex-end; /* This makes the bars grow from the bottom */
-    height: 100%;
-    width: 100%;
-    gap: 1rem;
-}
-
-.chart-column-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 20%;
-    height: 100%;
-    justify-content: flex-end; /* Aligns label to bottom */
-}
-
-.chart-bar-viz {
-    width: 100%;
-    background-color: rgba(76, 175, 80, 0.4); /* TRANSPARENT Green */
-    border: 2px solid #4CAF50; /* SOLID Green border */
-    border-bottom: none;
-    border-radius: 6px 6px 0 0;
-    
-    /* Animation */
-    transform: scaleY(0);
-    transform-origin: bottom;
-    animation: grow-column 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-
-.chart-bar-label {
-    color: #aaa;
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-    font-weight: 600;
-}
-
-/* 6. Animate the new chart */
-@keyframes grow-column {
-    from { transform: scaleY(0); }
-    to { transform: scaleY(1); }
-}
-
-/* Stagger the animation for each bar */
-.chart-column-item:nth-child(1) .chart-bar-viz { animation-delay: 0.1s; }
-.chart-column-item:nth-child(2) .chart-bar-viz { animation-delay: 0.2s; }
-.chart-column-item:nth-child(3) .chart-bar-viz { animation-delay: 0.3s; }
-.chart-column-item:nth-child(4) .chart-bar-viz { animation-delay: 0.4s; }
-
-/* 7. Style the new Encouragement Message */
-.leaderboard-note {
-    font-size: 0.95rem;
-    color: #aaa;
-    text-align: center;
-    margin-top: 1rem;
-    font-style: italic;
-}
-.leaderboard-note strong {
-    color: #f4f4f4;
-    font-weight: 600;
-}
-
-/* --- NEW: Day 5 - Live Feed Animation FIX --- */
-
-.activity-feed {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    /* This animation is what makes it scroll */
-    animation: scroll-up 20s linear infinite;
-}
-
-.activity-item {
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.activity-text {
-    display: block;
-    flex: 1 1 auto;
-}
-
-/* This is the scrolling animation */
-@keyframes scroll-up {
-    0% {
-        transform: translateY(0);
-    }
-    100% {
-        /* This value is set by the JavaScript in home.html */
-        transform: translateY(-50%); 
-    }
-}
-
-/* --- NEW: Day 5 - Navbar Logo & Layout Fix --- */
-
-/* 1. This makes the logo BIGGER */
-img.logo {
-    height: 55px; /* A bit larger to fill space consistently */
-    width: auto;
-    margin: 0;
-    display: block;
-}
-
-/* 2. This REMOVES the empty space on the left */
-.navbar .container {
-    max-width: none; /* Removes the 1000px limit */
-    width: 95%;      /* Pushes the logo 95% to the edge */
-}
-
-/* --- NEW: Day 5 - Rewards Page Tier List --- */
-
-.tier-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin: 1.5rem 0;
-}
-
-.tier-item {
-    display: flex;
-    align-items: center;
-    background-color: #333;
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    border: 2px solid #333; /* Default border */
-    transition: all 0.2s;
-}
-
-/* This highlights the user's active tier */
-.tier-item.active {
-    border-color: #4CAF50; /* Green border */
-    background-color: #1e1e1e; /* Darker bg */
-}
-
-.tier-icon {
-    font-size: 2rem;
-    margin-right: 1rem;
-}
-
-.tier-details {
-    flex-grow: 1; /* Pushes the rate to the right */
-}
-
-.tier-name {
-    display: block;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #f4f4f4;
-}
-.tier-item.active .tier-name {
-    color: #4CAF50; /* Green text */
-}
-
-.tier-desc {
-    display: block;
-    font-size: 0.9rem;
-    color: #aaa;
-}
-
-.tier-rate {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #4CAF50; /* Green */
-}
-
-/* --- NEW: Day 5 - Tier List Fix --- */
-
-/* This makes the "Base Rate" text a neutral color */
-.tier-rate.base-rate {
-    color: #aaa;
-    font-weight: 500;
-}
-
-/* --- NEW: "Halo" Active Tab Style --- */
-.nav-button.active {
-    color: #4CAF50; /* Main Green */
-    font-weight: 700;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); /* The "Halo" */
-    border: 1px solid #4CAF50;
-}
-
-/* --- NEW: Day 5 - Profile Page Styles --- */
-
-/* This styles the grey "note" text under the email input */
+/* --- Profile Page --- */
 .form-note {
     display: block;
     font-size: 0.9rem;
     color: #aaa;
     margin-top: 0.5rem;
 }
-
-/* This styles disabled inputs (like the email) to look read-only */
 .dark-theme .form-group input:disabled {
     background-color: #222;
     color: #777;
     cursor: not-allowed;
 }
-
-/* --- NEW: Profile Page Tooltips --- */
 .tooltip {
     display: inline-block;
     position: relative;
@@ -1721,14 +1170,12 @@ img.logo {
     font-weight: bold;
     cursor: help;
 }
-
 .tooltip:before {
     content: attr(data-tooltip);
     position: absolute;
-    bottom: 125%; /* Position above the "i" */
+    bottom: 125%;
     left: 50%;
     transform: translateX(-50%);
-    
     background-color: #1e1e1e;
     color: #f4f4f4;
     padding: 0.5rem 0.75rem;
@@ -1736,37 +1183,29 @@ img.logo {
     border: 1px solid #555;
     font-size: 0.9rem;
     font-weight: 400;
-    
-    width: 200px; /* Give it a fixed width */
+    width: 200px;
     text-align: left;
-    
-    visibility: hidden; /* Hide it by default */
+    visibility: hidden;
     opacity: 0;
     transition: opacity 0.2s;
     z-index: 10;
 }
-
-/* Show the tooltip on hover */
 .tooltip:hover:before {
     visibility: visible;
     opacity: 1;
 }
 
-/* --- NEW: Day 5 - Smart Search Page --- */
-
+/* --- Smart Search Page --- */
 .search-grid {
     display: grid;
-    grid-template-columns: 1fr; /* Single column on mobile */
+    grid-template-columns: 1fr;
     gap: 1.5rem;
 }
-
 @media (min-width: 900px) {
     .search-grid {
-        grid-template-columns: 1fr 2fr; /* 2 columns on desktop */
+        grid-template-columns: 1fr 2fr;
     }
 }
-
-/* Custom <select> dropdown */
 .dark-theme .form-group select {
     width: 100%;
     padding: 0.75rem;
@@ -1778,42 +1217,10 @@ img.logo {
     box-sizing: border-box;
 }
 
-/* Custom Toggle Switch for Priority */
-.toggle-switch {
-    display: flex;
-    background-color: #333;
-    border-radius: 8px;
-    padding: 4px;
-}
-.toggle-switch input[type="radio"] {
-    display: none; /* Hide the real radio button */
-}
-.toggle-switch label {
-    flex: 1; /* Make both sides equal */
-    text-align: center;
-    padding: 0.75rem;
-    color: #aaa;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-/* This is the style for the SELECTED toggle */
-.toggle-switch input[type="radio"]:checked + label {
-    background-color: #4CAF50; /* Green */
-    color: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
+/* Toggle Switch removed: replaced by .role-selector */
 
-.result-card {
-    background-color: #121212; /* Extra dark */
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-align: center;
-}
+/* Search Result Card */
 #search-result {
-    /* This makes the card the same height as the form */
     display: flex;
     flex-direction: column;
 }
@@ -1825,6 +1232,13 @@ img.logo {
     text-align: center;
     color: #aaa;
     font-style: italic;
+}
+.result-card {
+    background-color: #121212;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
 }
 .result-logo {
     height: 60px;
@@ -1849,25 +1263,28 @@ img.logo {
 .result-rate {
     font-size: 1rem;
     color: #aaa;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #444;
+}
+.result-rate:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 .result-rate strong {
     color: #f4f4f4;
+    min-width: 140px;
+    display: inline-block;
 }
 .result-card .btn-primary {
     text-decoration: none;
     width: 100%;
     box-sizing: border-box;
 }
-
-/* --- NEW: Search Page Logic Styles --- */
-
-/* This hides the new inputs by default */
 .hidden-form-group {
     display: none;
 }
-
-/* Styles for the new calculation section */
 .result-details-wrapper {
     background-color: #333;
     border-radius: 8px;
@@ -1889,10 +1306,9 @@ img.logo {
 }
 .result-details-wrapper .result-rate strong {
     color: #f4f4f4;
-    min-width: 140px; /* Aligns the values */
+    min-width: 140px;
     display: inline-block;
 }
-/* Style for the bonus and total */
 .result-details-wrapper .bonus {
     color: #4CAF50;
 }
@@ -1903,58 +1319,4 @@ img.logo {
 .result-details-wrapper .total span {
     font-weight: 700;
     font-size: 1.1rem;
-}
-
-/* --- NEW: Day 5 - Homepage Watermark & Text Color (CORRECTED) --- */
-
-/* 1. Make the section a "positioning anchor" */
-.dark-theme .cta-section {
-    position: relative;
-    z-index: 1; /* Make sure content is on top */
-}
-
-/* 2. This creates the watermark BEHIND the text */
-.dark-theme .cta-section::before {
-    content: ""; /* Required for a pseudo-element */
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    
-    /* Your logo, much bigger */
-    background-image: url("/static/logo.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 900px; /*  Large watermark dont chnage size no matter what  */
-    
-    /* This makes ONLY the watermark transparent */
-    opacity: 0.1; /* <-- 10% opacity */
-    
-    z-index: -1; /* This puts it BEHIND your text and cards */
-}
-
-/* 3. Re-apply all the text colors (to ensure they are visible) */
-.dark-theme .cta-section h2 {
-    color: #4CAF50; /* Main Green */
-}
-.dark-theme .cta-subtitle {
-    color: #aaa;
-}
-.dark-theme .cta-buttons p {
-    color: #aaa;
-}
-.dark-theme .link-secondary {
-    color: #2196F3; /* Bright Blue */
-}
-.dark-theme .advantage-card {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    border: 1px solid #333; /* Add a slight border */
-}
-.dark-theme .advantage-card h3 {
-    color: #4CAF50; /* Main Green */
-}
-.dark-theme .advantage-card p {
-    color: #aaa;
 }

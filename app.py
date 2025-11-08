@@ -46,11 +46,13 @@ class User(db.Model, UserMixin):
     hedera_account_id = db.Column(db.String(100), nullable=True)
     hedera_private_key = db.Column(db.String(255), nullable=True)
     
-    # --- NEW COLUMNS ---
     full_name = db.Column(db.String(100), nullable=True)
     phone_number = db.Column(db.String(20), nullable=True)
     address = db.Column(db.String(200), nullable=True)
-    id_number = db.Column(db.String(30), nullable=True) # <-- NEW FIELD
+    id_number = db.Column(db.String(30), nullable=True)
+    
+    # --- THIS IS THE NEW LINE ---
+    role = db.Column(db.String(20), nullable=False, default='collector')
 
 # -----------------------------------------------------------------
 # 4. A REQUIRED "HELPER" FUNCTION FOR FLASK-LOGIN
@@ -68,6 +70,7 @@ def signup():
     # This route only handles the POST data from the modal form
     email = request.form.get('email')
     password = request.form.get('password')
+    role = request.form.get('role')  # <-- ADD THIS per spec
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         flash('That email is already taken. Please log in.', 'error')
@@ -111,12 +114,16 @@ def signup():
         new_key = new_key_match.group(1)
         print(f"--- SUCCESS: Created Hedera Account {new_id} ---")
 
+        # Ensure role has a default if missing
+        role = role or 'collector'
+
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         new_user = User(
-            email=email, 
-            password_hash=hashed_password, 
-            hedera_account_id=new_id, 
-            hedera_private_key=new_key
+            email=email,
+            password_hash=hashed_password,
+            hedera_account_id=new_id,
+            hedera_private_key=new_key,
+            role=role
         )
         db.session.add(new_user)
         db.session.commit()
@@ -139,19 +146,20 @@ def login():
     
     if user and bcrypt.check_password_hash(user.password_hash, password):
         login_user(user, remember=True)
-        # --- Require profile completion (full name, phone and ID) before continuing ---
-        if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
+        # --- Require profile completion only for collectors ---
+        if user.role == 'collector' and (not current_user.full_name or not current_user.phone_number or not current_user.id_number):
             flash('Please complete your profile before continuing.', 'error')
             return redirect(url_for('profile'))
 
-        # --- THIS IS THE FIX FOR THE "WRONG REDIRECT" BUG (BUG 3) ---
+        # --- Redirect users based on role ---
         next_page = request.args.get('next')
         if next_page:
-            # If they were trying to go to /collector, send them there!
             return redirect(next_page)
+        # If the account is a center, send to center dashboard; otherwise send collectors to collector dashboard
+        if user.role == 'center':
+            return redirect(url_for('center_dashboard'))
         else:
-            # If they just logged in from the homepage, send them back to the homepage.
-            return redirect(url_for('home'))
+            return redirect(url_for('collector_dashboard'))
         # --- END OF THE FIX ---
             
     else:

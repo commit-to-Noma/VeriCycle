@@ -13,7 +13,8 @@
             <h1 class="logo">VeriCycle</h1>
             <nav>
                 <a href="{{ url_for('index') }}" class="nav-button">Home</a>
-                <a href="{{ url_for('signup') }}" class="nav-button">Sign Up</a>
+                <!-- Open modal signup instead of navigating to a separate page -->
+                <a href="#" class="nav-button js-open-auth" data-form="signup">Sign Up</a>
             </nav>
         </div>
     </header>
@@ -44,7 +45,7 @@
             </form>
             <p>
                 Don't have an account? 
-                <a href="{{ url_for('signup') }}" class="link-secondary">Sign Up here</a>
+                <a href="#" class="link-secondary js-open-auth" data-form="signup">Sign Up here</a>
             </p>
         </div>
     </main>
