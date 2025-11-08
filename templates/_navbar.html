@@ -11,9 +11,11 @@
             {% else %}
                 <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
             {% endif %}
-            <a href="{{ url_for('search') }}" class="nav-button {% if active_page == 'search' %}active{% endif %}">Search</a> <!-- We will build this next -->
-            <a href="{{ url_for('network') }}" class="nav-button {% if active_page == 'network' %}active{% endif %}">Network</a>
-            <a href="{{ url_for('rewards') }}" class="nav-button {% if active_page == 'rewards' %}active{% endif %}">Rewards</a>
+            {% if current_user.role == 'collector' %}
+                <a href="{{ url_for('search') }}" class="nav-button {% if active_page == 'search' %}active{% endif %}">Search</a>
+                <a href="{{ url_for('network') }}" class="nav-button {% if active_page == 'network' %}active{% endif %}">Network</a>
+                <a href="{{ url_for('rewards') }}" class="nav-button {% if active_page == 'rewards' %}active{% endif %}">Rewards</a>
+            {% endif %}
 
             {# Show Profile + Log Out when authenticated, otherwise show Sign Up (and Log In) #}
             {% if current_user.is_authenticated %}

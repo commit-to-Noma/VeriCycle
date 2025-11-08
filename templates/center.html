@@ -4,74 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Center Dashboard - VeriCycle</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <header class="navbar">
-        <div class="container">
-            <h1 class="logo">VeriCycle</h1>
-            <nav>
-                <a href="/" class="nav-button">Log Out</a>
-            </nav>
-        </div>
-    </header>
+<body class="dark-theme">
+    
+    {% include '_navbar.html' %}
 
     <main class="container app-dashboard">
-        <h2>Center Dashboard</h2>
-        <p>Welcome, Pikitup Marlboro!</p>
-        
-        <!-- 
-          HERE IS THE NEW PART!
-          Instead of just a button, we now have a <form>.
-          This form will send its data to a new URL called "/confirm-dropoff"
-          using the "POST" method.
-        -->
+        <div class="dashboard-header">
+            <h2>Center Dashboard</h2>
+            <p>Welcome, {{ current_user.email.split('@')[0] }}! Verify drop-offs and manage transactions.</p>
+        </div>
+
         <div class="card">
             <h3>Verify a Drop-off</h3>
-            <p>Enter the Collector's ID and the weight to confirm the transaction.</p>
+            <p>Enter the Collector's ID (from their QR code) and the weight to confirm the transaction.</p>
             
-            <form action="/confirm-dropoff" method="POST" class="verify-form">
-                
-                <!-- Input for the Collector's ID (the "scan") -->
-                <label for="collector-id">Collector ID:</label>
-                <input type="text" id="collector-id" name="collector_id" placeholder="e.g., 0.0.7191569">
-                
-                <!-- Input for the Weight -->
-                <label for="weight">Weight (kg):</label>
-                <input type="text" id="weight" name="weight" placeholder="e.g., 1.5">
-                
-                <!-- The "Confirm" button -->
-                <button type="submit" class="btn-primary">Confirm & Pay Collector</button>
-            
+            <form id="scan-form" action="/confirm-dropoff" method="POST" class="verify-form">
+
+                <input type="hidden" id="collector-id" name="collector_id" value="0.0.7219609"> <input type="hidden" id="weight" name="weight" value="1.5">
+
+                <button type="submit" class="btn-primary-large btn-form" id="scan-btn">
+                    Simulate Collector Scan & Pay
+                </button>
+
             </form>
         </div>
 
         <div class="card">
             <h3>Recent Verifications</h3>
-            <p>Verified 1.5kg for Nomathemba N.</p>
-            <p>Verified 2.1kg for John D.</p>
+            <div class="location-list" id="verification-list">
+                <h4 class="verification-date-header">Today, 8 November 2025</h4>
+                <ul id="today-list">
+                    <li>
+                        <a href="#" class="loc-name-address">
+                            <strong>15:02 - John D. (0.0.1234567):</strong> 3.0kg Paper
+                        </a>
+                        <span class="loc-phone">+90 ECO</span>
+                    </li>
+                </ul>
+                <h4 class="verification-date-header">Yesterday, 7 November 2025</h4>
+                <ul>
+                    <li>
+                        <a href="#" class="loc-name-address">
+                            <strong>11:30 - Jane S. (0.0.4567890):</strong> 5.2kg Glass
+                        </a>
+                        <span class="loc-phone">+120 ECO</span>
+                    </li>
+                </ul>
+            </div>
         </div>
     </main>
 
-    <!-- We add a little extra style for the form -->
-    <style>
-        .verify-form label {
-            display: block;
-            margin-top: 1rem;
-            font-weight: 500;
-        }
-        .verify-form input {
-            width: 95%;
-            padding: 0.75rem;
-            margin-top: 0.5rem;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 1rem;
-        }
-        .verify-form button {
-            margin-top: 1.5rem;
-            width: 100%;
-        }
-    </style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        const scanForm = document.getElementById('scan-form');
+        const scanBtn = document.getElementById('scan-btn');
+        const todayList = document.getElementById('today-list');
+
+        scanForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop the page from reloading
+            
+            scanBtn.textContent = "Verifying..."; // Give user feedback
+            scanBtn.disabled = true;
+
+            // Get the form data
+            const formData = new FormData(scanForm);
+
+            // Send the data to our Flask API
+            fetch("{{ url_for('confirm_dropoff') }}", {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // --- IT WORKED! ---
+                    
+                    // 1. Get the current time
+                    const now = new Date();
+                    const timeString = now.toTimeString().substring(0, 5); // e.g., "16:15"
+                    
+                    // 2. Get the demo data we "sent"
+                    const collectorId = document.getElementById('collector-id').value;
+                    const weight = document.getElementById('weight').value;
+                    
+                    // 3. Create a new list item
+                    const newItem = document.createElement('li');
+                    newItem.innerHTML = `
+                        <a href="#" class="loc-name-address">
+                            <strong>${timeString} - Noma N. (${collectorId}):</strong> ${weight}kg Cans
+                        </a>
+                        <span class="loc-phone">+75 ECO</span>
+                    `;
+                    
+                    // 4. Add the new item to the top of the list
+                    todayList.prepend(newItem);
+                    
+                    // 5. Reset the button
+                    scanBtn.textContent = "Simulation Successful!";
+                    setTimeout(() => {
+                        scanBtn.textContent = "Simulate Collector Scan & Pay";
+                        scanBtn.disabled = false;
+                    }, 2000);
+
+                } else {
+                    // Handle an error
+                    scanBtn.textContent = "Error! Try Again.";
+                    scanBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                scanBtn.textContent = "Error! Try Again.";
+                scanBtn.disabled = false;
+            });
+        });
+    });
+</script>
+
 </body>
 </html>

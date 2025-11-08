@@ -17,8 +17,8 @@ Core Color Palette:
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
-    background-color: #f4f4f4;
-    color: #333;
+    background-color: #121212;
+    color: #e0e0e0;
 }
 
 .container {
@@ -27,84 +27,38 @@ body {
     margin: 0 auto;
 }
 
-/* --- Navigation & Header --- */
-.navbar {
-    background-color: #fff;
-    padding: 1rem 0;
-    border-bottom: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.navbar .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 95%;
-    max-width: none;
-}
-
-h1.logo {
-    color: #4CAF50;
-    background-color: #333;
-    padding: 0.3rem 0.8rem;
-    border-radius: 8px;
-    font-size: 1.4rem;
-    margin: 0;
-    transition: all 0.2s;
-}
-h1.logo:hover {
-    background-color: #444;
+/* --- Buttons --- */
+.btn-primary {
+    display: inline-block;
+    background-color: #4CAF50;
     color: #fff;
-}
-
-img.logo {
-    height: 55px;
-    width: auto;
-    margin: 0;
-    display: block;
-}
-
-.nav-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
     text-decoration: none;
-    color: #0D47A1;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
+    border: none;
     border-radius: 8px;
+    cursor: pointer;
     transition: background-color 0.2s;
 }
-.nav-button:hover {
-    background-color: #f4f4f4;
+.btn-primary:hover {
+    background-color: #1B5E20;
 }
-
-/* --- "Halo" Active Tab Style --- */
-.nav-button.active {
-    color: #4CAF50;
-    font-weight: 700;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-    border: 1px solid #4CAF50;
-}
-
-/* --- Homepage Hero Section --- */
-.hero {
-    background-color: #0f2463; /* Dark Navy Blue */
+.btn-primary-large {
+    display: inline-block;
+    background-color: #4CAF50;
     color: #fff;
-    padding: 4rem 0;
-    text-align: center;
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
-.hero h1 {
-    font-size: 3rem;
-    margin: 0;
-}
-.hero h2 {
-    font-size: 1.5rem;
-    color: #4CAF50;
-    margin: 0;
-}
-.hero .subtitle {
-    font-size: 1.1rem;
-    max-width: 600px;
-    margin: 1rem auto;
-    opacity: 0.9;
+.btn-primary-large:hover {
+    background-color: #1B5E20;
 }
 .btn-secondary {
     display: inline-block;
@@ -125,20 +79,111 @@ img.logo {
     color: #0d2c54;
 }
 
-/* --- Homepage CTA Section ("Join") --- */
-.cta-section {
-    background-color: #ffffff;
+/* --- Navigation & Header --- */
+.navbar {
+    background-color: #1e1e1e;
+    padding: 1rem 0;
+    border-bottom: 1px solid #333;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 95%;
+    max-width: none;
+}
+h1.logo {
+    color: #4CAF50;
+    background-color: #333;
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    font-size: 1.4rem;
+    margin: 0;
+    transition: all 0.2s;
+}
+h1.logo:hover {
+    background-color: #444;
+    color: #fff;
+}
+img.logo {
+    height: 55px;
+    width: auto;
+    margin: 0;
+    display: block;
+}
+.nav-button {
+    text-decoration: none;
+    color: #f4f4f4;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+.nav-button:hover {
+    background-color: #333;
+}
+.nav-button.active {
+    color: #4CAF50;
+    font-weight: 700;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+    border: 1px solid #4CAF50;
+}
+
+/* --- Homepage Hero Section --- */
+.hero {
+    background-color: #0f2463;
+    color: #fff;
     padding: 4rem 0;
     text-align: center;
 }
+.hero h1 {
+    font-size: 3rem;
+    margin: 0;
+}
+.hero h2 {
+    font-size: 1.5rem;
+    color: #4CAF50;
+    margin: 0;
+}
+.hero .subtitle {
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 1rem auto;
+    opacity: 0.9;
+}
+
+/* --- Homepage CTA Section ("Join") --- */
+.cta-section {
+    position: relative;
+    z-index: 1;
+    background-color: #121212;
+    color: #e0e0e0;
+    padding: 4rem 0;
+    text-align: center;
+}
+.cta-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("/static/logo.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 600px;
+    opacity: 0.1;
+    z-index: -1;
+}
 .cta-section h2 {
     font-size: 2rem;
-    color: #0D47A1;
+    color: #4CAF50;
     margin-top: 0;
 }
 .cta-subtitle {
     font-size: 1.15rem;
-    color: #555;
+    color: #aaa;
     max-width: 600px;
     margin: 1rem auto 3rem auto;
 }
@@ -149,41 +194,29 @@ img.logo {
     margin-bottom: 3rem;
 }
 .advantage-card {
-    background-color: #f9f9f9;
+    background-color: #1e1e1e;
     padding: 1.5rem;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border: 1px solid #333;
 }
 .advantage-card h3 {
     margin-top: 0;
-    color: #1B5E20;
+    color: #4CAF50;
+}
+.advantage-card p {
+    color: #aaa;
 }
 .cta-buttons {
     margin-top: 2rem;
 }
-.btn-primary-large {
-    display: inline-block;
-    background-color: #4CAF50;
-    color: #fff;
-    padding: 1rem 2.5rem;
-    font-size: 1.2rem;
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.btn-primary-large:hover {
-    background-color: #1B5E20;
-}
 .cta-buttons p {
     margin-top: 1rem;
     font-size: 1rem;
-    color: #666;
+    color: #aaa;
 }
 .link-secondary {
-    color: #0D47A1;
+    color: #2196F3;
     font-weight: 600;
     text-decoration: none;
 }
@@ -232,35 +265,33 @@ img.logo {
     max-width: 600px;
     min-width: 240px;
     margin: 0 auto;
-/* Toggle Switch removed: replaced by .role-selector */
+    border: 1px solid #1a4a8a;
+    border-radius: 12px;
+    background-color: transparent;
+}
+.activity-feed {
+    position: absolute;
+    width: 100%;
+    animation: scroll-up 20s linear infinite;
+}
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    box-sizing: border-box;
+    border-bottom: 1px solid #333;
+    text-align: left;
+}
+.activity-item:last-child {
+    border-bottom: none;
+}
+.activity-icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+.activity-text {
     color: #ccc;
     font-size: 0.95rem;
-}
-
-/* --- NEW: Role "Button Select" Style --- */
-.role-selector {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-}
-.role-btn {
-    background-color: #333;
-    color: #aaa;
-    border: 2px solid #555;
-    padding: 0.75rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.role-btn:hover {
-    background-color: #444;
-}
-.role-btn.active {
-    background-color: #4CAF50; /* Main Green */
-    color: #fff;
-    border-color: #4CAF50;
 }
 .activity-text strong {
     color: #4CAF50;
@@ -385,22 +416,24 @@ img.logo {
     .mission-grid {
         grid-template-columns: 1fr;
     }
+    .advantages {
+        grid-template-columns: 1fr;
+    }
+    .live-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* --- App Dashboard --- */
 .app-dashboard {
     padding-top: 2rem;
 }
-.card {
-    background-color: #fff;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+.dark-theme .card {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
-.card h3 {
-    margin-top: 0;
-    color: #0D47A1;
+.dark-theme .card h3 {
+    color: #4CAF50;
 }
 
 /* --- General Form Styles --- */
@@ -411,7 +444,7 @@ img.logo {
     text-align: left;
 }
 .verify-form input {
-    width: 95%;
+    width: 100%;
     padding: 0.75rem;
     margin-top: 0.5rem;
     border-radius: 8px;
@@ -437,13 +470,13 @@ img.logo {
     text-align: center;
     font-weight: 500;
 }
-.flash-message.success {
-    background-color: #E8F5E9;
-    color: #1B5E20;
+.dark-theme .flash-message.success {
+    background-color: #1B5E20;
+    color: #E8F5E9;
 }
-.flash-message.error {
-    background-color: #FFEBEE;
-    color: #B71C1C;
+.dark-theme .flash-message.error {
+    background-color: #B71C1C;
+    color: #FFEBEE;
 }
 
 /* --- Modal (Pop-up) Styles --- */
@@ -466,6 +499,11 @@ img.logo {
     max-width: 400px;
     width: 90%;
     animation: fadeIn 0.3s;
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-radius: 12px; /* <-- Adds rounded corners */
+    padding: 1.5rem; /* <-- Comfortable internal spacing */
+    box-sizing: border-box; /* <-- Makes padding behave predictably */
 }
 .modal-close {
     position: absolute;
@@ -479,10 +517,16 @@ img.logo {
     cursor: pointer;
 }
 .modal-close:hover {
-    color: #333;
+    color: #fff;
 }
 .modal-content .verify-form {
     margin-top: 1rem;
+}
+.modal-content h2 {
+    color: #f4f4f4;
+}
+.modal-content p {
+    color: #aaa;
 }
 .form-group {
     margin-bottom: 1rem;
@@ -492,14 +536,17 @@ img.logo {
     margin-bottom: 0.5rem;
     font-weight: 500;
     text-align: left;
+    color: #e0e0e0;
 }
 .form-group input {
     width: 100%;
     padding: 0.75rem;
     font-size: 1rem;
-    border: 1px solid #ccc;
+    border: 1px solid #555;
     border-radius: 8px;
     box-sizing: border-box;
+    background-color: #333;
+    color: #fff;
 }
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
@@ -507,110 +554,6 @@ img.logo {
 }
 #auth-modal {
     display: none;
-}
-
-/* --- Dark Theme Styles --- */
-body.dark-theme {
-    background-color: #121212;
-    color: #e0e0e0;
-}
-.dark-theme .navbar {
-    background-color: #1e1e1e;
-    border-bottom-color: #333;
-}
-.dark-theme .nav-button {
-    color: #f4f4f4;
-}
-.dark-theme .nav-button:hover {
-    background-color: #333;
-}
-.dark-theme .card {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-.dark-theme .card h3 {
-    color: #4CAF50;
-}
-
-/* Dark Theme - Homepage CTA */
-.dark-theme .cta-section {
-    position: relative;
-    z-index: 1;
-    background-color: #121212;
-    color: #e0e0e0;
-}
-.dark-theme .cta-section::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("/static/logo.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 600px;
-    opacity: 0.1;
-    z-index: -1;
-}
-.dark-theme .cta-section h2 {
-    color: #4CAF50;
-}
-.dark-theme .cta-subtitle {
-    color: #aaa;
-}
-.dark-theme .cta-buttons p {
-    color: #aaa;
-}
-.dark-theme .link-secondary {
-    color: #2196F3;
-}
-.dark-theme .advantage-card {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    border: 1px solid #333;
-}
-.dark-theme .advantage-card h3 {
-    color: #4CAF50;
-}
-.dark-theme .advantage-card p {
-    color: #aaa;
-}
-
-/* Dark Theme - Auth Modal */
-.dark-theme .modal-content {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-.dark-theme .modal-close {
-    color: #aaa;
-}
-.dark-theme .modal-close:hover {
-    color: #fff;
-}
-.dark-theme .modal-content h2 {
-    color: #f4f4f4;
-}
-.dark-theme .auth-card p,
-.dark-theme .modal-content p {
-    color: #aaa;
-}
-.dark-theme .form-group label {
-    color: #e0e0e0;
-}
-.dark-theme .form-group input,
-.dark-theme .verify-form input {
-    background-color: #333;
-    border: 1px solid #555;
-    color: #fff;
-}
-.dark-theme .flash-message.success {
-    background-color: #1B5E20;
-    color: #E8F5E9;
-}
-.dark-theme .flash-message.error {
-    background-color: #B71C1C;
-    color: #FFEBEE;
 }
 
 /* --- Collector Dashboard Styles --- */
@@ -657,9 +600,8 @@ body.dark-theme {
 .chart-card {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    align-self: stretch;
     justify-content: flex-start;
+    align-self: stretch;
     text-align: center;
 }
 .kpi-card h3, .chart-card h3 {
@@ -702,16 +644,33 @@ body.dark-theme {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
-    .kpi-card, .chart-card {
-        min-height: 180px;
-    }
-    .kpi-card h3 {
-        font-size: 2.2rem;
-    }
-    .chart-card h3 {
-        font-size: 1.2rem;
-    }
-    .dashboard-header h2 { font-size: 2rem; }
+}
+.instructions {
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+.instructions h4 {
+    color: #f4f4f4;
+    font-weight: 600;
+    border-bottom: 1px solid #555;
+    padding-bottom: 0.5rem;
+}
+.instructions ol {
+    padding-left: 1.25rem;
+    margin: 0.5rem 0 0 0;
+}
+.instructions li {
+    color: #aaa;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+.instructions li:last-child {
+    margin-bottom: 0;
 }
 
 /* Success Pop-up Modal */
@@ -1217,7 +1176,31 @@ body.dark-theme {
     box-sizing: border-box;
 }
 
-/* Toggle Switch removed: replaced by .role-selector */
+/* This is the NEW "Button Select" style */
+.role-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+.role-btn {
+    background-color: #333;
+    color: #aaa;
+    border: 2px solid #555;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.role-btn:hover {
+    background-color: #444;
+}
+.role-btn.active {
+    background-color: #4CAF50;
+    color: #fff;
+    border-color: #4CAF50;
+}
 
 /* Search Result Card */
 #search-result {
@@ -1319,4 +1302,18 @@ body.dark-theme {
 .result-details-wrapper .total span {
     font-weight: 700;
     font-size: 1.1rem;
+}
+
+/* --- NEW: Center Dashboard Date Headers --- */
+.verification-date-header {
+    color: #f4f4f4;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #333;
+}
+.verification-date-header:first-of-type {
+    margin-top: 0; /* No extra space at the top */
 }

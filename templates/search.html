@@ -33,13 +33,11 @@
 
                     <div class="form-group">
                         <label>What's your priority?</label>
-                        <div class="toggle-switch">
-                            <input type="radio" id="priority-value" name="priority" value="value" checked>
-                            <label for="priority-value">Best Value</label>
-                            
-                            <input type="radio" id="priority-distance" name="priority" value="distance">
-                            <label for="priority-distance">Nearest</label>
+                        <div class="role-selector">
+                            <button type="button" class="role-btn active" data-priority="value">Best Value</button>
+                            <button type="button" class="role-btn" data-priority="distance">Nearest</button>
                         </div>
+                        <input type="hidden" id="priority-input" name="priority" value="value">
                     </div>
                     
                     <div class="form-group hidden-form-group" id="kg-input-group">
@@ -121,9 +119,10 @@
         // --- 2. GET ALL THE HTML ELEMENTS ---
         const searchForm = document.getElementById('search-form');
         const searchBtn = document.getElementById('search-btn');
-        const priorityRadios = document.querySelectorAll('input[name="priority"]');
-        const kgInputGroup = document.getElementById('kg-input-group');
-        const locationInputGroup = document.getElementById('location-input-group');
+    const kgInputGroup = document.getElementById('kg-input-group');
+    const locationInputGroup = document.getElementById('location-input-group');
+    const priorityButtons = document.querySelectorAll('.role-btn[data-priority]');
+    const priorityInput = document.getElementById('priority-input');
         
         const searchPlaceholder = document.getElementById('search-placeholder');
         const resultContent = document.getElementById('result-content');
@@ -147,7 +146,7 @@
 
         // --- 3. UI LOGIC (Show/Hide Inputs) ---
         function handlePriorityChange() {
-            const priority = document.querySelector('input[name="priority"]:checked').value;
+            const priority = priorityInput.value;
             if (priority === 'value') {
                 kgInputGroup.style.display = 'block';
                 locationInputGroup.style.display = 'none';
@@ -158,15 +157,23 @@
         }
         // Run it once on load
         handlePriorityChange();
-        // Add listeners
-        priorityRadios.forEach(radio => radio.addEventListener('change', handlePriorityChange));
+
+        // Wire up the button-style selector
+        priorityButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                priorityButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                priorityInput.value = this.dataset.priority;
+                handlePriorityChange();
+            });
+        });
 
         // --- 4. THE MAIN SEARCH FUNCTION ---
         searchForm.addEventListener('submit', function(e) {
             e.preventDefault(); // Stop the page from reloading
             
             const material = document.getElementById('material').value;
-            const priority = document.querySelector('input[name="priority"]:checked').value;
+            const priority = priorityInput.value;
             
             let resultData = {};
 

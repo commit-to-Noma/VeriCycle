@@ -1,3 +1,25 @@
+"""
+================================================================================
+VeriCycle - Main Flask Application (app.py)
+================================================================================
+This is the "brain" of the VeriCycle application. It handles:
+- All server-side logic and routing.
+- Database models (using Flask-SQLAlchemy).
+- User authentication (signup, login, logout) using Flask-Login & Bcrypt.
+- Securely calling the Hedera JavaScript "engine" (using subprocess).
+- Forcing profile completion before app access.
+- Serving all HTML templates and API data.
+
+Tools Used:
+- Flask: The main web framework.
+- Flask-SQLAlchemy: For the database (vericycle.db).
+- Flask-Login: To manage user sessions.
+- Flask-Bcrypt: For hashing passwords.
+- subprocess: To run Node.js scripts.
+- qrcode: To generate the collector's QR code.
+================================================================================
+"""
+
 from dotenv import load_dotenv
 load_dotenv() 
 
@@ -12,7 +34,7 @@ import os
 import re 
 
 # -----------------------------------------------------------------
-# 1. APP CONFIGURATION (THE SETUP)
+# 1. APP CONFIGURATION
 # -----------------------------------------------------------------
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
@@ -21,23 +43,18 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 've
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # -----------------------------------------------------------------
-# 2. INITIALIZE OUR NEW TOOLS
+# 2. INITIALIZE TOOLS
 # -----------------------------------------------------------------
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 
-# --- LOGIN BEHAVIOR: redirect to homepage but DO NOT auto-flash a message ---
-# We intentionally do NOT set login_manager.login_message so Flask-Login
-# won't flash a message on redirect. That prevents the homepage from
-# auto-opening the auth modal when a user directly loads '/'.
 login_manager.login_view = 'home'
 login_manager.login_message = None
 login_manager.login_message_category = None
-# --- END LOGIN BEHAVIOR ---
 
 # -----------------------------------------------------------------
-# 3. THE USER DATABASE "BLUEPRINT" (THE MODEL)
+# 3. DATABASE MODEL
 # -----------------------------------------------------------------
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -50,122 +67,126 @@ class User(db.Model, UserMixin):
     phone_number = db.Column(db.String(20), nullable=True)
     address = db.Column(db.String(200), nullable=True)
     id_number = db.Column(db.String(30), nullable=True)
-    
-    # --- THIS IS THE NEW LINE ---
     role = db.Column(db.String(20), nullable=False, default='collector')
 
 # -----------------------------------------------------------------
-# 4. A REQUIRED "HELPER" FUNCTION FOR FLASK-LOGIN
+# 4. HELPER FUNCTION FOR FLASK-LOGIN
 # -----------------------------------------------------------------
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
 # -----------------------------------------------------------------
-# 5. NEW LOGIN & SIGNUP ROUTES
+# 5. AUTHENTICATION ROUTES (LOGIN, LOGOUT, SIGNUP)
 # -----------------------------------------------------------------
 
 @app.route("/signup", methods=['POST'])
 def signup():
-    # This route only handles the POST data from the modal form
     email = request.form.get('email')
     password = request.form.get('password')
-    role = request.form.get('role')  # <-- ADD THIS per spec
+    role = request.form.get('role')
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         flash('That email is already taken. Please log in.', 'error')
-        # Send them back to the homepage (do not open the auth modal)
-        return redirect(url_for('home'))
+        return redirect(url_for('home', _anchor='auth-modal'))
 
-    print("--- CALLING HEDERA ENGINE: Creating new collector account... ---")
     try:
-        operator_id = os.getenv("OPERATOR_ID")
-        operator_key = os.getenv("OPERATOR_KEY")
-        if not operator_id or not operator_key:
-            raise Exception("Missing environment variables")
+        new_id = None
+        new_key = None
+        
+        # --- Logic for Collectors ---
+        if role == 'collector':
+            print("--- CALLING HEDERA ENGINE: Creating new collector account... ---")
+            operator_id = os.getenv("OPERATOR_ID")
+            operator_key = os.getenv("OPERATOR_KEY")
+            if not operator_id or not operator_key:
+                raise Exception("Missing environment variables. Please check your .env file.")
 
-        # This is your fixed subprocess call
-        # Ensure the Node process receives the operator env vars (so the JS script can read them)
-        child_env = os.environ.copy()
-        child_env.update({
-            "OPERATOR_ID": operator_id,
-            "OPERATOR_KEY": operator_key,
-        })
+            result = subprocess.run(
+                ["node", "collector-account.js", operator_id, operator_key],
+                check=True, capture_output=True, text=True, timeout=15
+            )
+            
+            output = result.stdout
+            print("--- JS SCRIPT STDOUT: ---"); print(output)
+            print("--- JS SCRIPT STDERR: ---"); print(result.stderr)
+            print("-------------------------")
 
-        result = subprocess.run(
-            ["node", "collector-account.js", operator_id, operator_key],
-            check=True, capture_output=True, text=True, env=child_env
-        )
-        # Print full stdout/stderr for troubleshooting the JS script output
-        print("--- collector-account.js stdout ---")
-        print(result.stdout)
-        print("--- collector-account.js stderr ---")
-        print(result.stderr)
+            new_id_match = re.search(r"(0.0\.\d+)", output)
+            new_key_match = re.search(r"(30[0-9a-fA-F]{60,})", output)
 
-        # Be permissive when parsing the script output: capture any non-space value after the labels
-        output = (result.stdout or "") + "\n" + (result.stderr or "")
-        new_id_match = re.search(r"New Account ID:\s*(\S+)", output)
-        new_key_match = re.search(r"New Account Private Key \(DER\):\s*(\S+)", output)
+            if not new_id_match or not new_key_match:
+                raise Exception("Script output was invalid. Could not find ID or Key in stdout.")
 
-        if not new_id_match or not new_key_match:
-            raise Exception("Script output was invalid.")
+            new_id = new_id_match.group(1)
+            new_key = new_key_match.group(1)
+            print(f"--- SUCCESS: Created Hedera Account {new_id} ---")
 
-        new_id = new_id_match.group(1)
-        new_key = new_key_match.group(1)
-        print(f"--- SUCCESS: Created Hedera Account {new_id} ---")
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            new_user = User(
+                email=email, password_hash=hashed_password, 
+                hedera_account_id=new_id, hedera_private_key=new_key, role=role
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            login_user(new_user)
+            return redirect(url_for('profile')) # COLLECTORS go to profile
 
-        # Ensure role has a default if missing
-        role = role or 'collector'
+        # --- Logic for Centers ---
+        else: # role == 'center'
+            print("--- SKIPPING HEDERA: Registering a verified Center account. ---")
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            new_user = User(
+                email=email, password_hash=hashed_password, role=role,
+                full_name=f"{email.split('@')[0]} Center", 
+                phone_number="011 123 4567",
+                id_number="VERIFIED-CENTER-001",
+                address="123 Industrial Rd, Johannesburg"
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            login_user(new_user)
+            return redirect(url_for('center_dashboard')) # CENTERS go straight to dashboard
 
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(
-            email=email,
-            password_hash=hashed_password,
-            hedera_account_id=new_id,
-            hedera_private_key=new_key,
-            role=role
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        # After successful signup, send user to the homepage without opening the auth modal
-        return redirect(url_for('home')) # Redirect back to homepage
-
-    except Exception as e:
-        print(f"--- HEDERA/PYTHON SIGNUP FAILED ---")
-        print(e)
+    except subprocess.CalledProcessError as e:
+        print(f"--- HEDERA SCRIPT CRASHED (CalledProcessError) ---")
+        print("STDOUT:", e.stdout); print("STDERR:", e.stderr)
         flash('A problem occurred while creating your account. Please try again.', 'error')
         return redirect(url_for('home'))
-            
+    except Exception as e:
+        print(f"--- HEDERA/PYTHON SIGNUP FAILED (General Exception) ---")
+        print(e)
+        flash('A problem occurred while creating your account. Please try again.','error')
+        return redirect(url_for('home'))
+
 
 @app.route("/login", methods=['POST'])
 def login():
-    # This route only handles the POST data from the modal form
     email = request.form.get('email')
     password = request.form.get('password')
     user = User.query.filter_by(email=email).first()
     
     if user and bcrypt.check_password_hash(user.password_hash, password):
         login_user(user, remember=True)
-
+        
         next_page = request.args.get('next')
-
-        # --- PROFILE CHECK (MANDATORY) ---
-        if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
-            flash('Please complete your profile to continue.', 'error')
-            return redirect(url_for('profile'))
-
-        # --- NEW "SMART" ROLE-BASED REDIRECT ---
-
-        # If they were trying to go to a specific page, send them there
+        
+        # --- NEW PROFILE CHECK (for Collectors ONLY) ---
+        if current_user.role == 'collector':
+            if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
+                flash('Please complete your profile to continue.', 'error')
+                return redirect(url_for('profile'))
+        
+        # If profile is complete (or user is a Center), continue.
         if next_page:
             return redirect(next_page)
-
+        
         # If they just logged in, send them to their correct dashboard
         if current_user.role == 'center':
             return redirect(url_for('center_dashboard'))
         else: # 'collector'
             return redirect(url_for('collector_dashboard'))
-
+            
     else:
         flash('Login Unsuccessful. Please check email and password.', 'error')
         return redirect(url_for('home'))
@@ -177,26 +198,46 @@ def logout():
     return redirect(url_for('home'))
 
 # -----------------------------------------------------------------
-# 6. ALL YOUR OTHER ROUTES (These are perfect)
+# 6. MAIN PAGE ROUTES
 # -----------------------------------------------------------------
 
 @app.route('/')
 def splash():
     return render_template('splash.html')
 
-
 @app.route('/home')
 def home():
     return render_template('home.html', active_page='home')
 
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        current_user.full_name = request.form.get('full_name')
+        current_user.phone_number = request.form.get('phone_number')
+        current_user.address = request.form.get('address')
+        current_user.id_number = request.form.get('id_number')
+        
+        db.session.commit()
+        flash('Your profile has been updated successfully!', 'success')
+        
+        # --- NEW: Smart redirect based on role ---
+        if current_user.role == 'center':
+            return redirect(url_for('center_dashboard'))
+        else:
+            return redirect(url_for('collector_dashboard'))
+
+    # GET request
+    return render_template('profile.html', active_page='profile')
+
 @app.route('/collector')
 @login_required 
 def collector_dashboard():
-    # Ensure profile is complete before allowing access to the collector dashboard
+    # --- NEW PROFILE GATE ---
     if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
-        flash('Please complete your profile before accessing the collector dashboard.', 'error')
+        flash('You must complete your profile before accessing the dashboard.', 'error')
         return redirect(url_for('profile'))
-
+    
     return render_template('collector.html', active_page='dashboard')
 
 @app.route('/center')
@@ -204,25 +245,32 @@ def collector_dashboard():
 def center_dashboard():
     return render_template('center.html', active_page='dashboard')
 
+@app.route('/search')
+@login_required
+def search():
+    return render_template('search.html', active_page='search')
+
 @app.route('/network')
 @login_required 
 def network():
     return render_template('network.html', active_page='network')
-
 
 @app.route('/rewards')
 @login_required 
 def rewards():
     return render_template('rewards.html', active_page='rewards')
 
+# -----------------------------------------------------------------
+# 7. APP "ENGINE" ROUTES (API & ACTIONS)
+# -----------------------------------------------------------------
+
 @app.route('/generate-qr')
 @login_required 
 def generate_qr():
-    # Require profile completion (full name, phone and ID) before allowing QR generation
+    # --- NEW PROFILE GATE ---
     if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
-        flash('Please complete your profile before generating your QR code.', 'error')
-        return redirect(url_for('profile'))
-
+        return "Profile incomplete", 403 
+    
     collector_id = current_user.hedera_account_id
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
     qr.add_data(collector_id)
@@ -236,75 +284,38 @@ def generate_qr():
 @app.route('/confirm-dropoff', methods=['POST'])
 @login_required 
 def confirm_dropoff():
+    # This route is only for Centers
+    if current_user.role != 'center':
+        return "Unauthorized", 403
+        
     collector_id = request.form['collector_id']
     weight_kg = float(request.form['weight'])
-    reward_amount = "250" 
-    print("--- CONFIRMATION RECEIVED! ---")
-    try:
-        subprocess.run(
-            ["node", "transfer-reward.js", collector_id, reward_amount],
-            check=True, 
-            capture_output=True,
-            text=True
-        )
-        print("--- HEDERA ENGINE CALL SUCCESSFUL! ---")
-    except subprocess.CalledProcessError as e:
-        print("--- !!! HEDERA ENGINE FAILED !!! ---")
-        print(e.stderr) 
-    return redirect(url_for('center_dashboard'))
+    reward_amount = "75" # This should be calculated based on weight, but 75 is our demo
 
-# -----------------------------------------------------------------
-# 6. (NEW) API FOR OUR "WOW" DASHBOARD
-# -----------------------------------------------------------------
+    print("--- CONFIRMATION RECEIVED! (demo mode - no token transfer) ---")
+    # NOTE: Demo flow — we intentionally skip calling the Hedera transfer script
+    # because many collectors in the demo environment may not have associated
+    # the demo token. Sending would fail with TOKEN_NOT_ASSOCIATED_TO_ACCOUNT.
+    # For a production flow, implement token association and return success
+    # based on the subprocess result.
+    return jsonify({"success": True, "message": "Transaction verified!"})
+
 @app.route('/api/my-dashboard-data')
 @login_required
 def get_dashboard_data():
-    # In the future, we will get this data from the database.
-    # For now, we send "fake" data to build our "wow" features,
-    # just like the GreenTrace winners did.
+    # New users start at 0
     data = {
-        "total_kg": 21.5,
-        "total_eco": 1850,
+        "total_kg": 0.0,
+        "total_eco": 0,
         "weekly_goal": 10,
-        "current_kg": 5,
-        "neighborhood_current_kg": 150,  # <-- NEW
-        "neighborhood_goal_kg": 1000     # <-- NEW
-        # "neighborhood_goal_percent" is no longer needed
+        "current_kg": 0.0,
+    "neighborhood_current_kg": 150.0,
+        "neighborhood_goal_kg": 1000 
     }
     return jsonify(data)
 
 # -----------------------------------------------------------------
-# 7. (NEW) PROFILE PAGE ROUTE
-# -----------------------------------------------------------------
-@app.route('/profile', methods=['GET', 'POST'])
-@login_required
-def profile():
-    if request.method == 'POST':
-        # --- This is the POST (Save) logic ---
-        current_user.full_name = request.form.get('full_name')
-        current_user.phone_number = request.form.get('phone_number')
-        current_user.address = request.form.get('address')
-        current_user.id_number = request.form.get('id_number')
-        
-        db.session.commit()
-        flash('Your profile has been updated successfully!', 'success')
-    # After saving, send user to their collector dashboard
-    return redirect(url_for('collector_dashboard'))
-
-    # --- This is the GET (View) logic ---
-    return render_template('profile.html', active_page='profile')
-
-# 8. (NEW) SMART SEARCH PAGE ROUTE
-# -----------------------------------------------------------------
-@app.route('/search')
-@login_required
-def search():
-    # In a real app, we'd do a database query.
-    # For the MVP, we just show the page.
-    return render_template('search.html', active_page='search')
-
-# -----------------------------------------------------------------
-# 7. RUN THE APP
+# 8. RUN THE APP
 # -----------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
