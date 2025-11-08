@@ -1156,42 +1156,7 @@ body.dark-theme {
     cursor: pointer;
 }
 
-/* 2. Bonus Chart Styles */
-.bonus-chart {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin: 1.5rem 0;
-}
-.bonus-bar {
-    background-color: #333;
-    padding: 1rem;
-    border-radius: 8px;
-}
-.bonus-label {
-    font-weight: 600;
-    color: #f4f4f4;
-    display: block;
-}
-.bonus-value {
-    font-size: 0.9rem;
-    color: #aaa;
-    display: block;
-    margin-bottom: 0.75rem;
-}
-.bar-viz {
-    height: 20px;
-    border-radius: 4px;
-    background-color: #555;
-}
-.bonus-bar.vericycle-bulk .bar-viz {
-    background-color: #4CAF50; /* Green */
-}
-.bonus-note {
-    font-size: 0.9rem;
-    color: #aaa;
-    text-align: center;
-}
+/* Bonus chart styles removed — replaced by the new tier-list styles appended at the end of the file. */
 
 /* 3. Proof Mockup Styles */
 #proof-mockup {
@@ -1596,3 +1561,60 @@ img.logo {
     max-width: none; /* Removes the 1000px limit */
     width: 95%;      /* Pushes the logo 95% to the edge */
 }
+
+/* --- NEW: Day 5 - Rewards Page Tier List --- */
+
+.tier-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.tier-item {
+    display: flex;
+    align-items: center;
+    background-color: #333;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    border: 2px solid #333; /* Default border */
+    transition: all 0.2s;
+}
+
+/* This highlights the user's active tier */
+.tier-item.active {
+    border-color: #4CAF50; /* Green border */
+    background-color: #1e1e1e; /* Darker bg */
+}
+
+.tier-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+}
+
+.tier-details {
+    flex-grow: 1; /* Pushes the rate to the right */
+}
+
+.tier-name {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f4f4f4;
+}
+.tier-item.active .tier-name {
+    color: #4CAF50; /* Green text */
+}
+
+.tier-desc {
+    display: block;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.tier-rate {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4CAF50; /* Green */
+}
+
