@@ -1633,3 +1633,66 @@ img.logo {
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); /* The "Halo" */
     border: 1px solid #4CAF50;
 }
+
+/* --- NEW: Day 5 - Profile Page Styles --- */
+
+/* This styles the grey "note" text under the email input */
+.form-note {
+    display: block;
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-top: 0.5rem;
+}
+
+/* This styles disabled inputs (like the email) to look read-only */
+.dark-theme .form-group input:disabled {
+    background-color: #222;
+    color: #777;
+    cursor: not-allowed;
+}
+
+/* --- NEW: Profile Page Tooltips --- */
+.tooltip {
+    display: inline-block;
+    position: relative;
+    background-color: #555;
+    color: #fff;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: help;
+}
+
+.tooltip:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%; /* Position above the "i" */
+    left: 50%;
+    transform: translateX(-50%);
+    
+    background-color: #1e1e1e;
+    color: #f4f4f4;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #555;
+    font-size: 0.9rem;
+    font-weight: 400;
+    
+    width: 200px; /* Give it a fixed width */
+    text-align: left;
+    
+    visibility: hidden; /* Hide it by default */
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+}
+
+/* Show the tooltip on hover */
+.tooltip:hover:before {
+    visibility: visible;
+    opacity: 1;
+}

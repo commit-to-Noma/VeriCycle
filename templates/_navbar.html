@@ -13,7 +13,7 @@
 
             {# Show Profile + Log Out when authenticated, otherwise show Sign Up (and Log In) #}
             {% if current_user.is_authenticated %}
-                <a href="#" class="nav-button {% if active_page == 'profile' %}active{% endif %}">Profile</a>
+                <a href="{{ url_for('profile') }}" class="nav-button {% if active_page == 'profile' %}active{% endif %}">Profile</a>
                 <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
             {% else %}
                 <!-- Only show Sign Up on the navbar. Login is accessible from the Sign Up modal. -->

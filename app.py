@@ -50,6 +50,7 @@ class User(db.Model, UserMixin):
     full_name = db.Column(db.String(100), nullable=True)
     phone_number = db.Column(db.String(20), nullable=True)
     address = db.Column(db.String(200), nullable=True)
+    id_number = db.Column(db.String(30), nullable=True) # <-- NEW FIELD
 
 # -----------------------------------------------------------------
 # 4. A REQUIRED "HELPER" FUNCTION FOR FLASK-LOGIN
@@ -138,7 +139,11 @@ def login():
     
     if user and bcrypt.check_password_hash(user.password_hash, password):
         login_user(user, remember=True)
-        
+        # --- Require profile completion (full name, phone and ID) before continuing ---
+        if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
+            flash('Please complete your profile before continuing.', 'error')
+            return redirect(url_for('profile'))
+
         # --- THIS IS THE FIX FOR THE "WRONG REDIRECT" BUG (BUG 3) ---
         next_page = request.args.get('next')
         if next_page:
@@ -175,6 +180,11 @@ def home():
 @app.route('/collector')
 @login_required 
 def collector_dashboard():
+    # Ensure profile is complete before allowing access to the collector dashboard
+    if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
+        flash('Please complete your profile before accessing the collector dashboard.', 'error')
+        return redirect(url_for('profile'))
+
     return render_template('collector.html', active_page='dashboard')
 
 @app.route('/center')
@@ -196,6 +206,11 @@ def rewards():
 @app.route('/generate-qr')
 @login_required 
 def generate_qr():
+    # Require profile completion (full name, phone and ID) before allowing QR generation
+    if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
+        flash('Please complete your profile before generating your QR code.', 'error')
+        return redirect(url_for('profile'))
+
     collector_id = current_user.hedera_account_id
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
     qr.add_data(collector_id)
@@ -257,10 +272,12 @@ def profile():
         current_user.full_name = request.form.get('full_name')
         current_user.phone_number = request.form.get('phone_number')
         current_user.address = request.form.get('address')
+        current_user.id_number = request.form.get('id_number')
         
         db.session.commit()
         flash('Your profile has been updated successfully!', 'success')
-        return redirect(url_for('profile'))
+    # After saving, send user to their collector dashboard
+    return redirect(url_for('collector_dashboard'))
 
     # --- This is the GET (View) logic ---
     return render_template('profile.html', active_page='profile')
