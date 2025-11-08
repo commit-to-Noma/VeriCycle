@@ -146,22 +146,26 @@ def login():
     
     if user and bcrypt.check_password_hash(user.password_hash, password):
         login_user(user, remember=True)
-        # --- Require profile completion only for collectors ---
-        if user.role == 'collector' and (not current_user.full_name or not current_user.phone_number or not current_user.id_number):
-            flash('Please complete your profile before continuing.', 'error')
+
+        next_page = request.args.get('next')
+
+        # --- PROFILE CHECK (MANDATORY) ---
+        if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
+            flash('Please complete your profile to continue.', 'error')
             return redirect(url_for('profile'))
 
-        # --- Redirect users based on role ---
-        next_page = request.args.get('next')
+        # --- NEW "SMART" ROLE-BASED REDIRECT ---
+
+        # If they were trying to go to a specific page, send them there
         if next_page:
             return redirect(next_page)
-        # If the account is a center, send to center dashboard; otherwise send collectors to collector dashboard
-        if user.role == 'center':
+
+        # If they just logged in, send them to their correct dashboard
+        if current_user.role == 'center':
             return redirect(url_for('center_dashboard'))
-        else:
+        else: # 'collector'
             return redirect(url_for('collector_dashboard'))
-        # --- END OF THE FIX ---
-            
+
     else:
         flash('Login Unsuccessful. Please check email and password.', 'error')
         return redirect(url_for('home'))
@@ -198,7 +202,7 @@ def collector_dashboard():
 @app.route('/center')
 @login_required 
 def center_dashboard():
-    return render_template('center.html')
+    return render_template('center.html', active_page='dashboard')
 
 @app.route('/network')
 @login_required 
