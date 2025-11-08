@@ -10,19 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
 <body class="dark-theme">
-    <header class="navbar">
-        <div class="container">
-            <div class="brand">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="VeriCycle Logo" class="logo">
-                <span class="logo-text">VeriCycle</span>
-            </div>
-            <nav>
-                <a href="{{ url_for('network') }}" class="nav-button">Network</a>
-                <a href="{{ url_for('rewards') }}" class="nav-button">Rewards</a>
-                <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
-            </nav>
-        </div>
-    </header>
+    {% include '_navbar.html' %}
 
     <main class="container app-dashboard">
         <div class="dashboard-header">

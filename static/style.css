@@ -1625,3 +1625,11 @@ img.logo {
     color: #aaa;
     font-weight: 500;
 }
+
+/* --- NEW: "Halo" Active Tab Style --- */
+.nav-button.active {
+    color: #4CAF50; /* Main Green */
+    font-weight: 700;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); /* The "Halo" */
+    border: 1px solid #4CAF50;
+}

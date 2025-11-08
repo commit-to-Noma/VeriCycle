@@ -8,26 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="dark-theme">
-    <header class="navbar">
-        <div class="container">
-            <div class="brand">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="VeriCycle Logo" class="logo">
-                <span class="logo-text">VeriCycle</span>
-            </div>
-            <nav>
-                {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button">Dashboard</a>
-                    <a href="{{ url_for('network') }}" class="nav-button">Network</a>
-                    <a href="{{ url_for('rewards') }}" class="nav-button">Rewards</a> <a href="{{ url_for('center_dashboard') }}" class="nav-button">Center Dashboard</a>
-                    <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
-                {% else %}
-                    <a href="#" class="nav-button js-open-auth" data-form="login">Collector Dashboard</a>
-                    <a href="#" class="nav-button js-open-auth" data-form="login">Center Dashboard</a>
-                    <a href="#" class="nav-button-primary js-open-auth" data-form="signup">Sign Up</a>
-                {% endif %}
-            </nav>
-        </div>
-    </header>
+    {% include '_navbar.html' %}
 
     <main class="hero">
         <div class="container">

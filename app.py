@@ -151,12 +151,12 @@ def splash():
 
 @app.route('/home')
 def home():
-    return render_template('home.html')
+    return render_template('home.html', active_page='home')
 
 @app.route('/collector')
 @login_required 
 def collector_dashboard():
-    return render_template('collector.html')
+    return render_template('collector.html', active_page='dashboard')
 
 @app.route('/center')
 @login_required 
@@ -166,13 +166,13 @@ def center_dashboard():
 @app.route('/network')
 @login_required 
 def network():
-    return render_template('network.html')
+    return render_template('network.html', active_page='network')
 
 
 @app.route('/rewards')
 @login_required 
 def rewards():
-    return render_template('rewards.html')
+    return render_template('rewards.html', active_page='rewards')
 
 @app.route('/generate-qr')
 @login_required 
