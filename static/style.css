@@ -1618,3 +1618,10 @@ img.logo {
     color: #4CAF50; /* Green */
 }
 
+/* --- NEW: Day 5 - Tier List Fix --- */
+
+/* This makes the "Base Rate" text a neutral color */
+.tier-rate.base-rate {
+    color: #aaa;
+    font-weight: 500;
+}
