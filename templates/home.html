@@ -21,32 +21,31 @@
     <section class="cta-section">
         <div class="container">
             
-            {% if not current_user.is_authenticated %}
-                <!-- If they are NOT logged in, show the "Join" section -->
-                <h2>Join the VeriCycle Network</h2>
-                <p class="cta-subtitle">
-                    Become a 'Green Member' today. Turn your recycling efforts into verifiable, secure, and valuable rewards.
-                </p>
-                
-                <div class="advantages">
-                    <div class="advantage-card">
-                        <h3>✅ Get Paid Safely.</h3>
-                        <p>Stop worrying about carrying cash. Your digital EcoCoin wallet is secure.</p>
-                    </div>
-                    <div class="advantage-card">
-                        <h3>🤝 Get Paid Fairly.</h3>
-                        <p>Get a permanent, verifiable receipt for every drop-off. No more disputes.</p>
-                    </div>
-                    <div class="advantage-card">
-                        <h3>📈 Build Your Future.</h3>
-                        <p>Build a real, digital income history that can help you get bank loans.</p>
-                    </div>
-                    <div class="advantage-card">
-                        <h3>💰 Earn More Than Cash.</h3>
-                        <p>Unlock "Bulk Bonuses" and other incentives only available to our 'Green Members'.</p>
-                    </div>
+            <h2>Join the VeriCycle Network</h2>
+            <p class="cta-subtitle">
+                Become a 'Green Member' today. Turn your recycling efforts into verifiable, secure, and valuable rewards.
+            </p>
+            
+            <div class="advantages">
+                <div class="advantage-card">
+                    <h3>✅ Get Paid Safely.</h3>
+                    <p>Stop worrying about carrying cash. Your digital EcoCoin wallet is secure.</p>
                 </div>
+                <div class="advantage-card">
+                    <h3>🤝 Get Paid Fairly.</h3>
+                    <p>Get a permanent, verifiable receipt for every drop-off. No more disputes.</p>
+                </div>
+                <div class="advantage-card">
+                    <h3>📈 Build Your Future.</h3>
+                    <p>Build a real, digital income history that can help you get bank loans.</p>
+                </div>
+                <div class="advantage-card">
+                    <h3>💰 Earn More Than Cash.</h3>
+                    <p>Unlock "Bulk Bonuses" and other incentives only available to our 'Green Members'.</p>
+                </div>
+            </div>
 
+            {% if not current_user.is_authenticated %}
                 <div class="cta-buttons">
                     <a href="#" class="btn-primary-large js-open-auth" data-form="signup">Create Your Account</a>
                     <p>
@@ -56,14 +55,6 @@
                 </div>
             
             {% else %}
-                <!-- 
-                  THIS IS THE FIX FOR BUG 2 (Weird Welcome)
-                  It now just says "Welcome Back!"
-                -->
-                <h2>Welcome Back!</h2>
-                <p class="cta-subtitle">
-                    You're all set. Head to your dashboard to see your progress.
-                </p>
                 <div class="cta-buttons">
                     <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to My Dashboard</a>
                 </div>

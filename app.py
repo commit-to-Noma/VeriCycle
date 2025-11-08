@@ -45,6 +45,11 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(60), nullable=False)
     hedera_account_id = db.Column(db.String(100), nullable=True)
     hedera_private_key = db.Column(db.String(255), nullable=True)
+    
+    # --- NEW COLUMNS ---
+    full_name = db.Column(db.String(100), nullable=True)
+    phone_number = db.Column(db.String(20), nullable=True)
+    address = db.Column(db.String(200), nullable=True)
 
 # -----------------------------------------------------------------
 # 4. A REQUIRED "HELPER" FUNCTION FOR FLASK-LOGIN
@@ -65,7 +70,8 @@ def signup():
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         flash('That email is already taken. Please log in.', 'error')
-        return redirect(url_for('home', _anchor='auth-modal')) # Redirect back to homepage
+        # Send them back to the homepage (do not open the auth modal)
+        return redirect(url_for('home'))
 
     print("--- CALLING HEDERA ENGINE: Creating new collector account... ---")
     try:
@@ -75,14 +81,27 @@ def signup():
             raise Exception("Missing environment variables")
 
         # This is your fixed subprocess call
+        # Ensure the Node process receives the operator env vars (so the JS script can read them)
+        child_env = os.environ.copy()
+        child_env.update({
+            "OPERATOR_ID": operator_id,
+            "OPERATOR_KEY": operator_key,
+        })
+
         result = subprocess.run(
             ["node", "collector-account.js", operator_id, operator_key],
-            check=True, capture_output=True, text=True
+            check=True, capture_output=True, text=True, env=child_env
         )
-        
-        output = result.stdout
-        new_id_match = re.search(r"New Account ID: (0.0\.\d+)", output)
-        new_key_match = re.search(r"New Account Private Key \(DER\): (302e\S+)", output)
+        # Print full stdout/stderr for troubleshooting the JS script output
+        print("--- collector-account.js stdout ---")
+        print(result.stdout)
+        print("--- collector-account.js stderr ---")
+        print(result.stderr)
+
+        # Be permissive when parsing the script output: capture any non-space value after the labels
+        output = (result.stdout or "") + "\n" + (result.stderr or "")
+        new_id_match = re.search(r"New Account ID:\s*(\S+)", output)
+        new_key_match = re.search(r"New Account Private Key \(DER\):\s*(\S+)", output)
 
         if not new_id_match or not new_key_match:
             raise Exception("Script output was invalid.")
@@ -100,14 +119,14 @@ def signup():
         )
         db.session.add(new_user)
         db.session.commit()
-
-        return redirect(url_for('home', _anchor='auth-modal')) # Redirect back to homepage
+        # After successful signup, send user to the homepage without opening the auth modal
+        return redirect(url_for('home')) # Redirect back to homepage
 
     except Exception as e:
         print(f"--- HEDERA/PYTHON SIGNUP FAILED ---")
         print(e)
         flash('A problem occurred while creating your account. Please try again.', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('home'))
             
 
 @app.route("/login", methods=['POST'])
@@ -226,6 +245,25 @@ def get_dashboard_data():
         # "neighborhood_goal_percent" is no longer needed
     }
     return jsonify(data)
+
+# -----------------------------------------------------------------
+# 7. (NEW) PROFILE PAGE ROUTE
+# -----------------------------------------------------------------
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        # --- This is the POST (Save) logic ---
+        current_user.full_name = request.form.get('full_name')
+        current_user.phone_number = request.form.get('phone_number')
+        current_user.address = request.form.get('address')
+        
+        db.session.commit()
+        flash('Your profile has been updated successfully!', 'success')
+        return redirect(url_for('profile'))
+
+    # --- This is the GET (View) logic ---
+    return render_template('profile.html', active_page='profile')
 
 # -----------------------------------------------------------------
 # 7. RUN THE APP
