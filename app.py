@@ -282,6 +282,15 @@ def profile():
     # --- This is the GET (View) logic ---
     return render_template('profile.html', active_page='profile')
 
+# 8. (NEW) SMART SEARCH PAGE ROUTE
+# -----------------------------------------------------------------
+@app.route('/search')
+@login_required
+def search():
+    # In a real app, we'd do a database query.
+    # For the MVP, we just show the page.
+    return render_template('search.html', active_page='search')
+
 # -----------------------------------------------------------------
 # 7. RUN THE APP
 # -----------------------------------------------------------------

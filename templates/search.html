@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find a Center - VeriCycle</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark-theme">
+    
+    {% include '_navbar.html' %}
+
+    <main class="container app-dashboard">
+        <div class="dashboard-header">
+            <h2>Recommendation Engine</h2>
+            <p>Find the best value for your materials or the center nearest to you.</p>
+        </div>
+
+        <div class="search-grid">
+
+            <div class="card">
+                <h3>Find a Center</h3>
+                <form class="verify-form" id="search-form">
+                    <div class="form-group">
+                        <label for="material">What are you recycling?</label>
+                        <select id="material" name="material">
+                            <option value="cans">Aluminum Cans</option>
+                            <option value="paper">Paper & Cardboard</option>
+                            <option value="plastic">PET Plastic Bottles</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>What's your priority?</label>
+                        <div class="toggle-switch">
+                            <input type="radio" id="priority-value" name="priority" value="value" checked>
+                            <label for="priority-value">Best Value</label>
+                            
+                            <input type="radio" id="priority-distance" name="priority" value="distance">
+                            <label for="priority-distance">Nearest</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group hidden-form-group" id="kg-input-group">
+                        <label for="kg">How many kilograms? (approx)</label>
+                        <input type="number" id="kg" name="kg" value="5">
+                    </div>
+                    
+                    <div class="form-group hidden-form-group" id="location-input-group">
+                        <label for="location">Enter your current location:</label>
+                        <input type="text" id="location" name="location" placeholder="e.g., 'Sandton'">
+                    </div>
+                    
+                    <button type="submit" class="btn-primary-large btn-form" id="search-btn">Find Center</button>
+                </form>
+            </div>
+
+            <div class="card" id="search-result">
+                <div id="search-placeholder">
+                    <p>Your recommendation will appear here.</p>
+                </div>
+                
+                <div class="result-card" id="result-content" style="display: none;">
+                    <img src="" alt="Logo" class="result-logo" id="result-logo">
+                    <h4 id="result-name"></h4>
+                    <p class="result-reason" id="result-reason"></p>
+                    
+                    <div class="result-details-wrapper" id="result-details-wrapper">
+                        <div class="result-rate" id="result-rate-div">
+                            <strong>Current Rate:</strong> <span id="result-rate"></span>
+                        </div>
+                        <div class="result-rate" id="result-calc-div">
+                            <strong>Your Payout:</strong> <span id="result-calc"></span>
+                        </div>
+                        <div class="result-rate bonus" id="result-bonus-div">
+                            <strong>+15% Silver Bonus:</strong> <span id="result-bonus"></span>
+                        </div>
+                        <div class="result-rate total" id="result-total-div">
+                            <strong>Total (in ECO):</strong> <span id="result-total"></span>
+                        </div>
+                    </div>
+
+                    <a href="#" target="_blank" class="btn-primary" id="result-button">Get Directions</a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // --- 1. OUR FAKE DATABASE ---
+        // We use this to show you did your research
+        const rates = {
+            "cans": [
+                { id: "mpact", name: "Mpact Recycling Germiston", rate: 1.85, logo: "https://mpactrecycling.co.za/templates/mr20/images/logo-mpact-recycling.svg" },
+                { id: "fmsa", name: "FMSA Waltloo", rate: 1.70, logo: "https://www.fmsa.co.za/wp-content/uploads/2019/04/FMSA-web-logo-dark.jpg" }
+            ],
+            "paper": [
+                { id: "mpact", name: "Mpact Recycling Germiston", rate: 1.10, logo: "https://mpactrecycling.co.za/templates/mr20/images/logo-mpact-recycling.svg" },
+                { id: "roodepoort", name: "Roodepoort Recycling", rate: 1.05, logo: "http://www.roodepoortrecycling.co.za/wp-content/uploads/2018/07/cropped-LETTERHEAD@300x-e1532005233566.png" }
+            ],
+            "plastic": [
+                { id: "fmsa", name: "FMSA Waltloo", rate: 2.50, logo: "https://www.fmsa.co.za/wp-content/uploads/2019/04/FMSA-web-logo-dark.jpg" },
+                { id: "mpact", name: "Mpact Recycling Germiston", rate: 2.30, logo: "https://mpactrecycling.co.za/templates/mr20/images/logo-mpact-recycling.svg" }
+            ]
+        };
+        const locations = {
+            "sandton": { id: "mpact", name: "Mpact Recycling Germiston", logo: "https://mpactrecycling.co.za/templates/mr20/images/logo-mpact-recycling.svg" },
+            "soweto": { id: "roodepoort", name: "Roodepoort Recycling", logo: "http://www.roodepoortrecycling.co.za/wp-content/uploads/2018/07/cropped-LETTERHEAD@300x-e1532005233566.png" },
+            "default": { id: "fmsa", name: "FMSA Waltloo", logo: "https://www.fmsa.co.za/wp-content/uploads/2019/04/FMSA-web-logo-dark.jpg" }
+        };
+        const directions = {
+            "mpact": "https://www.google.com/maps/search/?api=1&query=18+James+Bright+Avenue,+Driehoek,+Germiston",
+            "fmsa": "https://www.google.com/maps/search/?api=1&query=89+Battery+St,+Waltloo,+Pretoria",
+            "roodepoort": "https://www.google.com/maps/search/?api=1&query=195+Miles+Stoker+Rd,+Roodepoort"
+        };
+        
+        // --- 2. GET ALL THE HTML ELEMENTS ---
+        const searchForm = document.getElementById('search-form');
+        const searchBtn = document.getElementById('search-btn');
+        const priorityRadios = document.querySelectorAll('input[name="priority"]');
+        const kgInputGroup = document.getElementById('kg-input-group');
+        const locationInputGroup = document.getElementById('location-input-group');
+        
+        const searchPlaceholder = document.getElementById('search-placeholder');
+        const resultContent = document.getElementById('result-content');
+        
+        // Result card elements
+        const resultLogo = document.getElementById('result-logo');
+        const resultName = document.getElementById('result-name');
+        const resultReason = document.getElementById('result-reason');
+        const resultButton = document.getElementById('result-button');
+
+        // Calculation elements
+        const rateDiv = document.getElementById('result-rate-div');
+        const calcDiv = document.getElementById('result-calc-div');
+        const bonusDiv = document.getElementById('result-bonus-div');
+        const totalDiv = document.getElementById('result-total-div');
+        
+        const rateSpan = document.getElementById('result-rate');
+        const calcSpan = document.getElementById('result-calc');
+        const bonusSpan = document.getElementById('result-bonus');
+        const totalSpan = document.getElementById('result-total');
+
+        // --- 3. UI LOGIC (Show/Hide Inputs) ---
+        function handlePriorityChange() {
+            const priority = document.querySelector('input[name="priority"]:checked').value;
+            if (priority === 'value') {
+                kgInputGroup.style.display = 'block';
+                locationInputGroup.style.display = 'none';
+            } else { // 'distance'
+                kgInputGroup.style.display = 'none';
+                locationInputGroup.style.display = 'block';
+            }
+        }
+        // Run it once on load
+        handlePriorityChange();
+        // Add listeners
+        priorityRadios.forEach(radio => radio.addEventListener('change', handlePriorityChange));
+
+        // --- 4. THE MAIN SEARCH FUNCTION ---
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop the page from reloading
+            
+            const material = document.getElementById('material').value;
+            const priority = document.querySelector('input[name="priority"]:checked').value;
+            
+            let resultData = {};
+
+            if (priority === 'value') {
+                const kg = parseFloat(document.getElementById('kg').value) || 0;
+                // Find the best rate for this material
+                const best = rates[material].sort((a, b) => b.rate - a.rate)[0];
+                
+                // Do the math
+                const basePayout = kg * best.rate;
+                const bonus = basePayout * 0.15; // Your 15% Silver Tier bonus
+                const totalPayout = basePayout + bonus;
+                const totalEcoCoin = totalPayout / 0.02; // Using rate from rewards page
+
+                // Build the result object
+                resultData = {
+                    name: best.name,
+                    logo: best.logo,
+                    reason: `🏆 This center offers the <strong>best value</strong> for ${material}.`,
+                    rate: `R${best.rate.toFixed(2)} / kg`,
+                    calc: `R${basePayout.toFixed(2)} (${kg}kg @ R${best.rate.toFixed(2)})`,
+                    bonus: `R${bonus.toFixed(2)}`,
+                    total: `~ ${totalEcoCoin.toFixed(0)} ECO`,
+                    link: directions[best.id],
+                    showCalc: true
+                };
+
+            } else { // priority === 'distance'
+                const location = document.getElementById('location').value.toLowerCase().trim();
+                let closest;
+                
+                // Our "fake" location logic
+                if (location.includes('sandton')) {
+                    closest = locations['sandton'];
+                } else if (location.includes('soweto')) {
+                    closest = locations['soweto'];
+                } else {
+                    closest = locations['default']; // Any other address
+                }
+
+                resultData = {
+                    name: closest.name,
+                    logo: closest.logo,
+                    reason: `📍 This is the <strong>closest center</strong> to you that accepts ${material}.`,
+                    link: directions[closest.id],
+                    showCalc: false
+                };
+            }
+
+            // --- 5. DISPLAY THE RESULT ---
+            resultName.textContent = resultData.name;
+            resultLogo.src = resultData.logo;
+            resultReason.innerHTML = resultData.reason;
+            resultButton.href = resultData.link;
+            
+            if (resultData.showCalc) {
+                // Show all the math
+                rateSpan.textContent = resultData.rate;
+                calcSpan.textContent = resultData.calc;
+                bonusSpan.textContent = resultData.bonus;
+                totalSpan.textContent = resultData.total;
+                document.getElementById('result-details-wrapper').style.display = 'block';
+            } else {
+                // Hide the math section
+                document.getElementById('result-details-wrapper').style.display = 'none';
+            }
+
+            // Show the card
+            searchPlaceholder.style.display = 'none';
+            resultContent.style.display = 'block';
+        });
+
+    });
+</script>
+
+</body>
+</html>
