@@ -81,7 +81,15 @@ body {
 
 /* --- Navigation & Header --- */
 .navbar {
-    background-color: #1e1e1e;
+    /* "Sticky" styles */
+    position: sticky;
+    top: 0;
+    z-index: 1001; /* High z-index to stay on top */
+
+    /* "Transparent" styles */
+    background-color: rgba(30, 30, 30, 0.85); /* 1e1e1e with 85% opacity */
+    backdrop-filter: blur(10px); /* This gives it the "frosted glass" look */
+
     padding: 1rem 0;
     border-bottom: 1px solid #333;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
