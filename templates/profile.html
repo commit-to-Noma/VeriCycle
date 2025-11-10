@@ -67,10 +67,31 @@
                     <input type="text" id="address" name="address" value="{{ current_user.address or '' }}" placeholder="e.g., 123 Main St, Roodepoort">
                 </div>
 
-                <button type="submit" class="btn-primary-large btn-form">Save and Continue</button>
-            
-            </form>
+            <button type="submit" class="btn-primary-large btn-form">Save and Continue</button>
+
+        </form>
+    </div> <!-- This DIV now correctly closes the Profile card -->
+
+    <div class="card">
+        <h3>My Hedera Wallet</h3>
+        <p class="form-note" style="margin-top: -1rem; margin-bottom: 1.5rem; line-height: 1.5;">
+            Your VeriCycle account is a real, self-custody Hedera wallet. This allows us to send you EcoCoin directly and securely.
+        </p>
+
+        <div class="form-group">
+            <label>Your Hedera Account ID</label>
+            <input type="text" value="{{ current_user.hedera_account_id or 'N/A (Center Account)' }}" readonly disabled>
         </div>
+
+        <div class="form-group">
+            <label>Your Private Key (Keep this secret!)</label>
+            <input type="text" value="{{ current_user.hedera_private_key or 'N/A (Center Account)' }}" readonly disabled>
+        </div>
+
+        <p class="form-note">
+            <strong>This is your wallet.</strong> You can import this account into a wallet like <a href="https://www.hashpack.app/" target="_blank" style="color: #2196F3;">HashPack</a> at any time using your Private Key.
+        </p>
+    </div>
     </main>
 
 </body>

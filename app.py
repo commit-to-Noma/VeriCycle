@@ -290,7 +290,7 @@ def confirm_dropoff():
         
     collector_id = request.form['collector_id']
     weight_kg = float(request.form['weight'])
-    reward_amount = "75" # This should be calculated based on weight, but 75 is our demo
+    reward_amount = "750" # This should be calculated based on weight, but 750 is our demo
 
     print("--- CONFIRMATION RECEIVED! (demo mode - no token transfer) ---")
     # NOTE: Demo flow — we intentionally skip calling the Hedera transfer script
@@ -307,7 +307,7 @@ def get_dashboard_data():
     data = {
         "total_kg": 0.0,
         "total_eco": 0,
-        "weekly_goal": 10,
+        "weekly_goal": 20,
         "current_kg": 0.0,
     "neighborhood_current_kg": 150.0,
         "neighborhood_goal_kg": 1000 

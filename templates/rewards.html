@@ -40,11 +40,11 @@
                         </div>
 
                         <div class="bank-conversion">
-                            <span class="bank-label">Redemption Amount: 50.00 ECO</span>
-                            <span class="bank-total">ZAR 1.00</span>
+                            <span class="bank-label">Redemption Amount: 500.00 ECO</span>
+                            <span class="bank-total">ZAR 10.00</span>
                         </div>
 
-                        <button class="bank-button" id="bank-button-redeem">Confirm Redemption (50 ECO)</button>
+                        <button class="bank-button" id="bank-button-redeem">Confirm Redemption (500 ECO)</button>
                     </div>
                 </div>
             </div>
@@ -150,7 +150,7 @@
                     return;
                 }
 
-                const redeemAmount = 50; // Demo amount from PDF
+                const redeemAmount = 500; // Demo amount from PDF (updated)
 
                 if (currentData.total_eco < redeemAmount) {
                     alert("You do not have enough EcoCoin to make this redemption.");
@@ -165,7 +165,7 @@
 
                 // 3. SHOW YOUR NEW SUCCESS MESSAGE!
                 // Show a friendly transient message before redirecting
-                alert("Redemption Successful!\n\nWe have requested your bank to deposit ZAR 1.00. This transaction will be completed within 24 hours. You will now be taken to your dashboard.");
+                alert("Redemption Successful!\n\nWe have requested your bank to deposit ZAR 10.00. This transaction will be completed within 24 hours. You will now be taken to your dashboard.");
 
                 // 4. Redirect to the dashboard
                 window.location.href = '/collector';

@@ -1137,6 +1137,143 @@ img.logo {
     font-weight: bold;
     cursor: help;
 }
+
+/* Fix link color in profile notes */
+.dark-theme .form-note a {
+    color: #2196F3;
+}
+
+/* --- NEW: Collector Dashboard 2-Column QR Grid --- */
+
+.qr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+/* On mobile, stack the columns */
+@media (max-width: 700px) {
+    .qr-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.qr-grid .instructions {
+    /* Make the instructions a rounded, proportional card inside the grid */
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin: 0;
+    text-align: left;
+}
+
+.qr-grid .instructions h3 {
+    margin-top: 0;
+    color: #f4f4f4;
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.5rem;
+}
+
+.qr-grid .instructions ol {
+    margin-top: 1rem;
+}
+
+.qr-grid .instructions li {
+    font-size: 1rem;
+}
+
+.qr-grid #generate-btn {
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+.qr-code-container {
+    background-color: #121212;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1rem;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.qr-code-container img {
+    max-width: 100%;
+    height: auto;
+}
+
+.qr-placeholder {
+    color: #777;
+    font-style: italic;
+    text-align: center;
+}
+
+/* --- FIX: "Floating Data" & "Ugly Sign Up" --- */
+
+/* This fixes the green "Sign Up" button */
+.nav-button-primary {
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background-color: #4CAF50;
+    color: #fff;
+    transition: background-color 0.2s;
+    display: inline-block;
+}
+.nav-button-primary:hover {
+    background-color: #1B5E20;
+}
+
+/* Stronger selector to ensure the Sign Up link isn't rendered as a plain blue link */
+.navbar .nav-button-primary {
+    text-decoration: none;
+    color: #fff;
+}
+
+/* This fixes the "floating" dashboard cards */
+.dark-theme .card {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-radius: 12px;
+}
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    align-items: start;
+    grid-auto-rows: minmax(200px, auto);
+}
+.kpi-card, .chart-card {
+    min-height: 220px;
+    padding: 1.75rem;
+    box-sizing: border-box;
+}
+.kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-self: stretch;
+}
+.chart-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-self: stretch;
+    text-align: center;
+}
+.kpi-card h3, .chart-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #f4f4f4;
+    font-size: 1.4rem;
+}
+/* --- END OF FIX --- */
 .tooltip:before {
     content: attr(data-tooltip);
     position: absolute;
@@ -1325,3 +1462,104 @@ img.logo {
 .verification-date-header:first-of-type {
     margin-top: 0; /* No extra space at the top */
 }
+
+/* --- FINAL DASHBOARD CARD FIX --- */
+
+/* This rule creates the 2x2 grid layout */
+.dashboard-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* This rule creates the black, rounded boxes */
+.kpi-card, .chart-card {
+    display: flex !important;
+    flex-direction: column !important;
+    background-color: #1e1e1e !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    border-radius: 12px !important;
+    padding: 1.75rem !important;
+    margin-bottom: 1.5rem !important;
+    box-sizing: border-box !important;
+    min-height: 220px !important;
+}
+
+/* This styles the text inside the cards */
+.kpi-card h3, .chart-card h3 {
+    margin-top: 0 !important;
+    margin-bottom: 0.5rem !important;
+    color: #f4f4f4 !important;
+    font-size: 1.4rem !important;
+}
+/* --- END OF FIX --- */
+
+/* --- FIX: "Floating Data" (Adds missing card styles) --- */
+.dark-theme .card {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    align-items: start;
+    grid-auto-rows: minmax(200px, auto);
+}
+.kpi-card, .chart-card {
+    min-height: 220px;
+    padding: 1.75rem;
+    box-sizing: border-box;
+}
+.kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-self: stretch;
+}
+.chart-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-self: stretch;
+    text-align: center;
+}
+.kpi-card h3, .chart-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #f4f4f4;
+    font-size: 1.4rem;
+}
+/* --- END OF FIX --- */
+
+/* --- FIX: QR Code Layout --- */
+.qr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: center;
+}
+.qr-grid .instructions { background-color: transparent; border: none; padding: 0; margin: 0; }
+.qr-grid .instructions h3 { margin-top: 0; color: #f4f4f4; border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
+.qr-grid .instructions ol { margin-top: 1rem; }
+.qr-grid .instructions li { font-size: 1rem; }
+.qr-grid #generate-btn { width: 100%; margin-top: 1.5rem; }
+.qr-code-container {
+    background-color: #121212;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1rem;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+.qr-code-container img { max-width: 100%; height: auto; }
+.qr-placeholder { color: #777; font-style: italic; text-align: center; }
+@media (max-width: 700px) { .qr-grid { grid-template-columns: 1fr; } }

@@ -55,26 +55,36 @@
             
         </div>
         
-        <div class="card">
-            <h3>Your Drop-off QR Code</h3>
-            <p>Generate a unique code for the recycling center to scan.</p>
-            
-            <button class="btn-primary" id="simulate-deposit-btn" style="background-color: #0D47A1; margin-bottom: 1rem;">
-                Simulate New Deposit
-            </button>
+    <!-- This is the new 2-column QR card -->
+    <div class="card">
+        <div class="qr-grid">
 
+            <!-- Column 1: Instructions -->
             <div class="instructions">
-                <h4>How to Drop Off:</h4>
+                <h3>How to Drop Off:</h3>
                 <ol>
                     <li>Press the "Generate" button below.</li>
                     <li>Show your unique QR code to the recycling center.</li>
                     <li>The center will scan your code and weigh your materials.</li>
                     <li>Your EcoCoin reward will be deposited instantly!</li>
                 </ol>
+                <button class="btn-primary" id="generate-btn">Generate Drop-off QR Code</button>
             </div>
-            <button class="btn-primary" id="generate-btn">Generate Drop-off QR Code</button>
-            <div id="qr-code-container"></div>
+
+            <!-- Column 2: The QR Code -->
+            <div class="qr-code-container" id="qr-code-container">
+                <p class="qr-placeholder">Your QR code will appear here once generated.</p>
+            </div>
+
         </div>
+    </div>
+
+    <!-- This "Simulate" button is now at the bottom, separate -->
+    <div class="card">
+         <button class="btn-primary" id="simulate-deposit-btn" style="background-color: #0D47A1; width: 100%; box-sizing: border-box;">
+            Simulate New Deposit (750 ECO)
+        </button>
+    </div>
 
     </main>
 
@@ -220,14 +230,14 @@
 
         // --- 7. EVENT LISTENERS (FIXED) ---
         simulateBtn.addEventListener('click', function() {
-            showSuccessModal(75, 1.5);
+            showSuccessModal(750, 15.0);
         });
 
         modalCloseBtn.addEventListener('click', function() {
             hideSuccessModal();
 
-            const newEco = 75;
-            const newKg = 1.5;
+            const newEco = 750;
+            const newKg = 15.0;
 
             let oldEco = currentData.total_eco;
             let oldKg = currentData.total_kg;
