@@ -1675,3 +1675,42 @@ img.logo {
         display: none;
     }
 }
+
+/* --- NEW: Day 2 - Platform Stats (Small Grid) --- */
+
+.stats-grid-small {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    gap: 1rem;
+    margin-bottom: 2rem; /* Space before the leaderboard */
+}
+
+.stat-card-small {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.stat-value-small {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #4CAF50; /* Main Green */
+    line-height: 1.1;
+}
+
+.stat-label-small {
+    display: block;
+    font-size: 0.85rem;
+    color: #aaa;
+    margin-top: 0.25rem;
+}
+
+.leaderboard-title {
+    color: #f4f4f4;
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: left;
+    margin: 0 0 1rem 0;
+}
