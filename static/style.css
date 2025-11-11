@@ -140,10 +140,12 @@ img.logo {
 
 /* --- Homepage Hero Section --- */
 .hero {
-    background-color: #0f2463;
+    background-color: #0f2463; /* Dark Navy Blue */
     color: #fff;
     padding: 4rem 0;
     text-align: center;
+    position: relative; /* <-- ADD THIS */
+    overflow: hidden; /* <-- ADD THIS */
 }
 .hero h1 {
     font-size: 3rem;
@@ -180,7 +182,7 @@ img.logo {
     background-image: url("/static/logo.png");
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 1100px;
+    background-size: 900px;
     opacity: 0.1;
     z-index: -1;
 }
@@ -389,7 +391,7 @@ img.logo {
     background-image: url("/static/logo.png");
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 900px;
+    background-size: 1100px;
     opacity: 0.1;
     z-index: -1;
 }
@@ -1713,4 +1715,41 @@ img.logo {
     font-weight: 600;
     text-align: left;
     margin: 0 0 1rem 0;
+}
+
+/* --- NEW: Day 2 - Hero "Bubble" Stencils (Visible Version) --- */
+
+.hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    
+    /* This creates 5 bubbles with HIGHER, VISIBLE opacity */
+    background-image: 
+        /* Bubble 1 (Top-left, large, faint) */
+        radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.14) 0%, rgba(255,255,255,0.00) 60%),
+        /* Bubble 2 (Bottom-right, large, medium) */
+        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.10) 0%, rgba(255,255,255,0.00) 60%),
+        /* Bubble 3 (Top-right, small, faint) */
+        radial-gradient(circle at 80% 15%, rgba(255, 255, 255, 0.08) 0%, rgba(255,255,255,0.00) 60%),
+        /* Bubble 4 (Bottom-left, medium) */
+        radial-gradient(circle at 20% 90%, rgba(255, 255, 255, 0.12) 0%, rgba(255,255,255,0.00) 60%),
+        /* Bubble 5 (Center, small, faint) */
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06) 0%, rgba(255,255,255,0.00) 60%);
+    /* Position each bubble and control its visual size with background-size */
+    background-position: 10% 20%, 90% 80%, 80% 15%, 20% 90%, 50% 50%;
+    background-size: 30% 30%, 45% 45%, 12% 12%, 25% 25%, 8% 8%;
+    background-repeat: no-repeat;
+    
+    /* We don't need the extra opacity rule */
+}
+
+/* Make sure the text sits on top of the stencils */
+.hero .container {
+    position: relative;
+    z-index: 2;
 }
