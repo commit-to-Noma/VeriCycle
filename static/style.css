@@ -356,6 +356,11 @@ img.logo {
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     border: 1px solid #333;
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* <-- ADD THIS LINE */
+}
+.advantage-card:hover {
+    transform: translateY(-8px); /* Lifts the card up */
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5); /* Adds a bigger shadow */
 }
 .advantage-card h3 {
     margin-top: 0;

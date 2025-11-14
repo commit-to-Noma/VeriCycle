@@ -15,7 +15,7 @@
                 {% endif %}
                 
                 {% if current_user.role == 'collector' %}
-                    <a href="{{ url_for('search') }}" class="nav-button {% if active_page == 'search' %}active{% endif %}">Search</a>
+                    <a href="{{ url_for('search') }}" class="nav-button {% if active_page == 'search' %}active{% endif %}">Find Center</a>
                     <a href="{{ url_for('network') }}" class="nav-button {% if active_page == 'network' %}active{% endif %}">Network</a>
                     <a href="{{ url_for('rewards') }}" class="nav-button {% if active_page == 'rewards' %}active{% endif %}">Rewards</a>
                 {% endif %}
@@ -27,7 +27,7 @@
 
                 <a href="{{ url_for('home') }}" class="nav-button active">Home</a>
                 <a href="#" class="nav-button js-open-auth" data-form="login">Dashboard</a>
-                <a href="#" class="nav-button js-open-auth" data-form="login">Search</a>
+                <a href="#" class="nav-button js-open-auth" data-form="login">Find Center</a>
                 <a href="#" class="nav-button js-open-auth" data-form="login">Network</a>
                 <a href="#" class="nav-button js-open-auth" data-form="login">Rewards</a>
                 <a href="#" class="nav-button-primary js-open-auth" data-form="signup">Sign Up</a>
