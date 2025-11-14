@@ -1904,3 +1904,48 @@ img.logo {
     position: relative;
     z-index: 2;
 }
+
+/* --- "Need Help" FAQ Section (Collector Dashboard) --- */
+#faq-section h3 {
+    text-align: center;
+    font-size: 1.75rem;
+    margin-bottom: 0;
+}
+
+#faq-section .mockup-subtitle {
+    text-align: center;
+}
+
+.faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* This makes the 2 columns */
+    gap: 1rem 2rem;
+    margin-top: 1.5rem;
+}
+
+/* On mobile, stack to 1 column */
+@media (max-width: 600px) {
+    .faq-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.faq-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.faq-list li {
+    margin-bottom: 1rem;
+}
+
+.faq-list li a {
+    color: #2196F3; /* Blue link color */
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.faq-list li a:hover {
+    text-decoration: underline;
+}
