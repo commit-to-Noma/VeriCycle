@@ -26,6 +26,10 @@
                     <span class="tooltip" data-tooltip="EcoCoin is your digital reward token, built on the Hedera network. It's a secure, verifiable asset you earn for recycling.">ⓘ</span>
                 </h3>
                 <p class="kpi-value" id="kpi-ecocoin">--</p>
+                
+                <a href="{{ url_for('rewards') }}" class="btn-primary" style="width: 100%; box-sizing: border-box; margin-top: 1.5rem; text-align: center;">
+                    View Rewards
+                </a>
             </div>
             
             <div class="kpi-card">
@@ -85,6 +89,17 @@
             Simulate New Deposit (750 ECO)
         </button>
     </div>
+
+    <a href="{{ url_for('request_pickup') }}" class="pickup-card-link">
+        <div class="card pickup-card">
+            <div class="pickup-icon">🚚</div>
+            <div class="pickup-text">
+                <h3>Request a Pickup</h3>
+                <p>Have too much to drop off? Schedule a pickup from your location.</p>
+            </div>
+            <div class="pickup-arrow">›</div>
+        </div>
+    </a>
 
     <div class="card" id="faq-section">
         <h3>Need Help?</h3>

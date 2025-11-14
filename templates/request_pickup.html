@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Pickup - VeriCycle</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark-theme">
+    {% include '_navbar.html' %}
+
+    <main class="container app-dashboard">
+        <div class="dashboard-header">
+            <h2>Schedule a Pickup</h2>
+            <p>We'll come to you. Confirm your details below.</p>
+        </div>
+
+        <div class="card" id="pickup-card">
+            <div class="pickup-form-grid">
+
+                <div class="pickup-form">
+                    <h3>Your Pickup Details</h3>
+
+                        <div class="form-group">
+                            <label for="neighborhood">Select Your Neighborhood:</label>
+                            <select id="neighborhood">
+                                <option value="randburg">Randburg</option>
+                                <option value="soweto">Soweto</option>
+                                <option value="roodepoort">Roodepoort</option>
+                                <option value="sandton" selected>Sandton (High-Activity)</option>
+                                <option value="midrand">Midrand</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <span class="form-note">Your demo is set to <strong>Sandton</strong>.</span>
+                        </div>
+
+                    <div class="form-group">
+                        <label for="pickup-materials">Materials for Pickup:</label>
+                        <select id="pickup-materials">
+                            <option>Mixed (Paper, Plastic, Cans)</option>
+                            <option>Mainly Paper/Cardboard</option>
+                            <option>Mainly Plastic</option>
+                            <option>Mainly Cans/Metal</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pickup-weight">Estimated Weight:</label>
+                        <select id="pickup-weight">
+                            <option>Under 10 kg</option>
+                            <option>10 kg - 25 kg</option>
+                            <option>25 kg +</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pickup-cost-card">
+                    <div class="pickup-cost-header">
+                        <span class="pickup-cost-icon">🎉</span>
+                        <span class="pickup-cost-title">High-Activity Discount Unlocked!</span>
+                    </div>
+
+                    <p class="pickup-cost-desc">
+                        Because your neighborhood has a high recycling activity rate, the
+                        <strong>ZAR 25.00 pickup fee is waived.</strong> This is our reward to the community!
+                    </p>
+
+                    <div class="pickup-total-line">
+                        <span>Pickup Fee:</span>
+                        <span class="pickup-cost-strikethrough">ZAR 25.00</span>
+                    </div>
+                    <div class="pickup-total-line">
+                        <span>Neighborhood Discount:</span>
+                        <span>- ZAR 25.00</span>
+                    </div>
+
+                    <div class="pickup-total-final">
+                        <span>Total Due:</span>
+                        <span>ZAR 0.00</span>
+                    </div>
+                    
+                    <button class="btn-primary-large btn-form" id="confirm-pickup-btn">
+                        Confirm Pickup for Tomorrow
+                    </button>
+                    <p class="pickup-note">
+                        Our truck will collect between 09:00 and 14:00.
+                        (This is a pitch mockup)
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="success-card" style="display: none; text-align: center; padding: 3rem;">
+            <div class="pickup-cost-icon" style="font-size: 4rem;">✅</div>
+            
+            <h2 style="color: #4CAF50; margin-top: 1rem;">Pickup Confirmed!</h2>
+            
+            <p style="font-size: 1.1rem; color: #ccc;">
+                Your pickup for <strong>Sandton</strong> is scheduled for:
+            </p>
+            
+            <h3 style="color: #f4f4f4; font-size: 1.5rem; margin: 0.5rem 0 2.5rem 0;">
+                Tomorrow (Wed, 15 Nov) between 10:00 - 12:00
+            </h3>
+
+            <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Return to Dashboard</a>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="slots-modal">
+        <div class="card modal-content" style="max-width: 500px;">
+            <button class="modal-close js-close-modal">&times;</button>
+            
+            <h2 style="text-align: center;">Available Slots (Sandton)</h2>
+            <p style="text-align: center; color: #aaa; margin-top: -1rem;">
+                Based on your "Mixed" selection and optimizing for other pickups in your area.
+            </p>
+
+            <div class="slots-list">
+                <label class="slot-option">
+                    <input type="radio" name="slot" checked>
+                    <div class="slot-details">
+                        <span class="slot-day">Tomorrow (Wed, 15 Nov)</span>
+                        <span class="slot-time">10:00 - 12:00</span>
+                    </div>
+                </label>
+                <label class="slot-option">
+                    <input type="radio" name="slot">
+                    <div class="slot-details">
+                        <span class="slot-day">Tomorrow (Wed, 15 Nov)</span>
+                        <span class="slot-time">14:00 - 16:00</span>
+                    </div>
+                </label>
+                <label class="slot-option">
+                    <input type="radio" name="slot">
+                    <div class="slot-details">
+                        <span class="slot-day">Thursday (16 Nov)</span>
+                        <span class="slot-time">09:00 - 11:00</span>
+                    </div>
+                </label>
+            </div>
+
+            <button class="btn-primary-large btn-form" id="confirm-slot-btn">
+                Confirm 10:00 - 12:00 Slot
+            </button>
+        </div>
+    </div>
+
+    <style>
+        .pickup-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .pickup-cost-card {
+            background-color: #121212;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .pickup-cost-header {
+            text-align: center;
+        }
+        .pickup-cost-icon {
+            font-size: 3rem;
+        }
+        .pickup-cost-title {
+            display: block;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #4CAF50; /* Green */
+            margin-top: 0.5rem;
+        }
+        .pickup-cost-desc {
+            color: #ccc;
+            text-align: center;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .pickup-total-line {
+            display: flex;
+            justify-content: space-between;
+            color: #aaa;
+            font-size: 0.9rem;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .pickup-cost-strikethrough {
+            text-decoration: line-through;
+        }
+        .pickup-total-final {
+            display: flex;
+            justify-content: space-between;
+            color: #f4f4f4;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-top: 1px solid #333;
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+        .pickup-cost-card .btn-primary-large {
+            margin-top: 1.5rem;
+        }
+        .pickup-note {
+            font-size: 0.8rem;
+            color: #777;
+            text-align: center;
+            margin-top: 1rem;
+            margin-bottom: 0;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 900px) {
+            .pickup-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <style>
+        .slots-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+        }
+        .slot-option {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background-color: #333;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 2px solid #333;
+            cursor: pointer;
+        }
+        .slot-option:has(input:checked) {
+            border-color: #4CAF50;
+            background-color: #1e1e1e;
+        }
+        .slot-option input[type="radio"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            flex-shrink: 0;
+        }
+        .slot-details {
+            flex-grow: 1;
+        }
+        .slot-day {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f4f4f4;
+        }
+        .slot-time {
+            color: #aaa;
+        }
+        #slots-modal .modal-close {
+            /* This just makes the close button work */
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            color: #aaa;
+            font-size: 2rem;
+            font-weight: bold;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const pickupButton = document.getElementById('confirm-pickup-btn');
+            const slotsModal = document.getElementById('slots-modal');
+            const closeButton = slotsModal.querySelector('.js-close-modal');
+            
+            // 1. Open the modal
+            pickupButton.addEventListener('click', function(e) {
+                e.preventDefault(); // Stop the form from doing anything
+                slotsModal.style.display = 'flex';
+            });
+
+            // 2. Close the modal
+            closeButton.addEventListener('click', function() {
+                slotsModal.style.display = 'none';
+            });
+
+            // 3. (Optional) Close by clicking outside
+            slotsModal.addEventListener('click', function(e) {
+                if (e.target === slotsModal) {
+                    slotsModal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

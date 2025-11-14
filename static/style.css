@@ -1906,21 +1906,26 @@ img.logo {
 }
 
 /* --- "Need Help" FAQ Section (Collector Dashboard) --- */
+#faq-section {
+    padding: 2.5rem; /* <-- ADDED: Gives the whole box more breathing room */
+}
+
 #faq-section h3 {
     text-align: center;
     font-size: 1.75rem;
-    margin-bottom: 0;
+    margin-bottom: 0.5rem; /* <-- ADDED: Pushes subtitle down */
 }
 
 #faq-section .mockup-subtitle {
     text-align: center;
+    margin-bottom: 2.5rem; /* <-- ADDED: Pushes the list down */
 }
 
 .faq-grid {
     display: grid;
     grid-template-columns: 1fr 1fr; /* This makes the 2 columns */
     gap: 1rem 2rem;
-    margin-top: 1.5rem;
+    /* margin-top: 1.5rem;  <-- We don't need this anymore */
 }
 
 /* On mobile, stack to 1 column */
@@ -1948,4 +1953,46 @@ img.logo {
 
 .faq-list li a:hover {
     text-decoration: underline;
+}
+
+/* --- "Request Pickup" Card (Collector Dashboard) --- */
+.pickup-card-link {
+    text-decoration: none;
+    display: block;
+}
+
+.pickup-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.pickup-card-link:hover .pickup-card {
+    background-color: #333; /* Darker hover */
+    transform: translateY(-3px);
+}
+
+.pickup-icon {
+    font-size: 2.5rem;
+}
+
+.pickup-text {
+    flex-grow: 1;
+}
+
+.pickup-text h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #f4f4f4; /* White text */
+}
+
+.pickup-text p {
+    margin: 0;
+    color: #aaa;
+}
+
+.pickup-arrow {
+    font-size: 2.5rem;
+    color: #aaa;
 }

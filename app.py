@@ -240,6 +240,13 @@ def collector_dashboard():
     
     return render_template('collector.html', active_page='dashboard')
 
+
+@app.route('/request-pickup')
+@login_required 
+def request_pickup():
+    # We pass the user's address to pre-fill the form
+    return render_template('request_pickup.html', active_page='dashboard')
+
 @app.route('/center')
 @login_required 
 def center_dashboard():
