@@ -274,26 +274,43 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- 1. Get all the elements ---
             const pickupButton = document.getElementById('confirm-pickup-btn');
             const slotsModal = document.getElementById('slots-modal');
             const closeButton = slotsModal.querySelector('.js-close-modal');
             
-            // 1. Open the modal
+            // Our new elements for the success swap
+            const confirmSlotButton = document.getElementById('confirm-slot-btn');
+            const pickupCard = document.getElementById('pickup-card');
+            const successCard = document.getElementById('success-card');
+
+            // --- 2. Open the modal ---
             pickupButton.addEventListener('click', function(e) {
                 e.preventDefault(); // Stop the form from doing anything
                 slotsModal.style.display = 'flex';
             });
 
-            // 2. Close the modal
-            closeButton.addEventListener('click', function() {
+            // --- 3. Close the modal (with X or outside click) ---
+            function closeModal() {
                 slotsModal.style.display = 'none';
-            });
-
-            // 3. (Optional) Close by clicking outside
+            }
+            closeButton.addEventListener('click', closeModal);
             slotsModal.addEventListener('click', function(e) {
                 if (e.target === slotsModal) {
-                    slotsModal.style.display = 'none';
+                    closeModal();
                 }
+            });
+
+            // --- 4. NEW: The Confirmation Logic ---
+            confirmSlotButton.addEventListener('click', function() {
+                // A. Close the modal
+                closeModal();
+
+                // B. Hide the main form
+                pickupCard.style.display = 'none';
+
+                // C. Show the success card!
+                successCard.style.display = 'block';
             });
         });
     </script>

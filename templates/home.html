@@ -6,6 +6,303 @@
     <title>VeriCycle - Verified Value</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dark-theme">
+    {% include '_navbar.html' %}
+
+    <main class="hero">
+        <div class="container">
+            <h2>VeriCycle</h2>
+            <h1>Verified Value.</h1>
+            <p class="subtitle">Replacing an untrustworthy cash system with a verifiable ledger that protects both the collector and the center.</p>
+            <a href="#our-mission" class="btn-secondary">Learn About Our Mission</a>
+            <div class="floating-fixed-icons" aria-hidden="true">
+                <div id="icon-final-trash" class="fixed-icon icon-bin" aria-hidden="true">
+                    <svg class="fixed-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M3 6h18v2H3V6zm2 3h14l-1 11H6L5 9zm3-6h6v2H8V3z" fill="currentColor" />
+                    </svg>
+                </div>
+                <div id="icon-final-check" class="fixed-icon icon-check" aria-hidden="true">
+                    <svg class="fixed-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="32" cy="32" r="30" fill="currentColor" />
+                        <path d="M20 34l8 8 18-22" fill="none" stroke="#0f2463" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section class="cta-section">
+        <div class="container">
+            <h2>Join the VeriCycle Network</h2>
+            <p class="cta-subtitle">Become a 'Green Member' today. Turn your recycling efforts into verifiable, secure, and valuable rewards.</p>
+            <div class="advantages">
+                <div class="advantage-card">
+                    <h3>✅ Get Paid Safely.</h3>
+                    <p>Stop worrying about carrying cash. Your digital EcoCoin wallet is secure.</p>
+                </div>
+                <div class="advantage-card">
+                    <h3>🤝 Get Paid Fairly.</h3>
+                    <p>Get a permanent, verifiable receipt for every drop-off. No more disputes.</p>
+                </div>
+                <div class="advantage-card">
+                    <h3>📈 Build Your Future.</h3>
+                    <p>Build a real, digital income history that can help you get bank loans.</p>
+                </div>
+                <div class="advantage-card">
+                    <h3>💰 Earn More Than Cash.</h3>
+                    <p>Unlock "Bulk Bonuses" and other incentives only available to our 'Green Members'.</p>
+                </div>
+            </div>
+            {% if not current_user.is_authenticated %}
+                <div class="cta-buttons">
+                    <a href="#" class="btn-primary-large js-open-auth" data-form="signup">Create Your Account</a>
+                    <p>Already have an account? <a href="#" class="link-secondary js-open-auth" data-form="login">Log In here</a></p>
+                </div>
+            {% else %}
+                <div class="cta-buttons">
+                    <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to My Dashboard</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="how-it-works-section">
+        <div class="container">
+            <h2>How VeriCycle Works</h2>
+            <p class="activity-subtitle">Our simple 4-step process turns your recycling into a verifiable reward.</p>
+            <div class="how-it-works-grid">
+                <div class="step-card">
+                    <span class="step-number">1</span>
+                    <span class="step-icon">📝</span>
+                    <h3>Create Your Account</h3>
+                    <p>Sign up as a Collector to instantly create your secure, private Hedera wallet.</p>
+                </div>
+                <div class="step-card">
+                    <span class="step-number">2</span>
+                    <span class="step-icon">♻️</span>
+                    <h3>Drop Off &amp; Scan</h3>
+                    <p>Visit any Verified Center in our network and show them your unique QR code to be scanned.</p>
+                </div>
+                <div class="step-card">
+                    <span class="step-number">3</span>
+                    <span class="step-icon">💰</span>
+                    <h3>Get Paid Instantly</h3>
+                    <p>The center verifies your drop-off, and EcoCoin is sent directly to your wallet in seconds.</p>
+                </div>
+                <div class="step-card">
+                    <span class="step-number">4</span>
+                    <span class="step-icon">🏦</span>
+                    <h3>Redeem for Cash</h3>
+                    <p>Use the "Rewards" page to redeem your EcoCoin for real ZAR, sent directly to your bank.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="activity-feed-section">
+        <div class="container">
+            <div class="live-grid">
+                <div class="leaderboard-column">
+                    <h2>Platform Stats</h2>
+                    <p class="activity-subtitle">Join a growing, data-driven community.</p>
+                    <div class="stats-grid-small">
+                        <div class="stat-card-small">
+                            <span class="stat-value-small">500+</span>
+                            <span class="stat-label-small">Active Collectors</span>
+                        </div>
+                        <div class="stat-card-small">
+                            <span class="stat-value-small">3</span>
+                            <span class="stat-label-small">Verified Partners</span>
+                        </div>
+                        <div class="stat-card-small">
+                            <span class="stat-value-small">50,000+</span>
+                            <span class="stat-label-small">Total KGs Recycled</span>
+                        </div>
+                    </div>
+                    <h3 class="leaderboard-title">Top Neighborhoods</h3>
+                    <div class="leaderboard-chart">
+                        <canvas id="neighborhoodBarChart"></canvas>
+                    </div>
+                    <p class="leaderboard-note">🏆 A huge congrats to <strong>Sandton</strong> for recycling <strong>12.4k kg</strong> and leading the charge!</p>
+                </div>
+                <div class="live-feed-column">
+                    <h2>Live Community Activity</h2>
+                    <p class="activity-subtitle">See the latest verified drop-offs from Green Members.</p>
+                    <div class="activity-feed-container">
+                        <div class="activity-feed" id="activity-feed"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="mission-section" id="our-mission">
+        <div class="container">
+            <h2>Our Mission & Impact</h2>
+            <p class="activity-subtitle">VeriCycle is more than an app. It's a new economy for recycling.</p>
+            <div class="advantages" style="grid-template-columns: 1fr; row-gap: 1.5rem;">
+                <div class="advantage-card">
+                    <h3>❓ The Problem We're Solving</h3>
+                    <p>
+                        South Africa's recycling system depends on over 90,000 informal waste pickers. These collectors face <strong>social stigmatization, severe health risks</strong> from handling waste, and <strong>economic exploitation</strong> from cash-based middlemen. They have no way to build a formal financial history, trapping them in a high-risk, low-reward cycle.
+                    </p>
+                </div>
+                <div class="advantage-card">
+                    <h3>✅ The VeriCycle Solution</h3>
+                    <p>
+                        VeriCycle replaces this broken cash system with <strong>EcoCoin</strong>, a secure digital token on the Hedera network. We empower collectors by giving them a digital wallet, guaranteeing fair payment, and creating a <strong>permanent, verifiable record</strong> for every drop-off. This ensures transparency and builds trust for both the collector and the center.
+                    </p>
+                </div>
+                <div class="advantage-card">
+                    <h3>📈 The Real-World Impact</h3>
+                    <p>
+                        We are building a <strong>"Proof of Income"</strong> report for informal collectors, breaking the cycle of financial exclusion. But the VeriCycle model is universal: it rewards <strong>everyone</strong> for doing the right thing—from households who already recycle to new users we encourage to start. VeriCycle is uniquely able to deliver this because our verifiable, on-chain system creates a layer of trust that simple "points" apps cannot match. We are launching first in <strong>South Africa</strong>, with a clear vision to scale this powerful, transparent model globally.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- POP-UP (MODAL) -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="card modal-content">
+            <button class="modal-close js-close-auth">&times;</button>
+            <div id="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <div id="signup-form">
+                <h2>Create Your Account</h2>
+                <form action="{{ url_for('signup') }}" method="POST" class="verify-form">
+                    <div class="form-group">
+                        <label>Register as:</label>
+                        <div class="role-selector">
+                            <button type="button" class="role-btn active" data-role="collector">Collector</button>
+                            <button type="button" class="role-btn" data-role="center">Center</button>
+                        </div>
+                        <input type="hidden" id="role-input" name="role" value="collector">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email">Email:</label>
+                        <input type="email" id="signup-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password:</label>
+                        <input type="password" id="signup-password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-primary-large btn-form">Create Account</button>
+                </form>
+                <p>Already have an account? <a href="#" class="link-secondary js-toggle-auth">Log In</a></p>
+            </div>
+            <div id="login-form" style="display: none;">
+                <h2>Welcome Back</h2>
+                <form action="{{ url_for('login') }}" method="POST" class="verify-form">
+                    <div class="form-group">
+                        <label for="login-email">Email:</label>
+                        <input type="email" id="login-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password:</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-primary-large btn-form">Log In</button>
+                </form>
+                <p>Don't have an account? <a href="#" class="link-secondary js-toggle-auth">Sign Up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('auth-modal');
+        const allOpenButtons = document.querySelectorAll('.js-open-auth');
+        const allCloseButtons = document.querySelectorAll('.js-close-auth');
+        const allToggleLinks = document.querySelectorAll('.js-toggle-auth');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const flashContainer = document.getElementById('flash-container');
+
+        const openModal = function(e) { e.preventDefault(); const targetForm = this.dataset.form; if (targetForm === 'login') { loginForm.style.display = 'block'; signupForm.style.display = 'none'; } else { loginForm.style.display = 'none'; signupForm.style.display = 'block'; } modal.style.display = 'flex'; };
+        const closeModal = function(e) { e.preventDefault(); modal.style.display = 'none'; flashContainer.innerHTML = ''; };
+        const toggleForms = function(e) { e.preventDefault(); if (loginForm.style.display === 'none') { loginForm.style.display = 'block'; signupForm.style.display = 'none'; } else { loginForm.style.display = 'none'; signupForm.style.display = 'block'; } };
+
+        allOpenButtons.forEach(btn => btn.addEventListener('click', openModal));
+        allCloseButtons.forEach(btn => btn.addEventListener('click', closeModal));
+        allToggleLinks.forEach(link => link.addEventListener('click', toggleForms));
+
+        const roleButtons = document.querySelectorAll('.role-btn');
+        const roleInput = document.getElementById('role-input');
+        roleButtons.forEach(button => { button.addEventListener('click', function() { roleButtons.forEach(btn => btn.classList.remove('active')); this.classList.add('active'); if (roleInput) roleInput.value = this.dataset.role; }); });
+
+        const errorMessages = flashContainer ? flashContainer.querySelectorAll('.flash-message.error') : [];
+        if (errorMessages && errorMessages.length > 0) {
+            modal.style.display = 'flex';
+            const errorMsg = errorMessages[0].textContent || '';
+            if (errorMsg.includes('Login') || errorMsg.includes('log in') || errorMsg.includes('must be logged in')) { loginForm.style.display = 'block'; signupForm.style.display = 'none'; } else { loginForm.style.display = 'none'; signupForm.style.display = 'block'; }
+        }
+        if (window.location.hash === '#signup') { modal.style.display = 'flex'; loginForm.style.display = 'none'; signupForm.style.display = 'block'; }
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const feedElement = document.getElementById('activity-feed');
+            const fakeData = [
+                { icon: '♻️', text: '<strong>1.5kg</strong> of Cans verified at <strong>Pikitup Marlboro</strong>' },
+                { icon: '♻️', text: '<strong>2.1kg</strong> of Paper verified at <strong>Mpact Randburg</strong>' },
+                { icon: '♻️', text: '<strong>0.8kg</strong> of Glass verified at <strong>Roodepoort Recycling</strong>' },
+                { icon: '♻️', text: '<strong>3.0kg</strong> of Cardboard verified at <strong>Mpact Germiston</strong>' },
+                { icon: '♻️', text: '<strong>1.2kg</strong> of PET Bottles verified at <strong>FMSA Waltloo</strong>' },
+            ];
+            const allData = [...fakeData, ...fakeData];
+            allData.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'activity-item';
+                itemElement.innerHTML = `\n                        <span class="activity-icon">${item.icon}</span>\n                        <span class="activity-text">${item.text}</span>\n                    `;
+                feedElement.appendChild(itemElement);
+            });
+            const itemHeight = 61;
+            const totalScrollHeight = fakeData.length * itemHeight;
+            try { document.styleSheets[0].insertRule(`@keyframes scroll-up { 0% { transform: translateY(0); } 100% { transform: translateY(-${totalScrollHeight}px); } }`, document.styleSheets[0].cssRules.length); } catch (e) {}
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('neighborhoodBarChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            var gradient = ctx.createLinearGradient(0, 0, 0, 250);
+            gradient.addColorStop(0, 'rgba(76, 175, 80, 0.8)');
+            gradient.addColorStop(1, 'rgba(76, 175, 80, 0.2)');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sandton', 'Randburg', 'Soweto', 'Roodepoort'],
+                    datasets: [{ label: 'Total KGs Recycled', data: [12400, 9800, 7200, 5500], backgroundColor: gradient, borderColor: '#4CAF50', borderWidth: 2, borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) label += context.parsed.y.toLocaleString() + ' kg'; return label; } } } }, scales: { y: { beginAtZero: true, ticks: { color: '#aaa', callback: function(value){ return value/1000 + 'k kg'; } }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, x: { ticks: { color: '#f4f4f4' }, grid: { display: false } } } }
+            });
+        });
+    </script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeriCycle - Verified Value</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 <body class="dark-theme">
     {% include '_navbar.html' %}
@@ -60,129 +357,116 @@
                 </div>
                 <div class="advantage-card">
                     <h3>📈 Build Your Future.</h3>
-                    <p>Build a real, digital income history that can help you get bank loans.</p>
-                </div>
-                <div class="advantage-card">
-                    <h3>💰 Earn More Than Cash.</h3>
-                    <p>Unlock "Bulk Bonuses" and other incentives only available to our 'Green Members'.</p>
-                </div>
-            </div>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const ctx = document.getElementById('neighborhoodBarChart').getContext('2d');
+        
+                            // Create a faint gradient for the bars
+                            var gradient = ctx.createLinearGradient(0, 0, 0, 250);
+                            gradient.addColorStop(0, 'rgba(76, 175, 80, 0.8)');   /* Green at top */
+                            gradient.addColorStop(1, 'rgba(76, 175, 80, 0.2)'); /* Fading to transparent */
 
-            {% if not current_user.is_authenticated %}
-                <div class="cta-buttons">
-                    <a href="#" class="btn-primary-large js-open-auth" data-form="signup">Create Your Account</a>
-                    <p>
-                        Already have an account? 
-                        <a href="#" class="link-secondary js-open-auth" data-form="login">Log In here</a>
-                    </p>
-                </div>
-            
-            {% else %}
-                <div class="cta-buttons">
-                    <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to My Dashboard</a>
-                </div>
-            {% endif %}
-        </div>
-    </section> <section class="how-it-works-section">
-        <div class="container">
-            <h2>How VeriCycle Works</h2>
-            <p class="activity-subtitle">Our simple 4-step process turns your recycling into a verifiable reward.</p>
+                            new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: ['Sandton', 'Randburg', 'Soweto', 'Roodepoort'],
+                                    datasets: [{
+                                        label: 'Total KGs Recycled',
+                                        data: [12400, 9800, 7200, 5500], /* Your realistic stats */
+                                        backgroundColor: gradient,
+                                        borderColor: '#4CAF50',
+                                        borderWidth: 2,
+                                        borderRadius: 6
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false /* No legend, it's obvious */
+                                        },
+                                        tooltip: {
+                                            /* This is what you wanted on hover */
+                                            callbacks: {
+                                                label: function(context) {
+                                                    let label = context.dataset.label || '';
+                                                    if (label) {
+                                                        label += ': ';
+                                                    }
+                                                    if (context.parsed.y !== null) {
+                                                        /* Add the 'kg' suffix */
+                                                        label += context.parsed.y.toLocaleString() + ' kg';
+                                                    }
+                                                    return label;
+                                                }
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                color: '#aaa',
+                                                /* Add 'kg' to the Y-axis */
+                                                callback: function(value, index, values) {
+                                                    return value / 1000 + 'k kg';
+                                                }
+                                            },
+                                            grid: {
+                                                color: 'rgba(255, 255, 255, 0.1)'
+                                            }
+                                        },
+                                        x: {
+                                            ticks: {
+                                                color: '#f4f4f4' /* White labels for X-axis */
+                                            },
+                                            grid: {
+                                                display: false
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        });
+                        </script>
+                    </body>
+                    </html>
 
-            <div class="how-it-works-grid">
-                
-                <div class="step-card">
-                    <span class="step-number">1</span>
-                    <span class="step-icon">📝</span>
-                    <h3>Create Your Account</h3>
-                    <p>Sign up as a Collector to instantly create your secure, private Hedera wallet.</p>
-                </div>
+                            <div class="advantage-card">
+                                <h3>❓ The Problem We're Solving</h3>
+                                <p>
+                                    South Africa's recycling system depends on over 90,000 informal waste pickers. These collectors face <strong>social stigmatization, severe health risks</strong> from handling waste, and <strong>economic exploitation</strong> from cash-based middlemen. They have no way to build a formal financial history, trapping them in a high-risk, low-reward cycle.
+                                </p>
+                            </div>
 
-                <div class="step-card">
-                    <span class="step-number">2</span>
-                    <span class="step-icon">♻️</span>
-                    <h3>Drop Off &amp; Scan</h3>
-                    <p>Visit any Verified Center in our network and show them your unique QR code to be scanned.</p>
-                </div>
-
-                <div class="step-card">
-                    <span class="step-number">3</span>
-                    <span class="step-icon">💰</span>
-                    <h3>Get Paid Instantly</h3>
-                    <p>The center verifies your drop-off, and EcoCoin is sent directly to your wallet in seconds.</p>
-                </div>
-
-                <div class="step-card">
-                    <span class="step-number">4</span>
-                    <span class="step-icon">🏦</span>
-                    <h3>Redeem for Cash</h3>
-                    <p>Use the "Rewards" page to redeem your EcoCoin for real ZAR, sent directly to your bank.</p>
-                </div>
-
-            </div>
-        </div>
-    </section>
-    <section class="activity-feed-section">
-        <div class="container">
-            <div class="live-grid">
-
-                <div class="leaderboard-column">
-                    <h2>Platform Stats</h2>
-                    <p class="activity-subtitle">Join a growing, data-driven community.</p>
-
-                    <div class="stats-grid-small">
-                        <div class="stat-card-small">
-                            <span class="stat-value-small">500+</span>
-                            <span class="stat-label-small">Active Collectors</span>
-                        </div>
-                        <div class="stat-card-small">
-                            <span class="stat-value-small">3</span>
-                            <span class="stat-label-small">Verified Partners</span>
-                        </div>
-                        <div class="stat-card-small">
-                            <span class="stat-value-small">50,000+</span>
-                            <span class="stat-label-small">Total KGs Recycled</span>
-                        </div>
                     </div>
                     <h3 class="leaderboard-title">Top Neighborhoods</h3>
                     <div class="leaderboard-chart">
-                        <div class="column-chart-container">
-                            <div class="chart-column-item">
-                                <div class="chart-bar-viz" style="height: 92%;"></div>
-                                <span class="chart-bar-label">Sandton</span>
-                            </div>
-                            <div class="chart-column-item">
-                                <div class="chart-bar-viz" style="height: 81%;"></div>
-                                <span class="chart-bar-label">Randburg</span>
-                            </div>
-                            <div class="chart-column-item">
-                                <div class="chart-bar-viz" style="height: 65%;"></div>
-                                <span class="chart-bar-label">Soweto</span>
-                            </div>
-                            <div class="chart-column-item">
-                                <div class="chart-bar-viz" style="height: 50%;"></div>
-                                <span class="chart-bar-label">Roodepoort</span>
-                            </div>
-                        </div>
+                        <canvas id="neighborhoodBarChart"></canvas>
                     </div>
                     <p class="leaderboard-note">
-                        🏆 A huge congrats to <strong>Sandton</strong> for recycling <strong>12.4k kg</strong> and leading the charge!
-                    </p>
-                </div>
 
-                <div class="live-feed-column">
-                    <h2>Live Community Activity</h2>
+                            <div class="advantage-card">
+                                <h3>✅ The VeriCycle Solution</h3>
+                                <p>
+                                    VeriCycle replaces this broken cash system with <strong>EcoCoin</strong>, a secure digital token on the Hedera network. We empower collectors by giving them a digital wallet, guaranteeing fair payment, and creating a <strong>permanent, verifiable record</strong> for every drop-off. This ensures transparency and builds trust for both the collector and the center.
+                                </p>
+                            </div>
+
                     <p class="activity-subtitle">See the latest verified drop-offs from Green Members.</p>
                     
                     <div class="activity-feed-container">
                         <div class="activity-feed" id="activity-feed">
                             </div>
                     </div>
-                </div>
 
-            </div> </div>
-    </section>
-
-    <section class="mission-section" id="our-mission">
+                            <div class="advantage-card">
+                                <h3>📈 The Real-World Impact</h3>
+                                <p>
+                                    We are building a <strong>"Proof of Income"</strong> report for informal collectors, breaking the cycle of financial exclusion. But the VeriCycle model is universal: it rewards <strong>everyone</strong> for doing the right thing—from households who already recycle to new users we encourage to start. VeriCycle is uniquely able to deliver this because our verifiable, on-chain system creates a layer of trust that simple "points" apps cannot match. We are launching first in <strong>South Africa</strong>, with a clear vision to scale this powerful, transparent model globally.
+                                </p>
+                            </div>
         <div class="container">
             <h2>Our Mission & Impact</h2>
             <p class="activity-subtitle">VeriCycle is more than an app. It's a new economy for recycling.</p>
@@ -192,21 +476,21 @@
                 <div class="advantage-card">
                     <h3>❓ The Problem We're Solving</h3>
                     <p>
-                        South Africa's informal recycling sector is vital, but it's built on an untrustworthy, cash-based system. Collectors often get unfair prices, have no way to prove their income, and risk carrying cash. This traps people in a high-risk, low-reward cycle.
+                        South Africa's recycling system depends on over 90,000 informal waste pickers. These collectors face **social stigmatization, severe health risks** from handling waste, and **economic exploitation** from cash-based middlemen. They have no way to build a formal financial history, trapping them in a high-risk, low-reward cycle.
                     </p>
                 </div>
 
                 <div class="advantage-card">
                     <h3>✅ The VeriCycle Solution</h3>
                     <p>
-                        VeriCycle replaces cash with <strong>EcoCoin</strong>, a secure digital token. For every drop-off, a permanent, verifiable record is created on the Hedera network. This guarantees fair pay for collectors and gives centers a transparent, auditable log of their inventory.
+                        VeriCycle replaces this broken cash system with <strong>EcoCoin</strong>, a secure digital token on the Hedera network. We empower collectors by giving them a digital wallet, guaranteeing fair payment, and creating a **permanent, verifiable record** for every drop-off. This ensures transparency and builds trust for both the collector and the center.
                     </p>
                 </div>
 
                 <div class="advantage-card">
                     <h3>📈 The Real-World Impact</h3>
                     <p>
-                        We empower collectors by building a "Proof of Income" report for bank loans. Our 'Green Member' bonuses pay <em>more</em> than cash, boosting the local economy and creating a powerful incentive to keep Joburg clean.
+                        We are building a "Proof of Income" report that collectors can use for bank loans, breaking the cycle of financial exclusion. We are launching first in **South Africa** to refine this model, with a clear vision to **scale this solution globally**, empowering informal economies everywhere.
                     </p>
                 </div>
 

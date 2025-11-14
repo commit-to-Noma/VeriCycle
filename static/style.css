@@ -1996,3 +1996,17 @@ img.logo {
     font-size: 2.5rem;
     color: #aaa;
 }
+
+/* Neighborhood bonus text shown under the Neighborhood Goal chart */
+.neighborhood-bonus-text {
+    margin-top: 1.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #333;
+    font-size: 0.95rem;
+    color: #aaa;
+    line-height: 1.5;
+}
+.neighborhood-bonus-text strong {
+    color: #4CAF50;
+    font-weight: 600;
+}
