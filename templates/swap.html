@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redeem EcoCoin - VeriCycle</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark-theme">
+    {% include '_navbar.html' %}
+
+    <main class="container app-dashboard">
+        <div class="dashboard-header">
+            <h2>Redeem Your EcoCoin</h2>
+            <p>This is the 2-step process to cash out your rewards.</p>
+        </div>
+
+        <div class="rewards-grid">
+            <div class="card">
+                <h3>Step 1: Swap EcoCoin (Web3)</h3>
+                <p class="mockup-subtitle">Use a Hedera DEX (like SaucerSwap) to get HBAR or USDC.</p>
+                
+                <div class="swap-mockup">
+                    <div class="swap-box">
+                        <label>You Pay</label>
+                        <input type="text" value="750.00" disabled>
+                        <span class="swap-token">ECO</span>
+                    </div>
+                    
+                    <div class="swap-arrow">⬇️</div>
+                    
+                    <div class="swap-box">
+                        <label>You Receive</label>
+                        <input type="text" value="15.20" disabled>
+                        <span class="swap-token">HBAR</span>
+                    </div>
+                    
+                    <button class="btn-primary-large btn-form" disabled>
+                        Swap (Mockup)
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Step 2: Cash Out to Bank (ZAR)</h3>
+                <p class="mockup-subtitle">Use a local exchange (like Luno/VALR) to get ZAR.</p>
+
+                <div class="swap-mockup">
+                    <div class="swap-box">
+                        <label>You Sell</label>
+                        <input type="text" value="15.20" disabled>
+                        <span class="swap-token">HBAR</span>
+                    </div>
+                    
+                    <div class="swap-arrow">⬇️</div>
+                    
+                    <div class="swap-box">
+                        <label>You Receive (in your bank)</label>
+                        <input type="text" value="ZAR 25.50" disabled>
+                        <span class="swap-token">ZAR</span>
+                    </div>
+                    
+                    <button class="btn-primary-large btn-form" disabled>
+                        Withdraw to Bank (Mockup)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .swap-mockup {
+            background-color: #121212;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .swap-box {
+            position: relative;
+            background-color: #333;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .swap-box label {
+            display: block;
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 0.25rem;
+        }
+        .swap-box input {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.75rem;
+            font-weight: 600;
+            padding: 0;
+            width: 70%;
+        }
+        .swap-token {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+        .swap-arrow {
+            text-align: center;
+            font-size: 2rem;
+            margin: 1rem 0;
+        }
+        .swap-mockup .btn-primary-large {
+            margin-top: 1.5rem;
+            background-color: #555;
+            cursor: not-allowed;
+        }
+    </style>
+</body>
+</html>

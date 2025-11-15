@@ -262,10 +262,10 @@ def search():
 def network():
     return render_template('network.html', active_page='network')
 
-@app.route('/rewards')
+@app.route('/swap')
 @login_required 
-def rewards():
-    return render_template('rewards.html', active_page='rewards')
+def swap():
+    return render_template('swap.html', active_page='swap')
 
 # -----------------------------------------------------------------
 # 7. APP "ENGINE" ROUTES (API & ACTIONS)

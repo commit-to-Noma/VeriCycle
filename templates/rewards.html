@@ -18,36 +18,36 @@
 
         <div class="rewards-grid">
 
-            <div class="card" id="bank-mockup">
-                <h3>EcoCoin-to-Rand Bridge</h3>
-                <p class="mockup-subtitle">Redeem your EcoCoin directly to your bank account. (Pitch Mockup)</p>
-                
-                <div class="bank-app">
-                    <div class="bank-header">
-                        <span class="bank-logo">Standard Bank</span>
-                        <span class="bank-time">11:45</span>
-                    </div>
-                    <div class="bank-body">
-                        <h4>Redeem from VeriCycle</h4>
+            <div class="card" id="hashpack-redeem">
+    <div style="text-align: center; margin-bottom: 1rem;">
+        
+    </div>
+    
+    <h3>How to Redeem EcoCoin for ZAR</h3>
+    <p class="mockup-subtitle">Use any Hedera wallet (like HashPack) to swap your tokens.</p>
 
-                        <div class="bank-account">
-                            <span class="bank-label">From Wallet (Your Current Balance)</span>
-                            <span class="bank-value" id="wallet-balance">-- ECO</span>
-                        </div>
-                        <div class="bank-account">
-                            <span class="bank-label">To Account (Cheque)</span>
-                            <span class="bank-value">... 1337</span>
-                        </div>
-
-                        <div class="bank-conversion">
-                            <span class="bank-label">Redemption Amount: 500.00 ECO</span>
-                            <span class="bank-total">ZAR 10.00</span>
-                        </div>
-
-                        <button class="bank-button" id="bank-button-redeem">Confirm Redemption (500 ECO)</button>
-                    </div>
-                </div>
-            </div>
+    <div class="instructions">
+        <ol>
+            <li>
+                <strong>Import Your Wallet:</strong> Go to your profile page and get your private key. Import this account into HashPack.
+            </li>
+            <li>
+                <strong>Associate Token:</strong> Add the EcoCoin Token (ID: 0.0.XXXX) to your wallet.
+            </li>
+            <li>
+                <strong>Swap on a DEX:</strong> Use a Hedera DEX (like SaucerSwap) to trade your **EcoCoin** for **HBAR** or **USDC**.
+            </li>
+            <li>
+                <strong>Cash Out:</strong> From there, you can send your HBAR or USDC to a local exchange (like Luno or VALR) to withdraw it as ZAR to your bank.
+            </li>
+        </ol>
+    </div>
+    
+    <p class="bonus-note" style="margin-top: 1rem;">
+        <strong>Future Plan:</strong> Our next step is to partner with a bank to build a
+        direct **EcoCoin -> ZAR** API, making this process instant.
+    </p>
+</div>
 
             <div class="card" id="bonus-mockup">
                 <h3>Green Member Bonus</h3>
@@ -109,69 +109,6 @@
             </div>
         </div>
     </main>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        // --- 1. GET ALL THE ELEMENTS ---
-        const redeemButton = document.getElementById('bank-button-redeem');
-        const walletBalanceSpan = document.getElementById('wallet-balance');
-        let currentData = null;
-
-        // --- 2. LOAD YOUR *REAL* BALANCE INTO THE MOCKUP ---
-        let storedData = localStorage.getItem('userBalance');
-        if (storedData) {
-            try {
-                currentData = JSON.parse(storedData);
-                // Update the "From Wallet" to show your actual, current balance
-                if (typeof currentData.total_eco === 'number') {
-                    walletBalanceSpan.textContent = `ECO ${currentData.total_eco.toFixed(2)}`;
-                } else {
-                    walletBalanceSpan.textContent = "ECO --";
-                }
-            } catch (err) {
-                console.error('Invalid userBalance in localStorage', err);
-                walletBalanceSpan.textContent = "ECO -- (Visit Dashboard first)";
-            }
-        } else {
-            walletBalanceSpan.textContent = "ECO -- (Visit Dashboard first)";
-            if (redeemButton) {
-                redeemButton.disabled = true; // Disable button if no balance
-                redeemButton.textContent = "Please visit Dashboard first";
-            }
-        }
-
-        // --- 3. ADD THE NEW CLICK LOGIC ---
-        if (redeemButton) {
-            redeemButton.addEventListener('click', function(e) {
-                e.preventDefault();
-
-                if (!currentData) {
-                    alert("Error: No balance data found. Please visit your dashboard.");
-                    return;
-                }
-
-                const redeemAmount = 500; // Demo amount from PDF (updated)
-
-                if (currentData.total_eco < redeemAmount) {
-                    alert("You do not have enough EcoCoin to make this redemption.");
-                    return;
-                }
-
-                // 1. Subtract the amount
-                currentData.total_eco = currentData.total_eco - redeemAmount;
-
-                // 2. Save the new, lower balance back to storage
-                localStorage.setItem('userBalance', JSON.stringify(currentData));
-
-                // 3. SHOW YOUR NEW SUCCESS MESSAGE!
-                // Show a friendly transient message before redirecting
-                alert("Redemption Successful!\n\nWe have requested your bank to deposit ZAR 10.00. This transaction will be completed within 24 hours. You will now be taken to your dashboard.");
-
-                // 4. Redirect to the dashboard
-                window.location.href = '/collector';
-            });
-        }
-    });
-    </script>
+    
 </body>
 </html>
