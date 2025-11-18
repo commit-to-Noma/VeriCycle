@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 load_dotenv() 
 
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash, jsonify
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
@@ -49,6 +50,10 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 
+# Ensure tables exist (creates Activity table for persistence)
+with app.app_context():
+    db.create_all()
+
 login_manager.login_view = 'home'
 login_manager.login_message = None
 login_manager.login_message_category = None
@@ -68,6 +73,16 @@ class User(db.Model, UserMixin):
     address = db.Column(db.String(200), nullable=True)
     id_number = db.Column(db.String(30), nullable=True)
     role = db.Column(db.String(20), nullable=False, default='collector')
+
+
+class Activity(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    timestamp = db.Column(db.String(64), nullable=False)
+    desc = db.Column(db.String(512), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+
+    user = db.relationship('User', backref=db.backref('activities', lazy=True))
 
 # -----------------------------------------------------------------
 # 4. HELPER FUNCTION FOR FLASK-LOGIN
@@ -132,13 +147,38 @@ def signup():
             login_user(new_user)
             return redirect(url_for('profile')) # COLLECTORS go to profile
 
-        # --- Logic for Centers ---
+        # --- Logic for Centers (NOW CREATES AN ACCOUNT) ---
         else: # role == 'center'
-            print("--- SKIPPING HEDERA: Registering a verified Center account. ---")
+            print("--- CALLING HEDERA ENGINE: Creating new Center account... ---")
+            operator_id = os.getenv("OPERATOR_ID")
+            operator_key = os.getenv("OPERATOR_KEY")
+            if not operator_id or not operator_key:
+                raise Exception("Missing environment variables. Please check your .env file.")
+
+            # Run the same script to get keys for the Center
+            result = subprocess.run(
+                ["node", "collector-account.js", operator_id, operator_key],
+                check=True, capture_output=True, text=True, timeout=15
+            )
+            
+            output = result.stdout
+            print("--- JS SCRIPT STDOUT: ---"); print(output)
+
+            new_id_match = re.search(r"(0.0\.\d+)", output)
+            new_key_match = re.search(r"(30[0-9a-fA-F]{60,})", output)
+
+            if not new_id_match or not new_key_match:
+                raise Exception("Script output was invalid. Could not find ID or Key in stdout.")
+
+            new_id = new_id_match.group(1)
+            new_key = new_key_match.group(1)
+            print(f"--- SUCCESS: Created Hedera Account {new_id} for Center ---")
+
             hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
             new_user = User(
-                email=email, password_hash=hashed_password, role=role,
-                full_name=f"{email.split('@')[0]} Center", 
+                email=email, password_hash=hashed_password, 
+                hedera_account_id=new_id, hedera_private_key=new_key, role=role,
+                full_name=f"{email.split('@')[0]} Center",
                 phone_number="011 123 4567",
                 id_number="VERIFIED-CENTER-001",
                 address="123 Industrial Rd, Johannesburg"
@@ -250,6 +290,13 @@ def request_pickup():
 @app.route('/center')
 @login_required 
 def center_dashboard():
+    # --- THIS IS THE FIX ---
+    # We must check that the user is a 'center'
+    if current_user.role != 'center':
+        flash('You do not have permission to access this page.', 'error')
+        return redirect(url_for('collector_dashboard'))
+    # --- END OF FIX ---
+    
     return render_template('center.html', active_page='dashboard')
 
 @app.route('/search')
@@ -288,6 +335,58 @@ def generate_qr():
     img_io.seek(0)
     return send_file(img_io, mimetype='image/png')
 
+
+@app.route('/api/activity', methods=['POST'])
+@login_required
+def add_activity():
+    try:
+        payload = request.get_json() or {}
+        ts = payload.get('timestamp') or (payload.get('time') or '')
+        desc = payload.get('desc') or payload.get('description') or 'Activity'
+        amount = float(payload.get('amount') or 0)
+
+        # Simple duplicate guard: check for existing activity with same timestamp and desc
+        existing = Activity.query.filter_by(user_id=current_user.id, timestamp=ts, desc=desc).first()
+        if existing:
+            return jsonify({'success': True, 'message': 'Already exists', 'activity': {'timestamp': existing.timestamp, 'desc': existing.desc, 'amount': existing.amount}})
+
+        act = Activity(user_id=current_user.id, timestamp=ts or datetime.utcnow().isoformat(), desc=desc, amount=amount)
+        db.session.add(act)
+        db.session.commit()
+        return jsonify({'success': True, 'activity': {'timestamp': act.timestamp, 'desc': act.desc, 'amount': act.amount}})
+    except Exception as e:
+        print('Error in add_activity:', e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/activities/bulk', methods=['POST'])
+@login_required
+def bulk_activities():
+    try:
+        payload = request.get_json() or {}
+        items = payload.get('activities') or []
+        added = 0
+        for a in items:
+            ts = a.get('timestamp') or datetime.utcnow().isoformat()
+            desc = a.get('desc') or a.get('description') or 'Activity'
+            amount = float(a.get('amount') or 0)
+            # avoid duplicates
+            if Activity.query.filter_by(user_id=current_user.id, timestamp=ts, desc=desc).first():
+                continue
+            act = Activity(user_id=current_user.id, timestamp=ts, desc=desc, amount=amount)
+            db.session.add(act)
+            added += 1
+        if added > 0:
+            db.session.commit()
+
+        # Return the canonical activity list
+        acts = Activity.query.filter_by(user_id=current_user.id).order_by(Activity.id.desc()).limit(500).all()
+        result = [{'timestamp': x.timestamp, 'desc': x.desc, 'amount': x.amount} for x in acts]
+        return jsonify({'success': True, 'added': added, 'activities': result})
+    except Exception as e:
+        print('Error in bulk_activities:', e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/confirm-dropoff', methods=['POST'])
 @login_required 
 def confirm_dropoff():
@@ -310,15 +409,54 @@ def confirm_dropoff():
 @app.route('/api/my-dashboard-data')
 @login_required
 def get_dashboard_data():
-    # New users start at 0
-    data = {
-        "total_kg": 0.0,
-        "total_eco": 0,
-        "weekly_goal": 20,
-        "current_kg": 0.0,
-    "neighborhood_current_kg": 150.0,
-        "neighborhood_goal_kg": 1000 
-    }
+    # Serve a clean, staged dashboard for the demo user and live data for others.
+    if current_user.email == 'demo@vericycle.com':
+        # If it is, send the complete "lived-in" data and a hardcoded activity list
+        data = {
+            "total_kg": 23.5,
+            "total_eco": 1175,
+            "weekly_goal": 30,
+            "current_kg": 15.0,
+            "neighborhood_current_kg": 165.0,
+            "neighborhood_goal_kg": 1000,
+            "profile_complete": "1",
+            # --- THIS IS THE FIX ---
+            # We hardcode the starting activity list for the demo user
+            "activities": [
+                {
+                    "timestamp": "2025-11-12T10:00:00Z",
+                    "desc": "Verified Drop-off (8.5kg of Paper)",
+                    "amount": 425.00
+                },
+                {
+                    "timestamp": "2025-11-08T14:30:00Z",
+                    "desc": "Verified Drop-off (15.0kg of Cans)",
+                    "amount": 750.00
+                }
+            ]
+        }
+    else:
+        # Otherwise, give the default data for a new user
+        data = {
+            "total_kg": 0.0,
+            "total_eco": 0,
+            "weekly_goal": 30,
+            "current_kg": 0.0,
+            "neighborhood_current_kg": 150.0,
+            "neighborhood_goal_kg": 1000,
+            "profile_complete": "1" if current_user.full_name else "0",
+            "activities": [] # Start with an empty list
+        }
+
+        # --- THIS MOVED ---
+        # Attach user activities from the DB (only for non-demo users)
+        try:
+            acts = Activity.query.filter_by(user_id=current_user.id).order_by(Activity.id.desc()).limit(200).all()
+            data['activities'] = [{'timestamp': a.timestamp, 'desc': a.desc, 'amount': a.amount} for a in acts]
+        except Exception as e:
+            print('Error fetching activities:', e)
+            data['activities'] = []
+
     return jsonify(data)
 
 # -----------------------------------------------------------------

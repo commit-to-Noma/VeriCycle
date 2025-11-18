@@ -25,14 +25,14 @@
                         <div class="form-group">
                             <label for="neighborhood">Select Your Neighborhood:</label>
                             <select id="neighborhood">
-                                <option value="randburg">Randburg</option>
-                                <option value="soweto">Soweto</option>
-                                <option value="roodepoort">Roodepoort</option>
-                                <option value="sandton" selected>Sandton (High-Activity)</option>
-                                <option value="midrand">Midrand</option>
+                                <option value="randburg" {% if current_user.address and 'Randburg' in current_user.address %}selected{% endif %}>Randburg</option>
+                                <option value="soweto" {% if current_user.address and 'Soweto' in current_user.address %}selected{% endif %}>Soweto</option>
+                                <option value="roodepoort" {% if current_user.address and 'Roodepoort' in current_user.address %}selected{% endif %}>Roodepoort</option>
+                                <option value="sandton" {% if current_user.address and 'Sandton' in current_user.address %}selected{% endif %}>Sandton</option>
+                                <option value="midrand" {% if current_user.address and 'Midrand' in current_user.address %}selected{% endif %}>Midrand</option>
                                 <option value="other">Other</option>
                             </select>
-                            <span class="form-note">Your demo is set to <strong>Sandton</strong>.</span>
+                            <span class="form-note">Auto-selected from your profile address.</span>
                         </div>
 
                     <div class="form-group">
@@ -97,7 +97,7 @@
             <h2 style="color: #4CAF50; margin-top: 1rem;">Pickup Confirmed!</h2>
             
             <p style="font-size: 1.1rem; color: #ccc;">
-                Your pickup for <strong>Sandton</strong> is scheduled for:
+                Your pickup for <strong id="success-neighborhood">Sandton</strong> is scheduled for:
             </p>
             
             <h3 style="color: #f4f4f4; font-size: 1.5rem; margin: 0.5rem 0 2.5rem 0;">
@@ -108,11 +108,11 @@
         </div>
     </main>
 
-    <div class="modal-overlay" id="slots-modal">
+    <div class="modal-overlay" id="slots-modal" style="display:none;">
         <div class="card modal-content" style="max-width: 500px;">
             <button class="modal-close js-close-modal">&times;</button>
             
-            <h2 style="text-align: center;">Available Slots (Sandton)</h2>
+            <h2 style="text-align: center;">Available Slots (<span id="slots-neighborhood">Sandton</span>)</h2>
             <p style="text-align: center; color: #aaa; margin-top: -1rem;">
                 Based on your "Mixed" selection and optimizing for other pickups in your area.
             </p>
@@ -121,21 +121,21 @@
                 <label class="slot-option">
                     <input type="radio" name="slot" checked>
                     <div class="slot-details">
-                        <span class="slot-day">Tomorrow (Wed, 15 Nov)</span>
+                        <span class="slot-day" id="slot-day-1">Tomorrow</span>
                         <span class="slot-time">10:00 - 12:00</span>
                     </div>
                 </label>
                 <label class="slot-option">
                     <input type="radio" name="slot">
                     <div class="slot-details">
-                        <span class="slot-day">Tomorrow (Wed, 15 Nov)</span>
+                        <span class="slot-day" id="slot-day-2">Tomorrow</span>
                         <span class="slot-time">14:00 - 16:00</span>
                     </div>
                 </label>
                 <label class="slot-option">
                     <input type="radio" name="slot">
                     <div class="slot-details">
-                        <span class="slot-day">Thursday (16 Nov)</span>
+                        <span class="slot-day" id="slot-day-3">Day After</span>
                         <span class="slot-time">09:00 - 11:00</span>
                     </div>
                 </label>
@@ -284,9 +284,45 @@
             const pickupCard = document.getElementById('pickup-card');
             const successCard = document.getElementById('success-card');
 
+            // --- NEW: DYNAMIC DATE LOGIC ---
+            try {
+                const options = { weekday: 'short', month: 'short', day: 'numeric' };
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const dayAfter = new Date(today);
+                dayAfter.setDate(dayAfter.getDate() + 2);
+
+                const tomorrowStr = "Tomorrow (" + tomorrow.toLocaleDateString('en-US', options) + ")";
+                const dayAfterStr = dayAfter.toLocaleDateString('en-US', options);
+
+                const s1 = document.getElementById('slot-day-1');
+                const s2 = document.getElementById('slot-day-2');
+                const s3 = document.getElementById('slot-day-3');
+
+                if (s1) s1.textContent = tomorrowStr;
+                if (s2) s2.textContent = tomorrowStr;
+                if (s3) s3.textContent = dayAfterStr;
+            } catch (e) {
+                console.warn('Date rendering failed', e);
+            }
+
             // --- 2. Open the modal ---
             pickupButton.addEventListener('click', function(e) {
                 e.preventDefault(); // Stop the form from doing anything
+
+                // Read the selected neighborhood from the form (or fall back to profile/default)
+                const neighborhoodSelect = document.getElementById('neighborhood');
+                const selectedText = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text || '{{ current_user.neighborhood or "Sandton" }}';
+
+                // Update the modal heading so it reflects the user's neighborhood
+                const slotsNeighborhood = document.getElementById('slots-neighborhood');
+                if (slotsNeighborhood) slotsNeighborhood.textContent = selectedText.replace(/ \(.+\)/, '');
+
+                // Also set the success card neighborhood for after confirmation
+                const successNeighborhood = document.getElementById('success-neighborhood');
+                if (successNeighborhood) successNeighborhood.textContent = selectedText.replace(/ \(.+\)/, '');
+
                 slotsModal.style.display = 'flex';
             });
 

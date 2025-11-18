@@ -19,15 +19,48 @@
 
         <div class="card">
             <h3>Verify a Drop-off</h3>
-            <p>Enter the Collector's ID (from their QR code) and the weight to confirm the transaction.</p>
+            <p>Click the button to simulate scanning a collector's QR code. We will use the demo user (`demo@vericycle.com`) for this hackathon.</p>
             
-            <form id="scan-form" action="/confirm-dropoff" method="POST" class="verify-form">
-
-                <input type="hidden" id="collector-id" name="collector_id" value="0.0.7219609"> <input type="hidden" id="weight" name="weight" value="1.5">
-
-                <button type="submit" class="btn-primary-large btn-form" id="scan-btn">
-                    Simulate Collector Scan & Pay
+            <form id="verify-form" action="{{ url_for('confirm_dropoff') }}" method="POST" class="verify-form">
+                <input type="hidden" id="collector-id-scan" name="collector_id" value="0.0.7267109"> 
+                
+                <button type="button" class="btn-primary-large btn-form" id="scan-btn">
+                    📷 Scan Collector QR Code (Simulate)
                 </button>
+
+                <div id="scan-results" style="display: none;">
+                    <div class="form-group">
+                        <label>Collector Found:</label>
+                        <input type="text" value="Demo User (0.0.7267109)" disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="material-type">Material Type:</label>
+                        <select id="material-type" name="material" required>
+                            <option value="" disabled selected>-- Select Material --</option>
+                            <option value="cans">Cans (50 ECO/kg)</option>
+                            <option value="paper">Paper (30 ECO/kg)</option>
+                            <option value="glass">Glass (20 ECO/kg)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weight-kg">Material Weight (kg):</label>
+                        <input type="number" id="weight-kg" name="weight" step="0.1" placeholder="e.g., 7.5" required>
+                    </div>
+
+                    <div class="reward-summary" id="reward-summary" style="display: none;">
+                        <p>Base Reward: <span id="reward-base">--</span></p>
+                        <p>Neighborhood Bonus (2.5%): <span id="reward-hood">+ --</span></p>
+                        <p>Bronze Tier Bonus (1.0%): <span id="reward-tier">+ --</span></p>
+                        <hr>
+                        <p class="total">Total Payout: <span id="reward-total">--</span></p>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary-large btn-form" id="verify-btn" disabled>
+                        Enter Weight & Material
+                    </button>
+                </div>
 
             </form>
         </div>
@@ -35,94 +68,170 @@
         <div class="card">
             <h3>Recent Verifications</h3>
             <div class="location-list" id="verification-list">
-                <h4 class="verification-date-header">Today, 8 November 2025</h4>
+                <h4 class="verification-date-header" id="today-header">Today</h4>
                 <ul id="today-list">
-                    <li>
-                        <a href="#" class="loc-name-address">
-                            <strong>15:02 - John D. (0.0.1234567):</strong> 3.0kg Paper
-                        </a>
-                        <span class="loc-phone">+90 ECO</span>
-                    </li>
                 </ul>
-                <h4 class="verification-date-header">Yesterday, 7 November 2025</h4>
-                <ul>
-                    <li>
-                        <a href="#" class="loc-name-address">
-                            <strong>11:30 - Jane S. (0.0.4567890):</strong> 5.2kg Glass
-                        </a>
-                        <span class="loc-phone">+120 ECO</span>
-                    </li>
-                </ul>
-            </div>
+    
+    <h4 class="verification-date-header">Yesterday, November 17, 2025</h4>
+    <ul>
+        <li>
+            <a href="#" class="loc-name-address">
+                <strong>14:32 - 0.0.7267109:</strong> 15.0kg of Cans
+            </a>
+            <span class="loc-phone">+750 ECO</span>
+        </li>
+        <li>
+            <a href="#" class="loc-name-address">
+                <strong>11:15 - 0.0.7267109:</strong> 8.5kg of Paper
+            </a>
+            <span class="loc-phone">+425 ECO</span>
+        </li>
+    </ul>
+    </div>
         </div>
     </main>
 
+    <div id="success-banner" style="display:none; position:fixed; top:1rem; left:50%; transform:translateX(-50%); background:#0b6623; color:#fff; padding:0.8rem 1.2rem; border-radius:8px; z-index:9999; font-weight: 600;">
+        Verification Successful!
+    </div>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
+    // --- NEW DYNAMIC DATE ---
+    document.getElementById('today-header').textContent = "Today, " + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    
+    const scanBtn = document.getElementById('scan-btn');
+    const scanResultsDiv = document.getElementById('scan-results');
+    const verifyForm = document.getElementById('verify-form');
+    const verifyBtn = document.getElementById('verify-btn');
+    const todayList = document.getElementById('today-list');
+
+    // --- NEW: The Calculator Elements ---
+    const materialType = document.getElementById('material-type');
+    const weightInput = document.getElementById('weight-kg');
+    const rewardSummary = document.getElementById('reward-summary');
+    const rewardBase = document.getElementById('reward-base');
+    const rewardHood = document.getElementById('reward-hood');
+    const rewardTier = document.getElementById('reward-tier');
+    const rewardTotal = document.getElementById('reward-total');
+    let calculatedTotal = 0;
+
+    // Prices for materials
+    const prices = {
+        'cans': 50,
+        'paper': 30,
+        'glass': 20
+    };
+
+    // --- NEW: FUNCTION TO SHOW THE BANNER ---
+    function showBanner(text) {
+        const banner = document.getElementById('success-banner');
+        banner.textContent = text;
+        banner.style.display = 'block';
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, 2500); // Show for 2.5 seconds
+    }
+
+    // --- NEW: The Calculator Function ---
+    function calculateReward() {
+        const material = materialType.value;
+        const weight = parseFloat(weightInput.value);
+
+        if (!material || !weight || weight <= 0) {
+            rewardSummary.style.display = 'none';
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = "Enter Weight & Material";
+            return;
+        }
+
+        const base = prices[material] * weight;
+        const hoodBonus = base * 0.025; // 2.5% Neighborhood Bonus
+        const tierBonus = base * 0.01; // 1.0% Bronze Tier Bonus
+        calculatedTotal = Math.round(base + hoodBonus + tierBonus);
+
+        // Update the summary box
+        rewardBase.textContent = `${base.toFixed(2)} ECO`;
+        rewardHood.textContent = `+ ${hoodBonus.toFixed(2)} ECO`;
+        rewardTier.textContent = `+ ${tierBonus.toFixed(2)} ECO`;
+        rewardTotal.textContent = `${calculatedTotal} ECO`;
+        rewardSummary.style.display = 'block';
         
-        const scanForm = document.getElementById('scan-form');
-        const scanBtn = document.getElementById('scan-btn');
-        const todayList = document.getElementById('today-list');
+        // Update the button
+        verifyBtn.textContent = `Verify & Pay ${calculatedTotal} ECO`;
+        verifyBtn.disabled = false;
+    }
 
-        scanForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // Stop the page from reloading
-            
-            scanBtn.textContent = "Verifying..."; // Give user feedback
-            scanBtn.disabled = true;
+    // --- NEW: Add event listeners to the form ---
+    if (materialType) materialType.addEventListener('change', calculateReward);
+    if (weightInput) weightInput.addEventListener('input', calculateReward);
 
-            // Get the form data
-            const formData = new FormData(scanForm);
 
-            // Send the data to our Flask API
-            fetch("{{ url_for('confirm_dropoff') }}", {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // --- IT WORKED! ---
-                    
-                    // 1. Get the current time
-                    const now = new Date();
-                    const timeString = now.toTimeString().substring(0, 5); // e.g., "16:15"
-                    
-                    // 2. Get the demo data we "sent"
-                    const collectorId = document.getElementById('collector-id').value;
-                    const weight = document.getElementById('weight').value;
-                    
-                    // 3. Create a new list item
-                    const newItem = document.createElement('li');
-                    newItem.innerHTML = `
-                        <a href="#" class="loc-name-address">
-                            <strong>${timeString} - Noma N. (${collectorId}):</strong> ${weight}kg Cans
-                        </a>
-                        <span class="loc-phone">+75 ECO</span>
-                    `;
-                    
-                    // 4. Add the new item to the top of the list
-                    todayList.prepend(newItem);
-                    
-                    // 5. Reset the button
-                    scanBtn.textContent = "Simulation Successful!";
-                    setTimeout(() => {
-                        scanBtn.textContent = "Simulate Collector Scan & Pay";
-                        scanBtn.disabled = false;
-                    }, 2000);
+    // 1. When the "Scan" button is clicked
+    scanBtn.addEventListener('click', function() {
+        scanBtn.style.display = 'none';
+        scanResultsDiv.style.display = 'block';
+    });
 
-                } else {
-                    // Handle an error
-                    scanBtn.textContent = "Error! Try Again.";
-                    scanBtn.disabled = false;
-                }
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                scanBtn.textContent = "Error! Try Again.";
-                scanBtn.disabled = false;
-            });
+    // 2. When the "Verify & Pay" button is clicked
+    verifyForm.addEventListener('submit', function(e) {
+        e.preventDefault(); 
+        
+        verifyBtn.textContent = "Verifying...";
+        verifyBtn.disabled = true;
+
+        const formData = new FormData(verifyForm);
+
+        fetch("{{ url_for('confirm_dropoff') }}", {
+            method: 'POST',
+            credentials: 'same-origin', // <-- send cookies with request
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const now = new Date();
+                const timeString = now.toTimeString().substring(0, 5);
+                
+                const collectorId = "0.0.7267109"; // Demo ID
+                const weight = formData.get('weight');
+                const material = materialType.options[materialType.selectedIndex].text;
+                
+                const newItem = document.createElement('li');
+                newItem.innerHTML = `
+                    <a href="#" class="loc-name-address">
+                        <strong>${timeString} - ${collectorId}:</strong> ${weight}kg of ${material}
+                    </a>
+                    <span class="loc-phone">+${calculatedTotal} ECO</span> 
+                `;
+                
+                todayList.prepend(newItem);
+                
+                showBanner("Verification Successful!");
+                verifyForm.reset();
+                rewardSummary.style.display = 'none';
+                scanResultsDiv.style.display = 'none';
+                scanBtn.style.display = 'block';     
+                
+                setTimeout(() => {
+                    verifyBtn.disabled = false;
+                    calculateReward(); // Resets button text
+                }, 2000);
+
+            } else {
+                showBanner("Error! Try Again.");
+                verifyBtn.textContent = "Error! Try Again.";
+                verifyBtn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            showBanner("Error! Try Again.");
+            verifyBtn.textContent = "Error! Try Again.";
+            verifyBtn.disabled = false;
         });
     });
+});
 </script>
 
 </body>

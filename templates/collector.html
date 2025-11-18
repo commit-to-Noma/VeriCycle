@@ -22,8 +22,8 @@
             
             <div class="kpi-card">
                 <h3>
-                    Total EcoCoin Earned
-                    <span class="tooltip" data-tooltip="EcoCoin is your digital reward token, built on the Hedera network. It's a secure, verifiable asset you earn for recycling.">ⓘ</span>
+                    Current EcoCoin Balance
+                    <span class="tooltip" data-tooltip="This shows your current account balance available to spend or withdraw.">ⓘ</span>
                 </h3>
                 <p class="kpi-value" id="kpi-ecocoin">--</p>
                 
@@ -48,25 +48,32 @@
             </div>
             
             <div class="chart-card">
-                <h3>Neighborhood Goal</h3>
+                <h3>
+                    Neighborhood Goal
+                    <span class="tooltip" data-tooltip="Your neighborhood (Sandton) is a high-activity area, so you earn a +2.5% bonus on all EcoCoin payouts!">ⓘ</span>
+                </h3>
                 <p class="chart-label" id="neighborhood-goal-label">-- / -- kg</p>
                 
                 <div class="chart-canvas-container">
                     <span class="chart-percentage" id="neighborhood-percent">--%</span>
                     <canvas id="neighborhoodGoalChart"></canvas>
                 </div>
-                <div class="neighborhood-bonus-text">
-                    <strong>Neighborhood Bonus:</strong> Keep recycling to help your neighborhood reach its monthly goal — when the community hits the target, everyone earns a bonus EcoCoin payout.
                 </div>
-            </div>
             
         </div>
+
+    <div class="card" id="activity-section">
+        <h3>Recent Activity</h3>
+        <p class="mockup-subtitle">Your HCS-verified transaction log.</p>
         
+        <ul class="activity-list">
+        </ul>
+    </div>
+
     <!-- This is the new 2-column QR card -->
     <div class="card">
         <div class="qr-grid">
 
-            <!-- Column 1: Instructions -->
             <div class="instructions">
                 <h3>How to Drop Off:</h3>
                 <ol>
@@ -77,21 +84,16 @@
                 </ol>
                 <button class="btn-primary" id="generate-btn">Generate Drop-off QR Code</button>
             </div>
-
-            <!-- Column 2: The QR Code -->
+            
             <div class="qr-code-container" id="qr-code-container">
-                <p class="qr-placeholder">Your QR code will appear here once generated.</p>
+                <div class="qr-placeholder">
+                    Click "Generate" to create your code
+                </div>
             </div>
 
-        </div>
-    </div>
+        </div> </div>
 
-    <!-- This "Simulate" button is now at the bottom, separate -->
-    <div class="card">
-         <button class="btn-primary" id="simulate-deposit-btn" style="background-color: #0D47A1; width: 100%; box-sizing: border-box;">
-            Simulate New Deposit (750 ECO)
-        </button>
-    </div>
+    
 
     <a href="{{ url_for('request_pickup') }}" class="pickup-card-link">
         <div class="card pickup-card">
@@ -123,6 +125,20 @@
             </ul>
         </div>
     </div>
+
+    
+
+    <div class="card" style="background-color: #333; border: 1px solid #E57373;">
+         <button class="btn-primary" id="simulate-deposit-btn" style="background-color: #0D47A1; width: 100%; box-sizing: border-box;">
+            Simulate 10kg Cans Deposit (+518 ECO)
+        </button>
+        {% if current_user.email == 'demo@vericycle.com' %}
+        <button class="btn-secondary" id="reset-demo-btn" style="width: 100%; box-sizing: border-box; margin-top: 1rem; border-color: #E57373; color: #E57373;">
+            Reset Demo
+        </button>
+        {% endif %}
+    </div>
+
     </main>
 
     <script>
@@ -134,6 +150,19 @@
         let personalChart = null;
         let neighborhoodChart = null;
         let currentData = {}; // Holds the current state of all data
+
+        // --- NEW: "MAGIC RESET" BUTTON (uses session flag) ---
+        const resetBtn = document.getElementById('reset-demo-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                // Clear the bad data
+                localStorage.removeItem('userBalance'); 
+                // Set a flag so the page knows to fetch clean data
+                sessionStorage.setItem('demo_just_reset', 'true'); 
+                // Reload the page
+                location.reload(); 
+            });
+        }
 
         // --- 2. "SCROLLING NUMBER" ANIMATION FUNCTION (Unchanged) ---
         function animateValue(element, start, end, duration, suffix = '', decimals = 0) {
@@ -226,38 +255,118 @@
             }
         }
 
-        // --- 5. LOCALSTORAGE DATA HANDLER (FIXED) ---
+        // Render the Recent Activity list from currentData.activities
+        function renderActivityList() {
+            try {
+                const list = document.querySelector('#activity-section .activity-list');
+                if (!list) return;
+                const activities = currentData.activities || [];
+
+                // If there are no activities in currentData, try to rehydrate from localStorage
+                if (!activities || activities.length === 0) {
+                    try {
+                        const stored = localStorage.getItem('userBalance');
+                        if (stored) {
+                            const parsed = JSON.parse(stored);
+                            if (parsed && Array.isArray(parsed.activities) && parsed.activities.length > 0) {
+                                currentData.activities = parsed.activities;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error rehydrating activities from cache:', e);
+                    }
+                }
+
+                const finalActivities = (currentData.activities || []);
+                if (!finalActivities || finalActivities.length === 0) {
+                    // No activities to render; keep any existing static markup in DOM
+                    return;
+                }
+                list.innerHTML = '';
+                finalActivities.forEach(act => {
+                    const li = document.createElement('li');
+                    li.className = 'activity-item';
+
+                    // Determine display date (time if today, else date)
+                    const d = new Date(act.timestamp);
+                    const today = new Date();
+                    const isToday = d.toDateString() === today.toDateString();
+                    const dateLabel = isToday ? d.toTimeString().substring(0,5) : d.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
+
+                    const amountClass = act.amount < 0 ? 'withdrawal' : 'deposit';
+                    const amountText = (act.amount < 0 ? act.amount.toFixed(2) : ('+' + act.amount.toFixed(2))) + ' ECO';
+
+                    li.innerHTML = `
+                        <span class="activity-date">${dateLabel}</span>
+                        <span class="activity-desc">${act.desc}</span>
+                        <span class="activity-amount ${amountClass}">${amountText}</span>
+                    `;
+                    list.appendChild(li);
+                });
+            } catch (e) {
+                console.error('Error rendering activity list', e);
+            }
+        }
+
+        // --- 5. LOCALSTORAGE DATA HANDLER (NEW, SIMPLIFIED) ---
         async function initializeDashboard() {
             try {
+                // Check if we just clicked the "Reset" button
+                const justReset = sessionStorage.getItem('demo_just_reset');
+
                 let storedData = localStorage.getItem('userBalance');
-                
-                if (storedData) {
-                    currentData = JSON.parse(storedData);
-                } else {
+
+                // If we clicked "Reset" OR there is no stored data, fetch the clean data
+                if (justReset || !storedData) {
+                    sessionStorage.removeItem('demo_just_reset'); // Clear the flag
                     const response = await fetch('/api/my-dashboard-data');
-                    currentData = await response.json(); 
-                    // Also fetch profile status
-                    currentData.profile_complete = "{{ 1 if current_user.full_name and current_user.id_number else 0 }}";
+                    if (!response.ok) throw new Error('Network response was not ok');
+
+                    currentData = await response.json(); // This is the clean, 2-item list from app.py
                     localStorage.setItem('userBalance', JSON.stringify(currentData));
+
+                } else {
+                    // Otherwise, just load the data we already have
+                    currentData = JSON.parse(storedData);
                 }
-                
+
+                // --- THIS IS THE FIX ---
+                // Check if we just made a withdrawal on the swap page
+                const withdrawalFlag = sessionStorage.getItem('demo_just_withdrew');
+                if (withdrawalFlag) {
+                    try {
+                        const withdrawalData = JSON.parse(withdrawalFlag);
+                        currentData.activities = currentData.activities || [];
+                        currentData.activities.unshift({
+                            timestamp: new Date().toISOString(),
+                            desc: withdrawalData.desc,
+                            amount: withdrawalData.amount
+                        });
+                        sessionStorage.removeItem('demo_just_withdrew');
+                        localStorage.setItem('userBalance', JSON.stringify(currentData));
+                    } catch (e) {
+                        console.error('Error applying withdrawal flag:', e);
+                    }
+                }
+
                 drawDashboard(currentData);
+                renderActivityList(); 
 
             } catch (e) {
                 console.error("Error initializing dashboard:", e);
             }
         }
 
-        // --- 6. SUCCESS MODAL FUNCTIONS (Unchanged) ---
+        // --- 6. SUCCESS MODAL FUNCTIONS (Updated) ---
         const successModal = document.getElementById('success-modal');
         const modalCloseBtn = document.getElementById('modal-close-btn');
         const simulateBtn = document.getElementById('simulate-deposit-btn');
         const confettiCanvas = document.getElementById('confetti-canvas');
         const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
-
-        function showSuccessModal(eco, kg) {
-            document.getElementById('modal-eco-value').textContent = `+${eco}`;
-            document.getElementById('modal-kg-value').textContent = `+${kg.toFixed(1)} kg`;
+        function showSuccessModal(kg) {
+            // The EcoCoin value is now part of the HTML
+            // We just need to update the modal subtitle
+            document.querySelector('#success-modal .success-subtitle').textContent = `A new drop-off of ${kg.toFixed(1)}kg has been verified.`;
             successModal.style.display = 'flex';
             modalConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
         }
@@ -267,15 +376,23 @@
 
         // --- 7. EVENT LISTENERS (FIXED) ---
         simulateBtn.addEventListener('click', function() {
-            showSuccessModal(750, 15.0);
+            showSuccessModal(10.0);
         });
 
         modalCloseBtn.addEventListener('click', function() {
             hideSuccessModal();
 
-            const newEco = 750;
-            const newKg = 15.0;
+            const newEco = 518; 
+            const newKg = 10.0;
 
+            // --- 1. Create the new activity object ---
+            const activityObj = {
+                timestamp: new Date().toISOString(),
+                desc: `Verified Drop-off (${newKg.toFixed(1)}kg of Cans)`,
+                amount: newEco
+            };
+
+            // --- 2. Animate the numbers (your existing logic) ---
             let oldEco = currentData.total_eco;
             let oldKg = currentData.total_kg;
             let oldPersonalKg = currentData.current_kg;
@@ -295,19 +412,33 @@
             animateValue(document.getElementById('personal-percent'), oldPersonalPercent, newPersonalPercent, 1500, '%', 0); 
             animateValue(document.getElementById('neighborhood-percent'), oldNeighborhoodPercent, newNeighborhoodPercent, 1500, '%', 1); 
 
+            // --- 3. Update the labels ---
             document.getElementById('personal-goal-label').textContent = `${newPersonalKg.toFixed(1)} / ${currentData.weekly_goal.toFixed(1)} kg`;
             document.getElementById('neighborhood-goal-label').textContent = `${newNeighborhoodKg.toFixed(1)} / ${currentData.neighborhood_goal_kg.toFixed(1)} kg`;
-
             personalChart.data.datasets[0].data = [newPersonalKg, Math.max(0, currentData.weekly_goal - newPersonalKg)];
             neighborhoodChart.data.datasets[0].data = [newNeighborhoodKg, Math.max(0, currentData.neighborhood_goal_kg - newNeighborhoodKg)];
             personalChart.update();
             neighborhoodChart.update();
 
+            // --- 4. Save the new data to localStorage (THIS IS THE FIX) ---
             currentData.total_eco = newTotalEco;
             currentData.total_kg = newTotalKg;
             currentData.current_kg = newPersonalKg;
             currentData.neighborhood_current_kg = newNeighborhoodKg;
+            
+            // Add the new activity to the start of the list
+            currentData.activities = currentData.activities || [];
+            currentData.activities.unshift(activityObj); 
+            
+            // Save the *entire* new state
             localStorage.setItem('userBalance', JSON.stringify(currentData)); 
+
+            // --- 5. Re-render the activity list ---
+            renderActivityList(); // This will now render all 3 items
+
+            // --- 6. Scroll and show banner ---
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // ... (show banner code is fine) ...
         });
 
         // --- 8. INITIAL PAGE LOAD ---
@@ -315,21 +446,20 @@
     });
 </script>
 
-    <div class="modal-overlay" id="success-modal">
+        
+
+        <div class="modal-overlay" id="success-modal">
         <div class="card modal-content success-modal-content">
             <canvas id="confetti-canvas"></canvas>
             <h2>Success!</h2>
             <p class="success-subtitle">A new drop-off has been verified.</p>
             
-            <div class="success-kpis">
-                <div class="success-kpi">
-                    <span class="success-label">EcoCoin Earned</span>
-                    <span class="success-value" id="modal-eco-value">+0</span>
-                </div>
-                <div class="success-kpi">
-                    <span class="success-label">Kilograms Recycled</span>
-                    <span class="success-value" id="modal-kg-value">+0 kg</span>
-                </div>
+            <div class="reward-summary" style="padding: 0; border: none; background: none; margin-bottom: 1.5rem;">
+                <p>Base Reward (10.0kg Cans): <span>500.00 ECO</span></p>
+                <p>Neighborhood Bonus (2.5%): <span>+ 12.50 ECO</span></p>
+                <p>Bronze Tier Bonus (1.0%): <span>+ 5.00 ECO</span></p>
+                <hr>
+                <p class="total" style="font-size: 1.5rem;">Total Payout: <span id="modal-eco-value">+518 ECO</span></p>
             </div>
 
             <button class="btn-primary-large btn-form" id="modal-close-btn">Awesome!</button>

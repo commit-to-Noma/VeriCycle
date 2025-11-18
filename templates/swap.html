@@ -17,26 +17,66 @@
         </div>
 
         <div class="rewards-grid">
+
+            <div class="card" id="bonus-mockup">
+                <h3>Green Member Bonus</h3>
+                <p class="mockup-subtitle">Your 15.0kg total has unlocked the Bronze Tier!</p>
+                <div class="tier-list">
+                    <div class="tier-item">
+                        <span class="tier-icon" style="opacity: 0.5;">🟢</span>
+                        <div class="tier-details">
+                            <span class="tier-name">Green Member</span>
+                            <span class="tier-desc">Your starting tier (0-15kg)</span>
+                        </div>
+                        <span class="tier-rate" style="color: #aaa;">Base Rate</span>
+                    </div>
+                    <div class="tier-item active">
+                        <span class="tier-icon">🥉</span>
+                        <div class="tier-details">
+                            <span class="tier-name">Bronze Tier (Active)</span>
+                            <span class="tier-desc">Unlocked at 15kg Recycled</span>
+                        </div>
+                        <span class="tier-rate">+1.0% Bonus</span>
+                    </div>
+                    <div class="tier-item" style="opacity: 0.5;">
+                        <span class="tier-icon">🥈</span>
+                        <div class="tier-details">
+                            <span class="tier-name">Silver Tier</span>
+                            <span class="tier-desc">Unlock at 50kg Recycled</span>
+                        </div>
+                        <span class="tier-rate">+1.5% Bonus</span>
+                    </div>
+                    <div class="tier-item" style="opacity: 0.5;">
+                        <span class="tier-icon">🥇</span>
+                        <div class="tier-details">
+                            <span class="tier-name">Gold Tier</span>
+                            <span class="tier-desc">Unlock at 100kg Recycled</span>
+                        </div>
+                        <span class="tier-rate">+2.0% Bonus</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <h3>Step 1: Swap EcoCoin (Web3)</h3>
                 <p class="mockup-subtitle">Use a Hedera DEX (like SaucerSwap) to get HBAR or USDC.</p>
                 
                 <div class="swap-mockup">
-                    <div class="swap-box">
-                        <label>You Pay</label>
-                        <input type="text" value="750.00" disabled>
-                        <span class="swap-token">ECO</span>
-                    </div>
+                        <div class="swap-box">
+                                <label>You Pay</label>
+                                <input id="swap-pay" type="number" min="0" step="0.01" value="0.00">
+                                <span class="swap-token">ECO</span>
+                            </div>
                     
                     <div class="swap-arrow">⬇️</div>
                     
                     <div class="swap-box">
                         <label>You Receive</label>
-                        <input type="text" value="15.20" disabled>
+                        <input id="swap-receive" type="number" step="0.0001" value="0.0000" readonly>
                         <span class="swap-token">HBAR</span>
                     </div>
                     
-                    <button class="btn-primary-large btn-form" disabled>
+                    <button class="btn-primary-large btn-form" id="swap-btn">
                         Swap (Mockup)
                     </button>
                 </div>
@@ -49,7 +89,7 @@
                 <div class="swap-mockup">
                     <div class="swap-box">
                         <label>You Sell</label>
-                        <input type="text" value="15.20" disabled>
+                        <input id="withdraw-sell" type="number" step="0.0001" value="0.0000" readonly>
                         <span class="swap-token">HBAR</span>
                     </div>
                     
@@ -57,17 +97,34 @@
                     
                     <div class="swap-box">
                         <label>You Receive (in your bank)</label>
-                        <input type="text" value="ZAR 25.50" disabled>
+                        <input id="withdraw-receive" type="text" value="ZAR 0.00" readonly>
                         <span class="swap-token">ZAR</span>
                     </div>
                     
-                    <button class="btn-primary-large btn-form" disabled>
+                    <button class="btn-primary-large btn-form" id="withdraw-btn">
                         Withdraw to Bank (Mockup)
                     </button>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- Confirm Modal -->
+    <div class="modal-overlay" id="confirm-modal" style="display:none;">
+        <div class="card modal-content" style="max-width:520px;">
+            <h3 id="confirm-title">Confirm Action</h3>
+            <p id="confirm-message">Are you sure?</p>
+            <div style="display:flex;gap:1rem;justify-content:flex-end;margin-top:1rem;">
+                <button class="btn-secondary" id="confirm-no">No</button>
+                <button class="btn-primary" id="confirm-yes">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Small success banner -->
+    <div id="success-banner" style="display:none;position:fixed;top:1rem;left:50%;transform:translateX(-50%);background:#0b6623;color:#fff;padding:0.6rem 1rem;border-radius:6px;z-index:9999;">
+        Success
+    </div>
 
     <style>
         .swap-mockup {
@@ -113,9 +170,165 @@
         }
         .swap-mockup .btn-primary-large {
             margin-top: 1.5rem;
-            background-color: #555;
-            cursor: not-allowed;
+            background-color: #4CAF50;
+            cursor: pointer;
         }
+        /* Make modal confirm buttons proportionate */
+        #confirm-modal .card { max-width: 520px; padding: 1.25rem; }
+        #confirm-modal .card h3 { margin-top: 0; color: #2ecc71; }
+        #confirm-modal .card button { min-width: 96px; padding: 0.6rem 1rem; font-weight: 600; }
+        #confirm-modal .card #confirm-no { background: transparent; border: 2px solid #fff; color: #fff; }
+        #confirm-modal .card #confirm-yes { background: #4CAF50; color: #fff; border: none; }
     </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const swapBtn = document.getElementById('swap-btn');
+        const withdrawBtn = document.getElementById('withdraw-btn');
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmTitle = document.getElementById('confirm-title');
+        const confirmMessage = document.getElementById('confirm-message');
+        const confirmYes = document.getElementById('confirm-yes');
+        const confirmNo = document.getElementById('confirm-no');
+        const successBanner = document.getElementById('success-banner');
+
+        // Readable inputs (user can enter values). Some fields are readonly and computed.
+        const swapPayInput = document.getElementById('swap-pay');
+        const swapReceiveInput = document.getElementById('swap-receive'); // readonly, computed
+        const withdrawSellInput = document.getElementById('withdraw-sell'); // readonly, populated from swap
+        const withdrawReceiveInput = document.getElementById('withdraw-receive'); // readonly, computed
+
+        // Conversion rates (demo): ECO -> HBAR, HBAR -> ZAR
+        const ECO_TO_HBAR = 0.0202666667; // ~15.2 HBAR for 750 ECO
+        const HBAR_TO_ZAR = 1.6776315789; // ~ZAR25.50 for 15.2 HBAR
+
+        // demo withdrawal amount (legacy) - kept for backward compatibility but not used when using swap flow
+        const DEMO_WITHDRAWAL_ECO = 820;
+
+        function showConfirm(title, message, onYes) {
+            confirmTitle.textContent = title;
+            confirmMessage.textContent = message;
+            confirmModal.style.display = 'flex';
+
+            function cleanup() {
+                confirmModal.style.display = 'none';
+                confirmYes.removeEventListener('click', yesHandler);
+                confirmNo.removeEventListener('click', noHandler);
+            }
+            function yesHandler() { cleanup(); onYes(true); }
+            function noHandler() { cleanup(); onYes(false); }
+
+            confirmYes.addEventListener('click', yesHandler);
+            confirmNo.addEventListener('click', noHandler);
+        }
+
+        function showBanner(text) {
+            successBanner.textContent = text;
+            successBanner.style.display = 'block';
+            setTimeout(() => successBanner.style.display = 'none', 2200);
+        }
+        // Keep the receive field in sync as the user types ECO amount
+        function ecoToHbar(eco) { return eco * ECO_TO_HBAR; }
+        function hbarToZar(hbar) { return hbar * HBAR_TO_ZAR; }
+
+        function updateSwapReceive() {
+            const swapAmount = parseFloat(swapPayInput.value) || 0;
+            const hbar = ecoToHbar(swapAmount);
+            swapReceiveInput.value = hbar.toFixed(4);
+            // Also update the withdraw preview so Step 2 is ready
+            withdrawSellInput.value = hbar.toFixed(4);
+            withdrawReceiveInput.value = `ZAR ${hbarToZar(hbar).toFixed(2)}`;
+        }
+
+        swapPayInput.addEventListener('input', updateSwapReceive);
+
+        swapBtn.addEventListener('click', function() {
+            // Confirm with the user first
+            // read current input values
+            const swapAmount = parseFloat(swapPayInput.value) || 0;
+            const receiveAmount = parseFloat(swapReceiveInput.value) || 0;
+            showConfirm('Confirm Swap', `Swap ${swapAmount} ECO for ${receiveAmount} HBAR?`, function(confirmed) {
+                if (!confirmed) {
+                    showBanner('Swap cancelled');
+                    return;
+                }
+
+                // proceed with swap
+                let storedData = localStorage.getItem('userBalance');
+                if (!storedData) {
+                    showBanner('Error: no balance data found');
+                    return;
+                }
+                let currentData = JSON.parse(storedData);
+                if (currentData.total_eco < swapAmount) {
+                    showBanner('Insufficient EcoCoin');
+                    return;
+                }
+
+                // Deduct ECO now and record the swap as an activity (deduction)
+                currentData.total_eco = currentData.total_eco - swapAmount;
+                currentData.pending_hbar = (currentData.pending_hbar || 0) + receiveAmount;
+
+                // --- THIS IS THE FIX ---
+                // Save the withdrawal details to be shown on the dashboard
+                const withdrawalDetails = {
+                    desc: `Swap (${swapAmount.toFixed(2)} ECO for ${receiveAmount.toFixed(4)} HBAR)`,
+                    amount: -swapAmount
+                };
+                sessionStorage.setItem('demo_just_withdrew', JSON.stringify(withdrawalDetails));
+                // --- END OF FIX ---
+
+                // Do not add a local activity entry here; only persist updated totals
+                localStorage.setItem('userBalance', JSON.stringify(currentData));
+
+                // Note: not persisting swap activity to server from this page to avoid duplicate/messy ledger writes.
+
+                swapBtn.disabled = true;
+                swapBtn.textContent = 'Swap Complete';
+                showBanner(`Swap successful — -${swapAmount} ECO`);
+
+                // Ensure Step 2 fields reflect the swapped HBAR and computed ZAR, and are uneditable
+                withdrawSellInput.value = receiveAmount.toFixed(4);
+                withdrawReceiveInput.value = `ZAR ${hbarToZar(receiveAmount).toFixed(2)}`;
+            });
+        });
+
+        withdrawBtn.addEventListener('click', function() {
+            // Confirm withdraw — use the HBAR amount carried from the swap.
+            const withdrawHbar = parseFloat(withdrawSellInput.value) || 0;
+            const withdrawZar = hbarToZar(withdrawHbar);
+            showConfirm('Confirm Withdrawal', `Withdraw ${withdrawHbar.toFixed(4)} HBAR to your bank (${withdrawZar.toFixed(2)} ZAR)?`, function(confirmed) {
+                if (!confirmed) { showBanner('Withdrawal cancelled'); return; }
+
+                let storedData = localStorage.getItem('userBalance');
+                if (!storedData) { showBanner('Error: no balance data'); return; }
+                let currentData = JSON.parse(storedData);
+
+                // Ensure we have enough pending_hbar (set by swap). Do not re-deduct ECO here.
+                const pending = currentData.pending_hbar || 0;
+                if (pending < withdrawHbar) { showBanner('Not enough HBAR available'); return; }
+
+                currentData.pending_hbar = pending - withdrawHbar;
+
+                // --- THIS IS THE FIX ---
+                // Save the withdrawal details to be shown on the dashboard
+                const withdrawalDetails = {
+                    desc: `Withdrawal (${withdrawHbar.toFixed(4)} HBAR to bank)`,
+                    amount: 0 // It's an HBAR transaction, so 0 ECO
+                };
+                sessionStorage.setItem('demo_just_withdrew', JSON.stringify(withdrawalDetails));
+                // --- END OF FIX ---
+
+                // Persist totals to local cache (do not add a local activity entry for withdrawal)
+                localStorage.setItem('userBalance', JSON.stringify(currentData));
+
+                // Note: not persisting withdrawal activity to server from this page to avoid duplicate/messy ledger writes.
+
+                showBanner('Withdrawal completed');
+                // After a short delay, return to collector dashboard
+                setTimeout(() => { window.location.href = "{{ url_for('collector_dashboard') }}"; }, 900);
+            });
+        });
+    });
+    </script>
 </body>
 </html>

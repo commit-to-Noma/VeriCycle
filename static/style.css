@@ -2010,3 +2010,97 @@ img.logo {
     color: #4CAF50;
     font-weight: 600;
 }
+
+/* --- Navbar Logo with Text --- */
+.navbar .container {
+    display: flex;
+    justify-content: space-between; /* This pushes them apart */
+    align-items: center;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    /* We don't need margin-right: auto; anymore */
+}
+.logo-link span {
+    color: #f4f4f4;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+img.logo {
+    height: 45px; 
+}
+
+/* --- Recent Activity List (Dashboard) --- */
+#activity-section h3 {
+    text-align: center;
+    font-size: 1.75rem;
+    margin-bottom: 0;
+}
+#activity-section .mockup-subtitle {
+    text-align: center;
+}
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1.5rem;
+}
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #333;
+}
+.activity-item:last-child {
+    border-bottom: none;
+}
+.activity-date {
+    color: #aaa;
+    font-size: 0.9rem;
+    flex-basis: 100px;
+}
+.activity-desc {
+    color: #f4f4f4;
+    font-weight: 500;
+    flex-grow: 1;
+}
+.activity-amount {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.activity-amount.deposit {
+    color: #4CAF50; /* Green */
+}
+.activity-amount.withdrawal {
+    color: #E57373; /* Red */
+}
+
+/* --- Center Reward Summary --- */
+.reward-summary {
+    background-color: #121212;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+}
+.reward-summary p {
+    display: flex;
+    justify-content: space-between;
+    margin: 0.5rem 0;
+    color: #aaa;
+}
+.reward-summary p.total {
+    color: #f4f4f4;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+.reward-summary p span {
+    font-weight: 600;
+}
+.reward-summary p .total span {
+    color: #4CAF50;
+}
