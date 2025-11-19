@@ -1,7 +1,14 @@
 /* ================================================================================
-VeriCycle Main Stylesheet (style.css)
+File: style.css
+Context: The master stylesheet.
 ================================================================================
-This file contains all styles for the entire VeriCycle application.
+Specific Components:
+- `.glass-morphism`: Used on the navbar for the transparent blur effect.
+- `.chart-column-item`: Custom CSS animation (`grow-column`) for the 
+  homepage bar chart.
+- `.pickup-card`: Specific hover transforms (`translateY`) for the 
+  logistics card on the Collector dashboard.
+- Dark Mode Defaults: Sets `#121212` background globally.
 
 Core Color Palette:
 - Dark BG: #121212

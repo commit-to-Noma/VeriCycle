@@ -36,6 +36,7 @@ import re
 
 # -----------------------------------------------------------------
 # 1. APP CONFIGURATION
+# - Sets up Flask configuration and database file path.
 # -----------------------------------------------------------------
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
@@ -45,6 +46,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # -----------------------------------------------------------------
 # 2. INITIALIZE TOOLS
+# - Initialize extensions: database, encryption and login manager.
 # -----------------------------------------------------------------
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -60,6 +62,7 @@ login_manager.login_message_category = None
 
 # -----------------------------------------------------------------
 # 3. DATABASE MODEL
+# - Define `User` and `Activity` models used across routes.
 # -----------------------------------------------------------------
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -86,6 +89,7 @@ class Activity(db.Model):
 
 # -----------------------------------------------------------------
 # 4. HELPER FUNCTION FOR FLASK-LOGIN
+# - Provide the user loader required by Flask-Login.
 # -----------------------------------------------------------------
 @login_manager.user_loader
 def load_user(user_id):
@@ -93,6 +97,7 @@ def load_user(user_id):
 
 # -----------------------------------------------------------------
 # 5. AUTHENTICATION ROUTES (LOGIN, LOGOUT, SIGNUP)
+# - Routes handling user signup, login, logout and account creation.
 # -----------------------------------------------------------------
 
 @app.route("/signup", methods=['POST'])
@@ -109,7 +114,7 @@ def signup():
         new_id = None
         new_key = None
         
-        # --- Logic for Collectors ---
+        # Handle collector signup and create a Hedera account
         if role == 'collector':
             print("--- CALLING HEDERA ENGINE: Creating new collector account... ---")
             operator_id = os.getenv("OPERATOR_ID")
@@ -147,7 +152,7 @@ def signup():
             login_user(new_user)
             return redirect(url_for('profile')) # COLLECTORS go to profile
 
-        # --- Logic for Centers (NOW CREATES AN ACCOUNT) ---
+        # Handle center signup and create a Hedera account
         else: # role == 'center'
             print("--- CALLING HEDERA ENGINE: Creating new Center account... ---")
             operator_id = os.getenv("OPERATOR_ID")
@@ -211,7 +216,7 @@ def login():
         
         next_page = request.args.get('next')
         
-        # --- NEW PROFILE CHECK (for Collectors ONLY) ---
+        # Ensure collectors have completed their profile
         if current_user.role == 'collector':
             if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
                 flash('Please complete your profile to continue.', 'error')
@@ -239,6 +244,7 @@ def logout():
 
 # -----------------------------------------------------------------
 # 6. MAIN PAGE ROUTES
+# - Routes that render the main application pages and dashboards.
 # -----------------------------------------------------------------
 
 @app.route('/')
@@ -261,7 +267,7 @@ def profile():
         db.session.commit()
         flash('Your profile has been updated successfully!', 'success')
         
-        # --- NEW: Smart redirect based on role ---
+        # Redirect after profile update based on role
         if current_user.role == 'center':
             return redirect(url_for('center_dashboard'))
         else:
@@ -273,7 +279,7 @@ def profile():
 @app.route('/collector')
 @login_required 
 def collector_dashboard():
-    # --- NEW PROFILE GATE ---
+    # Require profile completion for collectors
     if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
         flash('You must complete your profile before accessing the dashboard.', 'error')
         return redirect(url_for('profile'))
@@ -290,12 +296,10 @@ def request_pickup():
 @app.route('/center')
 @login_required 
 def center_dashboard():
-    # --- THIS IS THE FIX ---
-    # We must check that the user is a 'center'
+    # Allow only 'center' users to access center dashboard
     if current_user.role != 'center':
         flash('You do not have permission to access this page.', 'error')
         return redirect(url_for('collector_dashboard'))
-    # --- END OF FIX ---
     
     return render_template('center.html', active_page='dashboard')
 
@@ -316,12 +320,13 @@ def swap():
 
 # -----------------------------------------------------------------
 # 7. APP "ENGINE" ROUTES (API & ACTIONS)
+# - API endpoints for activities, confirmations, QR generation and dashboard data.
 # -----------------------------------------------------------------
 
 @app.route('/generate-qr')
 @login_required 
 def generate_qr():
-    # --- NEW PROFILE GATE ---
+    # Require complete profile to generate QR
     if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
         return "Profile incomplete", 403 
     
@@ -420,8 +425,7 @@ def get_dashboard_data():
             "neighborhood_current_kg": 165.0,
             "neighborhood_goal_kg": 1000,
             "profile_complete": "1",
-            # --- THIS IS THE FIX ---
-            # We hardcode the starting activity list for the demo user
+            # Hardcode the starting activity list for the demo user
             "activities": [
                 {
                     "timestamp": "2025-11-12T10:00:00Z",
@@ -448,8 +452,7 @@ def get_dashboard_data():
             "activities": [] # Start with an empty list
         }
 
-        # --- THIS MOVED ---
-        # Attach user activities from the DB (only for non-demo users)
+        # Attach user activities from the DB for non-demo users
         try:
             acts = Activity.query.filter_by(user_id=current_user.id).order_by(Activity.id.desc()).limit(200).all()
             data['activities'] = [{'timestamp': a.timestamp, 'desc': a.desc, 'amount': a.amount} for a in acts]
@@ -461,6 +464,7 @@ def get_dashboard_data():
 
 # -----------------------------------------------------------------
 # 8. RUN THE APP
+# - Start the Flask development server when executed directly.
 # -----------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
