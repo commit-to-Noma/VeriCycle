@@ -34,6 +34,12 @@ body {
     margin: 0 auto;
 }
 
+/* New container for sections that need more space */
+.container-wide {
+    width: 95%;
+    max-width: 1400px; /* Much wider than the standard 1000px */
+    margin: 0 auto;
+}
 /* --- Buttons --- */
 .btn-primary {
     display: inline-block;
@@ -260,47 +266,43 @@ img.logo {
 
 /* Exact positions removed — only the two final icons are used now. */
 
-/* FINAL: Only two large background icons (trash left, check right)
-   User requested exact positions and sizes below. Animations staggered.
-*/
+/* --- UPDATED HERO ICONS --- */
 #icon-final-trash {
     position: absolute;
     top: 50%;
-    left: 6%; /* nudged further left as requested */
+    left: -150px; /* Pushed further out to the side */
     transform: translateY(-50%);
-    width: 180px; /* large background icon */
-    height: 180px;
-    opacity: 0.1;
+    width: 350px; /* MUCH BIGGER (was 180px) */
+    height: 350px;
+    opacity: 0.08;
     pointer-events: none;
     color: #ffffff;
     fill: currentColor;
     z-index: 0;
-    animation: floatLarge 8s ease-in-out infinite;
-    animation-delay: 0s;
-    animation-direction: alternate;
+    /* Faster, more obvious animation */
+    animation: floatLarge 6s ease-in-out infinite alternate; 
 }
 
 #icon-final-check {
     position: absolute;
     top: 50%;
-    right: 6%; /* nudged further right as requested */
+    right: -150px; /* Pushed further out to the side */
     transform: translateY(-50%);
-    width: 180px; /* large background icon */
-    height: 180px;
-    opacity: 0.1;
+    width: 350px; /* MUCH BIGGER */
+    height: 350px;
+    opacity: 0.08;
     pointer-events: none;
     color: #ffffff;
     fill: currentColor;
     z-index: 0;
-    animation: floatLarge 7s ease-in-out infinite;
-    animation-delay: 0.9s; /* stagger so they don't move together */
-    animation-direction: alternate-reverse;
+    /* Different timing so they don't move in sync */
+    animation: floatLarge 7s ease-in-out infinite alternate-reverse;
 }
 
+/* More dramatic movement */
 @keyframes floatLarge {
-    0% { transform: translateY(-50%) translateY(0) rotate(0deg); }
-    50% { transform: translateY(-50%) translateY(-14px) rotate(3deg); }
-    100% { transform: translateY(-50%) translateY(0) rotate(0deg); }
+    0% { transform: translateY(-50%) translateY(-20px) rotate(-5deg); }
+    100% { transform: translateY(-50%) translateY(20px) rotate(5deg); }
 }
 
 /* Size tweaks removed — legacy per-icon sizes not needed when only two large icons are used. */
@@ -369,6 +371,10 @@ img.logo {
     transform: translateY(-8px); /* Lifts the card up */
     box-shadow: 0 10px 20px rgba(0,0,0,0.5); /* Adds a bigger shadow */
 }
+
+.advantage-card:hover {
+    border-color: #4CAF50; /* highlight on hover */
+}
 .advantage-card h3 {
     margin-top: 0;
     color: #4CAF50;
@@ -395,8 +401,8 @@ img.logo {
 
 /* --- Homepage Live Activity Section --- */
 .activity-feed-section {
-    background-color: #0f2463;
-    padding: 4rem 0;
+    background-color: #0b1a4a; /* Slightly lighter/richer blue for cohesive dashboard */
+    padding: 2.5rem 0; /* reduced so section fits in viewport */
     text-align: center;
     border-top: 1px solid #333;
 }
@@ -416,32 +422,80 @@ img.logo {
     display: grid;
     grid-template-columns: 3fr 2fr;
     gap: 2.5rem;
-    align-items: stretch;
+    align-items: flex-start; /* align column tops so Live Activity sits higher */
 }
 .live-feed-column, .leaderboard-column {
     display: flex;
     flex-direction: column;
 }
-.activity-feed-container, .leaderboard-chart {
-    flex-grow: 1;
+
+/* 3. Alignment Layout (updated: center live activity vertically) */
+.live-feed-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* align to top to remove extra spacing */
+    gap: 0.4rem;
     height: 100%;
+    margin-top: -8rem; /* BIG NUDGE: move the whole live column upward drastically */
+    transform: translateY(-12px); /* extra fine-tune upward shift */
+    padding-top: 0;
 }
+
+/* Live header badge (pulsing dot + LIVE text) applied to the Live Activity heading */
+.live-feed-column h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 0.35rem 0; /* tighter heading spacing */
+    padding-top: 0.15rem; /* ensure heading sits visually higher */
+}
+.live-feed-column h3::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #37c96b; /* bright green */
+    box-shadow: 0 0 8px rgba(55,201,107,0.55);
+    display: inline-block;
+    animation: pulse 1.6s infinite;
+}
+.live-feed-column h3::after {
+    content: 'LIVE';
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #37c96b;
+    letter-spacing: 0.06em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(55,201,107,0.06);
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.9); opacity: 0.9; }
+    50% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.9; }
+}
+
 .activity-feed-container {
-    height: 250px;
+    display: flex;           /* NEW: Use flexbox */
+    align-items: center;     /* NEW: Center content vertically */
+    justify-content: center; /* NEW: Center content horizontally (optional) */
     overflow: hidden;
     position: relative;
-    width: 100%;
-    max-width: 600px;
-    min-width: 240px;
-    margin: 0 auto;
+    background-color: rgba(0,0,0,0.2);
     border: 1px solid #1a4a8a;
     border-radius: 12px;
-    background-color: transparent;
+    /* Keep the height match */
+    height: 400px !important;
+    min-height: 400px !important;
+    max-height: 400px !important;
+    box-sizing: border-box;
 }
 .activity-feed {
-    position: absolute;
+    position: relative; /* make feed static so items are visible */
     width: 100%;
-    animation: scroll-up 20s linear infinite;
+    animation: none; /* disable auto-scrolling for clarity */
+    padding: 0.25rem 0;
 }
 .activity-item {
     display: flex;
@@ -471,13 +525,29 @@ img.logo {
     100% { transform: translateY(-50%); }
 }
 
+/* Make the activity feed container scrollable when content overflows */
+.activity-feed-container { overflow: hidden; position: relative; }
+
+/* Activity feed is absolutely positioned and will animate upward in a loop */
+.activity-feed {
+    position: absolute;
+    bottom: 0; /* align the visual baseline with the chart */
+    width: 100%;
+    animation: scroll-up 18s linear infinite;
+    will-change: transform;
+}
+
+/* Slightly smaller font and padding for activity items so they fit better */
+.activity-item { padding: 0.75rem 1rem; }
+
 /* Leaderboard Column Chart */
 .leaderboard-chart {
     background-color: #1e1e1e;
-    padding: 1.5rem;
-    border-radius: 12px;
-    height: 250px;
+    padding: 2rem;
+    border-radius: 16px;
+    height: 350px; /* Reduced to fit on one screen */
     box-sizing: border-box;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 .column-chart-container {
     display: flex;
@@ -593,16 +663,176 @@ img.logo {
     }
 }
 
-/* --- App Dashboard --- */
+/* --- Layout Container (fixed width, perfect fit) --- */
 .app-dashboard {
-    padding-top: 2rem;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
 }
-.dark-theme .card {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+
+/* --- 3 Column Wallet Grid --- */
+.wallet-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr 260px;
+    gap: 1.5rem;
+    align-items: start;
 }
-.dark-theme .card h3 {
-    color: #4CAF50;
+
+/* --- Card Reset (clean, fintech look) --- */
+.card {
+    background: #1b1b1b;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 1.2rem;
+}
+
+/* --- Tier Card Styling (sleek & modern) --- */
+.tier-card-sleek h3 {
+    margin-bottom: 1rem;
+}
+
+.tier-list-sleek {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.tier-row-sleek {
+    background: #141414;
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    border: 1px solid #242424;
+}
+
+.tier-row-sleek.active {
+    border-color: #b87333;
+    background: #1d1a17;
+}
+
+.tier-row-sleek.locked {
+    opacity: 0.45;
+}
+
+/* Progress bar */
+.tier-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #2a2a2a;
+    border-radius: 4px;
+    margin: 0.4rem 0;
+}
+.progress-fill {
+    height: 100%;
+    background: #b87333;
+    border-radius: 4px;
+}
+
+/* Tier badges */
+.tier-badge {
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.tier-badge.green { background: #0b6623; }
+.tier-badge.bronze { background: #cd7f32; }
+.tier-badge.silver { background: #c0c0c0; color:#000; }
+.tier-badge.gold { background: #ffd700; color:#000; }
+
+/* --- Exchange Card Improvements --- */
+.action-card-sleek .step-block {
+    background: #141414;
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid #262626;
+    margin-bottom: 1.2rem;
+}
+
+.input-group-sleek {
+    display: flex;
+    align-items: center;
+    background: #0f0f0f;
+    padding: 0.7rem;
+    border-radius: 8px;
+    border: 1px solid #222;
+}
+.input-group-sleek input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1rem;
+}
+.currency-tag {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+/* Buttons */
+.btn-action {
+    width: 100%;
+    padding: 0.7rem;
+    margin-top: 0.8rem;
+    background: #0b6623;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+.btn-action:disabled {
+    opacity: 0.4;
+}
+.btn-action.blue {
+    background: #004aad;
+}
+
+/* Arrow */
+.arrow-divider {
+    text-align: center;
+    opacity: 0.5;
+    margin: 0.6rem 0;
+}
+
+/* --- Right Column Rates (bank style) --- */
+.rate-box {
+    background: #141414;
+    border: 1px solid #272727;
+    border-radius: 10px;
+    padding: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.rate-pair {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.rate-val {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0.25rem 0;
+}
+
+.rate-change {
+    font-size: 0.8rem;
+}
+.rate-change.positive { color: #0b6623; }
+.rate-change.negative { color: #b22222; }
+.rate-change.neutral { color: #ccc; }
+
+/* Why box */
+.why-box {
+    background: #101010;
+    padding: 0.9rem;
+    border-radius: 10px;
+    border: 1px solid #252525;
+    margin-top: 1rem;
+}
+
+/* Remove ALL overflow everywhere */
+html, body {
+    overflow-x: hidden;
 }
 
 /* --- General Form Styles --- */
@@ -673,6 +903,8 @@ img.logo {
     border-radius: 12px; /* <-- Adds rounded corners */
     padding: 1.5rem; /* <-- Comfortable internal spacing */
     box-sizing: border-box; /* <-- Makes padding behave predictably */
+    border: 1px solid #4CAF50; /* subtle green glow border */
+    backdrop-filter: blur(10px); /* modern frosted effect */
 }
 .modal-close {
     position: absolute;
@@ -1118,6 +1350,13 @@ img.logo {
     #bank-mockup {
         grid-column: 1 / -1;
     }
+}
+
+/* Swap page layout: main action + side info */
+.swap-main-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* 2/3 for Action, 1/3 for Info */
+    gap: 2rem;
 }
 .mockup-subtitle {
     font-size: 1rem;
@@ -1684,6 +1923,185 @@ img.logo {
 }
 /* --- END OF FIX --- */
 
+/* ------------------------------
+   New Dashboard Styles (from user)
+------------------------------ */
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 25px;
+    max-width: 1350px; /* ~15% wider */
+    margin: 20px auto;
+    padding: 10px;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.exchange-column {
+    display: flex;
+}
+
+.membership-card,
+.market-card,
+.exchange-card {
+    background: #10151f;
+    border: 1px solid #1f2a3a;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 0 22px rgba(0,0,0,0.25);
+}
+
+.section-title {
+    font-size: 1.35rem;
+    color: #eaf1ff;
+    margin-bottom: 12px;
+}
+
+.main-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.tier-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.tier-name {
+    font-size: 1.1rem;
+    color: #8dfc75;
+    font-weight: 600;
+}
+
+.tier-level {
+    font-size: 1rem;
+    background: #182330;
+    padding: 3px 10px;
+    border-radius: 10px;
+    color: #9bb3d4;
+}
+
+.tier-benefits {
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+    color: #bcd0f0;
+    line-height: 1.6;
+}
+
+.market-subtitle {
+    margin-top: -5px;
+    margin-bottom: 15px;
+    color: #9aaec9;
+}
+
+.market-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+}
+
+.market-box {
+    background: #161d2a;
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid #273344;
+}
+
+.market-box h3 {
+    margin-bottom: 6px;
+    font-size: 1rem;
+    color: #d4e2ff;
+}
+
+.market-box p {
+    font-size: 0.95rem;
+    color: #9ac6ff;
+    font-weight: 600;
+}
+
+.exchange-card {
+    width: 100%;
+}
+
+.exchange-subtitle {
+    margin-top: -5px;
+    margin-bottom: 18px;
+    color: #9bb3cc;
+}
+
+.exchange-step h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: #cfe0ff;
+}
+
+.exchange-step label {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    display: block;
+    color: #b8c7dd;
+}
+
+input[type="number"] {
+    width: 100%;
+    padding: 12px;
+    background: #0c121b;
+    border: 1px solid #223044;
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+}
+
+.result-box {
+    background: #131b27;
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 10px;
+    border: 1px solid #263246;
+}
+
+.result-box span {
+    font-size: 0.9rem;
+    color: #8898aa;
+}
+
+.result-box strong {
+    display: block;
+    margin-top: 4px;
+    color: #8dfc75;
+    font-size: 1.2rem;
+}
+
+.withdraw-btn {
+    width: 100%;
+    margin-top: 18px;
+    background: #37c96b;
+    border: none;
+    padding: 13px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    color: #041007;
+}
+
+.withdraw-btn:hover {
+    background: #2fb75f;
+}
+
+@media (max-width: 1100px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* --- FIX: "Floating Data" (Adds missing card styles) --- */
 .dark-theme .card {
     background-color: #1e1e1e;
@@ -1769,7 +2187,7 @@ img.logo {
 .how-it-works-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr); /* 4 columns */
-    gap: 1.5rem;
+    gap: 3rem; /* widened gap so arrows can sit centered */
     margin-top: 2rem;
 }
 
@@ -1795,6 +2213,15 @@ img.logo {
     position: relative; /* positioning anchor for arrows */
     overflow: visible; /* allow the chevron to sit outside the card */
     /* no z-index here so arrows can be layered above siblings */
+}
+
+/* Interactive hover for step cards */
+.step-card {
+    transition: transform 0.3s ease;
+}
+.step-card:hover {
+    transform: translateY(-5px);
+    border-color: #4CAF50;
 }
 
 .step-number {
@@ -1835,7 +2262,7 @@ img.logo {
     content: '›'; /* chevron arrow */
     position: absolute;
     top: 50%; /* center vertically */
-    right: -1.6rem; /* nudge into the middle of the gap (adjusted for centering) */
+    right: -2.5rem; /* pushed further right into the gap for perfect centering */
     transform: translateY(-50%);
 
     font-size: 3.4rem;
@@ -1869,24 +2296,19 @@ img.logo {
 
 .stats-grid-small {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 columns */
-    gap: 1rem;
-    margin-bottom: 2rem; /* Space before the leaderboard */
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem; /* More space between them */
+    margin-bottom: 2.5rem;
 }
-
 .stat-card-small {
-    background-color: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 12px;
+    background-color: rgba(0,0,0,0.3); /* Darker, cohesive */
+    border: 1px solid rgba(255,255,255,0.1);
+    border-left: 4px solid #4CAF50; /* Adds a nice accent */
     padding: 1rem;
+    text-align: left; /* More professional */
 }
-
 .stat-value-small {
-    display: block;
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #4CAF50; /* Main Green */
-    line-height: 1.1;
+    font-size: 2.2rem; /* Bigger numbers */
 }
 
 .stat-label-small {
@@ -2155,3 +2577,1038 @@ img.logo {
 .reward-summary p .total span {
     color: #4CAF50;
 }
+
+/* --- New Swap Page Layout --- */
+.swap-main-layout {
+    display: grid;
+    grid-template-columns: 3fr 1fr; /* Make left column clearly dominant */
+    gap: 1.5rem;
+}
+.swap-card {
+    background-color: #0f1724; /* slightly richer background to lift it visually */
+    padding: 1.25rem;
+    border-radius: 12px;
+    border: 1px solid rgba(76,175,80,0.08);
+    box-shadow: 0 14px 40px rgba(10,20,40,0.6);
+}
+
+.swap-card h3 { font-size: 1.5rem; margin: 0 0 0.75rem 0; color: #fff; }
+.swap-card .btn-primary-large { font-size: 1.05rem; padding: 0.9rem 1.25rem; }
+
+.step-box {
+    background-color: #121212;
+    padding: 1.75rem; /* slightly larger padding for focus */
+    border-radius: 12px;
+    border: 1px solid #222;
+}
+.step-box h4 { font-size: 1.15rem; margin: 0 0 0.5rem 0; color: #f4f4f4; }
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #000;
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+.input-row input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.2rem;
+    width: 100%;
+    text-align: right;
+}
+.unit { color: #4CAF50; font-weight: bold; }
+.arrow { color: #777; }
+
+.tier-list.compact .tier-item {
+    padding: 0.6rem;
+    justify-content: space-between;
+    border-radius: 8px;
+    background-color: #141414;
+    border: 1px solid #262626;
+}
+
+.tier-card {
+    background: transparent; /* keep card subtle */
+    border: none;
+    padding: 0.75rem;
+}
+
+.tier-card h3 { font-size: 1.1rem; margin-top: 0; color: #ddd; }
+.tier-item .tier-name { font-size: 0.95rem; }
+.tier-item .tier-rate { font-size: 0.95rem; }
+
+/* --- Swap Page: Live Rates & Context --- */
+.market-ticker {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem; /* Space for scrollbar if needed */
+}
+
+.market-ticker-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.ticker-item.recommended {
+    border: 1px solid rgba(76,175,80,0.18);
+    box-shadow: 0 8px 24px rgba(30, 70, 30, 0.18);
+}
+.tag-recommend { font-size: 0.65rem; padding: 2px 6px; }
+
+/* Center and limit the left action column so swap flow feels dominant */
+.action-column { display: flex; justify-content: center; }
+.action-column .swap-card { max-width: 720px; width: 100%; }
+.info-column { align-self: start; }
+
+.why-brief { color: #bfcbd9; margin-top: 0.5rem; font-size: 0.95rem; max-width: 760px; }
+
+.ticker-item {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.ticker-item .pair {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-bottom: 0.25rem;
+}
+
+.ticker-item .rate {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.ticker-item .change {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+.ticker-item .change.positive { color: #4CAF50; }
+.ticker-item .change.neutral { color: #aaa; }
+
+.tag-recommend {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #4CAF50;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Info Box ("Why Swap?") */
+.info-box {
+    background-color: rgba(33, 150, 243, 0.1); /* Faint blue bg */
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.info-icon {
+    font-size: 1.5rem;
+}
+
+.info-content strong {
+    display: block;
+    color: #2196F3; /* Blue title */
+    margin-bottom: 0.25rem;
+}
+
+.info-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #ccc;
+    line-height: 1.4;
+}
+
+/* --- NEW SWAP LAYOUT (1/3 Info, 2/3 Action) --- */
+.swap-main-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr; /* Info takes 1 part, Action takes 2 parts */
+    gap: 2rem;
+    align-items: start;
+}
+
+/* Vertical Ticker for the Info Column */
+.market-ticker-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.ticker-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #000;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+.ticker-row.recommended {
+    border-color: #4CAF50;
+    background-color: rgba(76, 175, 80, 0.05);
+}
+.pair-info { display: flex; flex-direction: column; }
+.tag-recommend { font-size: 0.6rem; color: #4CAF50; font-weight: bold; text-transform: uppercase; }
+.rate-info { text-align: right; }
+.ticker-note {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #aaa;
+    background: rgba(33, 150, 243, 0.1);
+    padding: 0.75rem;
+    border-radius: 6px;
+    border-left: 3px solid #2196F3;
+}
+
+/* Revert Tier List to "Nice" Spacious Look */
+.tier-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.tier-item {
+    display: flex;
+    align-items: center;
+    background-color: #000; /* darker contrast */
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+.tier-item.active {
+    border-color: #4CAF50;
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* --- Wide Layout Fixes --- */
+.swap-wide-grid {
+    display: grid;
+    grid-template-columns: 3fr 1fr; /* 75% Action, 25% Stats */
+    gap: 1.5rem;
+    height: 100%;
+}
+
+/* --- Bank Rate Cards (Horizontal) --- */
+.market-ticker-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 Equal Columns */
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.rate-card {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1rem;
+    position: relative;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+/* The "Recommended" One */
+.rate-card.recommended {
+    border: 2px solid #4CAF50; /* Green border */
+    background-color: rgba(76, 175, 80, 0.05);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+}
+
+.rate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.tag-best {
+    background-color: #4CAF50;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.rate-body {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.price { font-size: 1.8rem; font-weight: 700; color: #fff; }
+.change { font-size: 0.9rem; font-weight: 600; }
+.change.up { color: #4CAF50; } /* Green Arrow */
+.change.down { color: #E57373; } /* Red Arrow */
+.change.neutral { color: #aaa; } /* Grey Arrow */
+
+/* --- Horizontal Action Flow --- */
+.action-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+.step-half {
+    flex: 1;
+    background-color: #121212;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+.step-divider {
+    font-size: 2rem;
+    color: #555;
+    font-weight: 100;
+}
+.step-half.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* Info Pill */
+.info-pill {
+    background-color: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    color: #ccc;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+}
+
+/* Fill the screen: ensure container-wide touches the edges */
+.container-wide {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 1rem 1.25rem; /* small breathing room */
+}
+
+/* Make rate-cards look selectable */
+.rate-card { cursor: pointer; }
+.rate-card:hover { transform: translateY(-6px); border-color: #4CAF50; }
+
+/* Make ECO/HBAR stand out as Best Value */
+.rate-card.recommended .price { color: #1B5E20; }
+
+/* Ensure no vertical overflow on typical viewports by keeping compact spacing */
+.swap-wide-grid, .market-ticker-row, .action-row { gap: 1rem; }
+
+
+
+/* --- FINAL SWAP LAYOUT FIX --- */
+
+/* 1. Header Row */
+.swap-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    height: 50px; /* Fixed height to save space */
+}
+.page-title h2 { font-size: 1.8rem; margin: 0; color: #fff; }
+.page-title p { margin: 0; color: #aaa; font-size: 0.9rem; text-align: right; }
+
+/* 2. The Main Grid (Side-by-Side) */
+.bank-grid-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr; /* Fixed width for info, rest for action */
+    gap: 1.5rem;
+    height: calc(100vh - 140px); /* Calculate remaining height to avoid scroll */
+    min-height: 500px; /* Minimum safe height */
+}
+
+/* 3. Left Column Styling */
+.info-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.info-card {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    padding: 1rem;
+    border-radius: 12px;
+}
+.info-card h3 { margin-top: 0; font-size: 1.1rem; color: #ccc; border-bottom: 1px solid #333; padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+
+/* Rates Table */
+.rates-table { display: flex; flex-direction: column; gap: 0.5rem; }
+.rate-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: #111;
+    border-radius: 8px;
+}
+.rate-row.recommended { border: 1px solid #4CAF50; background: rgba(76,175,80,0.05); }
+.tag-best { display: block; font-size: 0.6rem; color: #4CAF50; font-weight: bold; text-transform: uppercase; }
+.pair-name { font-size: 0.9rem; color: #ccc; font-weight: 600; }
+.num { font-size: 1.1rem; color: #fff; font-weight: 700; }
+.change { font-size: 0.75rem; margin-left: 5px; }
+
+/* Detailed Tiers */
+.tier-list-detailed { display: flex; flex-direction: column; gap: 0.5rem; }
+.tier-row {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem;
+    border-radius: 8px;
+    background: #111;
+    border: 1px solid #222;
+}
+.tier-row.active { border-color: #4CAF50; background: #1a1a1a; }
+.tier-row.locked { opacity: 0.5; }
+.t-icon { font-size: 1.5rem; margin-right: 0.75rem; }
+.t-info { flex-grow: 1; }
+.t-name { display: block; font-size: 0.95rem; font-weight: 600; color: #f4f4f4; }
+.t-req { font-size: 0.75rem; color: #aaa; }
+.t-rate { font-size: 0.85rem; font-weight: 700; color: #4CAF50; }
+.t-rate.base { color: #aaa; }
+
+/* 4. Right Column (Action) Styling */
+.action-main {
+    height: 100%;
+}
+.action-card {
+    background-color: #0f1724; /* Dark Blue tint */
+    height: 100%;
+    border-radius: 16px;
+    padding: 2rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+.action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+.action-header h3 { margin: 0; font-size: 1.8rem; color: #fff; }
+.why-swap-box {
+    background: rgba(33, 150, 243, 0.15);
+    color: #90caf9;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+.process-flow {
+    display: flex;
+    justify-content: space-between; /* Side by side steps */
+    align-items: flex-start;
+    gap: 2rem;
+    height: 100%;
+}
+.step-container {
+    flex: 1;
+    background: #121212;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.step-container.disabled { opacity: 0.4; pointer-events: none; }
+.step-title { width: 100%; display: flex; justify-content: space-between; margin-bottom: 1rem; }
+.step-title h4 { margin: 0; color: #fff; font-size: 1.1rem; }
+.bal-label { font-size: 0.8rem; color: #4CAF50; }
+
+.input-wrapper {
+    width: 100%;
+    background: #000;
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    border: 1px solid #444;
+}
+.input-wrapper input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 600;
+    width: 80%;
+}
+.currency { color: #aaa; font-weight: 600; margin-top: 4px; }
+.arrow-down { font-size: 1.5rem; color: #555; margin: 0.5rem 0; }
+
+.full-btn { width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem; border-radius: 8px; border:none; cursor: pointer; font-weight: 600; color: white; transition: 0.2s; }
+.btn-primary { background-color: #4CAF50; }
+.btn-primary:hover { background-color: #388E3C; }
+.btn-blue { background-color: #0D47A1; }
+.btn-blue:hover { background-color: #0a367a; }
+
+/* Vertical Divider */
+.vertical-divider {
+    width: 1px;
+    background: #333;
+    height: 80%;
+    align-self: center;
+}
+
+/* --- WALLET PAGE 3-COLUMN LAYOUT --- */
+.wallet-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 0.8fr; /* Balanced proportions */
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* 1. LEFT: Sleek Tiers */
+.tier-card-sleek h3 { font-size: 1.1rem; color: #aaa; margin-top:0; border-bottom: 1px solid #333; padding-bottom:0.5rem; }
+.tier-list-sleek { display: flex; flex-direction: column; gap: 0.8rem; }
+
+.tier-row-sleek {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #111;
+}
+.tier-row-sleek.active {
+    background: #1a1a1a;
+    border: 1px solid #4CAF50;
+    display: block; /* Allows internal layout for active card */
+}
+.tier-row-sleek.locked { opacity: 0.5; }
+
+/* Badges (Pill Shape) */
+.tier-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 12px;
+    color: #000;
+    display: inline-block;
+}
+.tier-badge.green { background: #81C784; }
+.tier-badge.bronze { background: #D7CCC8; } /* Fallback color */
+.tier-badge.bronze { background: linear-gradient(45deg, #CD7F32, #A1662F); color: #fff; }
+.tier-badge.silver { background: #E0E0E0; }
+.tier-badge.gold { background: #FFD54F; }
+
+.tier-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.status-tag { font-size: 0.7rem; color: #4CAF50; font-weight: 700; text-transform: uppercase; }
+.tier-benefit { font-size: 0.9rem; color: #ccc; font-weight: 600; }
+
+.tier-progress-bar {
+    background: #333;
+    height: 4px;
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+    overflow: hidden;
+}
+.progress-fill { background: #4CAF50; height: 100%; }
+.tier-req { font-size: 0.7rem; color: #777; display: block; text-align: right; }
+
+
+/* 2. CENTER: Action Card */
+.action-card-sleek {
+    background-color: #1e1e1e;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.step-block h4 { margin: 0 0 0.5rem 0; font-size: 1rem; color: #aaa; font-weight: 500; }
+.step-header { display: flex; justify-content: space-between; }
+.bal-text { font-size: 0.75rem; color: #4CAF50; }
+
+.input-group-sleek {
+    display: flex;
+    align-items: center;
+    background: #000;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 0.6rem;
+}
+.input-group-sleek input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.3rem;
+    width: 100%;
+    font-weight: 600;
+}
+.input-group-sleek.filled { background: #111; }
+.currency-tag { color: #777; font-weight: 600; font-size: 0.9rem; padding-left: 0.5rem; }
+
+.arrow-divider { text-align: center; color: #555; padding: 0.25rem 0; font-size: 1.2rem; }
+
+.btn-action {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 6px;
+    background: #4CAF50;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.btn-action:hover { background: #388E3C; }
+.btn-action.blue { background: #0D47A1; }
+.btn-action.blue:hover { background: #0a367a; }
+
+
+/* 3. RIGHT: Rates (3 Separate Boxes) */
+.wallet-col-right { display: flex; flex-direction: column; gap: 1rem; }
+.section-title { margin: 0; font-size: 1.1rem; color: #ccc; }
+
+.rate-box {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    padding: 1rem;
+    border-radius: 8px;
+}
+.rate-pair { font-size: 0.85rem; color: #aaa; margin-bottom: 0.25rem; }
+.rate-val { font-size: 1.4rem; color: #fff; font-weight: 700; }
+.rate-change { font-size: 0.8rem; margin-top: 0.25rem; }
+.rate-change.positive { color: #4CAF50; }
+.rate-change.neutral { color: #777; }
+
+.why-box {
+    margin-top: 1rem;
+    background: rgba(33, 150, 243, 0.1);
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #90caf9;
+    border-left: 3px solid #2196F3;
+}
+.why-box p { margin: 0.25rem 0 0 0; color: #ccc; font-size: 0.8rem; }
+
+/* What this fixes: No Scrolling (standard container), 3 Rate Boxes, Sleek Tiers */
+
+/* --- PREMIUM FINTECH LAYOUT (Swap Page) --- */
+
+/* 1. The Layout Grid (No Scrolling) */
+.fintech-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr; /* Fixed Sidebar width, Fluid Main */
+    gap: 2rem;
+    height: calc(100vh - 140px); /* Fit to screen minus header */
+    min-height: 600px;
+}
+
+/* 2. Common Card Styles (Glass) */
+.glass-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+/* 3. SIDEBAR STYLES */
+.fintech-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 0.8rem;
+}
+.panel-header h3 { margin: 0; font-size: 1.1rem; color: #fff; }
+
+/* Tier Badge */
+.badge-tier.bronze {
+    background: linear-gradient(135deg, #cd7f32, #a65f1a);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    box-shadow: 0 2px 10px rgba(205, 127, 50, 0.3);
+}
+
+/* Progress Bar */
+.tier-labels { display: flex; justify-content: space-between; font-size: 0.85rem; color: #aaa; margin-bottom: 5px; }
+.progress-track { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: #4CAF50; box-shadow: 0 0 10px #4CAF50; }
+.next-tier-text { font-size: 0.8rem; color: #777; margin-top: 8px; }
+
+/* Market Rows */
+.market-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.market-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem;
+    border-radius: 10px;
+    background: #0d1117;
+    border: 1px solid #21262d;
+}
+.market-row.highlight {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.05);
+}
+.pair-group { display: flex; gap: 10px; align-items: center; }
+.icon-pair { display: flex; }
+.coin-icon { 
+    width: 24px; height: 24px; border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: bold; color: #fff;
+    border: 2px solid #161b22;
+}
+.coin-icon.eco { background: #4CAF50; z-index: 2; }
+.coin-icon.hbar { background: #000; margin-left: -8px; z-index: 1; }
+.coin-icon.zar { background: #0D47A1; margin-left: -8px; }
+
+.pair-name { display: block; font-size: 0.9rem; font-weight: 600; color: #e0e0e0; }
+.pair-vol { display: block; font-size: 0.7rem; color: #4CAF50; }
+.price-val { display: block; font-size: 0.95rem; font-weight: 700; color: #fff; text-align: right; }
+.price-change { display: block; font-size: 0.75rem; text-align: right; }
+.price-change.up { color: #4CAF50; }
+
+/* 4. MAIN EXCHANGE STYLES */
+.exchange-header { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+.exchange-header h3 { margin: 0; font-size: 1.5rem; color: #fff; }
+
+.tooltip-container {
+    width: 24px; height: 24px; background: #333; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; cursor: help; position: relative;
+}
+.tooltip-text {
+    visibility: hidden; background: #000; color: #fff; text-align: center;
+    padding: 5px 10px; border-radius: 6px; position: absolute; top: -40px; right: 0; width: 200px; white-space: nowrap;
+    border: 1px solid #444; opacity: 0; transition: 0.2s;
+}
+.tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+.step-box {
+    padding: 1.5rem;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    transition: opacity 0.3s;
+}
+.step-box.active { background: #0d1117; border-color: #4CAF50; }
+.step-box.disabled { opacity: 0.4; pointer-events: none; filter: grayscale(0.8); }
+
+.step-label { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+.step-num {
+    background: #333; color: #fff; width: 24px; height: 24px; 
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
+}
+.wallet-bal { margin-left: auto; font-size: 0.8rem; color: #4CAF50; }
+
+/* Premium Inputs */
+.input-group-premium {
+    display: flex;
+    background: #000;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 10px 15px;
+    align-items: center;
+}
+.input-group-premium:focus-within { border-color: #4CAF50; }
+.input-field { flex-grow: 1; }
+.input-field label { display: block; font-size: 0.75rem; color: #777; margin-bottom: 2px; }
+.input-field input { 
+    background: transparent; border: none; color: #fff; 
+    font-size: 1.5rem; font-weight: bold; width: 100%; outline: none;
+}
+.currency-selector {
+    background: #21262d; padding: 5px 10px; border-radius: 8px; 
+    font-size: 0.9rem; font-weight: 600; color: #fff;
+}
+
+.exchange-arrow { text-align: center; font-size: 1.5rem; color: #555; margin: 0.5rem 0; }
+
+/* Buttons */
+.btn-glow-green {
+    width: 100%; padding: 1rem; margin-top: 1rem; border-radius: 10px; border: none;
+    background: #4CAF50; color: #fff; font-weight: bold; font-size: 1rem; cursor: pointer;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+    transition: 0.2s;
+}
+.btn-glow-green:hover { background: #43a047; box-shadow: 0 0 20px rgba(76, 175, 80, 0.6); }
+
+.btn-glow-blue {
+    width: 100%; padding: 1rem; margin-top: 1rem; border-radius: 10px; border: none;
+    background: #2196F3; color: #fff; font-weight: bold; font-size: 1rem; cursor: pointer;
+    box-shadow: 0 0 15px rgba(33, 150, 243, 0.4);
+}
+
+
+/* --- FINAL SWAP FIXES --- */
+
+/* 1. Hide Input Arrows (Chrome/Safari/Edge) */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+/* Firefox */
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* 2. Fix Scrolling (Reduce height padding) */
+.fintech-grid {
+        height: auto; /* Let it grow naturally if needed, prevents cut-off */
+        min-height: 600px;
+        padding-bottom: 2rem; /* Add breathing room at bottom */
+}
+
+/* 3. Make "Exchange & Withdraw" BIGGER */
+.exchange-header h3 { font-size: 2rem; font-weight: 800; margin: 0; }
+
+/* 4. Why Pill */
+.why-swap-pill {
+        background: rgba(33, 150, 243, 0.15);
+        color: #90caf9;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+/* 5. New Coin Icons */
+.coin-icon.usdc { background: #2775CA; margin-left: -8px; }
+.coin-icon.btc { background: #F7931A; margin-left: -8px; }
+
+/* --- FINAL VISUAL POLISH --- */
+
+/* 1. Hierarchy Fixes */
+.swap-header-row {
+    margin-bottom: 0.5rem; /* Reduce gap below header */
+    display: flex;
+    align-items: flex-end; /* Align bottom of text */
+    justify-content: space-between;
+}
+.page-title h2 { 
+    font-size: 3rem; /* HUGE (Main Heading) */
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 0.2rem;
+    color: #fff;
+}
+.page-title p { 
+    font-size: 1.1rem; 
+    color: #aaa; 
+    margin: 0; 
+}
+
+/* 2. "Live" Blink Animation */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+.live-dot {
+    color: #ff4d4d; /* Bright Red for visibility or #4CAF50 for Green */
+    font-weight: bold;
+    font-size: 0.8rem;
+    animation: blink 2s infinite ease-in-out;
+    display: inline-block;
+    margin-left: auto;
+}
+
+/* 3. Perfect Alignment (Top & Bottom Match) */
+.fintech-grid {
+    align-items: stretch; /* Forces Right Card to match Left Column height */
+    height: auto;
+    min-height: 0; /* Allows shrinking */
+}
+.exchange-panel {
+    height: 100%; /* Fills the stretched space */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centers content vertically if there's extra space */
+    padding: 1.5rem; /* Reduced padding to save space */
+}
+
+/* 4. Tighten the Right Column (STOP SCROLLING) */
+.exchange-header { margin-bottom: 1rem; } /* Reduced from 2rem */
+.exchange-header h3 { font-size: 1.6rem; margin: 0; } /* 2nd Hierarchy */
+.exchange-subtitle {
+    color: #777;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+    line-height: 1.4;
+}
+
+.step-box {
+    padding: 1rem; /* Shrink internal padding */
+    margin-bottom: 1rem; /* Shrink gap between steps */
+    border: 1px solid #333;
+}
+.step-label { margin-bottom: 0.5rem; } /* Tighter labels */
+
+.input-group-premium {
+    padding: 6px 12px; /* Smaller input boxes */
+}
+.input-field label { font-size: 0.7rem; }
+.input-field input { font-size: 1.3rem; } /* Slightly smaller font */
+
+.exchange-arrow { margin: 0.25rem 0; font-size: 1.2rem; } /* Smaller arrow gap */
+
+/* Buttons - tighter */
+.btn-glow-green, .btn-glow-blue {
+    padding: 0.8rem;
+    margin-top: 0.8rem;
+    font-size: 1rem;
+}
+
+/* --- EMERGENCY LAYOUT FIXES --- */
+
+/* 1. Fix Header Clipping */
+.swap-header-row {
+    margin-top: 2rem; /* Pushes the title down below the navbar */
+    margin-bottom: 1.5rem;
+    align-items: flex-end; 
+}
+
+/* 2. Fix The Right Column (Remove Excess Space/Scrolling) */
+.fintech-grid {
+    align-items: start; /* Align to top, don't stretch to bottom */
+    height: auto; /* Let height be natural */
+    min-height: 0; /* Remove minimums */
+    padding-bottom: 3rem; /* Add breathing room at bottom page */
+}
+
+.exchange-panel {
+    height: auto; /* Shrink wrap the content! */
+    display: block; /* Normal block display */
+    padding: 2rem;
+}
+
+/* 3. Fix The Subtitle (Make it a proper subheading) */
+.exchange-header-block {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #333; /* Optional: adds a nice separator */
+    padding-bottom: 1rem;
+}
+.exchange-header-block h3 {
+    font-size: 1.8rem;
+    margin: 0 0 0.5rem 0;
+    color: #fff;
+}
+.exchange-subtitle {
+    color: #888;
+    font-size: 0.95rem;
+    margin: 0;
+    font-style: italic;
+}
+
+/* --- FINAL GLOBAL FIXES --- */
+/* --- FINAL GLOBAL FIXES --- */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    /* overflow: hidden;  <-- removed so other pages can scroll */
+}
+
+/* Ensure the container fits inside */
+.container-wide {
+    height: 100%;
+    box-sizing: border-box;
+    padding-bottom: 0;
+}
+
+/* --- HOMEPAGE FINAL FIXES --- */
+
+/* 1. Hierarchy Fonts */
+.section-h3 {
+    font-size: 1.5rem; 
+    font-weight: 700; 
+    color: #fff; 
+    margin-top: 0;
+    margin-bottom: 1rem; 
+    text-align: left;
+}
+
+/* 2. Perfect Alignment: Fixed Heights */
+/* This forces the Chart box and the Feed box to be exactly the same height */
+.leaderboard-chart, .activity-feed-container {
+    height: 400px !important; /* Fixed height aligns bottoms perfectly */
+    min-height: 400px;
+    box-sizing: border-box;
+}
+
+/* 3. Alignment Layout */
+.live-feed-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Pushes content down to align with chart logic */
+    padding-top: 0; /* Remove old padding */
+}
+
+/* 4. Seamless Loop Fix */
+/* We ensure the container hides the overflow cleanly */
+.activity-feed-container {
+    overflow: hidden;
+    position: relative;
+    background-color: rgba(0,0,0,0.2);
+    border: 1px solid #1a4a8a;
+    border-radius: 12px;
+}
+
+/* Page title subtitle alignment override (left-align under the title) */
+.page-title p { margin: 0; color: #aaa; font-size: 0.9rem; text-align: left; margin-left: 4px; }
+
+/* --- HOMEPAGE ALIGNMENT FIX (FINAL) --- */
+/* Force exact matching heights and absolute-feed positioning to avoid gaps */
+.leaderboard-chart, .activity-feed-container {
+    height: 400px !important;
+    min-height: 400px !important;
+    max-height: 400px !important;
+    box-sizing: border-box;
+}
+.live-feed-column {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    height: 100% !important;
+}
+.activity-feed-container {
+    position: relative !important;
+    overflow: hidden !important;
+}
+.activity-feed {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    bottom: auto !important;
+}
+
+

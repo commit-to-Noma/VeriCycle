@@ -34,7 +34,7 @@
     </main>
 
     <section class="cta-section">
-        <div class="container">
+        <div class="container-wide">
             <h2>Join the VeriCycle Network</h2>
             <p class="cta-subtitle">Become a 'Green Member' today. Turn your recycling efforts into verifiable, secure, and valuable rewards.</p>
             <div class="advantages">
@@ -69,7 +69,7 @@
     </section>
 
     <section class="how-it-works-section">
-        <div class="container">
+        <div class="container-wide">
             <h2>How VeriCycle Works</h2>
             <p class="activity-subtitle">Our simple 4-step process turns your recycling into a verifiable reward.</p>
             <div class="how-it-works-grid">
@@ -102,11 +102,18 @@
     </section>
 
     <section class="activity-feed-section">
-        <div class="container">
+        <div class="container-wide">
+            
+            <div style="text-align: left; margin-bottom: 2rem;">
+                <h2 style="font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem; color: #fff;">Platform Growth</h2>
+                <p class="activity-subtitle" style="margin: 0; text-align: left; font-size: 1.2rem; color: #aaa;">
+                    Real-time network performance across South Africa.
+                </p>
+            </div>
+
             <div class="live-grid">
+                
                 <div class="leaderboard-column">
-                    <h2>Platform Stats</h2>
-                    <p class="activity-subtitle">Join a growing, data-driven community.</p>
                     <div class="stats-grid-small">
                         <div class="stat-card-small">
                             <span class="stat-value-small">500+</span>
@@ -117,23 +124,25 @@
                             <span class="stat-label-small">Verified Partners</span>
                         </div>
                         <div class="stat-card-small">
-                            <span class="stat-value-small">50,000+</span>
-                            <span class="stat-label-small">Total KGs Recycled</span>
+                            <span class="stat-value-small">50k+</span>
+                            <span class="stat-label-small">Kg Recycled</span>
                         </div>
                     </div>
-                    <h3 class="leaderboard-title">Top Neighborhoods</h3>
+
+                    <h3 class="section-h3">Top Neighborhoods</h3>
                     <div class="leaderboard-chart">
                         <canvas id="neighborhoodBarChart"></canvas>
                     </div>
-                    <p class="leaderboard-note">🏆 A huge congrats to <strong>Sandton</strong> for recycling <strong>12.4k kg</strong> and leading the charge!</p>
+                    <p class="leaderboard-note" style="margin-top: 1rem;">🏆 Congratulations to <strong>Sandton</strong> for leading the charge!</p>
                 </div>
+
                 <div class="live-feed-column">
-                    <h2>Live Community Activity</h2>
-                    <p class="activity-subtitle">See the latest verified drop-offs from Green Members.</p>
+                    <h3 class="section-h3">Live Activity</h3>
                     <div class="activity-feed-container">
                         <div class="activity-feed" id="activity-feed"></div>
                     </div>
                 </div>
+
             </div>
         </div>
     </section>
@@ -251,7 +260,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- 1. LIVE ACTIVITY FEED LOGIC ---
             const feedElement = document.getElementById('activity-feed');
+            const container = document.querySelector('.activity-feed-container');
             const fakeData = [
                 { icon: '♻️', text: '<strong>1.5kg</strong> of Cans verified at <strong>Pikitup Marlboro</strong>' },
                 { icon: '♻️', text: '<strong>2.1kg</strong> of Paper verified at <strong>Mpact Randburg</strong>' },
@@ -259,35 +270,108 @@
                 { icon: '♻️', text: '<strong>3.0kg</strong> of Cardboard verified at <strong>Mpact Germiston</strong>' },
                 { icon: '♻️', text: '<strong>1.2kg</strong> of PET Bottles verified at <strong>FMSA Waltloo</strong>' },
             ];
-            const allData = [...fakeData, ...fakeData];
-            allData.forEach(item => {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'activity-item';
-                itemElement.innerHTML = `\n                        <span class="activity-icon">${item.icon}</span>\n                        <span class="activity-text">${item.text}</span>\n                    `;
-                feedElement.appendChild(itemElement);
-            });
-            const itemHeight = 61;
-            const totalScrollHeight = fakeData.length * itemHeight;
-            try { document.styleSheets[0].insertRule(`@keyframes scroll-up { 0% { transform: translateY(0); } 100% { transform: translateY(-${totalScrollHeight}px); } }`, document.styleSheets[0].cssRules.length); } catch (e) {}
-        });
-    </script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
+            // Build the feed to ensure seamless looping
+            function buildFeed(repeats) {
+                feedElement.innerHTML = '';
+                for (let r = 0; r < repeats; r++) {
+                    fakeData.forEach(item => {
+                        const itemElement = document.createElement('div');
+                        itemElement.className = 'activity-item';
+                        itemElement.innerHTML = `
+                            <span class="activity-icon">${item.icon}</span>
+                            <span class="activity-text">${item.text}</span>
+                        `;
+                        feedElement.appendChild(itemElement);
+                    });
+                }
+            }
+
+            // Fill container vertically
+            let repeats = 12; // increased to ensure seamless loop (was 6)
+            buildFeed(repeats);
+            let singleHeight = feedElement.scrollHeight / repeats;
+            const maxRepeats = 10;
+            while (singleHeight < (container.clientHeight || 350) && repeats < maxRepeats) {
+                repeats++;
+                buildFeed(repeats);
+                singleHeight = feedElement.scrollHeight / repeats;
+            }
+
+            // Create dynamic keyframe for perfect loop
+            try {
+                const keyframesName = 'scroll-up-loop';
+                const styleSheet = document.styleSheets[0];
+                // remove old rule if exists
+                for (let i = styleSheet.cssRules.length - 1; i >= 0; i--) {
+                    if (styleSheet.cssRules[i].name === keyframesName) { styleSheet.deleteRule(i); }
+                }
+                const rule = `@keyframes ${keyframesName} { 0% { transform: translateY(0); } 100% { transform: translateY(-${singleHeight}px); } }`;
+                styleSheet.insertRule(rule, styleSheet.cssRules.length);
+
+                feedElement.style.position = 'absolute';
+                feedElement.style.width = '100%';
+                // Adjust speed based on height
+                const duration = Math.max(10, Math.round(singleHeight * 0.06));
+                feedElement.style.animation = `${keyframesName} ${duration}s linear infinite`;
+
+                feedElement.addEventListener('mouseenter', () => { feedElement.style.animationPlayState = 'paused'; });
+                feedElement.addEventListener('mouseleave', () => { feedElement.style.animationPlayState = 'running'; });
+            } catch (e) { console.warn('Animation setup failed', e); }
+
+
+            // --- 2. CHART.JS LOGIC ---
             const canvas = document.getElementById('neighborhoodBarChart');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            var gradient = ctx.createLinearGradient(0, 0, 0, 250);
-            gradient.addColorStop(0, 'rgba(76, 175, 80, 0.8)');
-            gradient.addColorStop(1, 'rgba(76, 175, 80, 0.2)');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Sandton', 'Randburg', 'Soweto', 'Roodepoort'],
-                    datasets: [{ label: 'Total KGs Recycled', data: [12400, 9800, 7200, 5500], backgroundColor: gradient, borderColor: '#4CAF50', borderWidth: 2, borderRadius: 6 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) label += context.parsed.y.toLocaleString() + ' kg'; return label; } } } }, scales: { y: { beginAtZero: true, ticks: { color: '#aaa', callback: function(value){ return value/1000 + 'k kg'; } }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, x: { ticks: { color: '#f4f4f4' }, grid: { display: false } } } }
-            });
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                // Create Green Gradient
+                var gradient = ctx.createLinearGradient(0, 0, 0, 350);
+                gradient.addColorStop(0, 'rgba(76, 175, 80, 0.8)');
+                gradient.addColorStop(1, 'rgba(76, 175, 80, 0.1)');
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Sandton', 'Randburg', 'Soweto', 'Roodepoort'],
+                        datasets: [{
+                            label: 'Total KGs Recycled',
+                            data: [12400, 9800, 7200, 5500],
+                            backgroundColor: gradient,
+                            borderColor: '#4CAF50',
+                            borderWidth: 2,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) label += ': ';
+                                        if (context.parsed.y !== null) label += context.parsed.y.toLocaleString() + ' kg';
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#aaa', callback: function(value){ return value/1000 + 'k kg'; } },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#f4f4f4' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
         });
     </script>
 

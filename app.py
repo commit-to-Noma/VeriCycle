@@ -420,7 +420,7 @@ def get_dashboard_data():
     # Serve a clean, staged dashboard for the demo user and live data for others.
     # Case-insensitive match so users who signed up with different capitalization still get demo data
     if current_user.email.lower().strip() == 'demo@vericycle.com':
-        data = {
+            data = {
             "total_kg": 23.5,
             "total_eco": 1175,
             "weekly_goal": 30, 
@@ -428,7 +428,6 @@ def get_dashboard_data():
             "neighborhood_current_kg": 165.0, 
             "neighborhood_goal_kg": 1000,
             "profile_complete": "1",
-            "force_reset": True, # <--- Tells frontend to wipe old messy data automatically
             "activities": [
                 { "timestamp": "2025-11-12T10:00:00Z", "desc": "Verified Drop-off (8.5kg of Paper)", "amount": 425.00 },
                 { "timestamp": "2025-11-08T14:30:00Z", "desc": "Verified Drop-off (15.0kg of Cans)", "amount": 750.00 }

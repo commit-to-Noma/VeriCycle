@@ -12,7 +12,7 @@
 <body class="dark-theme">
     {% include '_navbar.html' %}
 
-    <main class="container app-dashboard">
+    <main class="container app-dashboard" style="overflow:visible;">
         <div class="dashboard-header">
             <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
             <p>Here is your recycling progress.</p>
@@ -28,7 +28,7 @@
                 <p class="kpi-value" id="kpi-ecocoin">--</p>
                 
                 <a href="{{ url_for('swap') }}" class="btn-primary" style="width: 100%; box-sizing: border-box; margin-top: 1.5rem; text-align: center;">
-                    My Wallet & Redeem
+                    Wallet & Exchange
                 </a>
             </div>
             
@@ -153,37 +153,24 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // --- BROADCAST LISTENER (Auto-update) ---
-        const channel = new BroadcastChannel('vericycle_demo');
-        channel.onmessage = (event) => {
-            if (event.data.type === 'DEPOSIT') {
-                // Trigger the button click automatically!
-                const btn = document.getElementById('simulate-deposit-btn');
-                if (btn) btn.click();
-            }
-        };
-
+        
         // --- 1. GLOBAL VARIABLES ---
         const generateButton = document.getElementById('generate-btn');
         const qrContainer = document.getElementById('qr-code-container');
         let personalChart = null;
         let neighborhoodChart = null;
-        let currentData = {}; // Holds the current state of all data
+        let currentData = {}; 
+        let pendingAnim = null; // holds pending animation values until modal is closed
 
-        // --- NEW: "MAGIC RESET" BUTTON (uses session flag) ---
-        const resetBtn = document.getElementById('reset-demo-btn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', function() {
-                // Clear the bad data
-                localStorage.removeItem('userBalance'); 
-                // Set a flag so the page knows to fetch clean data
-                sessionStorage.setItem('demo_just_reset', 'true'); 
-                // Reload the page
-                location.reload(); 
-            });
-        }
+        // --- BROADCAST LISTENER (Auto-update) ---
+        const channel = new BroadcastChannel('vericycle_demo');
+        channel.onmessage = (event) => {
+            if (event.data.type === 'DEPOSIT') {
+                handleDeposit();
+            }
+        };
 
-        // --- 2. "SCROLLING NUMBER" ANIMATION FUNCTION (Unchanged) ---
+        // --- 2. ANIMATION FUNCTION ---
         function animateValue(element, start, end, duration, suffix = '', decimals = 0) {
             let startTimestamp = null;
             const step = (timestamp) => {
@@ -196,296 +183,396 @@
             window.requestAnimationFrame(step);
         }
 
-        // --- 3. QR CODE LOGIC (Unchanged) ---
+        // Smooth-scroll helper (animates scroll to top over `duration` ms)
+        function smoothScrollToTop(duration = 350) {
+            const start = document.documentElement.scrollTop || document.body.scrollTop || 0;
+            if (start === 0) return;
+            const startTime = performance.now();
+            const step = (now) => {
+                const elapsed = now - startTime;
+                const t = Math.min(1, elapsed / duration);
+                // easeOutCubic
+                const eased = 1 - Math.pow(1 - t, 3);
+                const current = Math.round(start * (1 - eased));
+                window.scrollTo(0, current);
+                if (t < 1) requestAnimationFrame(step);
+                else {
+                    window.scrollTo(0, 0);
+                }
+            };
+            requestAnimationFrame(step);
+        }
+
+        // Animate scrollTop for any element (works for documentElement/body as well)
+        function smoothScrollElementToTop(el, duration = 350) {
+            if (!el) return Promise.resolve();
+            return new Promise((resolve) => {
+                const initial = el.scrollTop || 0;
+                if (initial === 0) { resolve(); return; }
+                const startTime = performance.now();
+                const tick = (now) => {
+                    const elapsed = now - startTime;
+                    const t = Math.min(1, elapsed / duration);
+                    const eased = 1 - Math.pow(1 - t, 3);
+                    const value = Math.round(initial * (1 - eased));
+                    try { el.scrollTop = value; } catch (e) {}
+                    // For document, sync both
+                    if (el === document.documentElement || el === document.body) {
+                        try { document.documentElement.scrollTop = value; } catch (e) {}
+                        try { document.body.scrollTop = value; } catch (e) {}
+                        try { window.scrollTo(0, value); } catch (e) {}
+                    }
+                    if (t < 1) requestAnimationFrame(tick);
+                    else { try { el.scrollTop = 0; } catch(e){}; resolve(); }
+                };
+                requestAnimationFrame(tick);
+            });
+        }
+
+        // animateValue that returns a Promise resolved after duration
+        function animateValuePromise(element, start, end, duration, suffix = '', decimals = 0) {
+            return new Promise((resolve) => {
+                animateValue(element, start, end, duration, suffix, decimals);
+                setTimeout(() => resolve(), duration + 20);
+            });
+        }
+
+        // --- 3. QR CODE LOGIC ---
         generateButton.addEventListener('click', function() {
-            // --- PROFILE CHECK ---
-            // We check here, right before generating
             if (!currentData.profile_complete) {
                 alert("Please complete your profile before generating a QR code.");
-                // We can also redirect them
                 window.location.href = "/profile";
                 return;
             }
-            
             qrContainer.innerHTML = ''; 
             const qrImage = document.createElement('img');
             qrImage.src = '/generate-qr?' + new Date().getTime();
             qrContainer.appendChild(qrImage);
         });
 
-        // --- 4. MAIN DATA LOADER & CHART BUILDER (FIXED) ---
-        function drawDashboard(data) {
-            try {
-                // A. Populate the KPI Cards
-                document.getElementById('kpi-ecocoin').textContent = data.total_eco;
-                document.getElementById('kpi-kg').textContent = `${data.total_kg.toFixed(1)} kg`;
-
-                // B. Populate the Chart Labels
-                document.getElementById('personal-goal-label').textContent = `${data.current_kg.toFixed(1)} / ${data.weekly_goal.toFixed(1)} kg`;
-                document.getElementById('neighborhood-goal-label').textContent = `${data.neighborhood_current_kg.toFixed(1)} / ${data.neighborhood_goal_kg.toFixed(1)} kg`;
-                
-                // C. Populate the Percentage text
-                let personalPercent = (data.current_kg / data.weekly_goal) * 100;
-                let neighborhoodPercent = (data.neighborhood_current_kg / data.neighborhood_goal_kg) * 100;
-                document.getElementById('personal-percent').textContent = `${personalPercent.toFixed(0)}%`;
-                document.getElementById('neighborhood-percent').textContent = `${neighborhoodPercent.toFixed(1)}%`; // Use 1 decimal for neighborhood
-
-                // D. Draw the Personal Goal Chart (Code is now included)
-                const personalCtx = document.getElementById('personalGoalChart').getContext('2d');
-                if (personalChart) personalChart.destroy(); 
-                personalChart = new Chart(personalCtx, {
-                    type: 'doughnut',
-                    data: {
-                        datasets: [{
-                            data: [data.current_kg, Math.max(0, data.weekly_goal - data.current_kg)],
-                            backgroundColor: ['#4CAF50', '#333'],
-                            borderColor: ['#1e1e1e'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false, cutout: '80%',
-                        animation: { duration: 0 }, 
-                        plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                    }
-                });
-
-                // E. Draw the Neighborhood Goal Chart (Code is now included)
-                const neighborhoodCtx = document.getElementById('neighborhoodGoalChart').getContext('2d');
-                if (neighborhoodChart) neighborhoodChart.destroy();
-                neighborhoodChart = new Chart(neighborhoodCtx, {
-                    type: 'doughnut',
-                    data: {
-                        datasets: [{
-                            data: [data.neighborhood_current_kg, Math.max(0, data.neighborhood_goal_kg - data.neighborhood_current_kg)],
-                            backgroundColor: ['#0D47A1', '#333'],
-                            borderColor: ['#1e1e1e'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false, cutout: '80%',
-                        animation: { duration: 0 },
-                        plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                    }
-                });
-            } catch (e) {
-                console.error("Error in drawDashboard:", e);
-            }
-        }
-
-        // Render the Recent Activity list from currentData.activities
-        function renderActivityList() {
-            try {
-                const list = document.querySelector('#activity-section .activity-list');
-                if (!list) return;
-                const activities = currentData.activities || [];
-
-                // If there are no activities in currentData, try to rehydrate from localStorage
-                if (!activities || activities.length === 0) {
-                    try {
-                        const stored = localStorage.getItem('userBalance');
-                        if (stored) {
-                            const parsed = JSON.parse(stored);
-                            if (parsed && Array.isArray(parsed.activities) && parsed.activities.length > 0) {
-                                currentData.activities = parsed.activities;
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error rehydrating activities from cache:', e);
-                    }
-                }
-
-                const finalActivities = (currentData.activities || []);
-                if (!finalActivities || finalActivities.length === 0) {
-                    // No activities to render; keep any existing static markup in DOM
-                    return;
-                }
-                list.innerHTML = '';
-                finalActivities.forEach(act => {
-                    const li = document.createElement('li');
-                    li.className = 'activity-item';
-
-                    // Determine display date (time if today, else date)
-                    const d = new Date(act.timestamp);
-                    const today = new Date();
-                    const isToday = d.toDateString() === today.toDateString();
-                    const dateLabel = isToday ? d.toTimeString().substring(0,5) : d.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
-
-                    const amountClass = act.amount < 0 ? 'withdrawal' : 'deposit';
-                    const amountText = (act.amount < 0 ? act.amount.toFixed(2) : ('+' + act.amount.toFixed(2))) + ' ECO';
-
-                    li.innerHTML = `
-                        <span class="activity-date">${dateLabel}</span>
-                        <span class="activity-desc">${act.desc}</span>
-                        <span class="activity-amount ${amountClass}">${amountText}</span>
-                    `;
-                    list.appendChild(li);
-                });
-            } catch (e) {
-                console.error('Error rendering activity list', e);
-            }
-        }
-
-        // --- 5. LOCALSTORAGE DATA HANDLER (NEW, SIMPLIFIED) ---
+        // --- 4. MAIN DATA LOADER ---
         async function initializeDashboard() {
             try {
-                // Check if we just clicked the "Reset" button
-                const justReset = sessionStorage.getItem('demo_just_reset');
-
+                // A. Get Base Server Data (1175 ECO)
+                const response = await fetch('/api/my-dashboard-data');
+                const serverData = await response.json();
+                
+                // B. Check LocalStorage (User Progress)
                 let storedData = localStorage.getItem('userBalance');
-
-                // If we clicked "Reset" OR there is no stored data, fetch the clean data
-                if (justReset || !storedData) {
-                    sessionStorage.removeItem('demo_just_reset'); // Clear the flag
-                    const response = await fetch('/api/my-dashboard-data');
-                    if (!response.ok) throw new Error('Network response was not ok');
-
-                    currentData = await response.json(); // This is the clean, 2-item list from app.py
-
-                    // --- CLEAN STATE FIX ---
-                    if (currentData.force_reset) {
-                        localStorage.removeItem('userBalance');
-                    }
-                    // -----------------------
-
-                    localStorage.setItem('userBalance', JSON.stringify(currentData));
-
-                } else {
-                    // Otherwise, just load the data we already have
+                
+                if (storedData) {
+                    // If we have saved progress, USE IT.
                     currentData = JSON.parse(storedData);
-                }
-
-                // --- THIS IS THE FIX ---
-                // If we just performed a swap (deduction), apply that flag first
-                const swapFlag = sessionStorage.getItem('demo_just_swapped');
-                if (swapFlag) {
-                    try {
-                        const swapData = JSON.parse(swapFlag);
-                        currentData.activities = currentData.activities || [];
-                        currentData.activities.unshift({
-                            timestamp: new Date().toISOString(),
-                            desc: swapData.desc,
-                            amount: swapData.amount
-                        });
-                        sessionStorage.removeItem('demo_just_swapped');
-                        localStorage.setItem('userBalance', JSON.stringify(currentData));
-                    } catch (e) {
-                        console.error('Error applying swap flag:', e);
+                    
+                    // Merge activities carefully to avoid losing server history
+                    if (!currentData.activities || currentData.activities.length === 0) {
+                        currentData.activities = serverData.activities;
                     }
+                } else {
+                    // First time load: Use Server Data
+                    currentData = serverData;
+                    localStorage.setItem('userBalance', JSON.stringify(currentData));
                 }
 
-                // Then apply a withdrawal flag (so withdrawal appears after the swap)
+                // C. Handle Withdrawal Return (The "Flag")
                 const withdrawalFlag = sessionStorage.getItem('demo_just_withdrew');
                 if (withdrawalFlag) {
-                    try {
-                        const withdrawalData = JSON.parse(withdrawalFlag);
-                        currentData.activities = currentData.activities || [];
-                        currentData.activities.unshift({
-                            timestamp: new Date().toISOString(),
-                            desc: withdrawalData.desc,
-                            amount: withdrawalData.amount
-                        });
-                        sessionStorage.removeItem('demo_just_withdrew');
-                        localStorage.setItem('userBalance', JSON.stringify(currentData));
-                    } catch (e) {
-                        console.error('Error applying withdrawal flag:', e);
-                    }
+                    const withdrawalData = JSON.parse(withdrawalFlag);
+
+                    // Capture old values for animation
+                    const oldEco = Number(currentData.total_eco) || 0;
+                    const oldKg = Number(currentData.total_kg) || 0;
+                    const oldPersonal = Number(currentData.current_kg) || 0;
+                    const oldNeighborhood = Number(currentData.neighborhood_current_kg) || 0;
+
+                    // Compute new values (swap deducts ECO only in demo)
+                    const newEco = oldEco - (Number(withdrawalData.swapAmount) || 0);
+                    const newKg = oldKg;
+                    const newPersonal = oldPersonal;
+                    const newNeighborhood = oldNeighborhood;
+
+                    // Apply changes to currentData
+                    currentData.total_eco = newEco;
+
+                    // Add Swap Transaction
+                    currentData.activities.unshift({
+                        timestamp: new Date().toISOString(),
+                        desc: withdrawalData.swapDesc,
+                        amount: -withdrawalData.swapAmount
+                    });
+
+                    // Add Withdrawal Transaction
+                    currentData.activities.unshift({
+                        timestamp: new Date().toISOString(),
+                        desc: withdrawalData.withdrawDesc,
+                        amount: 0
+                    });
+
+                    // Record pending animation so numbers animate when the dashboard loads
+                    pendingAnim = {
+                        type: 'withdraw',
+                        oldEco, newEco,
+                        oldKg, newKg,
+                        oldPersonal, newPersonal,
+                        oldNeighborhood, newNeighborhood,
+                        swapAmount: Number(withdrawalData.swapAmount) || 0
+                    };
+
+                    sessionStorage.removeItem('demo_just_withdrew');
+                    localStorage.setItem('userBalance', JSON.stringify(currentData));
                 }
 
+                // D. Draw Dashboard
                 drawDashboard(currentData);
-                renderActivityList(); 
+                renderActivityList();
+
+                // If a pending animation was recorded (e.g. from a withdraw flag),
+                // run it immediately so the user sees the animated update on load.
+                if (pendingAnim) {
+                    // Ensure viewport is at top before running animations
+                    const docEl = document.documentElement;
+                    const bodyEl = document.body;
+                    const mainDashboard = document.querySelector('.app-dashboard') || document.querySelector('main') || null;
+                    Promise.all([
+                        smoothScrollElementToTop(docEl, 200),
+                        smoothScrollElementToTop(bodyEl, 200)
+                    ]).then(() => {
+                        if (mainDashboard) return smoothScrollElementToTop(mainDashboard, 180);
+                    }).then(() => runPendingAnimations()).catch(() => runPendingAnimations());
+                }
 
             } catch (e) {
                 console.error("Error initializing dashboard:", e);
             }
         }
 
-        // --- 6. SUCCESS MODAL FUNCTIONS (Updated) ---
-        const successModal = document.getElementById('success-modal');
-        const modalCloseBtn = document.getElementById('modal-close-btn');
-        const simulateBtn = document.getElementById('simulate-deposit-btn');
-        const confettiCanvas = document.getElementById('confetti-canvas');
-        const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
-        function showSuccessModal(kg) {
-            // The EcoCoin value is now part of the HTML
-            // We just need to update the modal subtitle
-            document.querySelector('#success-modal .success-subtitle').textContent = `A new drop-off of ${kg.toFixed(1)}kg has been verified.`;
-            successModal.style.display = 'flex';
-            modalConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        }
-        function hideSuccessModal() {
-            successModal.style.display = 'none';
-        }
+        // --- 5. HANDLE DEPOSIT (Simulation Logic) ---
+        function handleDeposit() {
+            // Prepare values
+            const bonusAmount = 518.00;
+            const weightAmount = 10.0;
 
-        // --- 7. EVENT LISTENERS (FIXED) ---
-        simulateBtn.addEventListener('click', function() {
-            showSuccessModal(10.0);
-        });
+            // Ensure numeric coercion (defend against strings in localStorage)
+            let oldEco = Number(currentData.total_eco) || 0;
+            let oldKg = Number(currentData.total_kg) || 0;
+            let oldPersonal = Number(currentData.current_kg) || 0;
+            let oldNeighborhood = Number(currentData.neighborhood_current_kg) || 0;
 
-        modalCloseBtn.addEventListener('click', function() {
-            hideSuccessModal();
+            const newEco = oldEco + bonusAmount;
+            const newKg = oldKg + weightAmount;
+            const newPersonal = oldPersonal + weightAmount;
+            const newNeighborhood = oldNeighborhood + weightAmount;
+            // Update data model now (store new values immediately)
+            currentData.total_eco = newEco;
+            currentData.total_kg = newKg;
+            currentData.current_kg = newPersonal;
+            currentData.neighborhood_current_kg = newNeighborhood;
 
-            const newEco = 518; 
-            const newKg = 10.0;
+            // Add activity
+            const now = new Date();
+            currentData.activities = currentData.activities || [];
+            currentData.activities.unshift({
+                timestamp: now.toISOString(),
+                desc: `Verified Drop-off (10.0kg of Cans)`,
+                amount: bonusAmount
+            });
 
-            // --- 1. Create the new activity object ---
-            const activityObj = {
-                timestamp: new Date().toISOString(),
-                desc: `Verified Drop-off (${newKg.toFixed(1)}kg of Cans)`,
-                amount: newEco
+            // Persist state
+            localStorage.setItem('userBalance', JSON.stringify(currentData));
+
+            // Re-render the activity list so the new item appears
+            renderActivityList();
+
+            // Save pending animation payload so the numbers animate after the user presses 'Awesome!'
+            pendingAnim = {
+                type: 'deposit',
+                oldEco, newEco,
+                oldKg, newKg,
+                oldPersonal, newPersonal,
+                oldNeighborhood, newNeighborhood,
+                bonusAmount, weightAmount
             };
 
-            // --- 2. Animate the numbers (your existing logic) ---
-            let oldEco = currentData.total_eco;
-            let oldKg = currentData.total_kg;
-            let oldPersonalKg = currentData.current_kg;
-            let oldNeighborhoodKg = currentData.neighborhood_current_kg;
-            let oldPersonalPercent = (oldPersonalKg / currentData.weekly_goal) * 100;
-            let oldNeighborhoodPercent = (oldNeighborhoodKg / currentData.neighborhood_goal_kg) * 100;
+            // Show the modal immediately; actual scroll + animations run when user clicks "Awesome!"
+            document.querySelector('#success-modal .success-subtitle').textContent = `A new drop-off of ${weightAmount.toFixed(1)}kg has been verified.`;
+            const confettiCanvas = document.getElementById('confetti-canvas');
+            const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
+            document.getElementById('success-modal').style.display = 'flex';
+            modalConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
 
-            let newTotalEco = oldEco + newEco;
-            let newTotalKg = oldKg + newKg;
-            let newPersonalKg = oldPersonalKg + newKg;
-            let newNeighborhoodKg = oldNeighborhoodKg + newKg;
-            let newPersonalPercent = (newPersonalKg / currentData.weekly_goal) * 100;
-            let newNeighborhoodPercent = (newNeighborhoodKg / currentData.neighborhood_goal_kg) * 100;
+        // --- 6. DRAW DASHBOARD (Static Render) ---
+        function drawDashboard(data) {
+             // Safety fallback for zeroes
+             const eco = data.total_eco || 0;
+             const kg = data.total_kg || 0;
+             const curKg = data.current_kg || 0;
+             const goalKg = data.weekly_goal || 30;
+             const hoodCur = data.neighborhood_current_kg || 0;
+             const hoodGoal = data.neighborhood_goal_kg || 1000;
 
-            animateValue(document.getElementById('kpi-ecocoin'), oldEco, newTotalEco, 1500, '', 0); 
-            animateValue(document.getElementById('kpi-kg'), oldKg, newTotalKg, 1500, ' kg', 1);
-            animateValue(document.getElementById('personal-percent'), oldPersonalPercent, newPersonalPercent, 1500, '%', 0); 
-            animateValue(document.getElementById('neighborhood-percent'), oldNeighborhoodPercent, newNeighborhoodPercent, 1500, '%', 1); 
+             document.getElementById('kpi-ecocoin').textContent = eco.toFixed(0);
+             document.getElementById('kpi-kg').textContent = `${kg.toFixed(1)} kg`;
+             
+             document.getElementById('personal-goal-label').textContent = `${curKg.toFixed(1)} / ${goalKg.toFixed(1)} kg`;
+             document.getElementById('neighborhood-goal-label').textContent = `${hoodCur.toFixed(1)} / ${hoodGoal.toFixed(1)} kg`;
 
-            // --- 3. Update the labels ---
-            document.getElementById('personal-goal-label').textContent = `${newPersonalKg.toFixed(1)} / ${currentData.weekly_goal.toFixed(1)} kg`;
-            document.getElementById('neighborhood-goal-label').textContent = `${newNeighborhoodKg.toFixed(1)} / ${currentData.neighborhood_goal_kg.toFixed(1)} kg`;
-            personalChart.data.datasets[0].data = [newPersonalKg, Math.max(0, currentData.weekly_goal - newPersonalKg)];
-            neighborhoodChart.data.datasets[0].data = [newNeighborhoodKg, Math.max(0, currentData.neighborhood_goal_kg - newNeighborhoodKg)];
-            personalChart.update();
-            neighborhoodChart.update();
+             // Update Charts (Static)
+             // ... (Keep your existing Chart.js code here) ...
+             // Use the code from previous steps for Chart creation
+             updateCharts(curKg, goalKg, hoodCur, hoodGoal);
+        }
 
-            // --- 4. Save the new data to localStorage (THIS IS THE FIX) ---
-            currentData.total_eco = newTotalEco;
-            currentData.total_kg = newTotalKg;
-            currentData.current_kg = newPersonalKg;
-            currentData.neighborhood_current_kg = newNeighborhoodKg;
-            
-            // Add the new activity to the start of the list
-            currentData.activities = currentData.activities || [];
-            currentData.activities.unshift(activityObj); 
-            
-            // Save the *entire* new state
-            localStorage.setItem('userBalance', JSON.stringify(currentData)); 
+        // Run any pending animations that were recorded (deposit or withdrawal)
+        function runPendingAnimations() {
+            if (!pendingAnim) return Promise.resolve();
+            const anim = pendingAnim;
+            pendingAnim = null; // clear immediately to avoid double-run
 
-            // --- 5. Re-render the activity list ---
-            renderActivityList(); // This will now render all 3 items
+            const ecEl = document.getElementById('kpi-ecocoin');
+            const kgEl = document.getElementById('kpi-kg');
+            const pPctEl = document.getElementById('personal-percent');
+            const nPctEl = document.getElementById('neighborhood-percent');
 
-            // --- 6. Scroll and show banner ---
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            // ... (show banner code is fine) ...
+            // compute percentages safely
+            const oldPersonalPct = (anim.oldPersonal / (currentData.weekly_goal || 30)) * 100;
+            const newPersonalPct = (anim.newPersonal / (currentData.weekly_goal || 30)) * 100;
+            const oldNeighborhoodPct = (anim.oldNeighborhood / (currentData.neighborhood_goal_kg || 1000)) * 100;
+            const newNeighborhoodPct = (anim.newNeighborhood / (currentData.neighborhood_goal_kg || 1000)) * 100;
+
+            const promises = [
+                animateValuePromise(ecEl, anim.oldEco, anim.newEco, 900, '', 0),
+                animateValuePromise(kgEl, anim.oldKg, anim.newKg, 900, ' kg', 1),
+                animateValuePromise(pPctEl, oldPersonalPct, newPersonalPct, 900, '%', 0),
+                animateValuePromise(nPctEl, oldNeighborhoodPct, newNeighborhoodPct, 900, '%', 1)
+            ];
+
+            return Promise.all(promises).then(() => {
+                // update labels and charts after animation
+                try {
+                    document.getElementById('personal-goal-label').textContent = `${anim.newPersonal.toFixed(1)} / ${currentData.weekly_goal.toFixed(1)} kg`;
+                    updateCharts(anim.newPersonal, currentData.weekly_goal, anim.newNeighborhood, currentData.neighborhood_goal_kg);
+                } catch (e) {}
+            });
+        }
+
+        function updateCharts(curKg, goalKg, hoodCur, hoodGoal) {
+             const personalCtx = document.getElementById('personalGoalChart').getContext('2d');
+             if (personalChart) personalChart.destroy(); 
+             personalChart = new Chart(personalCtx, {
+                 type: 'doughnut',
+                 data: {
+                     datasets: [{
+                         data: [curKg, Math.max(0, goalKg - curKg)],
+                         backgroundColor: ['#4CAF50', '#333'],
+                         borderColor: ['#1e1e1e'],
+                         borderWidth: 0
+                     }]
+                 },
+                 options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+             });
+             
+             // Add Percentage Text
+             let pPct = (curKg / goalKg) * 100;
+             document.getElementById('personal-percent').textContent = `${pPct.toFixed(0)}%`;
+
+             const neighborhoodCtx = document.getElementById('neighborhoodGoalChart').getContext('2d');
+             if (neighborhoodChart) neighborhoodChart.destroy();
+             neighborhoodChart = new Chart(neighborhoodCtx, {
+                 type: 'doughnut',
+                 data: {
+                     datasets: [{
+                         data: [hoodCur, Math.max(0, hoodGoal - hoodCur)],
+                         backgroundColor: ['#0D47A1', '#333'],
+                         borderColor: ['#1e1e1e'],
+                         borderWidth: 0
+                     }]
+                 },
+                 options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+             });
+             
+             let nPct = (hoodCur / hoodGoal) * 100;
+             document.getElementById('neighborhood-percent').textContent = `${nPct.toFixed(1)}%`;
+        }
+
+        function renderActivityList() {
+            const list = document.querySelector('.activity-list');
+            if (!list) return;
+            list.innerHTML = '';
+            (currentData.activities || []).forEach(act => {
+                const li = document.createElement('li');
+                li.className = 'activity-item';
+                const d = new Date(act.timestamp);
+                const dateLabel = d.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
+                
+                // Color logic
+                let amountClass = 'deposit';
+                if (act.amount < 0) amountClass = 'withdrawal';
+                if (act.amount === 0) amountClass = 'neutral'; // For the 0.00 withdrawal
+
+                const amountText = (act.amount > 0 ? '+' : '') + act.amount.toFixed(2) + ' ECO';
+
+                li.innerHTML = `
+                    <span class="activity-date">${dateLabel}</span>
+                    <span class="activity-desc">${act.desc}</span>
+                    <span class="activity-amount ${amountClass}">${amountText}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('simulate-deposit-btn').addEventListener('click', handleDeposit);
+        
+        document.getElementById('modal-close-btn').addEventListener('click', function() {
+            const successModalEl = document.getElementById('success-modal');
+            if (successModalEl) {
+                // hide and disable pointer events to ensure it can't block scrolling
+                successModalEl.style.display = 'none';
+                successModalEl.style.pointerEvents = 'none';
+                successModalEl.style.visibility = 'hidden';
+            }
+
+            // Find possible scroll containers (document + main dashboard)
+            const docEl = document.documentElement;
+            const bodyEl = document.body;
+            const mainDashboard = document.querySelector('.app-dashboard') || document.querySelector('main') || null;
+
+            // Perform a fast, visible smooth-scroll UP so the user sees the motion,
+            // then run the pending animations once the scroll completes.
+            Promise.all([
+                smoothScrollElementToTop(docEl, 420),
+                smoothScrollElementToTop(bodyEl, 420)
+            ]).then(() => {
+                if (mainDashboard) return smoothScrollElementToTop(mainDashboard, 300);
+            }).then(() => {
+                // After the visible scroll completes, run the KPI animations
+                return runPendingAnimations();
+            }).then(() => {
+                const firstKpi = document.getElementById('kpi-ecocoin');
+                if (firstKpi && typeof firstKpi.focus === 'function') firstKpi.focus();
+            }).finally(() => {
+                // restore modal pointer handling shortly after animations
+                setTimeout(() => {
+                    if (successModalEl) {
+                        successModalEl.style.pointerEvents = '';
+                        successModalEl.style.visibility = '';
+                    }
+                }, 200);
+            });
         });
 
-        // --- 8. INITIAL PAGE LOAD ---
+        // Reset Button
+        const resetBtn = document.getElementById('reset-demo-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                localStorage.removeItem('userBalance');
+                sessionStorage.removeItem('demo_just_withdrew');
+                location.reload();
+            });
+        }
+
+        // Init
         initializeDashboard();
     });
 </script>
