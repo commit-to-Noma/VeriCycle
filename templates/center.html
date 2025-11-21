@@ -12,6 +12,7 @@
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard">
+        <a href="{{ url_for('collector_dashboard') }}" class="back-link">← Back to Dashboard</a>
         <div class="dashboard-header">
             <h2>Center Dashboard</h2>
             <p>Welcome, {{ current_user.email.split('@')[0] }}! Verify drop-offs and manage transactions.</p>
@@ -25,7 +26,7 @@
                 <input type="hidden" id="collector-id-scan" name="collector_id" value="0.0.7267109"> 
                 
                 <button type="button" class="btn-primary-large btn-form" id="scan-btn">
-                    📷 Scan Collector QR Code (Simulate)
+                    📷 Scan Collector QR Code
                 </button>
 
                 <div id="scan-results" style="display: none;">
@@ -70,24 +71,58 @@
             <div class="location-list" id="verification-list">
                 <h4 class="verification-date-header" id="today-header">Today</h4>
                 <ul id="today-list">
-                </ul>
+                    </ul>
     
-    <h4 class="verification-date-header">Yesterday, November 17, 2025</h4>
-    <ul>
-        <li>
-            <a href="#" class="loc-name-address">
-                <strong>14:32 - 0.0.7267109:</strong> 15.0kg of Cans
-            </a>
-            <span class="loc-phone">+750 ECO</span>
-        </li>
-        <li>
-            <a href="#" class="loc-name-address">
-                <strong>11:15 - 0.0.7267109:</strong> 8.5kg of Paper
-            </a>
-            <span class="loc-phone">+425 ECO</span>
-        </li>
-    </ul>
-    </div>
+                <h4 class="verification-date-header">Yesterday, November 17, 2025</h4>
+                <ul>
+                    <li>
+                        <div class="tx-info">
+                            <span class="tx-time">14:32</span>
+                            <div class="tx-details">
+                                <strong>Ed Marquez</strong> <span class="tx-id">(0.0.482910)</span><br>
+                                <span class="tx-meta">15.0kg of Cans</span>
+                            </div>
+                        </div>
+                        <span class="loc-phone">+750 ECO</span>
+                    </li>
+                    <li>
+                        <div class="tx-info">
+                            <span class="tx-time">11:15</span>
+                            <div class="tx-details">
+                                <strong>Jake Hall</strong> <span class="tx-id">(0.0.481029)</span><br>
+                                <span class="tx-meta">8.5kg of Paper</span>
+                            </div>
+                        </div>
+                        <span class="loc-phone">+425 ECO</span>
+                    </li>
+                    <li>
+                        <div class="tx-info">
+                            <span class="tx-time">09:45</span>
+                            <div class="tx-details">
+                                <strong>Ejaz Merchant</strong> <span class="tx-id">(0.0.591823)</span><br>
+                                <span class="tx-meta">12.0kg of Glass</span>
+                            </div>
+                        </div>
+                        <span class="loc-phone">+240 ECO</span>
+                    </li>
+                    <li>
+                        <div class="tx-info">
+                            <span class="tx-time">08:20</span>
+                            <div class="tx-details">
+                                <strong>Michiel Mulders</strong> <span class="tx-id">(0.0.339182)</span><br>
+                                <span class="tx-meta">5.0kg of Cans</span>
+                            </div>
+                        </div>
+                        <span class="loc-phone">+250 ECO</span>
+                    </li>
+                </ul>
+                
+                <div style="text-align: center; margin-top: 0.5rem;">
+                    <button class="btn-secondary" style="font-size: 0.9rem; padding: 0.5rem 1rem; border-color: #555; color: #aaa;">
+                        Load Previous Activity...
+                    </button>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -187,9 +222,12 @@ document.addEventListener('DOMContentLoaded', function() {
             credentials: 'same-origin', // <-- send cookies with request
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+        .then(response => {
+            // Try to parse the JSON error message on non-OK
+            return response.json().then(data => ({ ok: response.ok, data }));
+        })
+        .then(({ok, data}) => {
+            if (ok && data.success) {
                 const now = new Date();
                 const timeString = now.toTimeString().substring(0, 5);
                 
@@ -199,15 +237,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const newItem = document.createElement('li');
                 newItem.innerHTML = `
-                    <a href="#" class="loc-name-address">
-                        <strong>${timeString} - ${collectorId}:</strong> ${weight}kg of ${material}
-                    </a>
-                    <span class="loc-phone">+${calculatedTotal} ECO</span> 
+                    <div class="tx-info">
+                        <span class="tx-time">${timeString}</span>
+                        <div class="tx-details">
+                            <strong>Demo User</strong> <span class="tx-id">(${collectorId})</span><br>
+                            <span class="tx-meta">${weight}kg of ${material}</span>
+                        </div>
+                    </div>
+                    <span class="loc-phone">+${calculatedTotal} ECO</span>
                 `;
                 
                 todayList.prepend(newItem);
                 
                 showBanner("Verification Successful!");
+                // --- BROADCAST CHANNEL (Real-time signal) ---
+                const channel = new BroadcastChannel('vericycle_demo');
+                channel.postMessage({
+                    type: 'DEPOSIT'
+                });
                 verifyForm.reset();
                 rewardSummary.style.display = 'none';
                 scanResultsDiv.style.display = 'none';
@@ -219,8 +266,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 2000);
 
             } else {
-                showBanner("Error! Try Again.");
-                verifyBtn.textContent = "Error! Try Again.";
+                // Show server-provided message when available
+                const msg = (data && (data.message || data.error)) ? (data.message || data.error) : 'Error! Try Again.';
+                showBanner(msg);
+                verifyBtn.textContent = msg;
                 verifyBtn.disabled = false;
             }
         })

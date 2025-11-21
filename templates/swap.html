@@ -11,6 +11,7 @@
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard">
+        <a href="{{ url_for('collector_dashboard') }}" class="back-link">← Back to Dashboard</a>
         <div class="dashboard-header">
             <h2>Redeem Your EcoCoin</h2>
             <p>This is the 2-step process to cash out your rewards.</p>
@@ -102,7 +103,7 @@
                     </div>
                     
                     <button class="btn-primary-large btn-form" id="withdraw-btn">
-                        Withdraw to Bank (Mockup)
+                        Withdraw to Bank
                     </button>
                 </div>
             </div>
@@ -269,12 +270,13 @@
                 currentData.pending_hbar = (currentData.pending_hbar || 0) + receiveAmount;
 
                 // --- THIS IS THE FIX ---
-                // Save the withdrawal details to be shown on the dashboard
-                const withdrawalDetails = {
+                // Save the swap deduction to session so the collector dashboard will add it once on load
+                const swapDetails = {
                     desc: `Swap (${swapAmount.toFixed(2)} ECO for ${receiveAmount.toFixed(4)} HBAR)`,
                     amount: -swapAmount
                 };
-                sessionStorage.setItem('demo_just_withdrew', JSON.stringify(withdrawalDetails));
+                sessionStorage.setItem('demo_just_swapped', JSON.stringify(swapDetails));
+                // Do NOT insert the activity locally here to avoid duplicate entries when the dashboard also applies the session flag.
                 // --- END OF FIX ---
 
                 // Do not add a local activity entry here; only persist updated totals

@@ -78,3 +78,7 @@ python app.py
 
 Open your browser and go to http://127.0.0.1:5000.
 
+## 🧪 Testing the Dual-Persona Flow
+To prevent session conflicts when testing both roles at once:
+1. **Collector:** Open in a normal tab.
+2. **Center:** Open in an **Incognito/Private** window.

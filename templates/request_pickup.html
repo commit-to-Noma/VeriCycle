@@ -11,6 +11,7 @@
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard">
+        <a href="{{ url_for('collector_dashboard') }}" class="back-link">← Back to Dashboard</a>
         <div class="dashboard-header">
             <h2>Schedule a Pickup</h2>
             <p>We'll come to you. Confirm your details below.</p>
@@ -85,7 +86,6 @@
                     </button>
                     <p class="pickup-note">
                         Our truck will collect between 09:00 and 14:00.
-                        (This is a pitch mockup)
                     </p>
                 </div>
             </div>

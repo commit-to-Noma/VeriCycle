@@ -59,16 +59,26 @@
                     <canvas id="neighborhoodGoalChart"></canvas>
                 </div>
                 </div>
-            
-        </div>
 
-    <div class="card" id="activity-section">
-        <h3>Recent Activity</h3>
-        <p class="mockup-subtitle">Your HCS-verified transaction log.</p>
-        
-        <ul class="activity-list">
-        </ul>
-    </div>
+            <div class="card proof-income" style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem; min-height: 0; height: auto;">
+                <div>
+                    <h3 style="margin-bottom: 0.25rem;">Proof of Income Report</h3>
+                    <p style="color: #aaa; margin: 0; font-size: 0.9rem;">Download your official verified transaction history.</p>
+                </div>
+                <a href="{{ url_for('static', filename='sample_report.pdf') }}" target="_blank" class="btn-secondary" style="margin-top: 0;">
+                    Download PDF 📄
+                </a>
+            </div>
+
+            <div class="card" id="activity-section" style="grid-column: 1 / -1; margin-top: 0;">
+                <h3>Recent Activity</h3>
+                <p class="mockup-subtitle">Your HCS-verified transaction log.</p>
+                
+                <ul class="activity-list">
+                </ul>
+            </div>
+
+        </div>
 
     <!-- This is the new 2-column QR card -->
     <div class="card">
@@ -130,9 +140,9 @@
 
     <div class="card" style="background-color: #333; border: 1px solid #E57373;">
          <button class="btn-primary" id="simulate-deposit-btn" style="background-color: #0D47A1; width: 100%; box-sizing: border-box;">
-            Simulate 10kg Cans Deposit (+518 ECO)
+            Refresh Balance (Simulate Scan)
         </button>
-        {% if current_user.email == 'demo@vericycle.com' %}
+        {% if current_user.email.lower() == 'demo@vericycle.com' %}
         <button class="btn-secondary" id="reset-demo-btn" style="width: 100%; box-sizing: border-box; margin-top: 1rem; border-color: #E57373; color: #E57373;">
             Reset Demo
         </button>
@@ -143,7 +153,16 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        
+        // --- BROADCAST LISTENER (Auto-update) ---
+        const channel = new BroadcastChannel('vericycle_demo');
+        channel.onmessage = (event) => {
+            if (event.data.type === 'DEPOSIT') {
+                // Trigger the button click automatically!
+                const btn = document.getElementById('simulate-deposit-btn');
+                if (btn) btn.click();
+            }
+        };
+
         // --- 1. GLOBAL VARIABLES ---
         const generateButton = document.getElementById('generate-btn');
         const qrContainer = document.getElementById('qr-code-container');
@@ -323,6 +342,13 @@
                     if (!response.ok) throw new Error('Network response was not ok');
 
                     currentData = await response.json(); // This is the clean, 2-item list from app.py
+
+                    // --- CLEAN STATE FIX ---
+                    if (currentData.force_reset) {
+                        localStorage.removeItem('userBalance');
+                    }
+                    // -----------------------
+
                     localStorage.setItem('userBalance', JSON.stringify(currentData));
 
                 } else {
@@ -331,7 +357,25 @@
                 }
 
                 // --- THIS IS THE FIX ---
-                // Check if we just made a withdrawal on the swap page
+                // If we just performed a swap (deduction), apply that flag first
+                const swapFlag = sessionStorage.getItem('demo_just_swapped');
+                if (swapFlag) {
+                    try {
+                        const swapData = JSON.parse(swapFlag);
+                        currentData.activities = currentData.activities || [];
+                        currentData.activities.unshift({
+                            timestamp: new Date().toISOString(),
+                            desc: swapData.desc,
+                            amount: swapData.amount
+                        });
+                        sessionStorage.removeItem('demo_just_swapped');
+                        localStorage.setItem('userBalance', JSON.stringify(currentData));
+                    } catch (e) {
+                        console.error('Error applying swap flag:', e);
+                    }
+                }
+
+                // Then apply a withdrawal flag (so withdrawal appears after the swap)
                 const withdrawalFlag = sessionStorage.getItem('demo_just_withdrew');
                 if (withdrawalFlag) {
                     try {

@@ -266,12 +266,7 @@ def profile():
         
         db.session.commit()
         flash('Your profile has been updated successfully!', 'success')
-        
-        # Redirect after profile update based on role
-        if current_user.role == 'center':
-            return redirect(url_for('center_dashboard'))
-        else:
-            return redirect(url_for('collector_dashboard'))
+        return redirect(url_for('profile')) # Stay on profile page to avoid session confusion
 
     # GET request
     return render_template('profile.html', active_page='profile')
@@ -397,46 +392,46 @@ def bulk_activities():
 def confirm_dropoff():
     # This route is only for Centers
     if current_user.role != 'center':
-        return "Unauthorized", 403
-        
-    collector_id = request.form['collector_id']
-    weight_kg = float(request.form['weight'])
-    reward_amount = "750" # This should be calculated based on weight, but 750 is our demo
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
 
-    print("--- CONFIRMATION RECEIVED! (demo mode - no token transfer) ---")
-    # NOTE: Demo flow — we intentionally skip calling the Hedera transfer script
-    # because many collectors in the demo environment may not have associated
-    # the demo token. Sending would fail with TOKEN_NOT_ASSOCIATED_TO_ACCOUNT.
-    # For a production flow, implement token association and return success
-    # based on the subprocess result.
-    return jsonify({"success": True, "message": "Transaction verified!"})
+    try:
+        collector_id = request.form.get('collector_id')
+        weight = request.form.get('weight')
+        if not collector_id or not weight:
+            return jsonify({'success': False, 'error': 'Missing collector_id or weight in request.'}), 400
+
+        weight_kg = float(weight)
+        reward_amount = "750" # This should be calculated based on weight, but 750 is our demo
+
+        print("--- CONFIRMATION RECEIVED! (demo mode - no token transfer) ---")
+        # NOTE: Demo flow — we intentionally skip calling the Hedera transfer script
+        # because many collectors in the demo environment may not have associated
+        # the demo token. Sending would fail with TOKEN_NOT_ASSOCIATED_TO_ACCOUNT.
+        # For a production flow, implement token association and return success
+        # based on the subprocess result.
+        return jsonify({"success": True, "message": "Transaction verified!"})
+    except Exception as e:
+        print('Error in confirm_dropoff:', e)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/my-dashboard-data')
 @login_required
 def get_dashboard_data():
     # Serve a clean, staged dashboard for the demo user and live data for others.
-    if current_user.email == 'demo@vericycle.com':
-        # If it is, send the complete "lived-in" data and a hardcoded activity list
+    # Case-insensitive match so users who signed up with different capitalization still get demo data
+    if current_user.email.lower().strip() == 'demo@vericycle.com':
         data = {
             "total_kg": 23.5,
             "total_eco": 1175,
-            "weekly_goal": 30,
+            "weekly_goal": 30, 
             "current_kg": 15.0,
-            "neighborhood_current_kg": 165.0,
+            "neighborhood_current_kg": 165.0, 
             "neighborhood_goal_kg": 1000,
             "profile_complete": "1",
-            # Hardcode the starting activity list for the demo user
+            "force_reset": True, # <--- Tells frontend to wipe old messy data automatically
             "activities": [
-                {
-                    "timestamp": "2025-11-12T10:00:00Z",
-                    "desc": "Verified Drop-off (8.5kg of Paper)",
-                    "amount": 425.00
-                },
-                {
-                    "timestamp": "2025-11-08T14:30:00Z",
-                    "desc": "Verified Drop-off (15.0kg of Cans)",
-                    "amount": 750.00
-                }
+                { "timestamp": "2025-11-12T10:00:00Z", "desc": "Verified Drop-off (8.5kg of Paper)", "amount": 425.00 },
+                { "timestamp": "2025-11-08T14:30:00Z", "desc": "Verified Drop-off (15.0kg of Cans)", "amount": 750.00 }
             ]
         }
     else:

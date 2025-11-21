@@ -1999,6 +1999,50 @@ img.logo {
     color: #aaa;
 }
 
+/* Back-link (used on sub-pages to return to dashboard) */
+.back-link {
+    display: inline-block;
+    color: #aaa;
+    text-decoration: none;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+.back-link:hover { color: #4CAF50; }
+
+/* Single spacing control between Proof of Income and Recent Activity.
+   Keep one authoritative rule here so you can tune the vertical gap easily. */
+#activity-section {
+    /* Negative margin to visually tuck the activity card closer to the proof card.
+       Adjust this single value to tighten/loosen the gap proportionally. */
+    margin-top: -5rem !important;
+    padding-top: 0.4rem !important;
+}
+/* --- Center Transaction List Styling --- */
+.tx-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.tx-time {
+    font-family: monospace;
+    color: #4CAF50;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.tx-details {
+    text-align: left;
+}
+.tx-id {
+    font-weight: 400;
+    color: #777;
+    font-size: 0.85rem;
+}
+.tx-meta {
+    font-size: 0.85rem;
+    color: #aaa;
+}
+/* (Removed duplicate .proof-income rule.) */
+
 .pickup-arrow {
     font-size: 2.5rem;
     color: #aaa;
@@ -2053,7 +2097,7 @@ img.logo {
 .activity-list {
     list-style: none;
     padding: 0;
-    margin-top: 1.5rem;
+    margin-top: 0.5rem;
 }
 .activity-item {
     display: flex;
