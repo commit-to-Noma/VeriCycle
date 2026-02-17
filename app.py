@@ -25,14 +25,13 @@ load_dotenv()
 
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash, jsonify
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_bcrypt import Bcrypt
+from flask_login import login_user, login_required, logout_user, current_user
 import qrcode
 import io
 import subprocess
 import os 
 import re 
+from agents.collector_agent import CollectorAgent
 
 # -----------------------------------------------------------------
 # 1. APP CONFIGURATION
@@ -48,9 +47,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # 2. INITIALIZE TOOLS
 # - Initialize extensions: database, encryption and login manager.
 # -----------------------------------------------------------------
-db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
-login_manager = LoginManager(app)
+from extensions import db, bcrypt, login_manager
+
+# Initialize extensions with the app
+db.init_app(app)
+bcrypt.init_app(app)
+login_manager.init_app(app)
 
 # Ensure tables exist (creates Activity table for persistence)
 with app.app_context():
@@ -64,28 +66,7 @@ login_manager.login_message_category = None
 # 3. DATABASE MODEL
 # - Define `User` and `Activity` models used across routes.
 # -----------------------------------------------------------------
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(60), nullable=False)
-    hedera_account_id = db.Column(db.String(100), nullable=True)
-    hedera_private_key = db.Column(db.String(255), nullable=True)
-    
-    full_name = db.Column(db.String(100), nullable=True)
-    phone_number = db.Column(db.String(20), nullable=True)
-    address = db.Column(db.String(200), nullable=True)
-    id_number = db.Column(db.String(30), nullable=True)
-    role = db.Column(db.String(20), nullable=False, default='collector')
-
-
-class Activity(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    timestamp = db.Column(db.String(64), nullable=False)
-    desc = db.Column(db.String(512), nullable=False)
-    amount = db.Column(db.Float, nullable=False)
-
-    user = db.relationship('User', backref=db.backref('activities', lazy=True))
+from models import User, Activity
 
 # -----------------------------------------------------------------
 # 4. HELPER FUNCTION FOR FLASK-LOGIN
@@ -390,28 +371,55 @@ def bulk_activities():
 @app.route('/confirm-dropoff', methods=['POST'])
 @login_required 
 def confirm_dropoff():
-    # This route is only for Centers
     if current_user.role != 'center':
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
 
     try:
         collector_id = request.form.get('collector_id')
         weight = request.form.get('weight')
+
         if not collector_id or not weight:
-            return jsonify({'success': False, 'error': 'Missing collector_id or weight in request.'}), 400
+            return jsonify({'success': False, 'error': 'Missing data'}), 400
 
-        weight_kg = float(weight)
-        reward_amount = "750" # This should be calculated based on weight, but 750 is our demo
+        collector = User.query.filter_by(hedera_account_id=collector_id).first()
+        if not collector:
+            return jsonify({'success': False, 'error': 'Collector not found'}), 404
 
-        print("--- CONFIRMATION RECEIVED! (demo mode - no token transfer) ---")
-        # NOTE: Demo flow — we intentionally skip calling the Hedera transfer script
-        # because many collectors in the demo environment may not have associated
-        # the demo token. Sending would fail with TOKEN_NOT_ASSOCIATED_TO_ACCOUNT.
-        # For a production flow, implement token association and return success
-        # based on the subprocess result.
-        return jsonify({"success": True, "message": "Transaction verified!"})
+        activity = Activity(
+            user_id=collector.id,
+            timestamp=datetime.utcnow().isoformat(),
+            desc=f"Pending Drop-off ({weight}kg)",
+            amount=float(weight),
+            verified_status="pending"
+        )
+
+        db.session.add(activity)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Drop-off recorded as pending verification.",
+            "activity_id": activity.id
+        })
+
     except Exception as e:
         print('Error in confirm_dropoff:', e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/run-collector-agent/<int:activity_id>', methods=['POST'])
+@login_required
+def run_collector_agent(activity_id):
+    if current_user.role != 'center':
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    try:
+        agent = CollectorAgent()
+        result = agent.process(activity_id)
+
+        return jsonify(result)
+    except Exception as e:
+        print('Error in run_collector_agent:', e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/my-dashboard-data')
