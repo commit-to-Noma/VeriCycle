@@ -25,6 +25,7 @@ class Activity(db.Model):
 
     # NEW FIELDS FOR AGENTS
     verified_status = db.Column(db.String(20), default="pending")
+    status = db.Column(db.String(50), default="pending")
     agent_processed = db.Column(db.Boolean, default=False)
     hedera_tx_id = db.Column(db.String(150), nullable=True)
     trust_weight = db.Column(db.Float, default=1.0)

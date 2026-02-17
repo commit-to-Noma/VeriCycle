@@ -32,6 +32,7 @@ import subprocess
 import os 
 import re 
 from agents.collector_agent import CollectorAgent
+import threading
 
 # -----------------------------------------------------------------
 # 1. APP CONFIGURATION
@@ -334,6 +335,12 @@ def add_activity():
         act = Activity(user_id=current_user.id, timestamp=ts or datetime.utcnow().isoformat(), desc=desc, amount=amount)
         db.session.add(act)
         db.session.commit()
+        try:
+            print(f"CollectorAgent triggered for activity {act.id}")
+            agent = CollectorAgent()
+            threading.Thread(target=lambda: agent.process(act.id), daemon=True).start()
+        except Exception as e:
+            print('Failed to start CollectorAgent thread:', e)
         return jsonify({'success': True, 'activity': {'timestamp': act.timestamp, 'desc': act.desc, 'amount': act.amount}})
     except Exception as e:
         print('Error in add_activity:', e)
