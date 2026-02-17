@@ -114,6 +114,6 @@ We are launching in **South Africa** to solve a critical humanitarian crisis (sa
 ---
 
 ## 🔗 Links
--   **Live Demo:** [INSERT YOUR RENDER LINK HERE]
--   **Pitch Deck:** See PDF in repository.
--   **Video Demo:** [INSERT YOUTUBE LINK HERE]
+-   **Live Demo:** https://vericycle.onrender.com
+-   **Pitch Deck:** https://github.com/commit-to-Noma/VeriCycle/blob/main/Vericycle%20Pitch%20Deck.pdf
+-   **Video Demo:** https://youtu.be/Tj-i2-C7dGQ
