@@ -260,8 +260,9 @@ def collector_dashboard():
     if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
         flash('You must complete your profile before accessing the dashboard.', 'error')
         return redirect(url_for('profile'))
-    
-    return render_template('collector.html', active_page='dashboard')
+    # Expose the user's activities to the template so the UI can show agent status and Hedera TX
+    activities = Activity.query.filter_by(user_id=current_user.id).all()
+    return render_template('collector.html', activities=activities, active_page='dashboard')
 
 
 @app.route('/request-pickup')
@@ -429,45 +430,137 @@ def run_collector_agent(activity_id):
         print('Error in run_collector_agent:', e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+@app.route('/api/simulate-deposit', methods=['POST'])
+@login_required
+def simulate_deposit():
+    """
+    Creates a pending activity for a simulated drop-off.
+    Triggers the CollectorAgent in a background thread.
+    Returns the updated dashboard data.
+    """
+    try:
+        # Demo deposit values (reduced for verification demo: ensure total_amount <= 200)
+        weight = 10.0
+        # Reduced base amount for demo so Agent validation passes
+        base_amount = 130.00
+        neighborhood_bonus = 12.50
+        tier_bonus = 5.00
+        total_amount = base_amount + neighborhood_bonus + tier_bonus  # 147.50
+        
+        # Create activity record
+        from datetime import datetime
+        activity = Activity(
+            user_id=current_user.id,
+            timestamp=datetime.utcnow().isoformat() + 'Z',
+            desc=f"Verified Drop-off ({weight}kg of Cans)",
+            amount=total_amount,
+            status="pending",
+            verified_status="pending"
+        )
+        
+        db.session.add(activity)
+        db.session.commit()
+        
+        activity_id = activity.id
+        print(f"\n{'='*80}", flush=True)
+        print(f"[BACKEND] POST /api/simulate-deposit called", flush=True)
+        print(f"[BACKEND] New activity created: ID={activity_id}, user={current_user.email}, amount={total_amount}", flush=True)
+        print(f"{'='*80}\n", flush=True)
+        
+        # Trigger agent in background thread
+        def process_async():
+            print(f"[BACKEND] Background thread started for activity {activity_id}", flush=True)
+            try:
+                agent = CollectorAgent()
+                result = agent.process(activity_id)
+                if result.get('success'):
+                    print(f"[BACKEND] ✅ Agent finished successfully: tx_id={result.get('tx_id', 'N/A')[:40]}...", flush=True)
+                else:
+                    print(f"[BACKEND] ❌ Agent failed: {result.get('error', 'Unknown error')}", flush=True)
+            except Exception as e:
+                print(f"[BACKEND] 💥 Background thread crashed: {e}", flush=True)
+                import traceback
+                traceback.print_exc()
+        
+        background_thread = threading.Thread(target=process_async, daemon=True)
+        background_thread.start()
+        print(f"[BACKEND] Background thread spawned (daemon=True)", flush=True)
+        
+        # Fetch and return updated dashboard
+        response = get_dashboard_data()
+        response_data = response.get_json()
+        response_data['activity_id'] = activity_id
+        response_data['message'] = 'Drop-off logged and pending verification'
+        
+        print(f"[BACKEND] Returning dashboard with {len(response_data['activities'])} activities", flush=True)
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"[BACKEND] ❌ Error in simulate_deposit: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/my-dashboard-data')
 @login_required
 def get_dashboard_data():
-    # Serve a clean, staged dashboard for the demo user and live data for others.
-    # Case-insensitive match so users who signed up with different capitalization still get demo data
-    if current_user.email.lower().strip() == 'demo@vericycle.com':
-            data = {
-            "total_kg": 23.5,
-            "total_eco": 1175,
-            "weekly_goal": 30, 
-            "current_kg": 15.0,
-            "neighborhood_current_kg": 165.0, 
-            "neighborhood_goal_kg": 1000,
-            "profile_complete": "1",
-            "activities": [
-                { "timestamp": "2025-11-12T10:00:00Z", "desc": "Verified Drop-off (8.5kg of Paper)", "amount": 425.00 },
-                { "timestamp": "2025-11-08T14:30:00Z", "desc": "Verified Drop-off (15.0kg of Cans)", "amount": 750.00 }
-            ]
-        }
-    else:
-        # Otherwise, give the default data for a new user
-        data = {
-            "total_kg": 0.0,
-            "total_eco": 0,
-            "weekly_goal": 30,
-            "current_kg": 0.0,
-            "neighborhood_current_kg": 150.0,
-            "neighborhood_goal_kg": 1000,
-            "profile_complete": "1" if current_user.full_name else "0",
-            "activities": [] # Start with an empty list
-        }
-
-        # Attach user activities from the DB for non-demo users
-        try:
-            acts = Activity.query.filter_by(user_id=current_user.id).order_by(Activity.id.desc()).limit(200).all()
-            data['activities'] = [{'timestamp': a.timestamp, 'desc': a.desc, 'amount': a.amount} for a in acts]
-        except Exception as e:
-            print('Error fetching activities:', e)
-            data['activities'] = []
+    """
+    Returns dashboard data with real balance calculated from verified activities.
+    For demo user: Uses demo seed data + any new activities.
+    For other users: Calculates from their verified activities database.
+    """
+    activities = []
+    total_eco = 0
+    total_kg = 0
+    
+    try:
+        # Fetch all activities for this user (verified + pending)
+        acts = Activity.query.filter_by(user_id=current_user.id).order_by(Activity.id.desc()).limit(200).all()
+        
+        for a in acts:
+            activities.append({
+                'timestamp': a.timestamp,
+                'desc': a.desc,
+                'amount': a.amount,
+                'status': a.status,
+                'hedera_tx_id': a.hedera_tx_id
+            })
+            
+            # Only count VERIFIED activities toward balance
+            if a.verified_status == "verified" or a.status == "verified":
+                total_eco += a.amount
+                # Extract kg from description (e.g., "Verified Drop-off (10.0kg of Cans)")
+                import re
+                match = re.search(r'(\d+\.?\d*)\s*kg', a.desc)
+                if match:
+                    total_kg += float(match.group(1))
+    except Exception as e:
+        print('Error fetching activities:', e)
+        activities = []
+        total_eco = 0
+        total_kg = 0
+    
+    # Demo user gets seed data plus their activities
+    if current_user.email.lower().strip() == 'test@gmail.com':
+        demo_seed = [
+            { "timestamp": "2025-11-12T10:00:00Z", "desc": "Verified Drop-off (8.5kg of Paper)", "amount": 425.00, "status": "verified", "hedera_tx_id": None },
+            { "timestamp": "2025-11-08T14:30:00Z", "desc": "Verified Drop-off (15.0kg of Cans)", "amount": 750.00, "status": "verified", "hedera_tx_id": None }
+        ]
+        total_eco += 425.00 + 750.00  # Add seed data to balance
+        total_kg += 8.5 + 15.0
+        activities = demo_seed + activities  # Seed activities first, then user activities
+    
+    data = {
+        "total_kg": round(total_kg, 1),
+        "total_eco": round(total_eco, 2),
+        "weekly_goal": 30,
+        "current_kg": min(total_kg, 30),  # Personal weekly goal progress
+        "neighborhood_current_kg": 165.0,  # Static for now
+        "neighborhood_goal_kg": 1000,
+        "profile_complete": "1" if current_user.full_name else "0",
+        "activities": activities
+    }
 
     return jsonify(data)
 

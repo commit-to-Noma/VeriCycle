@@ -76,6 +76,34 @@
                 
                 <ul class="activity-list">
                 </ul>
+                
+                                <h3>Your Activity</h3>
+
+                                <table style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
+                                    <tr style="text-align:left; border-bottom: 1px solid #444;">
+                                        <th style="padding: 0.5rem;">Description</th>
+                                        <th style="padding: 0.5rem;">Amount</th>
+                                        <th style="padding: 0.5rem;">Status</th>
+                                        <th style="padding: 0.5rem;">Hedera TX</th>
+                                    </tr>
+
+                                    {% for act in activities %}
+                                        {% set display_status = act.status or act.verified_status %}
+                                        {% set hidden = display_status in ['failed', 'rejected'] %}
+                                        <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}" style="border-bottom: 1px solid #2a2a2a;">
+                                            <td style="padding: 0.5rem;">{{ act.desc }}</td>
+                                            <td style="padding: 0.5rem;">{{ act.amount }}</td>
+                                            <td style="padding: 0.5rem;">
+                                                {% if hidden %}
+                                                    <span class="status-muted">{{ display_status }} <span class="status-note">(hidden)</span></span>
+                                                {% else %}
+                                                    {{ display_status }}
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 0.5rem;">{{ act.hedera_tx_id or "Pending" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
             </div>
 
         </div>
@@ -142,11 +170,6 @@
          <button class="btn-primary" id="simulate-deposit-btn" style="background-color: #0D47A1; width: 100%; box-sizing: border-box;">
             Refresh Balance (Simulate Scan)
         </button>
-        {% if current_user.email.lower() == 'demo@vericycle.com' %}
-        <button class="btn-secondary" id="reset-demo-btn" style="width: 100%; box-sizing: border-box; margin-top: 1rem; border-color: #E57373; color: #E57373;">
-            Reset Demo
-        </button>
-        {% endif %}
     </div>
 
     </main>
@@ -161,14 +184,6 @@
         let neighborhoodChart = null;
         let currentData = {}; 
         let pendingAnim = null; // holds pending animation values until modal is closed
-
-        // --- BROADCAST LISTENER (Auto-update) ---
-        const channel = new BroadcastChannel('vericycle_demo');
-        channel.onmessage = (event) => {
-            if (event.data.type === 'DEPOSIT') {
-                handleDeposit();
-            }
-        };
 
         // --- 2. ANIMATION FUNCTION ---
         function animateValue(element, start, end, duration, suffix = '', decimals = 0) {
@@ -253,28 +268,14 @@
         // --- 4. MAIN DATA LOADER ---
         async function initializeDashboard() {
             try {
-                // A. Get Base Server Data (1175 ECO)
+                // Fetch fresh server data (always from backend, no cache)
                 const response = await fetch('/api/my-dashboard-data');
                 const serverData = await response.json();
                 
-                // B. Check LocalStorage (User Progress)
-                let storedData = localStorage.getItem('userBalance');
-                
-                if (storedData) {
-                    // If we have saved progress, USE IT.
-                    currentData = JSON.parse(storedData);
-                    
-                    // Merge activities carefully to avoid losing server history
-                    if (!currentData.activities || currentData.activities.length === 0) {
-                        currentData.activities = serverData.activities;
-                    }
-                } else {
-                    // First time load: Use Server Data
-                    currentData = serverData;
-                    localStorage.setItem('userBalance', JSON.stringify(currentData));
-                }
+                // Set as current data
+                currentData = serverData;
 
-                // C. Handle Withdrawal Return (The "Flag")
+                // Check for withdrawal return flag (from swap page)
                 const withdrawalFlag = sessionStorage.getItem('demo_just_withdrew');
                 if (withdrawalFlag) {
                     const withdrawalData = JSON.parse(withdrawalFlag);
@@ -298,14 +299,16 @@
                     currentData.activities.unshift({
                         timestamp: new Date().toISOString(),
                         desc: withdrawalData.swapDesc,
-                        amount: -withdrawalData.swapAmount
+                        amount: -withdrawalData.swapAmount,
+                        status: 'verified'
                     });
 
                     // Add Withdrawal Transaction
                     currentData.activities.unshift({
                         timestamp: new Date().toISOString(),
                         desc: withdrawalData.withdrawDesc,
-                        amount: 0
+                        amount: 0,
+                        status: 'verified'
                     });
 
                     // Record pending animation so numbers animate when the dashboard loads
@@ -319,10 +322,9 @@
                     };
 
                     sessionStorage.removeItem('demo_just_withdrew');
-                    localStorage.setItem('userBalance', JSON.stringify(currentData));
                 }
 
-                // D. Draw Dashboard
+                // Draw Dashboard
                 drawDashboard(currentData);
                 renderActivityList();
 
@@ -346,60 +348,116 @@
             }
         }
 
-        // --- 5. HANDLE DEPOSIT (Simulation Logic) ---
-        function handleDeposit() {
-            // Prepare values
-            const bonusAmount = 518.00;
-            const weightAmount = 10.0;
+        // --- 5. HANDLE DEPOSIT (Backend-Driven) ---
+        async function handleDeposit() {
+            try {
+                // Show loading state
+                document.getElementById('simulate-deposit-btn').disabled = true;
+                
+                // Call backend to create activity and process it
+                const response = await fetch('/api/simulate-deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok || result.total_eco === undefined) {
+                    alert('Error: ' + (result.error || 'Failed to process deposit'));
+                    document.getElementById('simulate-deposit-btn').disabled = false;
+                    return;
+                }
+                
+                const bonusAmount = 518.00;
+                const weightAmount = 10.0;
 
-            // Ensure numeric coercion (defend against strings in localStorage)
-            let oldEco = Number(currentData.total_eco) || 0;
-            let oldKg = Number(currentData.total_kg) || 0;
-            let oldPersonal = Number(currentData.current_kg) || 0;
-            let oldNeighborhood = Number(currentData.neighborhood_current_kg) || 0;
+                // Get old values from current UI
+                let oldEco = Number(currentData.total_eco) || 0;
+                let oldKg = Number(currentData.total_kg) || 0;
+                let oldPersonal = Number(currentData.current_kg) || 0;
+                let oldNeighborhood = Number(currentData.neighborhood_current_kg) || 0;
 
-            const newEco = oldEco + bonusAmount;
-            const newKg = oldKg + weightAmount;
-            const newPersonal = oldPersonal + weightAmount;
-            const newNeighborhood = oldNeighborhood + weightAmount;
-            // Update data model now (store new values immediately)
-            currentData.total_eco = newEco;
-            currentData.total_kg = newKg;
-            currentData.current_kg = newPersonal;
-            currentData.neighborhood_current_kg = newNeighborhood;
+                // Update from server response
+                currentData = result;
+                
+                const newEco = Number(currentData.total_eco) || 0;
+                const newKg = Number(currentData.total_kg) || 0;
+                const newPersonal = Math.min(newKg, 30);  // Personal goal is weekly
+                const newNeighborhood = Number(currentData.neighborhood_current_kg) || 0;
 
-            // Add activity
-            const now = new Date();
-            currentData.activities = currentData.activities || [];
-            currentData.activities.unshift({
-                timestamp: now.toISOString(),
-                desc: `Verified Drop-off (10.0kg of Cans)`,
-                amount: bonusAmount
-            });
+                // Re-render the activity list so the new item appears immediately
+                renderActivityList();
 
-            // Persist state
-            localStorage.setItem('userBalance', JSON.stringify(currentData));
+                // Save pending animation payload so the numbers animate after the user presses 'Awesome!'
+                pendingAnim = {
+                    type: 'deposit',
+                    oldEco, newEco,
+                    oldKg, newKg,
+                    oldPersonal, newPersonal,
+                    oldNeighborhood, newNeighborhood,
+                    bonusAmount, weightAmount
+                };
 
-            // Re-render the activity list so the new item appears
-            renderActivityList();
+                // Show the modal immediately; actual scroll + animations run when user clicks "Awesome!"
+                document.querySelector('#success-modal .success-subtitle').textContent = `A new drop-off of ${weightAmount.toFixed(1)}kg has been verified.`;
+                const confettiCanvas = document.getElementById('confetti-canvas');
+                const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
+                document.getElementById('success-modal').style.display = 'flex';
+                modalConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                
+                document.getElementById('simulate-deposit-btn').disabled = false;
 
-            // Save pending animation payload so the numbers animate after the user presses 'Awesome!'
-            pendingAnim = {
-                type: 'deposit',
-                oldEco, newEco,
-                oldKg, newKg,
-                oldPersonal, newPersonal,
-                oldNeighborhood, newNeighborhood,
-                bonusAmount, weightAmount
-            };
-
-            // Show the modal immediately; actual scroll + animations run when user clicks "Awesome!"
-            document.querySelector('#success-modal .success-subtitle').textContent = `A new drop-off of ${weightAmount.toFixed(1)}kg has been verified.`;
-            const confettiCanvas = document.getElementById('confetti-canvas');
-            const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
-            document.getElementById('success-modal').style.display = 'flex';
-            modalConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                // After re-rendering activities, ensure hidden rows stay hidden
+                applyHiddenStatusStyles();
+                console.log('[FRONTEND] Deposit success. Activity ID:', result.activity_id);
+                
+            } catch (e) {
+                console.error('[FRONTEND] Error in handleDeposit:', e);
+                alert('Error processing deposit');
+                document.getElementById('simulate-deposit-btn').disabled = false;
+            }
         }
+
+        // --- 6. HIDE/SHOW FAILED & REJECTED ROWS ---
+        // Adds a toggle button and hides rows with status 'failed' or 'rejected' by default.
+        function applyHiddenStatusStyles() {
+            const rows = document.querySelectorAll('tr.activity-row');
+            rows.forEach(r => {
+                const st = (r.getAttribute('data-status') || '').toLowerCase();
+                if (st === 'failed' || st === 'rejected') {
+                    r.style.display = 'none';
+                } else {
+                    r.style.display = '';
+                }
+            });
+        }
+
+        // Create toggle UI
+        (function insertHiddenToggle() {
+            const container = document.getElementById('activity-section');
+            if (!container) return;
+            const btn = document.createElement('button');
+            btn.className = 'btn-secondary';
+            btn.style.marginTop = '0.75rem';
+            btn.textContent = 'Show failed/rejected items';
+            btn.dataset.shown = 'false';
+            btn.addEventListener('click', function() {
+                const shown = btn.dataset.shown === 'true';
+                const rows = document.querySelectorAll('tr.activity-row');
+                rows.forEach(r => {
+                    const st = (r.getAttribute('data-status') || '').toLowerCase();
+                    if (st === 'failed' || st === 'rejected') {
+                        r.style.display = shown ? 'none' : '';
+                    }
+                });
+                btn.dataset.shown = (!shown).toString();
+                btn.textContent = shown ? 'Show failed/rejected items' : 'Hide failed/rejected items';
+            });
+            container.insertBefore(btn, container.querySelector('table'));
+        })();
+
+        // Apply initially
+        applyHiddenStatusStyles();
 
         // --- 6. DRAW DASHBOARD (Static Render) ---
         function drawDashboard(data) {
@@ -511,10 +569,13 @@
                 if (act.amount === 0) amountClass = 'neutral'; // For the 0.00 withdrawal
 
                 const amountText = (act.amount > 0 ? '+' : '') + act.amount.toFixed(2) + ' ECO';
+                
+                // Add status badge if present
+                const statusText = act.status ? ` [${act.status.toUpperCase()}]` : '';
 
                 li.innerHTML = `
                     <span class="activity-date">${dateLabel}</span>
-                    <span class="activity-desc">${act.desc}</span>
+                    <span class="activity-desc">${act.desc}${statusText}</span>
                     <span class="activity-amount ${amountClass}">${amountText}</span>
                 `;
                 list.appendChild(li);
@@ -562,24 +623,12 @@
             });
         });
 
-        // Reset Button
-        const resetBtn = document.getElementById('reset-demo-btn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', function() {
-                localStorage.removeItem('userBalance');
-                sessionStorage.removeItem('demo_just_withdrew');
-                location.reload();
-            });
-        }
-
         // Init
         initializeDashboard();
     });
-</script>
+    </script>
 
-        
-
-        <div class="modal-overlay" id="success-modal">
+    <div class="modal-overlay" id="success-modal">
         <div class="card modal-content success-modal-content">
             <canvas id="confetti-canvas"></canvas>
             <h2>Success!</h2>
@@ -596,5 +645,5 @@
             <button class="btn-primary-large btn-form" id="modal-close-btn">Awesome!</button>
         </div>
     </div>
-    </body>
+</body>
 </html>
