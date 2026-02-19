@@ -1,5 +1,6 @@
 from extensions import db
 from flask_login import UserMixin
+from datetime import datetime, timezone
 
 
 class User(db.Model, UserMixin):
@@ -36,3 +37,28 @@ class Activity(db.Model):
     attempt_count = db.Column(db.Integer, default=0)
 
     user = db.relationship('User', backref=db.backref('activities', lazy=True))
+
+
+class AgentTask(db.Model):
+    __tablename__ = "agent_task"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=False)
+    agent_name = db.Column(db.String(50), nullable=False)     # "CollectorAgent", etc
+    task_type = db.Column(db.String(50), nullable=False)      # "collect"/"verify"/"log"/"reward"/"attest"
+
+    status = db.Column(db.String(20), default="queued")       # queued|processing|done|failed
+    attempts = db.Column(db.Integer, default=0)
+
+    next_run_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                            default=lambda: datetime.now(timezone.utc))
+    last_error = db.Column(db.String(512), nullable=True)
+
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                           default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                           default=lambda: datetime.now(timezone.utc),
+                           onupdate=lambda: datetime.now(timezone.utc))
+
+    activity = db.relationship('Activity', backref=db.backref('tasks', lazy=True))

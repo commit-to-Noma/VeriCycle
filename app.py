@@ -31,8 +31,8 @@ import io
 import subprocess
 import os 
 import re 
-from agents.agent_coordinator import AgentCoordinator
 import threading
+from sqlalchemy.exc import OperationalError
 
 # -----------------------------------------------------------------
 # 1. APP CONFIGURATION
@@ -55,9 +55,25 @@ db.init_app(app)
 bcrypt.init_app(app)
 login_manager.init_app(app)
 
-# Ensure tables exist (creates Activity table for persistence)
-with app.app_context():
-    db.create_all()
+# (Tables will be created after models are imported)
+
+# Start the task worker thread (run in background thread with app context)
+import os
+import threading
+from agents.task_worker import run_worker_loop
+
+
+def start_worker_background():
+    def _run():
+        with app.app_context():
+            print("[BACKEND] Worker thread entering app context", flush=True)
+            run_worker_loop()
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    print("[BACKEND] Task worker thread started (daemon=True)", flush=True)
+
+# worker will be started when running the app directly (see bottom run block)
 
 login_manager.login_view = 'home'
 login_manager.login_message = None
@@ -69,13 +85,20 @@ login_manager.login_message_category = None
 # -----------------------------------------------------------------
 from models import User, Activity
 
+# Ensure tables exist (create after models are imported so metadata is registered)
+with app.app_context():
+    db.create_all()
+
 # -----------------------------------------------------------------
 # 4. HELPER FUNCTION FOR FLASK-LOGIN
 # - Provide the user loader required by Flask-Login.
 # -----------------------------------------------------------------
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    try:
+        return db.session.get(User, int(user_id))
+    except OperationalError:
+        return None
 
 # -----------------------------------------------------------------
 # 5. AUTHENTICATION ROUTES (LOGIN, LOGOUT, SIGNUP)
@@ -348,11 +371,11 @@ def add_activity():
         db.session.add(act)
         db.session.commit()
         try:
-            print(f"AgentCoordinator triggered for activity {act.id}")
-            coord = AgentCoordinator()
-            threading.Thread(target=lambda: coord.run_pipeline(act.id), daemon=True).start()
+            print(f"Enqueuing pipeline for activity {act.id}")
+            from agents.task_enqueue import enqueue_pipeline
+            enqueue_pipeline(act.id)
         except Exception as e:
-            print('Failed to start AgentCoordinator thread:', e)
+            print('Failed to enqueue tasks:', e)
         return jsonify({'success': True, 'activity': {'timestamp': act.timestamp, 'desc': act.desc, 'amount': act.amount}})
     except Exception as e:
         print('Error in add_activity:', e)
@@ -433,10 +456,10 @@ def run_collector_agent(activity_id):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
 
     try:
-        coord = AgentCoordinator()
-        result = coord.run_pipeline(activity_id)
+        from agents.task_enqueue import enqueue_pipeline
+        enqueue_pipeline(activity_id)
 
-        return jsonify({'success': result})
+        return jsonify({'success': True})
     except Exception as e:
         print('Error in run_collector_agent:', e)
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -459,11 +482,11 @@ def simulate_deposit():
         tier_bonus = 5.00
         total_amount = base_amount + neighborhood_bonus + tier_bonus  # 147.50
         
-        # Create activity record
-        from datetime import datetime
+        # Create activity record (use timezone-aware UTC timestamp)
+        from datetime import datetime, timezone
         activity = Activity(
             user_id=current_user.id,
-            timestamp=datetime.utcnow().isoformat() + 'Z',
+            timestamp=datetime.now(timezone.utc).isoformat(),
             desc=f"Verified Drop-off ({weight}kg of Cans)",
             amount=total_amount,
             status="pending",
@@ -479,24 +502,10 @@ def simulate_deposit():
         print(f"[BACKEND] New activity created: ID={activity_id}, user={current_user.email}, amount={total_amount}", flush=True)
         print(f"{'='*80}\n", flush=True)
         
-        # Trigger agent in background thread
-        def process_async():
-            print(f"[BACKEND] Background thread started for activity {activity_id}", flush=True)
-            try:
-                coord = AgentCoordinator()
-                result = coord.run_pipeline(activity_id)
-                if result:
-                    print(f"[BACKEND] ✅ Pipeline finished successfully", flush=True)
-                else:
-                    print(f"[BACKEND] ❌ Pipeline failed", flush=True)
-            except Exception as e:
-                print(f"[BACKEND] 💥 Background thread crashed: {e}", flush=True)
-                import traceback
-                traceback.print_exc()
-        
-        background_thread = threading.Thread(target=process_async, daemon=True)
-        background_thread.start()
-        print(f"[BACKEND] Background thread spawned (daemon=True)", flush=True)
+        # Enqueue pipeline tasks in the persistent queue
+        from agents.task_enqueue import enqueue_pipeline
+        enqueue_pipeline(activity_id)
+        print(f"[BACKEND] Tasks enqueued for activity {activity_id}", flush=True)
         
         # Fetch and return updated dashboard
         response = get_dashboard_data()
@@ -626,4 +635,6 @@ def admin_agents():
 # - Start the Flask development server when executed directly.
 # -----------------------------------------------------------------
 if __name__ == '__main__':
+    # Start background worker only when running the app directly
+    start_worker_background()
     app.run(debug=True, use_reloader=False)

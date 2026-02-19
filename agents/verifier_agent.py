@@ -29,10 +29,10 @@ class VerifierAgent:
                     print(f"[VERIFIER AGENT ERROR] Activity {activity_id} not found", flush=True)
                     return True  # Not my responsibility
 
-                # Only process if in 'collected' stage
-                if activity.pipeline_stage not in (None, "created", "collected"):
+                # Only process if exactly in 'collected' stage
+                if activity.pipeline_stage != "collected":
                     print(f"[VERIFIER AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
-                    return True
+                    return "skip"
 
                 print(f"[VERIFIER AGENT] Verifying: desc='{activity.desc}', amount={activity.amount}", flush=True)
 

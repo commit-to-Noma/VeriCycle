@@ -29,6 +29,11 @@ class CollectorAgent:
                     print(f"[AGENT ERROR] Activity {activity_id} not found", flush=True)
                     return False
 
+                # Only process if activity is newly created
+                if activity.pipeline_stage != "created":
+                    print(f"[AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
+                    return "skip"
+
                 print(f"[AGENT] Activity loaded: desc='{activity.desc}', amount={activity.amount}", flush=True)
 
                 # Validation: amount must be positive and <= 200

@@ -97,12 +97,17 @@ class LogbookAgent:
 
                 if not activity:
                     print(f"[LOGBOOK AGENT ERROR] Activity {activity_id} not found", flush=True)
-                    return True  # Not my responsibility
+                    return "done"  # nothing to do
 
-                # Only process if verified
+                # Idempotency: if already logged to HCS, skip
+                if activity.hedera_tx_id:
+                    print("[LOGBOOK AGENT] Already logged; skipping", flush=True)
+                    return "done"
+
+                # Only process if exactly verified
                 if activity.pipeline_stage != "verified":
                     print(f"[LOGBOOK AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
-                    return True
+                    return "skip"
 
                 print(f"[LOGBOOK AGENT] Submitting to Hedera HCS...", flush=True)
 
