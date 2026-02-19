@@ -18,16 +18,37 @@ async function submitRecord(dropOffData) {
   const client = Client.forTestnet();
   client.setOperator(operatorId, operatorKey);
 
-  console.log("Submitting new record to the VeriCycle Logbook...");
+  console.error("Submitting new record to the VeriCycle Logbook...");
 
   const message = JSON.stringify(dropOffData);
   const transaction = new TopicMessageSubmitTransaction({ topicId: logbookTopicId, message });
   const txResponse = await transaction.execute(client);
   const receipt = await txResponse.getReceipt(client);
 
-  console.log(`✅ New verification record submitted: ${receipt.status.toString()}`);
+  console.error(`✅ New verification record submitted: ${receipt.status.toString()}`);
   client.close();
-  return receipt.status.toString();
+  
+  // Return transaction ID as the single source of truth
+  return txResponse.transactionId.toString();
+}
+
+// CLI support: allow running as a standalone script
+const cliMode = process.argv[1]?.endsWith('submit-record.js') && process.argv.length > 2;
+
+if (cliMode) {
+  const activityId = process.argv[2];
+  const timestamp = new Date().toISOString();
+  const dropOffData = { activityId, timestamp, verified: true };
+  
+  submitRecord(dropOffData)
+    .then(txId => {
+      console.log(`TX_ID=${txId}`);
+      process.exit(0);
+    })
+    .catch(error => {
+      console.error('Error:', error.message);
+      process.exit(1);
+    });
 }
 
 export { submitRecord };

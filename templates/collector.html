@@ -100,7 +100,15 @@
                                                     {{ display_status }}
                                                 {% endif %}
                                             </td>
-                                            <td style="padding: 0.5rem;">{{ act.hedera_tx_id or "Pending" }}</td>
+                                            <td style="padding: 0.5rem;">
+                                                {% if display_status == "pending" %}
+                                                    Pending
+                                                {% elif act.hedera_tx_id and act.hedera_tx_id.startswith("0.0.") %}
+                                                    {{ act.hedera_tx_id }}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </table>
