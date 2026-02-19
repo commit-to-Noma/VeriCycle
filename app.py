@@ -31,7 +31,7 @@ import io
 import subprocess
 import os 
 import re 
-from agents.collector_agent import CollectorAgent
+from agents.agent_coordinator import AgentCoordinator
 import threading
 
 # -----------------------------------------------------------------
@@ -87,10 +87,19 @@ def signup():
     email = request.form.get('email')
     password = request.form.get('password')
     role = request.form.get('role')
+    
+    # ===== CRITICAL: Check if email exists BEFORE expensive Hedera account creation =====
+    # This prevents:
+    # 1. Burning testnet funds on duplicate account attempts
+    # 2. Race conditions where two requests try to create the same account
+    # Must be checked BEFORE any subprocess calls to collector-account.js
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
+        print(f"[SIGNUP] Email {email} already exists, rejecting signup")
         flash('That email is already taken. Please log in.', 'error')
         return redirect(url_for('home', _anchor='auth-modal'))
+    
+    print(f"[SIGNUP] Email {email} is new. Proceeding with account creation for role={role}")
 
     try:
         new_id = None
@@ -150,6 +159,8 @@ def signup():
             
             output = result.stdout
             print("--- JS SCRIPT STDOUT: ---"); print(output)
+            print("--- JS SCRIPT STDERR: ---"); print(result.stderr)
+            print("-------------------------")
 
             new_id_match = re.search(r"(0.0\.\d+)", output)
             new_key_match = re.search(r"(30[0-9a-fA-F]{60,})", output)
@@ -337,11 +348,11 @@ def add_activity():
         db.session.add(act)
         db.session.commit()
         try:
-            print(f"CollectorAgent triggered for activity {act.id}")
-            agent = CollectorAgent()
-            threading.Thread(target=lambda: agent.process(act.id), daemon=True).start()
+            print(f"AgentCoordinator triggered for activity {act.id}")
+            coord = AgentCoordinator()
+            threading.Thread(target=lambda: coord.run_pipeline(act.id), daemon=True).start()
         except Exception as e:
-            print('Failed to start CollectorAgent thread:', e)
+            print('Failed to start AgentCoordinator thread:', e)
         return jsonify({'success': True, 'activity': {'timestamp': act.timestamp, 'desc': act.desc, 'amount': act.amount}})
     except Exception as e:
         print('Error in add_activity:', e)
@@ -422,10 +433,10 @@ def run_collector_agent(activity_id):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
 
     try:
-        agent = CollectorAgent()
-        result = agent.process(activity_id)
+        coord = AgentCoordinator()
+        result = coord.run_pipeline(activity_id)
 
-        return jsonify(result)
+        return jsonify({'success': result})
     except Exception as e:
         print('Error in run_collector_agent:', e)
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -472,12 +483,12 @@ def simulate_deposit():
         def process_async():
             print(f"[BACKEND] Background thread started for activity {activity_id}", flush=True)
             try:
-                agent = CollectorAgent()
-                result = agent.process(activity_id)
-                if result.get('success'):
-                    print(f"[BACKEND] ✅ Agent finished successfully: tx_id={result.get('tx_id', 'N/A')[:40]}...", flush=True)
+                coord = AgentCoordinator()
+                result = coord.run_pipeline(activity_id)
+                if result:
+                    print(f"[BACKEND] ✅ Pipeline finished successfully", flush=True)
                 else:
-                    print(f"[BACKEND] ❌ Agent failed: {result.get('error', 'Unknown error')}", flush=True)
+                    print(f"[BACKEND] ❌ Pipeline failed", flush=True)
             except Exception as e:
                 print(f"[BACKEND] 💥 Background thread crashed: {e}", flush=True)
                 import traceback
@@ -564,8 +575,54 @@ def get_dashboard_data():
 
     return jsonify(data)
 
+
 # -----------------------------------------------------------------
-# 8. RUN THE APP
+# 8. ADMIN AGENT MONITOR
+# - View pipeline status and agent processing
+# -----------------------------------------------------------------
+@app.route('/admin/agents', methods=['GET'])
+@login_required
+def admin_agents():
+    """
+    Agent Monitor: Shows recent activities with pipeline status
+    Displays: status, pipeline_stage, trust_weight, hedera_tx_id, last_error
+    """
+    if current_user.role not in ('admin', 'center'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        # Get recent activities (last 50)
+        activities = Activity.query.order_by(Activity.id.desc()).limit(50).all()
+        
+        result = []
+        for act in activities:
+            result.append({
+                'id': act.id,
+                'user_email': User.query.get(act.user_id).email if act.user_id else 'N/A',
+                'timestamp': act.timestamp,
+                'desc': act.desc,
+                'amount': act.amount,
+                'status': act.status,
+                'verified_status': act.verified_status,
+                'pipeline_stage': act.pipeline_stage,
+                'trust_weight': round(act.trust_weight, 3) if act.trust_weight else 0,
+                'hedera_tx_id': act.hedera_tx_id[:20] + '...' if act.hedera_tx_id and len(act.hedera_tx_id) > 20 else act.hedera_tx_id,
+                'last_error': act.last_error,
+                'attempt_count': act.attempt_count
+            })
+        
+        return jsonify({
+            'success': True,
+            'total': len(result),
+            'activities': result
+        })
+    except Exception as e:
+        print(f'Error in admin_agents: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# -----------------------------------------------------------------
+# 9. RUN THE APP
 # - Start the Flask development server when executed directly.
 # -----------------------------------------------------------------
 if __name__ == '__main__':

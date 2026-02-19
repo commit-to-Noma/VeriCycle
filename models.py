@@ -29,5 +29,10 @@ class Activity(db.Model):
     agent_processed = db.Column(db.Boolean, default=False)
     hedera_tx_id = db.Column(db.String(150), nullable=True)
     trust_weight = db.Column(db.Float, default=1.0)
+    
+    # PIPELINE FIELDS (for multi-agent coordinator)
+    pipeline_stage = db.Column(db.String(50), default="created")  # created -> collected -> verified -> logged -> rewarded -> attested
+    last_error = db.Column(db.String(512), nullable=True)
+    attempt_count = db.Column(db.Integer, default=0)
 
     user = db.relationship('User', backref=db.backref('activities', lazy=True))

@@ -32,7 +32,8 @@ async function main() {
   console.log("-----------------------------------");
   console.log("✅ New Collector Account Created!");
   console.log(`New Account ID: ${newAccountId.toString()}`);
-  console.log(`New Account Private Key (DER): ${newAccountPrivateKey.toStringDer()}`);
+  // Output key in structured format (not labeled) for Flask to parse
+  console.log(`ACCOUNT_KEY=${newAccountPrivateKey.toStringDer()}`);
   console.log("-----------------------------------");
 
   client.close();

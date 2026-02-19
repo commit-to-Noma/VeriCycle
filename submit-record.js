@@ -15,6 +15,9 @@ async function submitRecord(dropOffData) {
   const logbookTopicId = process.env.VERICYCLE_TOPIC_ID;
   if (!operatorId || !operatorKey || !logbookTopicId) throw new Error("Please set OPERATOR_ID, OPERATOR_KEY and VERICYCLE_TOPIC_ID in .env");
 
+  // ===== DEBUG: Log which operator is being used (credentials are NOT printed) =====
+  console.error(`[HEDERA] Using operator: ${operatorId}`);
+
   const client = Client.forTestnet();
   client.setOperator(operatorId, operatorKey);
 

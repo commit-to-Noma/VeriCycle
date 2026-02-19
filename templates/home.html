@@ -249,6 +249,31 @@
         const roleInput = document.getElementById('role-input');
         roleButtons.forEach(button => { button.addEventListener('click', function() { roleButtons.forEach(btn => btn.classList.remove('active')); this.classList.add('active'); if (roleInput) roleInput.value = this.dataset.role; }); });
 
+        // ===== PREVENT DOUBLE FORM SUBMISSION =====
+        // Disable submit button after first click to prevent duplicate Hedera account creation
+        const signupFormElement = signupForm.querySelector('form');
+        const loginFormElement = loginForm.querySelector('form');
+
+        if (signupFormElement) {
+            signupFormElement.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn && !submitBtn.disabled) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Creating Account...';
+                }
+            });
+        }
+
+        if (loginFormElement) {
+            loginFormElement.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn && !submitBtn.disabled) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Logging In...';
+                }
+            });
+        }
+
         const errorMessages = flashContainer ? flashContainer.querySelectorAll('.flash-message.error') : [];
         if (errorMessages && errorMessages.length > 0) {
             modal.style.display = 'flex';
