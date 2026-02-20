@@ -103,6 +103,17 @@ def seed_layer0_if_empty():
         ]
         db.session.add_all(schedules)
         db.session.commit()
+
+        krugersdorp = Location(name="Krugersdorp", city="Johannesburg", ward="", latitude=None, longitude=None)
+        db.session.add(krugersdorp)
+        db.session.commit()
+
+        krugersdorp_schedules = [
+            WasteSchedule(location_id=krugersdorp.id, stream="Recycling", pickup_day=4, pickup_window="08:00-12:00"),
+            WasteSchedule(location_id=krugersdorp.id, stream="General Waste", pickup_day=2, pickup_window="08:00-12:00"),
+        ]
+        db.session.add_all(krugersdorp_schedules)
+        db.session.commit()
         print('[SEED] Layer 0 seed completed', flush=True)
     except Exception as e:
         print('[SEED] Error while seeding Layer 0:', e, flush=True)
@@ -362,6 +373,7 @@ def household_dashboard():
 
     location = Location.query.get(profile.location_id)
     schedules = WasteSchedule.query.filter_by(location_id=location.id).order_by(WasteSchedule.pickup_day.asc()).all()
+    locations = Location.query.order_by(Location.name.asc()).all()
 
     schedule_rows = [
         {
@@ -377,8 +389,29 @@ def household_dashboard():
         location=location,
         reliability_score=profile.reliability_score,
         schedules=schedule_rows,
+        locations=locations,
+        selected_location_id=location.id,
         active_page='household'
     )
+
+@app.route("/household/set-location", methods=["POST"])
+@login_required
+def set_household_location():
+    location_id = request.form.get("location_id", type=int)
+    if not location_id:
+        flash("Pick a location.", "error")
+        return redirect(url_for("household_dashboard"))
+
+    profile = HouseholdProfile.query.filter_by(user_id=current_user.id).first()
+    if not profile:
+        profile = HouseholdProfile(user_id=current_user.id, location_id=location_id)
+        db.session.add(profile)
+    else:
+        profile.location_id = location_id
+
+    db.session.commit()
+    flash("Location updated.", "success")
+    return redirect(url_for("household_dashboard"))
 
 @app.route('/search')
 @login_required

@@ -15,7 +15,21 @@
 
       <div class="card">
         <h3>Location</h3>
-        <p><strong>{{ location.name }}</strong>{% if location.city %}, {{ location.city }}{% endif %}</p>
+        <form method="POST" action="/household/set-location" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <label for="location_id"><strong>Select location:</strong></label>
+          <select name="location_id" id="location_id">
+            {% for loc in locations %}
+              <option value="{{ loc.id }}" {% if loc.id == selected_location_id %}selected{% endif %}>
+                {{ loc.name }}{% if loc.city %}, {{ loc.city }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          <button type="submit">Update</button>
+        </form>
+
+        <p style="margin-top:10px;">
+          Current: <strong>{{ location.name }}</strong>{% if location.city %}, {{ location.city }}{% endif %}
+        </p>
         <p>Reliability Score: <strong>{{ "%.2f"|format(reliability_score) }}</strong></p>
         <p class="muted">Reliability updates after confirm/missed pickups (Phase 1 Day 19).</p>
       </div>
