@@ -20,6 +20,8 @@
                     <a href="{{ url_for('search') }}" class="nav-button {% if active_page == 'search' %}active{% endif %}">Find Center</a>
                     <a href="{{ url_for('network') }}" class="nav-button {% if active_page == 'network' %}active{% endif %}">Network</a>
                 {% endif %}
+
+                <a href="{{ url_for('public_data') }}" class="nav-button {% if active_page == 'public_data' %}active{% endif %}">Public Data</a>
                 
                 <a href="{{ url_for('profile') }}" class="nav-button {% if active_page == 'profile' %}active{% endif %}">Profile</a>
                 <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
@@ -28,6 +30,7 @@
 
                 <a href="{{ url_for('home') }}" class="nav-button active">Home</a>
                 <a href="#" class="nav-button js-open-auth" data-form="login">Dashboard</a>
+                <a href="{{ url_for('public_data') }}" class="nav-button {% if active_page == 'public_data' %}active{% endif %}">Public Data</a>
                 <a href="#" class="nav-button js-open-auth" data-form="login">Find Center</a>
                 <a href="#" class="nav-button js-open-auth" data-form="login">Network</a>
                 <a href="#" class="nav-button-primary js-open-auth" data-form="signup">Sign Up</a>

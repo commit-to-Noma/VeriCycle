@@ -30,6 +30,8 @@ import qrcode
 import io
 import subprocess
 import os 
+import requests
+import json
 import re 
 import threading
 from sqlalchemy.exc import OperationalError
@@ -137,6 +139,59 @@ def load_user(user_id):
         return db.session.get(User, int(user_id))
     except OperationalError:
         return None
+
+
+def mirror_fetch_latest_topic_messages(topic_id: str, limit: int = 10):
+    """
+    Fetch latest topic messages from Hedera Mirror Node (testnet).
+    Returns list of dicts with: consensus_timestamp, sequence_number, message (decoded), tx_id (best-effort).
+    """
+    base = "https://testnet.mirrornode.hedera.com"
+    url = f"{base}/api/v1/topics/{topic_id}/messages"
+    params = {"limit": limit, "order": "desc"}
+
+    r = requests.get(url, params=params, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+
+    out = []
+    for m in data.get("messages", []):
+        raw_b64 = m.get("message", "")
+        decoded = ""
+        parsed = None
+        tx_id = m.get("transaction_id")
+
+        try:
+            import base64
+            decoded = base64.b64decode(raw_b64).decode("utf-8", errors="replace")
+            try:
+                parsed = json.loads(decoded)
+            except Exception:
+                parsed = None
+        except Exception:
+            decoded = ""
+
+        if not tx_id:
+            chunk_info = m.get("chunk_info") or {}
+            initial_tx = chunk_info.get("initial_transaction_id") or {}
+            account_id = initial_tx.get("account_id")
+            transaction_valid_start = initial_tx.get("transaction_valid_start")
+            if account_id and transaction_valid_start:
+                tx_id = f"{account_id}@{transaction_valid_start}"
+
+        if not tx_id and isinstance(parsed, dict):
+            tx_id = parsed.get("tx_id") or parsed.get("txId")
+
+        out.append({
+            "consensus_timestamp": m.get("consensus_timestamp"),
+            "sequence_number": m.get("sequence_number"),
+            "decoded": decoded,
+            "parsed": parsed,
+            "tx_id": tx_id,
+            "running_hash": m.get("running_hash"),
+        })
+
+    return out
 
 # -----------------------------------------------------------------
 # 5. AUTHENTICATION ROUTES (LOGIN, LOGOUT, SIGNUP)
@@ -308,6 +363,29 @@ def splash():
 @app.route('/home')
 def home():
     return render_template('home.html', active_page='home')
+
+
+@app.get('/public-data')
+def public_data():
+    topic_id = os.environ.get("VERICYCLE_TOPIC_ID") or os.environ.get("HCS_TOPIC_ID") or ""
+    messages = []
+    error = None
+
+    if not topic_id:
+        error = "Missing VERICYCLE_TOPIC_ID in environment (.env)."
+    else:
+        try:
+            messages = mirror_fetch_latest_topic_messages(topic_id, limit=15)
+        except Exception as e:
+            error = f"Mirror node fetch failed: {type(e).__name__}: {str(e)}"
+
+    return render_template(
+        "public_data.html",
+        topic_id=topic_id,
+        messages=messages,
+        error=error,
+        active_page='public_data',
+    )
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Public Data (Mirror Node)</h2>
+
+<p><strong>Topic ID:</strong> {{ topic_id if topic_id else "—" }}</p>
+
+{% if error %}
+  <div class="card" style="margin-top:12px;">
+    <strong>Error:</strong> {{ error }}
+  </div>
+{% endif %}
+
+<div class="card" style="margin-top:12px;">
+  <h3>Latest HCS Messages</h3>
+
+  {% if messages and messages|length > 0 %}
+    <table class="table" style="width:100%; margin-top:8px;">
+      <thead>
+        <tr>
+          <th>Seq</th>
+          <th>Consensus Timestamp</th>
+          <th>Tx ID</th>
+          <th>Decoded Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in messages %}
+        <tr>
+          <td>{{ m.sequence_number }}</td>
+          <td style="white-space:nowrap;">{{ m.consensus_timestamp }}</td>
+          <td style="white-space:nowrap;">{{ m.tx_id if m.tx_id else "—" }}</td>
+          <td style="max-width:760px; overflow-wrap:anywhere;">
+            {% if m.parsed %}
+              <pre style="margin:0; white-space:pre-wrap;">{{ m.parsed | tojson(indent=2) }}</pre>
+            {% else %}
+              <pre style="margin:0; white-space:pre-wrap;">{{ m.decoded }}</pre>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No messages returned yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}
