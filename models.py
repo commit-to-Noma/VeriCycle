@@ -48,7 +48,7 @@ class AgentTask(db.Model):
     agent_name = db.Column(db.String(50), nullable=False)     # "CollectorAgent", etc
     task_type = db.Column(db.String(50), nullable=False)      # "collect"/"verify"/"log"/"reward"/"attest"
 
-    status = db.Column(db.String(20), default="queued")       # queued|processing|done|failed
+    status = db.Column(db.String(20), default="queued")       # queued|running|done|failed
     attempts = db.Column(db.Integer, default=0)
 
     next_run_at = db.Column(db.DateTime(timezone=True), nullable=False,
@@ -119,3 +119,17 @@ class PickupEvent(db.Model):
 
     location = db.relationship("Location", backref=db.backref("pickup_events", lazy=True))
     user = db.relationship("User", backref=db.backref("pickup_events", lazy=True))
+
+
+class AgentLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.String(64), nullable=False)  # ISO UTC string
+    activity_id = db.Column(db.Integer, nullable=False)
+    agent_name = db.Column(db.String(64), nullable=False)
+    level = db.Column(db.String(16), nullable=False, default="info")  # info|error
+    message = db.Column(db.String(512), nullable=False)
+
+    # snapshot fields (useful for judge view)
+    pipeline_stage = db.Column(db.String(50), nullable=True)
+    hedera_tx_id = db.Column(db.String(150), nullable=True)
+    last_error = db.Column(db.String(512), nullable=True)

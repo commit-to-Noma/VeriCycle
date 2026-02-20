@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Admin Monitor (Agents)</h2>
+
+<div class="card" style="margin-top:12px;">
+  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <form method="GET" action="/admin/monitor" style="display:flex; align-items:center; gap:8px;">
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" name="debug" value="1" {% if debug_mode %}checked{% endif %}>
+        Show full history (Debug)
+      </label>
+      <button type="submit">Apply</button>
+    </form>
+    <form method="POST" action="/admin/clear-logs">
+      <button type="submit">Clear old logs</button>
+    </form>
+  </div>
+
+  <h3>Latest Agent Logs — Mode: {{ mode_label }}</h3>
+  <table class="table" style="width:100%; margin-top:8px;">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Activity</th>
+        <th>Agent</th>
+        <th>Level</th>
+        <th>Stage</th>
+        <th>Tx</th>
+        <th>Message</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in logs %}
+      <tr>
+        <td style="white-space:nowrap;">{{ l.created_at }}</td>
+        <td>{{ l.activity_id }}</td>
+        <td>{{ l.agent_name }}</td>
+        <td>{{ l.level }}</td>
+        <td>{{ l.pipeline_stage or "—" }}</td>
+        <td style="white-space:nowrap;">
+          {% if l.hedera_tx_id %}
+            <a href="https://hashscan.io/testnet/transaction/{{ l.hedera_tx_id }}" target="_blank">View</a>
+          {% else %}—{% endif %}
+        </td>
+        <td style="max-width:520px; overflow-wrap:anywhere;">{{ l.message }}</td>
+        <td>
+          <form method="POST" action="/admin/rerun/{{ l.activity_id }}">
+            <button type="submit">Rerun</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

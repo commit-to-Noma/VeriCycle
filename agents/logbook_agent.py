@@ -7,16 +7,16 @@ Uses per-user Hedera credentials (not the shared operator).
 import subprocess
 import re
 import os
-from typing import Optional
 from extensions import db
 from models import Activity, User
 
 def _extract_tx_id(stdout: str) -> str | None:
-    m = re.search(r"TX_ID=([0-9]+\.[0-9]+\.[0-9]+@[0-9]+\.[0-9]+)", stdout)
+    # strict: TX_ID=0.0.x@seconds.nanoseconds
+    m = re.search(r"^TX_ID=(0\.0\.\d+@\d+\.\d+)\s*$", stdout, re.MULTILINE)
     return m.group(1) if m else None
 
 
-def submit_to_hcs_for_activity(activity: Activity) -> Optional[str]:
+def submit_to_hcs_for_activity(activity: Activity) -> str:
     """
     Submit activity to Hedera HCS using the activity owner's Hedera credentials.
     
@@ -24,7 +24,7 @@ def submit_to_hcs_for_activity(activity: Activity) -> Optional[str]:
         activity: Activity object to submit
         
     Returns:
-        Transaction ID string, or None if failed
+        Transaction ID string
     """
     user = User.query.get(activity.user_id)
     if not user or not user.hedera_account_id or not user.hedera_private_key:
@@ -33,7 +33,7 @@ def submit_to_hcs_for_activity(activity: Activity) -> Optional[str]:
         activity.last_error = "Missing user Hedera credentials"
         db.session.commit()
         print(f"[LOGBOOK AGENT ERROR] User {activity.user_id} missing Hedera credentials", flush=True)
-        return None
+        raise RuntimeError("Missing user Hedera credentials")
 
     print(f"[LOGBOOK AGENT] Using user's Hedera account: {user.hedera_account_id}", flush=True)
 
@@ -57,25 +57,17 @@ def submit_to_hcs_for_activity(activity: Activity) -> Optional[str]:
     stderr = result.stderr or ""
 
     if result.returncode != 0:
-        error_msg = f"HCS submit failed (rc={result.returncode}). stdout={stdout.strip()[:200]}"
-        print(f"[LOGBOOK AGENT ERROR] {error_msg}", flush=True)
-        if stderr:
-            print(f"[LOGBOOK AGENT ERROR] stderr: {stderr.strip()[:200]}", flush=True)
-        activity.status = "failed"
-        activity.pipeline_stage = "failed"
-        activity.last_error = error_msg
-        db.session.commit()
-        return None
+        raise RuntimeError(
+            "HCS submit failed. "
+            f"rc={result.returncode} stdout_tail={stdout[-400:]} stderr_tail={stderr[-400:]}"
+        )
 
     tx_id = _extract_tx_id(stdout)
     if not tx_id:
-        error_msg = f"Logbook failed: TX_ID not found. stdout='{stdout.strip()}' stderr='{stderr.strip()}'"
-        print(f"[LOGBOOK AGENT ERROR] {error_msg}", flush=True)
-        activity.status = "failed"
-        activity.pipeline_stage = "failed"
-        activity.last_error = "TX_ID parse failed"
-        db.session.commit()
-        return None
+        raise RuntimeError(
+            "HCS submit did not return TX_ID=... line. "
+            f"rc={result.returncode} stdout_tail={stdout[-400:]} stderr_tail={stderr[-400:]}"
+        )
 
     return tx_id
 
@@ -117,11 +109,6 @@ class LogbookAgent:
 
                 # Use per-user credentials for submission
                 tx_id = submit_to_hcs_for_activity(activity)
-                
-                if not tx_id:
-                    print(f"[LOGBOOK AGENT] Submission failed (see details above)", flush=True)
-                    print(f"{'='*80}\n", flush=True)
-                    return False
 
                 print(f"[LOGBOOK AGENT] ✓ HCS submission successful", flush=True)
                 print(f"[LOGBOOK AGENT] Transaction ID: {tx_id}", flush=True)

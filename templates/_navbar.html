@@ -22,6 +22,7 @@
                 {% endif %}
 
                 <a href="{{ url_for('public_data') }}" class="nav-button {% if active_page == 'public_data' %}active{% endif %}">Public Data</a>
+                <a href="{{ url_for('admin_monitor') }}" class="nav-button {% if active_page == 'admin_monitor' %}active{% endif %}">Admin Monitor</a>
                 
                 <a href="{{ url_for('profile') }}" class="nav-button {% if active_page == 'profile' %}active{% endif %}">Profile</a>
                 <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>

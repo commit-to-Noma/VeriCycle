@@ -1,8 +1,8 @@
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from extensions import db
-from models import AgentTask, Activity
+from models import AgentTask, AgentLog, Activity
 from agents.collector_agent import CollectorAgent
 from agents.verifier_agent import VerifierAgent
 from agents.logbook_agent import LogbookAgent
@@ -18,12 +18,19 @@ AGENT_MAP = {
 }
 
 # Backoff schedule per attempt index (1-based)
-BACKOFF_SECONDS = [5, 30, 120]
-
-def _schedule_backoff(task: AgentTask):
-    idx = min(task.attempts, len(BACKOFF_SECONDS)) - 1
-    delay = BACKOFF_SECONDS[idx] if idx >= 0 else 5
-    task.next_run_at = datetime.now(timezone.utc) + timedelta(seconds=delay)
+def _log(activity_id: int, agent_name: str, message: str, level: str = "info"):
+    ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    activity = Activity.query.get(activity_id)
+    db.session.add(AgentLog(
+        created_at=ts,
+        activity_id=activity_id,
+        agent_name=agent_name,
+        level=level,
+        message=message[:512],
+        pipeline_stage=getattr(activity, "pipeline_stage", None) if activity else None,
+        hedera_tx_id=getattr(activity, "hedera_tx_id", None) if activity else None,
+        last_error=getattr(activity, "last_error", None) if activity else None,
+    ))
 
 def run_worker_loop(poll_interval=1.0):
     print("[WORKER] AgentTask worker loop started", flush=True)
@@ -33,22 +40,19 @@ def run_worker_loop(poll_interval=1.0):
 
     while True:
         try:
-            now = datetime.now(timezone.utc)
-
             with app.app_context():
-                # Find next due task (only pick queued tasks to avoid reprocessing failed ones)
+                # Only pick queued tasks; done/failed/running tasks are never re-executed
                 task = (AgentTask.query
                     .filter(AgentTask.status == "queued")
-                    .filter(AgentTask.next_run_at <= now)
-                    .order_by(AgentTask.next_run_at.asc(), AgentTask.id.asc())
+                    .order_by(AgentTask.id.asc())
                     .first())
 
                 if not task:
-                    # nothing to do this cycle
-                    pass
+                    time.sleep(0.5)
+                    continue
                 else:
-                    # Lock task
-                    task.status = "processing"
+                    # lock task so it cannot be picked again
+                    task.status = "running"
                     db.session.commit()
 
                     # Refresh activity and skip if activity is in a terminal state
@@ -56,6 +60,7 @@ def run_worker_loop(poll_interval=1.0):
                     if not activity or activity.status in ("failed", "rejected") or activity.pipeline_stage in ("failed", "rejected"):
                         task.status = "done"
                         task.last_error = "Skipped: activity terminal state"
+                        _log(task.activity_id, task.agent_name, task.last_error)
                         db.session.commit()
                         continue
 
@@ -63,30 +68,26 @@ def run_worker_loop(poll_interval=1.0):
                     if not agent:
                         task.status = "failed"
                         task.last_error = f"Unknown agent: {task.agent_name}"
-                        task.attempts += 1
-                        _schedule_backoff(task)
+                        _log(task.activity_id, task.agent_name, task.last_error, level="error")
                         db.session.commit()
                     else:
                         print(f"[WORKER] Running task_id={task.id} agent={task.agent_name} activity_id={task.activity_id}", flush=True)
-
-                        result = agent.process(task.activity_id)
-
-                        # 1) Terminal stop (agent indicated a hard failure)
-                        if result is False:
-                            task.status = "done"
-                            db.session.commit()
-                            continue
-
-                        # 2) Agent asked to skip (not its turn) -> requeue shortly
-                        if result == "skip":
-                            task.status = "queued"
-                            task.next_run_at = datetime.now(timezone.utc) + timedelta(seconds=1)
-                            db.session.commit()
-                            continue
-
-                        # 3) Completed work (success)
-                        task.status = "done"
+                        _log(task.activity_id, task.agent_name, f"START task_id={task.id}")
                         db.session.commit()
+
+                        try:
+                            agent.process(task.activity_id)
+
+                            # Completed this task execution (including skip/terminal signals)
+                            task.status = "done"
+                            _log(task.activity_id, task.agent_name, "DONE")
+                            db.session.commit()
+                        except Exception as e:
+                            task.last_error = f"{type(e).__name__}: {str(e)}"[:512]
+                            task.status = "failed"
+                            _log(task.activity_id, task.agent_name, f"ERROR {type(e).__name__}: {str(e)}", level="error")
+                            db.session.commit()
+                            print(f"[WORKER TASK ERROR] task_id={task.id} {type(e).__name__}: {e}", flush=True)
 
             # Sleep between polls
             time.sleep(poll_interval)

@@ -23,7 +23,7 @@ Tools Used:
 from dotenv import load_dotenv
 load_dotenv() 
 
-from flask import Flask, render_template, request, redirect, url_for, send_file, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, send_file, flash, jsonify, abort
 from datetime import datetime, timezone, date
 from flask_login import login_user, login_required, logout_user, current_user
 import qrcode
@@ -85,7 +85,7 @@ login_manager.login_message_category = None
 # 3. DATABASE MODEL
 # - Define `User` and `Activity` models used across routes.
 # -----------------------------------------------------------------
-from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent
+from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask
 from extensions import db as _db  # ensure db is available for seed helper
 
 
@@ -815,6 +815,104 @@ def get_dashboard_data():
 # 8. ADMIN AGENT MONITOR
 # - View pipeline status and agent processing
 # -----------------------------------------------------------------
+@app.get('/admin/monitor')
+@login_required
+def admin_monitor():
+    debug_mode = (request.args.get('debug', '0').lower() in ('1', 'true', 'yes', 'on'))
+
+    rows = AgentLog.query.order_by(AgentLog.id.desc()).limit(1000).all()
+
+    if debug_mode:
+        # Full mode: show full recent stream (no dedupe)
+        logs = rows
+    else:
+        seen = set()
+        logs = []
+        for row in rows:
+            key = (row.activity_id, row.agent_name)
+            if key in seen:
+                continue
+            seen.add(key)
+            logs.append(row)
+        logs = logs[:80]
+
+    return render_template(
+        'admin_monitor.html',
+        logs=logs,
+        debug_mode=debug_mode,
+        mode_label='Full History (Debug)' if debug_mode else 'Summary',
+        active_page='admin_monitor'
+    )
+
+
+@app.post('/admin/clear-logs')
+@login_required
+def admin_clear_logs():
+    keep = 200
+    keep_subquery = db.session.query(AgentLog.id).order_by(AgentLog.id.desc()).limit(keep).subquery()
+    AgentLog.query.filter(~AgentLog.id.in_(keep_subquery)).delete(synchronize_session=False)
+    db.session.commit()
+    return redirect('/admin/monitor')
+
+
+@app.post('/admin/rerun/<int:activity_id>')
+@login_required
+def admin_rerun(activity_id):
+    activity = Activity.query.get(activity_id)
+    if not activity:
+        abort(404)
+
+    def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stage: str, hedera_tx_id: str, message: str):
+        ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        db.session.add(AgentLog(
+            created_at=ts,
+            activity_id=activity_id,
+            agent_name=agent_name,
+            level=level,
+            message=message[:512],
+            pipeline_stage=pipeline_stage,
+            hedera_tx_id=hedera_tx_id,
+            last_error=getattr(activity, "last_error", None),
+        ))
+
+    def enqueue_once(activity_id: int, agent_name: str) -> bool:
+        exists = AgentTask.query.filter(
+            AgentTask.activity_id == activity_id,
+            AgentTask.agent_name == agent_name,
+            AgentTask.status.in_(["queued", "running"])
+        ).first()
+        if exists:
+            return False
+
+        task_type_map = {
+            "CollectorAgent": "collect",
+            "VerifierAgent": "verify",
+            "LogbookAgent": "log",
+            "RewardAgent": "reward",
+            "ComplianceAgent": "attest",
+        }
+        db.session.add(AgentTask(
+            activity_id=activity_id,
+            agent_name=agent_name,
+            task_type=task_type_map.get(agent_name, "collect"),
+            status="queued"
+        ))
+        return True
+
+    if activity.pipeline_stage == "attested":
+        log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "RERUN ignored (already attested)")
+        db.session.commit()
+        return redirect('/admin/monitor')
+
+    log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "RERUN requested from /admin/monitor")
+
+    for name in ["CollectorAgent", "VerifierAgent", "LogbookAgent", "RewardAgent", "ComplianceAgent"]:
+        enqueue_once(activity_id, name)
+
+    db.session.commit()
+    return redirect('/admin/monitor')
+
+
 @app.route('/admin/agents', methods=['GET'])
 @login_required
 def admin_agents():

@@ -10,6 +10,9 @@ function randomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-const txId = `0.0.${randomInt(1000000)}@${Date.now()}`;
-console.log(txId);
+const nowMs = Date.now();
+const seconds = Math.floor(nowMs / 1000);
+const nanos = (nowMs % 1000) * 1000000;
+const txId = `0.0.${randomInt(1000000)}@${seconds}.${nanos}`;
+console.log(`TX_ID=${txId}`);
 process.exit(0);
