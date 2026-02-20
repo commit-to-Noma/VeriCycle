@@ -62,3 +62,42 @@ class AgentTask(db.Model):
                            onupdate=lambda: datetime.now(timezone.utc))
 
     activity = db.relationship('Activity', backref=db.backref('tasks', lazy=True))
+
+class Location(db.Model):
+    __tablename__ = "location"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)          # e.g. "Ruimsig"
+    city = db.Column(db.String(120), nullable=True)           # e.g. "Johannesburg"
+    ward = db.Column(db.String(50), nullable=True)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+
+
+class HouseholdProfile(db.Model):
+    __tablename__ = "household_profile"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, unique=True)
+    location_id = db.Column(db.Integer, db.ForeignKey("location.id"), nullable=False)
+
+    # Day 19 will update this
+    reliability_score = db.Column(db.Float, default=1.0)
+
+    user = db.relationship("User", backref=db.backref("household_profile", uselist=False))
+    location = db.relationship("Location", backref=db.backref("households", lazy=True))
+
+
+class WasteSchedule(db.Model):
+    __tablename__ = "waste_schedule"
+    id = db.Column(db.Integer, primary_key=True)
+    location_id = db.Column(db.Integer, db.ForeignKey("location.id"), nullable=False)
+
+    # e.g. "Recycling", "General Waste", "Garden"
+    stream = db.Column(db.String(50), nullable=False)
+
+    # 0=Mon ... 6=Sun (store as int for simplicity)
+    pickup_day = db.Column(db.Integer, nullable=False)
+
+    # "08:00-12:00"
+    pickup_window = db.Column(db.String(50), nullable=True)
+
+    location = db.relationship("Location", backref=db.backref("schedules", lazy=True))

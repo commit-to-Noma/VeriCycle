@@ -12,10 +12,11 @@
                 {% if current_user.role == 'center' %}
                     <a href="{{ url_for('center_dashboard') }}" class="nav-button {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
                 {% else %}
-                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
+                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if active_page == 'dashboard' %}active{% endif %}">User Activity Dashboard</a>
                 {% endif %}
                 
                 {% if current_user.role == 'collector' %}
+                    <a href="{{ url_for('household_dashboard') }}" class="nav-button {% if active_page == 'household' %}active{% endif %}">Household</a>
                     <a href="{{ url_for('search') }}" class="nav-button {% if active_page == 'search' %}active{% endif %}">Find Center</a>
                     <a href="{{ url_for('network') }}" class="nav-button {% if active_page == 'network' %}active{% endif %}">Network</a>
                 {% endif %}

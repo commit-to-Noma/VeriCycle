@@ -117,3 +117,34 @@ We are launching in **South Africa** to solve a critical humanitarian crisis (sa
 -   **Live Demo:** https://vericycle.onrender.com
 -   **Pitch Deck:** https://github.com/commit-to-Noma/VeriCycle/blob/main/Vericycle%20Pitch%20Deck.pdf
 -   **Video Demo:** https://youtu.be/Tj-i2-C7dGQ
+
+---
+
+## Layering (Phase 1 Day 17)
+
+Layer 0: Household Scheduling + reliability (local SQLite) — locations, household profiles, and waste schedules are first-class objects.
+
+Layer 1: Hedera HCS logging + TX IDs + HashScan links.
+
+Layer 2: Optional HTS rewards (token transfers) — never blocks Layer 1.
+
+### Hackathon Demo Flow (Layer 0 testing)
+
+How to test the Household dashboard locally:
+
+1. Run the app:
+
+```bash
+python app.py
+```
+
+2. In your browser, log in as `test@gmail.com` (use the seeded demo account flow in the app), then open:
+
+http://127.0.0.1:5000/household
+
+Expected: Page shows “Household Dashboard”, Location `Ruimsig, Johannesburg`, Reliability Score `1.00`, and a schedule table with at least:
+
+- Recycling — Thu — 08:00-12:00
+- General Waste — Tue — 08:00-12:00
+
+DB changes: On first run `location` and `waste_schedule` are seeded; after visiting `/household` a `household_profile` row is created for the logged-in user.

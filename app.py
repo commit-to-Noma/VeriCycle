@@ -83,11 +83,38 @@ login_manager.login_message_category = None
 # 3. DATABASE MODEL
 # - Define `User` and `Activity` models used across routes.
 # -----------------------------------------------------------------
-from models import User, Activity
+from models import User, Activity, Location, WasteSchedule, HouseholdProfile
+from extensions import db as _db  # ensure db is available for seed helper
+
+
+def seed_layer0_if_empty():
+    try:
+        if Location.query.count() > 0:
+            return
+
+        print('[SEED] Creating default Layer 0: Ruimsig location and schedules', flush=True)
+        ruimsig = Location(name="Ruimsig", city="Johannesburg", ward="", latitude=None, longitude=None)
+        db.session.add(ruimsig)
+        db.session.commit()
+
+        schedules = [
+            WasteSchedule(location_id=ruimsig.id, stream="Recycling", pickup_day=3, pickup_window="08:00-12:00"),
+            WasteSchedule(location_id=ruimsig.id, stream="General Waste", pickup_day=1, pickup_window="08:00-12:00"),
+        ]
+        db.session.add_all(schedules)
+        db.session.commit()
+        print('[SEED] Layer 0 seed completed', flush=True)
+    except Exception as e:
+        print('[SEED] Error while seeding Layer 0:', e, flush=True)
 
 # Ensure tables exist (create after models are imported so metadata is registered)
 with app.app_context():
     db.create_all()
+    # Seed Layer 0 household/location/schedule data if empty
+    try:
+        seed_layer0_if_empty()
+    except Exception:
+        pass
 
 # -----------------------------------------------------------------
 # 4. HELPER FUNCTION FOR FLASK-LOGIN
@@ -314,6 +341,44 @@ def center_dashboard():
         return redirect(url_for('collector_dashboard'))
     
     return render_template('center.html', active_page='dashboard')
+
+
+DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
+
+
+@app.route('/household')
+@login_required
+def household_dashboard():
+    # Attach user to default location if no profile exists
+    profile = HouseholdProfile.query.filter_by(user_id=current_user.id).first()
+    if not profile:
+        default_loc = Location.query.first()
+        if not default_loc:
+            flash('No locations are configured yet.', 'error')
+            return redirect(url_for('home'))
+        profile = HouseholdProfile(user_id=current_user.id, location_id=default_loc.id)
+        db.session.add(profile)
+        db.session.commit()
+
+    location = Location.query.get(profile.location_id)
+    schedules = WasteSchedule.query.filter_by(location_id=location.id).order_by(WasteSchedule.pickup_day.asc()).all()
+
+    schedule_rows = [
+        {
+            "stream": s.stream,
+            "day": DAY_NAMES[s.pickup_day] if s.pickup_day is not None and 0 <= s.pickup_day < 7 else "-",
+            "window": s.pickup_window or "—"
+        }
+        for s in schedules
+    ]
+
+    return render_template(
+        "household.html",
+        location=location,
+        reliability_score=profile.reliability_score,
+        schedules=schedule_rows,
+        active_page='household'
+    )
 
 @app.route('/search')
 @login_required

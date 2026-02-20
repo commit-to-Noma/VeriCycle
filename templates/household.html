@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Household Dashboard - VeriCycle</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark-theme">
+    {% include '_navbar.html' %}
+
+    <main class="container">
+      <h2>Household Dashboard</h2>
+
+      <div class="card">
+        <h3>Location</h3>
+        <p><strong>{{ location.name }}</strong>{% if location.city %}, {{ location.city }}{% endif %}</p>
+        <p>Reliability Score: <strong>{{ "%.2f"|format(reliability_score) }}</strong></p>
+        <p class="muted">Reliability updates after confirm/missed pickups (Phase 1 Day 19).</p>
+      </div>
+
+      <div class="card">
+        <h3>This Week’s Waste Schedule</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Stream</th>
+              <th>Pickup Day</th>
+              <th>Window</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in schedules %}
+            <tr>
+              <td>{{ row.stream }}</td>
+              <td>{{ row.day }}</td>
+              <td>{{ row.window }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="muted">Confirm/missed actions arrive next (Phase 1 Day 19).</p>
+      </div>
+    </main>
+
+</body>
+</html>
