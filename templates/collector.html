@@ -101,10 +101,12 @@
                                                 {% endif %}
                                             </td>
                                             <td style="padding: 0.5rem;">
-                                                {% if display_status == "pending" %}
+                                                {% if display_status == "pending" and not act.hedera_tx_id %}
                                                     Pending
-                                                {% elif act.hedera_tx_id and act.hedera_tx_id.startswith("0.0.") %}
-                                                    {{ act.hedera_tx_id }}
+                                                {% elif act.hedera_tx_id %}
+                                                    <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">
+                                                        View on Hedera
+                                                    </a>
                                                 {% else %}
                                                     —
                                                 {% endif %}

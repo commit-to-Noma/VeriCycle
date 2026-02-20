@@ -11,7 +11,9 @@ from typing import Optional
 from extensions import db
 from models import Activity, User
 
-TX_RE = re.compile(r"TX_ID=(.+)")
+def _extract_tx_id(stdout: str) -> str | None:
+    m = re.search(r"TX_ID=([0-9]+\.[0-9]+\.[0-9]+@[0-9]+\.[0-9]+)", stdout)
+    return m.group(1) if m else None
 
 
 def submit_to_hcs_for_activity(activity: Activity) -> Optional[str]:
@@ -51,25 +53,27 @@ def submit_to_hcs_for_activity(activity: Activity) -> Optional[str]:
         cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
 
-    stdout = (result.stdout or "").strip()
-    stderr = (result.stderr or "").strip()
+    stdout = result.stdout or ""
+    stderr = result.stderr or ""
 
-    # Parse TX_ID from output
-    tx_id = None
-    for line in stdout.splitlines():
-        m = TX_RE.search(line.strip())
-        if m:
-            tx_id = m.group(1).strip()
-            break
-
-    if result.returncode != 0 or not tx_id:
-        error_msg = f"HCS submit failed (rc={result.returncode}). stdout={stdout[:200]}"
+    if result.returncode != 0:
+        error_msg = f"HCS submit failed (rc={result.returncode}). stdout={stdout.strip()[:200]}"
         print(f"[LOGBOOK AGENT ERROR] {error_msg}", flush=True)
         if stderr:
-            print(f"[LOGBOOK AGENT ERROR] stderr: {stderr[:200]}", flush=True)
+            print(f"[LOGBOOK AGENT ERROR] stderr: {stderr.strip()[:200]}", flush=True)
         activity.status = "failed"
         activity.pipeline_stage = "failed"
         activity.last_error = error_msg
+        db.session.commit()
+        return None
+
+    tx_id = _extract_tx_id(stdout)
+    if not tx_id:
+        error_msg = f"Logbook failed: TX_ID not found. stdout='{stdout.strip()}' stderr='{stderr.strip()}'"
+        print(f"[LOGBOOK AGENT ERROR] {error_msg}", flush=True)
+        activity.status = "failed"
+        activity.pipeline_stage = "failed"
+        activity.last_error = "TX_ID parse failed"
         db.session.commit()
         return None
 
@@ -124,6 +128,7 @@ class LogbookAgent:
 
                 activity.hedera_tx_id = tx_id
                 activity.pipeline_stage = "logged"
+                activity.status = "verified"
                 db.session.commit()
 
                 print(f"[LOGBOOK AGENT] Activity logged with tx_id", flush=True)

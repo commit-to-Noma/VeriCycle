@@ -45,11 +45,13 @@ if (cliMode) {
   
   submitRecord(dropOffData)
     .then(txId => {
-      console.log(`TX_ID=${txId}`);
+      // IMPORTANT: stdout must be machine-parseable, single line:
+      process.stdout.write(`TX_ID=${txId}\n`);
       process.exit(0);
     })
     .catch(error => {
-      console.error('Error:', error.message);
+      // Keep errors on stderr
+      console.error(`ERROR=${error.message}`);
       process.exit(1);
     });
 }
