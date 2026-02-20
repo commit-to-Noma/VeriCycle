@@ -71,6 +71,7 @@ class Location(db.Model):
     ward = db.Column(db.String(50), nullable=True)
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
+    reliability_score = db.Column(db.Float, default=1.0)
 
 
 class HouseholdProfile(db.Model):
@@ -101,3 +102,20 @@ class WasteSchedule(db.Model):
     pickup_window = db.Column(db.String(50), nullable=True)
 
     location = db.relationship("Location", backref=db.backref("schedules", lazy=True))
+
+
+class PickupEvent(db.Model):
+    __tablename__ = "pickup_event"
+
+    id = db.Column(db.Integer, primary_key=True)
+    location_id = db.Column(db.Integer, db.ForeignKey("location.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    stream = db.Column(db.String(50), nullable=False)
+    scheduled_date = db.Column(db.String(10), nullable=False)
+    outcome = db.Column(db.String(20), nullable=False)
+
+    created_at = db.Column(db.String(64), nullable=False)
+
+    location = db.relationship("Location", backref=db.backref("pickup_events", lazy=True))
+    user = db.relationship("User", backref=db.backref("pickup_events", lazy=True))

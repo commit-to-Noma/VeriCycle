@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 load_dotenv() 
 
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash, jsonify
-from datetime import datetime
+from datetime import datetime, timezone, date
 from flask_login import login_user, login_required, logout_user, current_user
 import qrcode
 import io
@@ -83,7 +83,7 @@ login_manager.login_message_category = None
 # 3. DATABASE MODEL
 # - Define `User` and `Activity` models used across routes.
 # -----------------------------------------------------------------
-from models import User, Activity, Location, WasteSchedule, HouseholdProfile
+from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent
 from extensions import db as _db  # ensure db is available for seed helper
 
 
@@ -357,6 +357,15 @@ def center_dashboard():
 DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
 
 
+def recalc_reliability(location_id: int) -> float:
+    events = PickupEvent.query.filter_by(location_id=location_id).all()
+    if not events:
+        return 1.0
+    confirmed = sum(1 for e in events if e.outcome == "confirmed")
+    total = len(events)
+    return round(confirmed / total, 2)
+
+
 @app.route('/household')
 @login_required
 def household_dashboard():
@@ -374,6 +383,7 @@ def household_dashboard():
     location = Location.query.get(profile.location_id)
     schedules = WasteSchedule.query.filter_by(location_id=location.id).order_by(WasteSchedule.pickup_day.asc()).all()
     locations = Location.query.order_by(Location.name.asc()).all()
+    recent_events = PickupEvent.query.filter_by(location_id=location.id).order_by(PickupEvent.id.desc()).limit(10).all()
 
     schedule_rows = [
         {
@@ -387,12 +397,52 @@ def household_dashboard():
     return render_template(
         "household.html",
         location=location,
-        reliability_score=profile.reliability_score,
+        reliability_score=location.reliability_score,
         schedules=schedule_rows,
+        recent_events=recent_events,
         locations=locations,
         selected_location_id=location.id,
         active_page='household'
     )
+
+
+@app.route("/household/pickup-action", methods=["POST"])
+@login_required
+def household_pickup_action():
+    action = request.form.get("action")
+    stream = request.form.get("stream")
+    if action not in ("confirmed", "missed") or not stream:
+        flash("Invalid pickup action.", "error")
+        return redirect(url_for("household_dashboard"))
+
+    profile = HouseholdProfile.query.filter_by(user_id=current_user.id).first()
+    if not profile or not profile.location_id:
+        flash("Set a location first.", "error")
+        return redirect(url_for("household_dashboard"))
+
+    today = date.today().isoformat()
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    event = PickupEvent(
+        location_id=profile.location_id,
+        user_id=current_user.id,
+        stream=stream,
+        scheduled_date=today,
+        outcome=action,
+        created_at=now,
+    )
+    db.session.add(event)
+
+    loc = db.session.get(Location, profile.location_id)
+    loc.reliability_score = recalc_reliability(profile.location_id)
+
+    db.session.commit()
+
+    print(f"[L0] PickupEvent created: location_id={loc.id} stream={stream} outcome={action} date={today}", flush=True)
+    print(f"[L0] Location reliability updated: {loc.reliability_score}", flush=True)
+
+    flash(f"Recorded: {stream} — {action}", "success")
+    return redirect(url_for("household_dashboard"))
 
 @app.route("/household/set-location", methods=["POST"])
 @login_required
