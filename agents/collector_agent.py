@@ -23,7 +23,7 @@ class CollectorAgent:
 
         with app.app_context():
             try:
-                activity = Activity.query.get(activity_id)
+                activity = db.session.get(Activity, activity_id)
 
                 if not activity:
                     print(f"[AGENT ERROR] Activity {activity_id} not found", flush=True)

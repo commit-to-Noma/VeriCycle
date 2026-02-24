@@ -20,13 +20,13 @@ class ComplianceAgent:
         print(f"{'='*80}\n", flush=True)
 
         try:
-            activity = Activity.query.get(activity_id)
+            activity = db.session.get(Activity, activity_id)
 
             if not activity:
                 print(f"[COMPLIANCE AGENT ERROR] Activity {activity_id} not found", flush=True)
                 return "done"  # nothing to do
 
-            # Only process if rewarded
+            # Deferred Hedera mode: compliance runs after reward finalization
             if activity.pipeline_stage != "rewarded":
                 print(f"[COMPLIANCE AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
                 return "skip"

@@ -20,7 +20,7 @@ AGENT_MAP = {
 # Backoff schedule per attempt index (1-based)
 def _log(activity_id: int, agent_name: str, message: str, level: str = "info"):
     ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    activity = Activity.query.get(activity_id)
+    activity = db.session.get(Activity, activity_id)
     db.session.add(AgentLog(
         created_at=ts,
         activity_id=activity_id,
@@ -56,7 +56,7 @@ def run_worker_loop(poll_interval=1.0):
                     db.session.commit()
 
                     # Refresh activity and skip if activity is in a terminal state
-                    activity = Activity.query.get(task.activity_id)
+                    activity = db.session.get(Activity, task.activity_id)
                     if not activity or activity.status in ("failed", "rejected") or activity.pipeline_stage in ("failed", "rejected"):
                         task.status = "done"
                         task.last_error = "Skipped: activity terminal state"

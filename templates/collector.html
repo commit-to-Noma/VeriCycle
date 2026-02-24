@@ -70,49 +70,85 @@
                 </a>
             </div>
 
-            <div class="card" id="activity-section" style="grid-column: 1 / -1; margin-top: 0;">
-                <h3>Recent Activity</h3>
-                <p class="mockup-subtitle">Your HCS-verified transaction log.</p>
-                
-                <ul class="activity-list">
-                </ul>
-                
-                                <h3>Your Activity</h3>
+            <div class="card" id="agent-status-section" style="grid-column: 1 / -1; margin-top: 0;">
+                <h3>Agent Status</h3>
+                <p class="mockup-subtitle">Live snapshot of OpenClaw agents</p>
 
-                                <table style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
+                <div id="agent-status-panel">
+                    <table style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
+                        <thead>
+                            <tr style="text-align:left; border-bottom: 1px solid #444;">
+                                <th style="padding: 0.5rem;">Agent</th>
+                                <th style="padding: 0.5rem;">Health</th>
+                                <th style="padding: 0.5rem;">Last Seen</th>
+                                <th style="padding: 0.5rem;">Last TX</th>
+                                <th style="padding: 0.5rem;">Last Error</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agent-status-tbody">
+                            <tr>
+                                <td colspan="5" style="padding: 0.75rem; color: #aaa;">Loading agent snapshot...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" id="activity-section" style="grid-column: 1 / -1; margin-top: 0;">
+                <h3>Activity Timeline</h3>
+                <p class="mockup-subtitle">HCS-verified log (newest first)</p>
+
+                                <table id="activity-table" style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
                                     <tr style="text-align:left; border-bottom: 1px solid #444;">
                                         <th style="padding: 0.5rem;">Description</th>
                                         <th style="padding: 0.5rem;">Amount</th>
                                         <th style="padding: 0.5rem;">Status</th>
+                                        <th style="padding: 0.5rem;">Proof Bundle</th>
                                         <th style="padding: 0.5rem;">Hedera TX</th>
                                     </tr>
-
-                                    {% for act in activities %}
-                                        {% set display_status = act.status or act.verified_status %}
-                                        {% set hidden = display_status in ['failed', 'rejected'] %}
-                                        <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}" style="border-bottom: 1px solid #2a2a2a;">
-                                            <td style="padding: 0.5rem;">{{ act.desc }}</td>
-                                            <td style="padding: 0.5rem;">{{ act.amount }}</td>
-                                            <td style="padding: 0.5rem;">
-                                                {% if hidden %}
-                                                    <span class="status-muted">{{ display_status }} <span class="status-note">(hidden)</span></span>
-                                                {% else %}
-                                                    {{ display_status }}
-                                                {% endif %}
-                                            </td>
-                                            <td style="padding: 0.5rem;">
-                                                {% if display_status == "pending" and not act.hedera_tx_id %}
-                                                    Pending
-                                                {% elif act.hedera_tx_id %}
-                                                    <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">
-                                                        View on Hedera
-                                                    </a>
-                                                {% else %}
-                                                    —
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
+                                    <tbody id="activity-tbody">
+                                        {% for act in activities %}
+                                            {% set display_status = act.status or act.verified_status %}
+                                            {% set hidden = display_status in ['failed', 'rejected'] %}
+                                            <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}" style="border-bottom: 1px solid #2a2a2a;">
+                                                <td style="padding: 0.5rem;">{{ act.desc }}</td>
+                                                <td style="padding: 0.5rem;">{{ act.amount }}</td>
+                                                <td style="padding: 0.5rem;">
+                                                    {% if hidden %}
+                                                        <span class="status-muted">{{ display_status }} <span class="status-note">(hidden)</span></span>
+                                                    {% else %}
+                                                        {{ display_status }}
+                                                    {% endif %}
+                                                </td>
+                                                <td style="padding: 0.5rem;">
+                                                    {% if act.proof_bundle_url %}
+                                                        <a href="{{ act.proof_bundle_url }}">Download Proof</a>
+                                                    {% elif act.id and act.proof_hash %}
+                                                        <a href="/api/proof-bundle/{{ act.id }}">Download Proof</a>
+                                                    {% elif act.id %}
+                                                        <a href="/api/proof-bundle/{{ act.id }}">Generate Proof</a>
+                                                    {% else %}
+                                                        —
+                                                    {% endif %}
+                                                </td>
+                                                <td style="padding: 0.5rem;">
+                                                    {% if act.hedera_tx_id %}
+                                                        <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">
+                                                            View on Hedera
+                                                        </a>
+                                                    {% elif act.logbook_status == "failed" or act.pipeline_stage == "log_failed" %}
+                                                           <form method="post" action="/admin/retry-logbook/{{ act.id }}" style="display:inline; margin:0;">
+                                                               <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Hedera delayed (retry)</button>
+                                                           </form>
+                                                    {% elif not act.hedera_tx_id %}
+                                                        Hedera delayed (retry)
+                                                    {% else %}
+                                                        —
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
                                 </table>
             </div>
 
@@ -195,6 +231,16 @@
         let currentData = {}; 
         let pendingAnim = null; // holds pending animation values until modal is closed
 
+        function normalizeTimelineData(data) {
+            const normalized = data || {};
+            const source = Array.isArray(normalized.timeline)
+                ? normalized.timeline
+                : (Array.isArray(normalized.activities) ? normalized.activities : []);
+            normalized.timeline = source;
+            normalized.activities = source;
+            return normalized;
+        }
+
         // --- 2. ANIMATION FUNCTION ---
         function animateValue(element, start, end, duration, suffix = '', decimals = 0) {
             let startTimestamp = null;
@@ -262,6 +308,77 @@
             });
         }
 
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function toHashScanTxLink(txId) {
+            if (!txId) return '—';
+            return `<a href="https://hashscan.io/testnet/transaction/${encodeURIComponent(txId)}" target="_blank" rel="noopener">View on Hedera</a>`;
+        }
+
+        function formatDateTimeDisplay(value) {
+            if (!value) return '—';
+            const parsed = new Date(value);
+            if (Number.isNaN(parsed.getTime())) return value;
+            return parsed.toLocaleString();
+        }
+
+        function healthChip(health) {
+            const norm = (health || 'unknown').toLowerCase();
+            let color = '#aaa';
+            if (norm === 'ok') color = '#4CAF50';
+            if (norm === 'degraded') color = '#E57373';
+            return `<span style="color:${color}; font-weight:600; text-transform:capitalize;">${escapeHtml(norm)}</span>`;
+        }
+
+        function renderAgentStatusPanel(data) {
+            const tbody = document.getElementById('agent-status-tbody');
+            if (!tbody) return;
+
+            const agents = Array.isArray(data?.agents) ? data.agents : [];
+            if (!agents.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="padding: 0.75rem; color: #aaa;">No agent logs yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            agents.forEach((item) => {
+                const derivedHealth = item.last_seen ? (item.health || 'ok') : 'unknown';
+                const errorSnippet = item.last_error ? escapeHtml(item.last_error).slice(0, 120) : '—';
+
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #2a2a2a';
+                row.innerHTML = `
+                    <td style="padding: 0.5rem;">${escapeHtml(item.agent || '—')}</td>
+                    <td style="padding: 0.5rem;">${healthChip(derivedHealth)}</td>
+                    <td style="padding: 0.5rem;">${escapeHtml(formatDateTimeDisplay(item.last_seen))}</td>
+                    <td style="padding: 0.5rem;">${toHashScanTxLink(item.last_tx)}</td>
+                    <td style="padding: 0.5rem; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${errorSnippet}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function loadAgentStatus() {
+            try {
+                const response = await fetch('/api/agent-status');
+                const payload = await response.json();
+                renderAgentStatusPanel(payload);
+            } catch (error) {
+                const tbody = document.getElementById('agent-status-tbody');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="padding: 0.75rem; color: #E57373;">Unable to load agent status.</td></tr>';
+                }
+                console.error('Error loading agent status:', error);
+            }
+        }
+
         // --- 3. QR CODE LOGIC ---
         generateButton.addEventListener('click', function() {
             if (!currentData.profile_complete) {
@@ -283,7 +400,7 @@
                 const serverData = await response.json();
                 
                 // Set as current data
-                currentData = serverData;
+                currentData = normalizeTimelineData(serverData);
 
                 // Check for withdrawal return flag (from swap page)
                 const withdrawalFlag = sessionStorage.getItem('demo_just_withdrew');
@@ -306,7 +423,7 @@
                     currentData.total_eco = newEco;
 
                     // Add Swap Transaction
-                    currentData.activities.unshift({
+                    currentData.timeline.unshift({
                         timestamp: new Date().toISOString(),
                         desc: withdrawalData.swapDesc,
                         amount: -withdrawalData.swapAmount,
@@ -314,7 +431,7 @@
                     });
 
                     // Add Withdrawal Transaction
-                    currentData.activities.unshift({
+                    currentData.timeline.unshift({
                         timestamp: new Date().toISOString(),
                         desc: withdrawalData.withdrawDesc,
                         amount: 0,
@@ -337,6 +454,7 @@
                 // Draw Dashboard
                 drawDashboard(currentData);
                 renderActivityList();
+                loadAgentStatus();
 
                 // If a pending animation was recorded (e.g. from a withdraw flag),
                 // run it immediately so the user sees the animated update on load.
@@ -388,7 +506,7 @@
                 let oldNeighborhood = Number(currentData.neighborhood_current_kg) || 0;
 
                 // Update from server response
-                currentData = result;
+                currentData = normalizeTimelineData(result);
                 
                 const newEco = Number(currentData.total_eco) || 0;
                 const newKg = Number(currentData.total_kg) || 0;
@@ -463,7 +581,7 @@
                 btn.dataset.shown = (!shown).toString();
                 btn.textContent = shown ? 'Show failed/rejected items' : 'Hide failed/rejected items';
             });
-            container.insertBefore(btn, container.querySelector('table'));
+            container.insertBefore(btn, container.querySelector('#activity-table'));
         })();
 
         // Apply initially
@@ -564,31 +682,52 @@
         }
 
         function renderActivityList() {
-            const list = document.querySelector('.activity-list');
-            if (!list) return;
-            list.innerHTML = '';
-            (currentData.activities || []).forEach(act => {
-                const li = document.createElement('li');
-                li.className = 'activity-item';
-                const d = new Date(act.timestamp);
-                const dateLabel = d.toLocaleDateString(undefined, { month: 'short', day: '2-digit', year: 'numeric' });
-                
-                // Color logic
-                let amountClass = 'deposit';
-                if (act.amount < 0) amountClass = 'withdrawal';
-                if (act.amount === 0) amountClass = 'neutral'; // For the 0.00 withdrawal
+            const tbody = document.getElementById('activity-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
 
-                const amountText = (act.amount > 0 ? '+' : '') + act.amount.toFixed(2) + ' ECO';
-                
-                // Add status badge if present
-                const statusText = act.status ? ` [${act.status.toUpperCase()}]` : '';
+            (currentData.timeline || []).forEach(act => {
+                const rawStatus = (act.status || act.verified_status || '').toString();
+                const displayStatus = rawStatus || 'pending';
+                const statusLower = displayStatus.toLowerCase();
+                const hidden = statusLower === 'failed' || statusLower === 'rejected';
+                const amount = Number(act.amount) || 0;
 
-                li.innerHTML = `
-                    <span class="activity-date">${dateLabel}</span>
-                    <span class="activity-desc">${act.desc}${statusText}</span>
-                    <span class="activity-amount ${amountClass}">${amountText}</span>
+                const row = document.createElement('tr');
+                row.className = `activity-row${hidden ? ' hidden-status' : ''}`;
+                row.setAttribute('data-status', displayStatus);
+                row.style.borderBottom = '1px solid #2a2a2a';
+
+                const txCell = (() => {
+                    if (act.hedera_tx_id) return toHashScanTxLink(act.hedera_tx_id);
+                    const logbookStatus = (act.logbook_status || '').toLowerCase();
+                    if (logbookStatus === 'failed' || (act.pipeline_stage || '').toLowerCase() === 'log_failed') {
+                        if (act.id) {
+                            return `<form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0;">
+                                <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Hedera delayed (retry)</button>
+                            </form>`;
+                        }
+                        return 'Hedera delayed (retry)';
+                    }
+                    return 'Hedera delayed (retry)';
+                })();
+
+                const proofCell = (() => {
+                    if (act.proof_bundle_url) {
+                        return `<a href="${act.proof_bundle_url}">${act.proof_hash ? 'Download Proof' : 'Generate Proof'}</a>`;
+                    }
+                    if (!act.id) return '—';
+                    return `<a href="/api/proof-bundle/${encodeURIComponent(act.id)}">${act.proof_hash ? 'Download Proof' : 'Generate Proof'}</a>`;
+                })();
+
+                row.innerHTML = `
+                    <td style="padding: 0.5rem;">${act.desc || ''}</td>
+                    <td style="padding: 0.5rem;">${amount.toFixed(2)}</td>
+                    <td style="padding: 0.5rem;">${hidden ? `<span class="status-muted">${displayStatus} <span class="status-note">(hidden)</span></span>` : displayStatus}</td>
+                    <td style="padding: 0.5rem;">${proofCell}</td>
+                    <td style="padding: 0.5rem;">${txCell}</td>
                 `;
-                list.appendChild(li);
+                tbody.appendChild(row);
             });
         }
 

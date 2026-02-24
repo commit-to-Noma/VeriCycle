@@ -1,18 +1,78 @@
 #!/usr/bin/env node
-// Demo stub for Hedera submission script
-// Usage: node submit-record.js <operatorId> <operatorKey>
-// Prints a mock transaction ID to stdout and exits 0.
+import "dotenv/config";
+import {
+  Client,
+  TopicMessageSubmitTransaction,
+  Hbar,
+} from "@hashgraph/sdk";
 
-const operatorId = process.argv[2] || '';
-const operatorKey = process.argv[3] || '';
-
-function randomInt(max) {
-  return Math.floor(Math.random() * Math.floor(max));
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const nowMs = Date.now();
-const seconds = Math.floor(nowMs / 1000);
-const nanos = (nowMs % 1000) * 1000000;
-const txId = `0.0.${randomInt(1000000)}@${seconds}.${nanos}`;
-console.log(`TX_ID=${txId}`);
-process.exit(0);
+async function submitOnce(operatorId, operatorKey, topicId, payload) {
+  const client = Client.forTestnet();
+  client.setOperator(operatorId, operatorKey);
+  client.setMaxAttempts(1);
+  if (typeof client.setRequestTimeout === "function") {
+    client.setRequestTimeout(15000);
+  }
+
+  const tx = new TopicMessageSubmitTransaction({
+    topicId,
+    message: JSON.stringify(payload),
+  })
+    .setMaxTransactionFee(new Hbar(2))
+    .setTransactionValidDuration(120);
+
+  try {
+    const response = await tx.execute(client);
+    await response.getReceipt(client);
+    return response.transactionId.toString();
+  } finally {
+    client.close();
+  }
+}
+
+async function main() {
+  const operatorId = process.env.OPERATOR_ID;
+  const operatorKey = process.env.OPERATOR_KEY;
+  const topicId = process.env.VERICYCLE_TOPIC_ID;
+  const activityId = process.argv[2] || "";
+  const proofHash = process.argv[3] || "";
+
+  if (!operatorId || !operatorKey || !topicId) {
+    throw new Error("Missing OPERATOR_ID, OPERATOR_KEY, or VERICYCLE_TOPIC_ID in .env");
+  }
+
+  const payload = {
+    activityId,
+    proofHash,
+    timestamp: new Date().toISOString(),
+    verified: true,
+  };
+
+  let lastError = null;
+  const maxTries = 8;
+  for (let attempt = 1; attempt <= maxTries; attempt += 1) {
+    try {
+      const txId = await submitOnce(operatorId, operatorKey, topicId, payload);
+      console.log(`TX_ID=${txId}`);
+      return;
+    } catch (error) {
+      lastError = error;
+      console.error(`WARN=submit attempt ${attempt} failed: ${error?.message || String(error)}`);
+      if (attempt === maxTries) {
+        break;
+      }
+      await sleep(400 * attempt);
+    }
+  }
+
+  throw lastError || new Error("Unknown submit failure");
+}
+
+main().catch((error) => {
+  console.error(`ERROR=${error?.message || String(error)}`);
+  process.exit(1);
+});

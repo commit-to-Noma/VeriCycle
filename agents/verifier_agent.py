@@ -4,7 +4,26 @@ Assigns trust_weight and decides verified/rejected status.
 """
 
 from extensions import db
-from models import Activity
+from models import Activity, AgentTask, User
+from agents.proof_utils import build_proof_hash
+
+
+def _enqueue_agent_once(activity_id: int, agent_name: str, task_type: str) -> bool:
+    exists = AgentTask.query.filter(
+        AgentTask.activity_id == activity_id,
+        AgentTask.agent_name == agent_name,
+        AgentTask.status.in_(["queued", "running"])
+    ).first()
+    if exists:
+        return False
+
+    db.session.add(AgentTask(
+        activity_id=activity_id,
+        agent_name=agent_name,
+        task_type=task_type,
+        status="queued"
+    ))
+    return True
 
 
 class VerifierAgent:
@@ -23,7 +42,7 @@ class VerifierAgent:
 
         with app.app_context():
             try:
-                activity = Activity.query.get(activity_id)
+                activity = db.session.get(Activity, activity_id)
 
                 if not activity:
                     print(f"[VERIFIER AGENT ERROR] Activity {activity_id} not found", flush=True)
@@ -53,11 +72,30 @@ class VerifierAgent:
                 activity.trust_weight = 0.85
                 activity.verified_status = "verified"
                 activity.pipeline_stage = "verified"
+                activity.logbook_status = activity.logbook_status or "pending"
+
+                user = db.session.get(User, activity.user_id)
+                activity.proof_hash = build_proof_hash(
+                    activity_id=activity.id,
+                    user_email=(user.email if user else ""),
+                    amount=activity.amount,
+                    description=activity.desc,
+                    created_at=activity.timestamp,
+                    verifier_trust_weight=activity.trust_weight,
+                )
                 
                 print(f"[VERIFIER AGENT] ✓ VERIFIED: trust_weight={activity.trust_weight}", flush=True)
                 
                 db.session.commit()
+
+                reward_queued = _enqueue_agent_once(activity.id, "RewardAgent", "reward")
+                compliance_queued = _enqueue_agent_once(activity.id, "ComplianceAgent", "attest")
+                db.session.commit()
                 print(f"[VERIFIER AGENT] Database updated", flush=True)
+                print(
+                    f"[VERIFIER AGENT] Enqueued downstream: RewardAgent={reward_queued}, ComplianceAgent={compliance_queued}",
+                    flush=True
+                )
                 print(f"{'='*80}\n", flush=True)
 
                 return True

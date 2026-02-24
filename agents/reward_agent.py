@@ -20,14 +20,14 @@ class RewardAgent:
         print(f"{'='*80}\n", flush=True)
 
         try:
-            activity = Activity.query.get(activity_id)
+            activity = db.session.get(Activity, activity_id)
 
             if not activity:
                 print(f"[REWARD AGENT ERROR] Activity {activity_id} not found", flush=True)
                 return "done"  # nothing to do
 
-            # Only process if logged
-            if activity.pipeline_stage != "logged":
+            # Deferred Hedera mode: rewards run once activity is verified
+            if activity.pipeline_stage not in ("verified", "logged"):
                 print(f"[REWARD AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
                 return "skip"
 

@@ -29,6 +29,8 @@ class Activity(db.Model):
     status = db.Column(db.String(50), default="pending")
     agent_processed = db.Column(db.Boolean, default=False)
     hedera_tx_id = db.Column(db.String(150), nullable=True)
+    proof_hash = db.Column(db.String(64), nullable=True)
+    logbook_status = db.Column(db.String(20), default="pending")  # pending|failed|anchored
     trust_weight = db.Column(db.Float, default=1.0)
     
     # PIPELINE FIELDS (for multi-agent coordinator)

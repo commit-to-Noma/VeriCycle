@@ -6,15 +6,13 @@ PIPELINE_TASKS = [
     ("CollectorAgent", "collect"),
     ("VerifierAgent", "verify"),
     ("LogbookAgent", "log"),
-    ("RewardAgent", "reward"),
-    ("ComplianceAgent", "attest"),
 ]
 
 def enqueue_pipeline(activity_id: int):
     now = datetime.now(timezone.utc)
     # Stagger tasks so Collector runs first, then Verifier, etc.
     # Offsets are in seconds and simple; adjust if you need finer control.
-    offsets = [0, 1, 2, 3, 4]
+    offsets = [0, 1, 2]
     for (agent_name, task_type), off in zip(PIPELINE_TASKS, offsets):
         db.session.add(AgentTask(
             activity_id=activity_id,

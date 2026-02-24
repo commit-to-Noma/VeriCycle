@@ -20,6 +20,7 @@ async function submitRecord(dropOffData) {
 
   const client = Client.forTestnet();
   client.setOperator(operatorId, operatorKey);
+  client.setMaxAttempts(5);
 
   console.error("Submitting new record to the VeriCycle Logbook...");
 

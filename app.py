@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 load_dotenv() 
 
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash, jsonify, abort
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 from flask_login import login_user, login_required, logout_user, current_user
 import qrcode
 import io
@@ -35,6 +35,8 @@ import json
 import re 
 import threading
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import text
+from urllib.parse import urlencode
 
 # -----------------------------------------------------------------
 # 1. APP CONFIGURATION
@@ -87,6 +89,7 @@ login_manager.login_message_category = None
 # -----------------------------------------------------------------
 from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask
 from extensions import db as _db  # ensure db is available for seed helper
+from agents.proof_utils import build_proof_hash
 
 
 def seed_layer0_if_empty():
@@ -120,9 +123,53 @@ def seed_layer0_if_empty():
     except Exception as e:
         print('[SEED] Error while seeding Layer 0:', e, flush=True)
 
+
+def ensure_activity_columns():
+    cols = db.session.execute(text("PRAGMA table_info(activity)")).mappings().all()
+    existing = {c.get("name") for c in cols}
+
+    if "proof_hash" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN proof_hash VARCHAR(64)"))
+
+    if "logbook_status" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN logbook_status VARCHAR(20) DEFAULT 'pending'"))
+
+    db.session.commit()
+
+
+def backfill_activity_proof_hashes():
+    try:
+        missing = Activity.query.filter(
+            (Activity.proof_hash.is_(None)) | (Activity.proof_hash == "")
+        ).all()
+        if not missing:
+            return
+
+        for act in missing:
+            user = db.session.get(User, act.user_id)
+            act.proof_hash = build_proof_hash(
+                activity_id=act.id,
+                user_email=(user.email if user else ""),
+                amount=act.amount,
+                description=act.desc,
+                created_at=act.timestamp,
+                verifier_trust_weight=act.trust_weight,
+            )
+            if not getattr(act, "logbook_status", None):
+                act.logbook_status = "anchored" if act.hedera_tx_id else "pending"
+
+        db.session.commit()
+    except Exception as e:
+        print(f"[BACKEND] Proof-hash backfill skipped: {e}", flush=True)
+
 # Ensure tables exist (create after models are imported so metadata is registered)
 with app.app_context():
     db.create_all()
+    try:
+        ensure_activity_columns()
+        backfill_activity_proof_hashes()
+    except Exception as e:
+        print(f"[BACKEND] Activity schema ensure skipped: {e}", flush=True)
     # Seed Layer 0 household/location/schedule data if empty
     try:
         seed_layer0_if_empty()
@@ -410,8 +457,13 @@ def collector_dashboard():
     if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
         flash('You must complete your profile before accessing the dashboard.', 'error')
         return redirect(url_for('profile'))
-    # Expose the user's activities to the template so the UI can show agent status and Hedera TX
-    activities = Activity.query.filter_by(user_id=current_user.id).all()
+    # Expose one newest-first activity list for the dashboard table.
+    activities = (
+        Activity.query
+        .filter_by(user_id=current_user.id)
+        .order_by(Activity.timestamp.desc())
+        .all()
+    )
     return render_template('collector.html', activities=activities, active_page='dashboard')
 
 
@@ -716,10 +768,21 @@ def simulate_deposit():
             desc=f"Verified Drop-off ({weight}kg of Cans)",
             amount=total_amount,
             status="pending",
-            verified_status="pending"
+            verified_status="pending",
+            logbook_status="pending"
         )
         
         db.session.add(activity)
+        db.session.commit()
+
+        activity.proof_hash = build_proof_hash(
+            activity_id=activity.id,
+            user_email=current_user.email,
+            amount=activity.amount,
+            description=activity.desc,
+            created_at=activity.timestamp,
+            verifier_trust_weight=activity.trust_weight,
+        )
         db.session.commit()
         
         activity_id = activity.id
@@ -756,21 +819,53 @@ def get_dashboard_data():
     For demo user: Uses demo seed data + any new activities.
     For other users: Calculates from their verified activities database.
     """
-    activities = []
+    timeline = []
     total_eco = 0
     total_kg = 0
+
+    def _generated_proof_url(activity_id, timestamp, desc, amount, trust_weight, user_email):
+        qs = urlencode({
+            "activity_id": activity_id,
+            "timestamp": timestamp,
+            "desc": desc,
+            "amount": amount,
+            "trust_weight": trust_weight,
+            "user_email": user_email,
+        })
+        return f"/api/proof-bundle-generated?{qs}"
     
     try:
         # Fetch all activities for this user (verified + pending)
-        acts = Activity.query.filter_by(user_id=current_user.id).order_by(Activity.id.desc()).limit(200).all()
+        acts = (
+            Activity.query
+            .filter_by(user_id=current_user.id)
+            .order_by(Activity.timestamp.desc())
+            .limit(200)
+            .all()
+        )
         
         for a in acts:
-            activities.append({
+            proof_hash = a.proof_hash or build_proof_hash(
+                activity_id=a.id,
+                user_email=current_user.email,
+                amount=a.amount,
+                description=a.desc,
+                created_at=a.timestamp,
+                verifier_trust_weight=a.trust_weight,
+            )
+
+            timeline.append({
+                'id': a.id,
                 'timestamp': a.timestamp,
                 'desc': a.desc,
                 'amount': a.amount,
                 'status': a.status,
-                'hedera_tx_id': a.hedera_tx_id
+                'hedera_tx_id': a.hedera_tx_id,
+                'proof_hash': proof_hash,
+                'proof_bundle_url': f'/api/proof-bundle/{a.id}',
+                'logbook_status': a.logbook_status,
+                'pipeline_stage': a.pipeline_stage,
+                'last_error': a.last_error,
             })
             
             # Only count VERIFIED activities toward balance
@@ -783,19 +878,67 @@ def get_dashboard_data():
                     total_kg += float(match.group(1))
     except Exception as e:
         print('Error fetching activities:', e)
-        activities = []
+        timeline = []
         total_eco = 0
         total_kg = 0
     
     # Demo user gets seed data plus their activities
     if current_user.email.lower().strip() == 'test@gmail.com':
+        seed1_ts = "2025-11-12T10:00:00Z"
+        seed1_desc = "Verified Drop-off (8.5kg of Paper)"
+        seed1_amount = 425.00
+        seed2_ts = "2025-11-08T14:30:00Z"
+        seed2_desc = "Verified Drop-off (15.0kg of Cans)"
+        seed2_amount = 750.00
+
+        seed1_hash = build_proof_hash(
+            activity_id="demo-seed-1",
+            user_email=current_user.email,
+            amount=seed1_amount,
+            description=seed1_desc,
+            created_at=seed1_ts,
+            verifier_trust_weight=0.85,
+        )
+        seed2_hash = build_proof_hash(
+            activity_id="demo-seed-2",
+            user_email=current_user.email,
+            amount=seed2_amount,
+            description=seed2_desc,
+            created_at=seed2_ts,
+            verifier_trust_weight=0.85,
+        )
+
         demo_seed = [
-            { "timestamp": "2025-11-12T10:00:00Z", "desc": "Verified Drop-off (8.5kg of Paper)", "amount": 425.00, "status": "verified", "hedera_tx_id": None },
-            { "timestamp": "2025-11-08T14:30:00Z", "desc": "Verified Drop-off (15.0kg of Cans)", "amount": 750.00, "status": "verified", "hedera_tx_id": None }
+            {
+                "id": None,
+                "timestamp": seed1_ts,
+                "desc": seed1_desc,
+                "amount": seed1_amount,
+                "status": "verified",
+                "hedera_tx_id": None,
+                "proof_hash": seed1_hash,
+                "proof_bundle_url": _generated_proof_url("demo-seed-1", seed1_ts, seed1_desc, seed1_amount, 0.85, current_user.email),
+                "logbook_status": "pending",
+                "pipeline_stage": "attested",
+                "last_error": None
+            },
+            {
+                "id": None,
+                "timestamp": seed2_ts,
+                "desc": seed2_desc,
+                "amount": seed2_amount,
+                "status": "verified",
+                "hedera_tx_id": None,
+                "proof_hash": seed2_hash,
+                "proof_bundle_url": _generated_proof_url("demo-seed-2", seed2_ts, seed2_desc, seed2_amount, 0.85, current_user.email),
+                "logbook_status": "pending",
+                "pipeline_stage": "attested",
+                "last_error": None
+            }
         ]
         total_eco += 425.00 + 750.00  # Add seed data to balance
         total_kg += 8.5 + 15.0
-        activities = demo_seed + activities  # Seed activities first, then user activities
+        timeline = demo_seed + timeline  # Seed activities first, then user activities
     
     data = {
         "total_kg": round(total_kg, 1),
@@ -805,16 +948,252 @@ def get_dashboard_data():
         "neighborhood_current_kg": 165.0,  # Static for now
         "neighborhood_goal_kg": 1000,
         "profile_complete": "1" if current_user.full_name else "0",
-        "activities": activities
+        "timeline": timeline,
+        "activities": timeline
     }
 
     return jsonify(data)
+
+
+@app.get('/api/proof-bundle/<int:activity_id>')
+@login_required
+def download_proof_bundle(activity_id):
+    activity = db.session.get(Activity, activity_id)
+    if not activity:
+        abort(404)
+    if activity.user_id != current_user.id and current_user.role not in ('admin', 'center'):
+        abort(403)
+
+    user = db.session.get(User, activity.user_id)
+    bundle = {
+        "activity_id": activity.id,
+        "user_email": user.email if user else None,
+        "timestamp": activity.timestamp,
+        "description": activity.desc,
+        "amount": activity.amount,
+        "status": activity.status,
+        "pipeline_stage": activity.pipeline_stage,
+        "trust_weight": activity.trust_weight,
+        "proof_hash": activity.proof_hash,
+        "logbook_status": activity.logbook_status,
+        "hedera_tx_id": activity.hedera_tx_id,
+        "last_error": activity.last_error,
+    }
+
+    payload = json.dumps(bundle, indent=2).encode('utf-8')
+    return send_file(
+        io.BytesIO(payload),
+        mimetype='application/json',
+        as_attachment=True,
+        download_name=f'proof-bundle-{activity.id}.json'
+    )
+
+
+@app.get('/api/proof-bundle-generated')
+@login_required
+def download_generated_proof_bundle():
+    activity_id = request.args.get('activity_id', '')
+    timestamp = request.args.get('timestamp', '')
+    desc = request.args.get('desc', '')
+    amount_raw = request.args.get('amount', '0')
+    trust_weight_raw = request.args.get('trust_weight', '0.85')
+    user_email = request.args.get('user_email') or current_user.email
+
+    try:
+        amount = float(amount_raw)
+    except Exception:
+        amount = 0.0
+
+    try:
+        trust_weight = float(trust_weight_raw)
+    except Exception:
+        trust_weight = 0.85
+
+    proof_hash = build_proof_hash(
+        activity_id=activity_id,
+        user_email=user_email,
+        amount=amount,
+        description=desc,
+        created_at=timestamp,
+        verifier_trust_weight=trust_weight,
+    )
+
+    bundle = {
+        "activity_id": activity_id,
+        "user_email": user_email,
+        "timestamp": timestamp,
+        "description": desc,
+        "amount": amount,
+        "status": "verified",
+        "pipeline_stage": "attested",
+        "trust_weight": trust_weight,
+        "proof_hash": proof_hash,
+        "logbook_status": "pending",
+        "hedera_tx_id": None,
+        "last_error": None,
+    }
+
+    payload = json.dumps(bundle, indent=2).encode('utf-8')
+    return send_file(
+        io.BytesIO(payload),
+        mimetype='application/json',
+        as_attachment=True,
+        download_name=f'proof-bundle-{activity_id or "generated"}.json'
+    )
+
+
+@app.route('/api/agent-status')
+@login_required
+def get_agent_status():
+    agents = ["CollectorAgent", "VerifierAgent", "LogbookAgent", "RewardAgent", "ComplianceAgent"]
+    statuses = []
+
+    def _normalize_ts(ts: str):
+        if not ts:
+            return None
+        return ts.replace("+00:00", "Z")
+
+    error_levels = ("error", "failed")
+
+    for agent_name in agents:
+        latest_log = (
+            AgentLog.query
+            .filter(AgentLog.agent_name == agent_name)
+            .order_by(AgentLog.id.desc())
+            .first()
+        )
+
+        latest_error = (
+            AgentLog.query
+            .filter(
+                AgentLog.agent_name == agent_name,
+                db.func.lower(AgentLog.level).in_(error_levels)
+            )
+            .order_by(AgentLog.id.desc())
+            .first()
+        )
+
+        latest_non_error = (
+            AgentLog.query
+            .filter(
+                AgentLog.agent_name == agent_name,
+                db.func.lower(AgentLog.level).notin_(error_levels)
+            )
+            .order_by(AgentLog.id.desc())
+            .first()
+        )
+
+        latest_tx = (
+            None if agent_name != "LogbookAgent" else (
+                AgentLog.query
+                .filter(
+                    AgentLog.agent_name == agent_name,
+                    AgentLog.hedera_tx_id.isnot(None),
+                    AgentLog.hedera_tx_id != ""
+                )
+                .order_by(AgentLog.id.desc())
+                .first()
+            )
+        )
+
+        if not latest_log:
+            health = "unknown"
+        else:
+            level = (latest_log.level or "").lower()
+            health = "degraded" if level in error_levels else "ok"
+            if latest_error and (not latest_non_error or latest_error.id > latest_non_error.id):
+                health = "degraded"
+
+        last_error_msg = None
+        if latest_error:
+            last_error_msg = latest_error.last_error or latest_error.message
+
+        statuses.append({
+            "agent": agent_name,
+            "health": health,
+            "last_seen": _normalize_ts(latest_log.created_at if latest_log else None),
+            "last_tx": latest_tx.hedera_tx_id if (agent_name == "LogbookAgent" and latest_tx) else None,
+            "last_error": last_error_msg,
+        })
+
+    return jsonify({"agents": statuses})
 
 
 # -----------------------------------------------------------------
 # 8. ADMIN AGENT MONITOR
 # - View pipeline status and agent processing
 # -----------------------------------------------------------------
+def _task_type_for_agent(agent_name: str) -> str:
+    task_type_map = {
+        "CollectorAgent": "collect",
+        "VerifierAgent": "verify",
+        "LogbookAgent": "log",
+        "RewardAgent": "reward",
+        "ComplianceAgent": "attest",
+    }
+    return task_type_map.get(agent_name, "collect")
+
+
+def enqueue_once(activity_id: int, agent_name: str) -> bool:
+    exists = AgentTask.query.filter(
+        AgentTask.activity_id == activity_id,
+        AgentTask.agent_name == agent_name,
+        AgentTask.status.in_(["queued", "running"])
+    ).first()
+    if exists:
+        return False
+
+    db.session.add(AgentTask(
+        activity_id=activity_id,
+        agent_name=agent_name,
+        task_type=_task_type_for_agent(agent_name),
+        status="queued"
+    ))
+    return True
+
+
+def logbook_retry_blocked(activity_id: int) -> bool:
+    active = AgentTask.query.filter(
+        AgentTask.activity_id == activity_id,
+        AgentTask.agent_name == "LogbookAgent",
+        AgentTask.status.in_(["queued", "running"])
+    ).first()
+    if active:
+        return True
+
+    last_failed = AgentTask.query.filter(
+        AgentTask.activity_id == activity_id,
+        AgentTask.agent_name == "LogbookAgent",
+        AgentTask.status == "failed"
+    ).order_by(AgentTask.id.desc()).first()
+
+    if not last_failed:
+        return False
+
+    last_updated = getattr(last_failed, "updated_at", None)
+    if last_updated:
+        if last_updated.tzinfo is None:
+            last_updated = last_updated.replace(tzinfo=timezone.utc)
+        return last_updated > (datetime.now(timezone.utc) - timedelta(seconds=15))
+
+    return True
+
+
+def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stage: str, hedera_tx_id: str, message: str):
+    activity = db.session.get(Activity, activity_id)
+    ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    db.session.add(AgentLog(
+        created_at=ts,
+        activity_id=activity_id,
+        agent_name=agent_name,
+        level=level,
+        message=(message or "")[:512],
+        pipeline_stage=pipeline_stage,
+        hedera_tx_id=hedera_tx_id,
+        last_error=getattr(activity, "last_error", None),
+    ))
+
+
 @app.get('/admin/monitor')
 @login_required
 def admin_monitor():
@@ -858,46 +1237,9 @@ def admin_clear_logs():
 @app.post('/admin/rerun/<int:activity_id>')
 @login_required
 def admin_rerun(activity_id):
-    activity = Activity.query.get(activity_id)
+    activity = db.session.get(Activity, activity_id)
     if not activity:
         abort(404)
-
-    def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stage: str, hedera_tx_id: str, message: str):
-        ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        db.session.add(AgentLog(
-            created_at=ts,
-            activity_id=activity_id,
-            agent_name=agent_name,
-            level=level,
-            message=message[:512],
-            pipeline_stage=pipeline_stage,
-            hedera_tx_id=hedera_tx_id,
-            last_error=getattr(activity, "last_error", None),
-        ))
-
-    def enqueue_once(activity_id: int, agent_name: str) -> bool:
-        exists = AgentTask.query.filter(
-            AgentTask.activity_id == activity_id,
-            AgentTask.agent_name == agent_name,
-            AgentTask.status.in_(["queued", "running"])
-        ).first()
-        if exists:
-            return False
-
-        task_type_map = {
-            "CollectorAgent": "collect",
-            "VerifierAgent": "verify",
-            "LogbookAgent": "log",
-            "RewardAgent": "reward",
-            "ComplianceAgent": "attest",
-        }
-        db.session.add(AgentTask(
-            activity_id=activity_id,
-            agent_name=agent_name,
-            task_type=task_type_map.get(agent_name, "collect"),
-            status="queued"
-        ))
-        return True
 
     if activity.pipeline_stage == "attested":
         log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "RERUN ignored (already attested)")
@@ -911,6 +1253,42 @@ def admin_rerun(activity_id):
 
     db.session.commit()
     return redirect('/admin/monitor')
+
+
+@app.post('/admin/retry-logbook/<int:activity_id>')
+@login_required
+def admin_retry_logbook(activity_id):
+    activity = db.session.get(Activity, activity_id)
+    if not activity:
+        abort(404)
+
+    if activity.user_id != current_user.id and current_user.role not in ('admin', 'center'):
+        abort(403)
+
+    if activity.hedera_tx_id:
+        log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "LOGBOOK RETRY ignored (already logged)")
+        db.session.commit()
+        return redirect('/collector')
+
+    if activity.pipeline_stage not in ("log_failed", "verified", "logged", "rewarded", "attested"):
+        log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "LOGBOOK RETRY ignored (invalid stage)")
+        db.session.commit()
+        return redirect('/collector')
+
+    if logbook_retry_blocked(activity_id):
+        log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "Retry blocked (already attempted/active)")
+        db.session.commit()
+        return redirect('/collector')
+
+    db.session.add(AgentTask(
+        activity_id=activity_id,
+        agent_name="LogbookAgent",
+        task_type="log",
+        status="queued"
+    ))
+    log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "Enqueued Logbook retry")
+    db.session.commit()
+    return redirect('/collector')
 
 
 @app.route('/admin/agents', methods=['GET'])
