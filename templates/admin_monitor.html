@@ -1,57 +1,183 @@
-{% extends "base.html" %}
-{% block content %}
-<h2>Admin Monitor (Agents)</h2>
+<!DOCTYPE html>
+<html>
+<head>
 
-<div class="card" style="margin-top:12px;">
-  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <form method="GET" action="/admin/monitor" style="display:flex; align-items:center; gap:8px;">
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" name="debug" value="1" {% if debug_mode %}checked{% endif %}>
-        Show full history (Debug)
-      </label>
-      <button type="submit">Apply</button>
-    </form>
-    <form method="POST" action="/admin/clear-logs">
-      <button type="submit">Clear old logs</button>
-    </form>
-  </div>
+<title>VeriCycle Admin Monitor</title>
 
-  <h3>Latest Agent Logs — Mode: {{ mode_label }}</h3>
-  <table class="table" style="width:100%; margin-top:8px;">
-    <thead>
-      <tr>
-        <th>Time</th>
-        <th>Activity</th>
-        <th>Agent</th>
-        <th>Level</th>
-        <th>Stage</th>
-        <th>Tx</th>
-        <th>Message</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for l in logs %}
-      <tr>
-        <td style="white-space:nowrap;">{{ l.created_at }}</td>
-        <td>{{ l.activity_id }}</td>
-        <td>{{ l.agent_name }}</td>
-        <td>{{ l.level }}</td>
-        <td>{{ l.pipeline_stage or "—" }}</td>
-        <td style="white-space:nowrap;">
-          {% if l.hedera_tx_id %}
-            <a href="https://hashscan.io/testnet/transaction/{{ l.hedera_tx_id }}" target="_blank">View</a>
-          {% else %}—{% endif %}
-        </td>
-        <td style="max-width:520px; overflow-wrap:anywhere;">{{ l.message }}</td>
-        <td>
-          <form method="POST" action="/admin/rerun/{{ l.activity_id }}">
-            <button type="submit">Rerun</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endblock %}
+<link rel="stylesheet" href="/static/style.css">
+
+<style>
+
+body {
+
+font-family: Arial;
+
+background: #0b0f14;
+
+color: white;
+
+padding: 20px;
+
+}
+
+.card {
+
+background: #151b22;
+
+padding: 15px;
+
+margin-bottom: 15px;
+
+border-radius: 8px;
+
+}
+
+button {
+
+background: #2ecc71;
+
+border: none;
+
+padding: 8px;
+
+cursor: pointer;
+
+}
+
+a {
+
+color: #58a6ff;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>VeriCycle Admin Monitor</h1>
+
+<p>
+	<a href="/collector">Back to Collector</a> |
+	<a href="/home">Home</a>
+</p>
+
+<div class="card" id="queue-summary">Queue: loading...</div>
+
+<div id="activities"></div>
+
+<script>
+
+fetch("/api/admin/queue")
+	.then(r => r.json())
+	.then(q => {
+		const el = document.getElementById("queue-summary");
+		el.innerHTML = `
+			<h3>Queue Summary</h3>
+			<p>Queued: ${q.queued ?? 0} | Running: ${q.running ?? 0} | Failed: ${q.failed ?? 0} | Done: ${q.done ?? 0}</p>
+		`;
+	})
+	.catch(() => {
+		const el = document.getElementById("queue-summary");
+		el.innerHTML = "<h3>Queue Summary</h3><p>Unable to load queue state.</p>";
+	});
+
+fetch("/api/admin/activities")
+
+.then(r => r.json())
+
+.then(data => {
+const container = document.getElementById("activities");
+
+if (!data || data.length === 0) {
+container.innerHTML = "<div class='card'><p>No activities yet. Create a deposit from /collector, then refresh.</p></div>";
+return;
+}
+
+data.forEach(a => {
+let html = `
+
+<div class="card">
+
+<h3>Activity ${a.id}</h3>
+
+<p>${a.desc}</p>
+
+<p>Amount: ${a.amount}</p>
+
+<p>Status: ${a.stage}</p>
+
+`;
+
+if (a.hedera_tx_id){
+
+html += `<p>
+<a href="https://hashscan.io/testnet/transaction/${a.hedera_tx_id}" target="_blank">
+View on Hedera
+</a>
+<button style="margin-left:10px" onclick="verifyMirror(${a.id})">Verify on Mirror</button>
+<span id="mirror_${a.id}" style="margin-left:10px"></span>
+</p>`;
+}
+
+else {
+
+html += `<p>Hedera delayed (retry)</p>
+
+<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
+
+}
+
+html += `<h4>Agent Pipeline</h4>`;
+
+(a.tasks || []).forEach(t => {
+
+html += `<p>${t.agent} : ${t.status}</p>`;
+
+});
+
+html += "</div>";
+
+container.innerHTML += html;
+
+});
+});
+
+
+function retry(id){
+
+fetch("/admin/retry-logbook/" + id)
+
+.then(() => location.reload());
+
+}
+
+function verifyMirror(id){
+const el = document.getElementById("mirror_" + id);
+if (!el) return;
+el.innerText = "Checking...";
+
+fetch("/api/mirror-verify/" + id)
+	.then(async r => {
+		if (r.ok) return r.json();
+		const j = await r.json().catch(() => ({}));
+		throw j;
+	})
+	.then(() => {
+		el.innerText = "Verified on Hedera Mirror";
+	})
+	.catch(err => {
+		if (err && err.status === "not_found_yet") el.innerText = "Not indexed yet (try again)";
+		else if (err && err.status === "timeout") el.innerText = "Mirror timeout (try again)";
+		else if (err && err.status === "request_exception") el.innerText = "Mirror request failed";
+		else if (err && err.status === "http_error") el.innerText = "Mirror HTTP error";
+		else if (err && err.error) el.innerText = "Mirror error: " + err.error;
+		else el.innerText = "Mirror verify failed";
+	});
+}
+
+</script>
+
+</body>
+</html>

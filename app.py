@@ -1194,34 +1194,108 @@ def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stag
     ))
 
 
-@app.get('/admin/monitor')
-@login_required
+@app.route('/admin/monitor')
 def admin_monitor():
-    debug_mode = (request.args.get('debug', '0').lower() in ('1', 'true', 'yes', 'on'))
+    return render_template('admin_monitor.html')
 
-    rows = AgentLog.query.order_by(AgentLog.id.desc()).limit(1000).all()
 
-    if debug_mode:
-        # Full mode: show full recent stream (no dedupe)
-        logs = rows
-    else:
-        seen = set()
-        logs = []
-        for row in rows:
-            key = (row.activity_id, row.agent_name)
-            if key in seen:
-                continue
-            seen.add(key)
-            logs.append(row)
-        logs = logs[:80]
+@app.route('/api/admin/activities')
+def api_admin_activities():
+    activities = Activity.query.order_by(Activity.timestamp.desc()).all()
 
-    return render_template(
-        'admin_monitor.html',
-        logs=logs,
-        debug_mode=debug_mode,
-        mode_label='Full History (Debug)' if debug_mode else 'Summary',
-        active_page='admin_monitor'
-    )
+    result = []
+
+    for activity in activities:
+        tasks = (
+            AgentTask.query
+            .filter_by(activity_id=activity.id)
+            .order_by(AgentTask.id.asc())
+            .all()
+        )
+
+        latest_by_agent = {}
+        for t in tasks:
+            latest_by_agent[t.agent_name] = t
+
+        task_data = []
+        for _, t in latest_by_agent.items():
+            task_data.append({
+                'agent': t.agent_name,
+                'status': t.status,
+                'attempts': t.attempts,
+                'error': t.last_error,
+            })
+
+        order = ["CollectorAgent", "VerifierAgent", "LogbookAgent", "RewardAgent", "ComplianceAgent"]
+        task_data.sort(key=lambda x: order.index(x["agent"]) if x["agent"] in order else 999)
+
+        result.append({
+            'id': activity.id,
+            'timestamp': activity.timestamp,
+            'desc': activity.desc,
+            'amount': activity.amount,
+            'stage': activity.pipeline_stage,
+            'hedera_tx_id': activity.hedera_tx_id,
+            'proof': f'/api/proof-bundle/{activity.id}',
+            'tasks': task_data,
+        })
+
+    return jsonify(result)
+
+
+@app.route('/api/admin/queue')
+def api_admin_queue():
+    pending = AgentTask.query.filter_by(status="queued").count()
+    running = AgentTask.query.filter_by(status="running").count()
+    failed = AgentTask.query.filter_by(status="failed").count()
+    done = AgentTask.query.filter_by(status="done").count()
+
+    return jsonify({
+        "queued": pending,
+        "running": running,
+        "failed": failed,
+        "done": done,
+    })
+
+
+@app.route('/api/mirror-verify/<int:activity_id>')
+def api_mirror_verify(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+
+    if not activity.hedera_tx_id:
+        return jsonify({"ok": False, "error": "No hedera_tx_id on activity"}), 400
+
+    tx = activity.hedera_tx_id.strip()
+    tx_for_mirror = tx
+    if "@" in tx_for_mirror:
+        account_id, valid_start = tx_for_mirror.split("@", 1)
+        if "." in valid_start:
+            seconds, nanos = valid_start.split(".", 1)
+            tx_for_mirror = f"{account_id}-{seconds}-{nanos}"
+
+    url = f"https://testnet.mirrornode.hedera.com/api/v1/transactions/{tx_for_mirror}"
+
+    try:
+        r = requests.get(url, timeout=15)
+
+        if r.status_code == 200:
+            return jsonify({"ok": True, "status": "verified"})
+
+        if r.status_code == 404:
+            return jsonify({"ok": False, "status": "not_found_yet"}), 404
+
+        return jsonify({
+            "ok": False,
+            "status": "http_error",
+            "code": r.status_code,
+            "body_preview": (r.text[:300] if r.text else "")
+        }), 502
+
+    except requests.exceptions.Timeout:
+        return jsonify({"ok": False, "status": "timeout"}), 504
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"ok": False, "status": "request_exception", "error": str(e)}), 502
 
 
 @app.post('/admin/clear-logs')
@@ -1255,7 +1329,7 @@ def admin_rerun(activity_id):
     return redirect('/admin/monitor')
 
 
-@app.post('/admin/retry-logbook/<int:activity_id>')
+@app.route('/admin/retry-logbook/<int:activity_id>', methods=['GET', 'POST'])
 @login_required
 def admin_retry_logbook(activity_id):
     activity = db.session.get(Activity, activity_id)
@@ -1288,6 +1362,10 @@ def admin_retry_logbook(activity_id):
     ))
     log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "Enqueued Logbook retry")
     db.session.commit()
+
+    if request.method == 'GET':
+        return ('', 204)
+
     return redirect('/collector')
 
 
