@@ -9,7 +9,6 @@ import re
 import os
 from extensions import db
 from models import Activity, User
-from agents.proof_utils import build_proof_hash
 
 def _extract_tx_id(stdout: str) -> str | None:
     # strict: TX_ID=0.0.x@seconds.nanoseconds
@@ -173,20 +172,31 @@ class LogbookAgent:
 
                 if not activity.proof_hash:
                     user = db.session.get(User, activity.user_id)
-                    activity.proof_hash = build_proof_hash(
-                        activity_id=activity.id,
-                        user_email=(user.email if user else ""),
-                        amount=activity.amount,
-                        description=activity.desc,
-                        created_at=activity.timestamp,
-                        verifier_trust_weight=activity.trust_weight,
-                    )
+                    from app import stable_proof_input, compute_proof_sha256
+                    stable_bundle = {
+                        "vericycle_version": "hackathon-2026",
+                        "activity_id": activity.id,
+                        "timestamp": activity.timestamp,
+                        "user": (user.email if user else ""),
+                        "description": activity.desc,
+                        "amount": float(activity.amount) if activity.amount is not None else None,
+                        "stage": "recorded",
+                    }
+                    activity.proof_hash = compute_proof_sha256(stable_proof_input(stable_bundle))
                     db.session.commit()
 
                 # Deferred mode: allow anchoring while stage is verified or already downstream.
                 if activity.pipeline_stage not in ("verified", "rewarded", "attested", "logged", "log_failed"):
                     print(f"[LOGBOOK AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
                     return "skip"
+
+                if os.getenv("DEMO_MODE", "0") == "1":
+                    print("[LOGBOOK AGENT] DEMO_MODE enabled: skipping Hedera submit", flush=True)
+                    activity.hedera_tx_id = None
+                    activity.logbook_status = activity.logbook_status or "pending"
+                    activity.last_error = None
+                    db.session.commit()
+                    return "done"
 
                 print(f"[LOGBOOK AGENT] Submitting to Hedera HCS...", flush=True)
 

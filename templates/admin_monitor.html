@@ -44,6 +44,25 @@ cursor: pointer;
 
 }
 
+.verify-badge {
+display: inline-block;
+padding: 4px 8px;
+border-radius: 6px;
+font-size: 12px;
+font-weight: 700;
+margin-left: 10px;
+}
+
+.verify-badge.ok {
+background: #0b6623;
+color: #ffffff;
+}
+
+.verify-badge.bad {
+background: #B71C1C;
+color: #ffffff;
+}
+
 a {
 
 color: #58a6ff;
@@ -63,11 +82,26 @@ color: #58a6ff;
 	<a href="/home">Home</a>
 </p>
 
+<div class="card" id="demo-mode-card">Demo Mode: loading...</div>
+
 <div class="card" id="queue-summary">Queue: loading...</div>
 
 <div id="activities"></div>
 
 <script>
+
+fetch("/api/config")
+	.then(r => r.json())
+	.then(cfg => {
+		const el = document.getElementById("demo-mode-card");
+		const on = !!(cfg && cfg.demo_mode);
+		el.innerHTML = `<h3>Demo Mode: ${on ? "ON" : "OFF"}</h3>`;
+		el.style.color = on ? "#9ad7a6" : "#ff6b6b";
+	})
+	.catch(() => {
+		const el = document.getElementById("demo-mode-card");
+		el.innerHTML = "<h3>Demo Mode: unavailable</h3>";
+	});
 
 fetch("/api/admin/queue")
 	.then(r => r.json())
@@ -76,6 +110,7 @@ fetch("/api/admin/queue")
 		el.innerHTML = `
 			<h3>Queue Summary</h3>
 			<p>Queued: ${q.queued ?? 0} | Running: ${q.running ?? 0} | Failed: ${q.failed ?? 0} | Done: ${q.done ?? 0}</p>
+			<p id="auto-verify-status" style="margin-top:8px;color:#9ad7a6;font-weight:600;">Auto-verify pending...</p>
 		`;
 	})
 	.catch(() => {
@@ -89,24 +124,52 @@ fetch("/api/admin/activities")
 
 .then(data => {
 const container = document.getElementById("activities");
+const autoVerifyStatus = document.getElementById("auto-verify-status");
 
 if (!data || data.length === 0) {
 container.innerHTML = "<div class='card'><p>No activities yet. Create a deposit from /collector, then refresh.</p></div>";
+if (autoVerifyStatus) {
+	autoVerifyStatus.textContent = "Auto-verify complete: no activities";
+	autoVerifyStatus.style.color = "#9ad7a6";
+}
 return;
 }
 
+let autoTotal = data.length;
+let autoDone = 0;
+let autoVerified = 0;
+let autoMismatch = 0;
+
+if (autoVerifyStatus) {
+	autoVerifyStatus.textContent = `Auto-verify running... (0/${autoTotal})`;
+	autoVerifyStatus.style.color = "#d8dee9";
+}
+
 data.forEach(a => {
+const parsedTime = new Date(a.timestamp);
+const exactTime = Number.isNaN(parsedTime.getTime())
+	? (a.timestamp || "Unknown")
+	: parsedTime.toLocaleString([], {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: false
+	});
+
 let html = `
 
 <div class="card">
 
-<h3>Activity ${a.id}</h3>
+<h3>Deposit ${a.id}</h3>
 
-<p>${a.desc}</p>
+<p>Deposit: ${a.desc || "Not specified"}</p>
 
 <p>Amount: ${a.amount}</p>
 
-<p>Status: ${a.stage}</p>
+<p>Date/Time: ${exactTime}</p>
 
 `;
 
@@ -129,6 +192,12 @@ html += `<p>Hedera delayed (retry)</p>
 
 }
 
+html += `<p>
+<button style="margin-top:10px" onclick="verifyProof(${a.id})">Verify Proof Hash</button>
+<button style="margin-top:10px;margin-left:10px" onclick="regenerateProof(${a.id})">Regenerate Proof Bundle</button>
+<span id="proof_${a.id}" style="margin-left:10px"></span>
+</p>`;
+
 html += `<h4>Agent Pipeline</h4>`;
 
 (a.tasks || []).forEach(t => {
@@ -140,6 +209,22 @@ html += `<p>${t.agent} : ${t.status}</p>`;
 html += "</div>";
 
 container.innerHTML += html;
+
+verifyProof(a.id).then(result => {
+	autoDone += 1;
+	if (result === "verified") autoVerified += 1;
+	if (result === "mismatch" || result === "error") autoMismatch += 1;
+
+	if (autoVerifyStatus) {
+		if (autoDone < autoTotal) {
+			autoVerifyStatus.textContent = `Auto-verify running... (${autoDone}/${autoTotal})`;
+			autoVerifyStatus.style.color = "#d8dee9";
+		} else {
+			autoVerifyStatus.textContent = `Auto-verify complete: ${autoVerified} verified, ${autoMismatch} issues`;
+			autoVerifyStatus.style.color = autoMismatch > 0 ? "#ff6b6b" : "#9ad7a6";
+		}
+	}
+});
 
 });
 });
@@ -174,6 +259,64 @@ fetch("/api/mirror-verify/" + id)
 		else if (err && err.status === "http_error") el.innerText = "Mirror HTTP error";
 		else if (err && err.error) el.innerText = "Mirror error: " + err.error;
 		else el.innerText = "Mirror verify failed";
+	});
+}
+
+function verifyProof(id){
+const el = document.getElementById("proof_" + id);
+if (!el) return Promise.resolve("error");
+el.textContent = "Checking...";
+el.className = "";
+
+const timeoutMs = 10000;
+const timeoutPromise = new Promise((_, reject) => {
+	setTimeout(() => reject(new Error("timeout")), timeoutMs);
+});
+
+return Promise.race([fetch("/api/proof-verify/" + id), timeoutPromise])
+	.then(async r => {
+		if (!r || !r.ok) {
+			const j = r ? await r.json().catch(() => ({})) : {};
+			throw j;
+		}
+		return r.json();
+	})
+	.then(data => {
+		const match = !!(data && (data.match === true || data.hash_match === true));
+		if (match) {
+			el.textContent = "Proof hash OK";
+			el.className = "verify-badge ok";
+			return "verified";
+		}
+		el.textContent = "Proof hash MISMATCH";
+		el.className = "verify-badge bad";
+		return "mismatch";
+	})
+	.catch(() => {
+		el.textContent = "Proof verify error";
+		el.className = "verify-badge bad";
+		return "error";
+	});
+}
+
+function regenerateProof(id){
+const el = document.getElementById("proof_" + id);
+if (el) {
+	el.textContent = "Regenerating...";
+	el.className = "";
+}
+
+fetch("/api/proof-bundle/" + id)
+	.then(r => {
+		if (!r.ok) throw new Error("regen failed");
+		return r.blob();
+	})
+	.then(() => verifyProof(id))
+	.catch(() => {
+		if (el) {
+			el.textContent = "Proof regenerate failed";
+			el.className = "verify-badge bad";
+		}
 	});
 }
 

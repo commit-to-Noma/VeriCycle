@@ -5,7 +5,6 @@ Assigns trust_weight and decides verified/rejected status.
 
 from extensions import db
 from models import Activity, AgentTask, User
-from agents.proof_utils import build_proof_hash
 
 
 def _enqueue_agent_once(activity_id: int, agent_name: str, task_type: str) -> bool:
@@ -75,14 +74,17 @@ class VerifierAgent:
                 activity.logbook_status = activity.logbook_status or "pending"
 
                 user = db.session.get(User, activity.user_id)
-                activity.proof_hash = build_proof_hash(
-                    activity_id=activity.id,
-                    user_email=(user.email if user else ""),
-                    amount=activity.amount,
-                    description=activity.desc,
-                    created_at=activity.timestamp,
-                    verifier_trust_weight=activity.trust_weight,
-                )
+                from app import stable_proof_input, compute_proof_sha256
+                stable_bundle = {
+                    "vericycle_version": "hackathon-2026",
+                    "activity_id": activity.id,
+                    "timestamp": activity.timestamp,
+                    "user": (user.email if user else ""),
+                    "description": activity.desc,
+                    "amount": float(activity.amount) if activity.amount is not None else None,
+                    "stage": "recorded",
+                }
+                activity.proof_hash = compute_proof_sha256(stable_proof_input(stable_bundle))
                 
                 print(f"[VERIFIER AGENT] ✓ VERIFIED: trust_weight={activity.trust_weight}", flush=True)
                 

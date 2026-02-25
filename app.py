@@ -32,6 +32,7 @@ import subprocess
 import os 
 import requests
 import json
+import hashlib
 import re 
 import threading
 from sqlalchemy.exc import OperationalError
@@ -47,6 +48,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'a-really-secret-key-that-you-should-change'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'vericycle.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+DEMO_MODE = os.getenv("DEMO_MODE", "0") == "1"
 
 # -----------------------------------------------------------------
 # 2. INITIALIZE TOOLS
@@ -90,6 +92,27 @@ login_manager.login_message_category = None
 from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask
 from extensions import db as _db  # ensure db is available for seed helper
 from agents.proof_utils import build_proof_hash
+
+
+def stable_proof_input(bundle: dict) -> dict:
+    """
+    Return only stable fields for proof hashing.
+    Excludes transient pipeline/task fields to prevent hash drift.
+    """
+    return {
+        "vericycle_version": bundle.get("vericycle_version"),
+        "activity_id": bundle.get("activity_id"),
+        "timestamp": bundle.get("timestamp"),
+        "user": bundle.get("user"),
+        "description": bundle.get("description"),
+        "amount": bundle.get("amount"),
+        "stage": bundle.get("stage"),
+    }
+
+
+def compute_proof_sha256(stable_dict: dict) -> str:
+    canonical = json.dumps(stable_dict, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def seed_layer0_if_empty():
@@ -139,22 +162,24 @@ def ensure_activity_columns():
 
 def backfill_activity_proof_hashes():
     try:
-        missing = Activity.query.filter(
-            (Activity.proof_hash.is_(None)) | (Activity.proof_hash == "")
-        ).all()
-        if not missing:
+        activities = Activity.query.all()
+        if not activities:
             return
 
-        for act in missing:
+        for act in activities:
             user = db.session.get(User, act.user_id)
-            act.proof_hash = build_proof_hash(
-                activity_id=act.id,
-                user_email=(user.email if user else ""),
-                amount=act.amount,
-                description=act.desc,
-                created_at=act.timestamp,
-                verifier_trust_weight=act.trust_weight,
-            )
+            bundle = {
+                "vericycle_version": "hackathon-2026",
+                "activity_id": act.id,
+                "timestamp": act.timestamp,
+                "user": (user.email if user else ""),
+                "description": act.desc,
+                "amount": float(act.amount) if act.amount is not None else None,
+                "stage": "recorded",
+            }
+            stable_hash = compute_proof_sha256(stable_proof_input(bundle))
+            if act.proof_hash != stable_hash:
+                act.proof_hash = stable_hash
             if not getattr(act, "logbook_status", None):
                 act.logbook_status = "anchored" if act.hedera_tx_id else "pending"
 
@@ -775,14 +800,16 @@ def simulate_deposit():
         db.session.add(activity)
         db.session.commit()
 
-        activity.proof_hash = build_proof_hash(
-            activity_id=activity.id,
-            user_email=current_user.email,
-            amount=activity.amount,
-            description=activity.desc,
-            created_at=activity.timestamp,
-            verifier_trust_weight=activity.trust_weight,
-        )
+        stable_bundle = {
+            "vericycle_version": "hackathon-2026",
+            "activity_id": activity.id,
+            "timestamp": activity.timestamp,
+            "user": current_user.email,
+            "description": activity.desc,
+            "amount": float(activity.amount) if activity.amount is not None else None,
+            "stage": "recorded",
+        }
+        activity.proof_hash = compute_proof_sha256(stable_proof_input(stable_bundle))
         db.session.commit()
         
         activity_id = activity.id
@@ -964,29 +991,95 @@ def download_proof_bundle(activity_id):
     if activity.user_id != current_user.id and current_user.role not in ('admin', 'center'):
         abort(403)
 
-    user = db.session.get(User, activity.user_id)
-    bundle = {
-        "activity_id": activity.id,
-        "user_email": user.email if user else None,
-        "timestamp": activity.timestamp,
-        "description": activity.desc,
-        "amount": activity.amount,
-        "status": activity.status,
-        "pipeline_stage": activity.pipeline_stage,
-        "trust_weight": activity.trust_weight,
-        "proof_hash": activity.proof_hash,
-        "logbook_status": activity.logbook_status,
-        "hedera_tx_id": activity.hedera_tx_id,
-        "last_error": activity.last_error,
-    }
+    payload_data = _build_proof_payload(activity=activity)
+    proof_sha256 = _compute_proof_sha256(payload_data)
+    payload_data["proof_sha256"] = proof_sha256
+    payload_data["proof_hash"] = proof_sha256
+    payload_data["proof_hash_basis"] = "stable_fields_v1"
+    payload_data["proof_hash_fields"] = list(stable_proof_input(payload_data).keys())
 
-    payload = json.dumps(bundle, indent=2).encode('utf-8')
+    if activity.proof_hash != proof_sha256:
+        activity.proof_hash = proof_sha256
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    payload = json.dumps(payload_data, indent=2, ensure_ascii=False).encode('utf-8')
     return send_file(
         io.BytesIO(payload),
         mimetype='application/json',
         as_attachment=True,
         download_name=f'proof-bundle-{activity.id}.json'
     )
+
+
+def _build_proof_payload(activity=None, fallback_activity_id='', fallback_timestamp='', fallback_desc='', fallback_amount=0.0, fallback_user=''):
+    tasks = []
+    if activity:
+        tasks = (
+            AgentTask.query
+            .filter_by(activity_id=activity.id)
+            .order_by(AgentTask.id.asc())
+            .all()
+        )
+
+    latest_by_agent = {}
+    for task in tasks:
+        latest_by_agent[task.agent_name] = task
+
+    pipeline_order = ["CollectorAgent", "VerifierAgent", "LogbookAgent", "RewardAgent", "ComplianceAgent"]
+
+    def _agent_sort_key(agent_name: str):
+        try:
+            return (pipeline_order.index(agent_name), agent_name)
+        except ValueError:
+            return (len(pipeline_order), agent_name)
+
+    agent_approvals = []
+    for agent_name in sorted(latest_by_agent.keys(), key=_agent_sort_key):
+        task = latest_by_agent[agent_name]
+        agent_approvals.append({
+            "agent": task.agent_name,
+            "status": task.status,
+            "attempts": task.attempts,
+            "last_error": task.last_error,
+        })
+
+    effective_activity_id = activity.id if activity else (fallback_activity_id or "")
+    effective_timestamp = activity.timestamp if activity else (fallback_timestamp or datetime.now(timezone.utc).isoformat())
+    activity_user_email = None
+    if activity:
+        rel_user = getattr(activity, "user", None)
+        if rel_user is not None:
+            activity_user_email = getattr(rel_user, "email", None)
+        if not activity_user_email and getattr(activity, "user_id", None):
+            db_user = db.session.get(User, activity.user_id)
+            activity_user_email = db_user.email if db_user else None
+
+    effective_user = activity_user_email or fallback_user or ""
+    effective_description = getattr(activity, "desc", "") if activity else fallback_desc
+    effective_amount = activity.amount if activity and activity.amount is not None else fallback_amount
+    effective_stage = "recorded"
+    effective_hedera_tx_id = activity.hedera_tx_id if activity else None
+
+    payload_data = {
+        "vericycle_version": "hackathon-2026",
+        "activity_id": effective_activity_id,
+        "timestamp": effective_timestamp.isoformat() if hasattr(effective_timestamp, "isoformat") else str(effective_timestamp),
+        "user": effective_user,
+        "description": effective_description,
+        "amount": float(effective_amount) if effective_amount is not None else None,
+        "stage": effective_stage,
+        "hedera_tx_id": effective_hedera_tx_id,
+        "agent_approvals": agent_approvals,
+    }
+    return payload_data
+
+
+def _compute_proof_sha256(payload_data: dict):
+    stable = stable_proof_input(payload_data)
+    return compute_proof_sha256(stable)
 
 
 @app.get('/api/proof-bundle-generated')
@@ -996,7 +1089,6 @@ def download_generated_proof_bundle():
     timestamp = request.args.get('timestamp', '')
     desc = request.args.get('desc', '')
     amount_raw = request.args.get('amount', '0')
-    trust_weight_raw = request.args.get('trust_weight', '0.85')
     user_email = request.args.get('user_email') or current_user.email
 
     try:
@@ -1004,42 +1096,82 @@ def download_generated_proof_bundle():
     except Exception:
         amount = 0.0
 
+    activity = None
     try:
-        trust_weight = float(trust_weight_raw)
+        parsed_activity_id = int(activity_id)
+        activity = db.session.get(Activity, parsed_activity_id)
     except Exception:
-        trust_weight = 0.85
+        activity = None
 
-    proof_hash = build_proof_hash(
-        activity_id=activity_id,
-        user_email=user_email,
-        amount=amount,
-        description=desc,
-        created_at=timestamp,
-        verifier_trust_weight=trust_weight,
+    payload_data = _build_proof_payload(
+        activity=activity,
+        fallback_activity_id=activity_id,
+        fallback_timestamp=timestamp,
+        fallback_desc=desc,
+        fallback_amount=amount,
+        fallback_user=user_email,
     )
 
-    bundle = {
-        "activity_id": activity_id,
-        "user_email": user_email,
-        "timestamp": timestamp,
-        "description": desc,
-        "amount": amount,
-        "status": "verified",
-        "pipeline_stage": "attested",
-        "trust_weight": trust_weight,
-        "proof_hash": proof_hash,
-        "logbook_status": "pending",
-        "hedera_tx_id": None,
-        "last_error": None,
-    }
+    proof_sha256 = _compute_proof_sha256(payload_data)
+    payload_data["proof_sha256"] = proof_sha256
+    payload_data["proof_hash"] = proof_sha256
+    payload_data["proof_hash_basis"] = "stable_fields_v1"
+    payload_data["proof_hash_fields"] = list(stable_proof_input(payload_data).keys())
 
-    payload = json.dumps(bundle, indent=2).encode('utf-8')
+    if activity and activity.proof_hash != proof_sha256:
+        activity.proof_hash = proof_sha256
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    payload = json.dumps(payload_data, indent=2, ensure_ascii=False).encode('utf-8')
     return send_file(
         io.BytesIO(payload),
         mimetype='application/json',
         as_attachment=True,
-        download_name=f'proof-bundle-{activity_id or "generated"}.json'
+        download_name=f'proof-bundle-{payload_data.get("activity_id") or "generated"}.json'
     )
+
+
+@app.get('/api/proof-verify/<int:activity_id>')
+@login_required
+def verify_proof_bundle(activity_id):
+    activity = db.session.get(Activity, activity_id)
+    if not activity:
+        abort(404)
+    if activity.user_id != current_user.id and current_user.role not in ('admin', 'center'):
+        abort(403)
+
+    payload_data = _build_proof_payload(activity=activity)
+    recomputed_hash = _compute_proof_sha256(payload_data)
+    stored_hash = (activity.proof_hash or "").strip().lower()
+
+    if not stored_hash:
+        stored_hash = recomputed_hash.lower()
+        activity.proof_hash = recomputed_hash
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    hash_match = stored_hash == recomputed_hash.lower()
+
+    return jsonify({
+        "ok": True,
+        "activity_id": activity.id,
+        "match": hash_match,
+        "stored": activity.proof_hash,
+        "computed": recomputed_hash,
+        "basis": "stable_fields_v1",
+        "fields": list(stable_proof_input(payload_data).keys()),
+        "hash_match": hash_match,
+        "stored_hash": activity.proof_hash,
+        "recomputed_hash": recomputed_hash,
+        "hedera_tx_id": activity.hedera_tx_id,
+        "proof_exists_without_hedera": True,
+        "verified_at": datetime.now(timezone.utc).isoformat()
+    })
 
 
 @app.route('/api/agent-status')
@@ -1199,9 +1331,14 @@ def admin_monitor():
     return render_template('admin_monitor.html')
 
 
+@app.route('/api/config')
+def api_config():
+    return jsonify({"demo_mode": DEMO_MODE})
+
+
 @app.route('/api/admin/activities')
 def api_admin_activities():
-    activities = Activity.query.order_by(Activity.timestamp.desc()).all()
+    activities = Activity.query.order_by(Activity.timestamp.asc()).all()
 
     result = []
 
