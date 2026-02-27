@@ -49,6 +49,7 @@ app.config['SECRET_KEY'] = 'a-really-secret-key-that-you-should-change'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'vericycle.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 DEMO_MODE = os.getenv("DEMO_MODE", "0") == "1"
+print(f"[BOOT] DEMO_MODE={'1' if DEMO_MODE else '0'}", flush=True)
 
 # -----------------------------------------------------------------
 # 2. INITIALIZE TOOLS
@@ -489,7 +490,7 @@ def collector_dashboard():
         .order_by(Activity.timestamp.desc())
         .all()
     )
-    return render_template('collector.html', activities=activities, active_page='dashboard')
+    return render_template('collector.html', activities=activities, active_page='dashboard', demo_mode=DEMO_MODE)
 
 
 @app.route('/request-pickup')
@@ -988,7 +989,7 @@ def download_proof_bundle(activity_id):
     activity = db.session.get(Activity, activity_id)
     if not activity:
         abort(404)
-    if activity.user_id != current_user.id and current_user.role not in ('admin', 'center'):
+    if (activity.user_id != current_user.id) and (not is_admin_user()):
         abort(403)
 
     payload_data = _build_proof_payload(activity=activity)
@@ -1082,6 +1083,13 @@ def _compute_proof_sha256(payload_data: dict):
     return compute_proof_sha256(stable)
 
 
+def is_admin_user():
+    try:
+        return current_user.is_authenticated and getattr(current_user, "role", None) == "admin"
+    except Exception:
+        return False
+
+
 @app.get('/api/proof-bundle-generated')
 @login_required
 def download_generated_proof_bundle():
@@ -1140,7 +1148,7 @@ def verify_proof_bundle(activity_id):
     activity = db.session.get(Activity, activity_id)
     if not activity:
         abort(404)
-    if activity.user_id != current_user.id and current_user.role not in ('admin', 'center'):
+    if (activity.user_id != current_user.id) and (not is_admin_user()):
         abort(403)
 
     payload_data = _build_proof_payload(activity=activity)
@@ -1327,7 +1335,10 @@ def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stag
 
 
 @app.route('/admin/monitor')
+@login_required
 def admin_monitor():
+    if not is_admin_user():
+        abort(403)
     return render_template('admin_monitor.html')
 
 
@@ -1337,7 +1348,10 @@ def api_config():
 
 
 @app.route('/api/admin/activities')
+@login_required
 def api_admin_activities():
+    if not is_admin_user():
+        abort(403)
     activities = Activity.query.order_by(Activity.timestamp.asc()).all()
 
     result = []
@@ -1372,6 +1386,7 @@ def api_admin_activities():
             'desc': activity.desc,
             'amount': activity.amount,
             'stage': activity.pipeline_stage,
+            'logbook_status': activity.logbook_status,
             'hedera_tx_id': activity.hedera_tx_id,
             'proof': f'/api/proof-bundle/{activity.id}',
             'tasks': task_data,
@@ -1381,7 +1396,10 @@ def api_admin_activities():
 
 
 @app.route('/api/admin/queue')
+@login_required
 def api_admin_queue():
+    if not is_admin_user():
+        abort(403)
     pending = AgentTask.query.filter_by(status="queued").count()
     running = AgentTask.query.filter_by(status="running").count()
     failed = AgentTask.query.filter_by(status="failed").count()
@@ -1445,6 +1463,27 @@ def admin_clear_logs():
     return redirect('/admin/monitor')
 
 
+@app.post('/admin/cleanup-stale-running')
+@login_required
+def admin_cleanup_stale_running():
+    if not is_admin_user():
+        abort(403)
+
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=5)
+    stale_tasks = AgentTask.query.filter(
+        AgentTask.status == "running",
+        AgentTask.updated_at < cutoff
+    ).all()
+
+    for task in stale_tasks:
+        task.status = "failed"
+        task.last_error = "stale running cleanup"
+        log_agent_event(task.activity_id, "Admin", "error", "cleanup", None, "Marked stale running task as failed")
+
+    db.session.commit()
+    return redirect('/admin/monitor')
+
+
 @app.post('/admin/rerun/<int:activity_id>')
 @login_required
 def admin_rerun(activity_id):
@@ -1479,17 +1518,29 @@ def admin_retry_logbook(activity_id):
     if activity.hedera_tx_id:
         log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "LOGBOOK RETRY ignored (already logged)")
         db.session.commit()
+        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': True, 'status': 'already_logged'}), 200
         return redirect('/collector')
 
     if activity.pipeline_stage not in ("log_failed", "verified", "logged", "rewarded", "attested"):
         log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "LOGBOOK RETRY ignored (invalid stage)")
         db.session.commit()
+        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'status': 'invalid_stage'}), 409
         return redirect('/collector')
 
     if logbook_retry_blocked(activity_id):
         log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "Retry blocked (already attempted/active)")
         db.session.commit()
+        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'status': 'blocked'}), 409
         return redirect('/collector')
+
+    # Reset to the stage expected by Logbook so retry can run deterministically.
+    activity.pipeline_stage = "verified"
+    activity.hedera_tx_id = None
+    activity.last_error = None
+    db.session.commit()
 
     db.session.add(AgentTask(
         activity_id=activity_id,
@@ -1499,6 +1550,9 @@ def admin_retry_logbook(activity_id):
     ))
     log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "Enqueued Logbook retry")
     db.session.commit()
+
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'ok': True, 'status': 'queued'}), 200
 
     if request.method == 'GET':
         return ('', 204)

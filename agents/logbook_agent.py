@@ -8,7 +8,43 @@ import subprocess
 import re
 import os
 from extensions import db
-from models import Activity, User
+from models import Activity, User, AgentTask
+
+
+def _enqueue_compliance_once(activity_id: int) -> bool:
+    exists = AgentTask.query.filter(
+        AgentTask.activity_id == activity_id,
+        AgentTask.agent_name == "ComplianceAgent",
+        AgentTask.status.in_(["queued", "running"])
+    ).first()
+    if exists:
+        return False
+
+    db.session.add(AgentTask(
+        activity_id=activity_id,
+        agent_name="ComplianceAgent",
+        task_type="attest",
+        status="queued"
+    ))
+    return True
+
+
+def _enqueue_reward_once(activity_id: int) -> bool:
+    exists = AgentTask.query.filter(
+        AgentTask.activity_id == activity_id,
+        AgentTask.agent_name == "RewardAgent",
+        AgentTask.status.in_(["queued", "running"])
+    ).first()
+    if exists:
+        return False
+
+    db.session.add(AgentTask(
+        activity_id=activity_id,
+        agent_name="RewardAgent",
+        task_type="reward",
+        status="queued"
+    ))
+    return True
 
 def _extract_tx_id(stdout: str) -> str | None:
     # strict: TX_ID=0.0.x@seconds.nanoseconds
@@ -142,6 +178,16 @@ def submit_to_hcs_for_activity(activity: Activity) -> str:
     )
 
 
+def _persist_logbook_failed(activity: Activity | None, err_msg: str):
+    if not activity:
+        return
+    activity.hedera_tx_id = None
+    activity.logbook_status = "offchain_final"
+    activity.pipeline_stage = "logged"
+    activity.last_error = (err_msg or "HCS submission failed")[:512]
+    db.session.commit()
+
+
 class LogbookAgent:
     name = "LogbookAgent"
 
@@ -158,6 +204,7 @@ class LogbookAgent:
         print(f"{'='*80}\n", flush=True)
 
         with app.app_context():
+            activity = None
             try:
                 activity = db.session.get(Activity, activity_id)
 
@@ -169,6 +216,31 @@ class LogbookAgent:
                 if activity.hedera_tx_id:
                     print("[LOGBOOK AGENT] Already logged; skipping", flush=True)
                     return "done"
+
+                if os.getenv("DEMO_MODE", "0") == "1":
+                    print("[LOGBOOK AGENT] DEMO_MODE enabled: skipping Hedera submit (no hedera_tx_id will be set)", flush=True)
+
+                    try:
+                        activity.logbook_status = "demo_skipped"
+                    except Exception:
+                        pass
+
+                    activity.pipeline_stage = "logged"
+                    activity.last_error = None
+                    db.session.commit()
+
+                    compliance_queued = _enqueue_compliance_once(activity.id)
+                    db.session.commit()
+                    print(f"[LOGBOOK AGENT] Enqueued downstream: ComplianceAgent={compliance_queued}", flush=True)
+
+                    try:
+                        from app import log_agent_event
+                        log_agent_event(activity.id, "LogbookAgent", "info", activity.pipeline_stage, None, "DEMO_MODE: Hedera submit skipped")
+                        db.session.commit()
+                    except Exception:
+                        pass
+
+                    return "demo_skipped"
 
                 if not activity.proof_hash:
                     user = db.session.get(User, activity.user_id)
@@ -185,23 +257,29 @@ class LogbookAgent:
                     activity.proof_hash = compute_proof_sha256(stable_proof_input(stable_bundle))
                     db.session.commit()
 
-                # Deferred mode: allow anchoring while stage is verified or already downstream.
-                if activity.pipeline_stage not in ("verified", "rewarded", "attested", "logged", "log_failed"):
+                if activity.pipeline_stage != "verified":
                     print(f"[LOGBOOK AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
                     return "skip"
 
-                if os.getenv("DEMO_MODE", "0") == "1":
-                    print("[LOGBOOK AGENT] DEMO_MODE enabled: skipping Hedera submit", flush=True)
-                    activity.hedera_tx_id = None
-                    activity.logbook_status = activity.logbook_status or "pending"
-                    activity.last_error = None
-                    db.session.commit()
-                    return "done"
+                activity.logbook_status = "pending"
+                activity.last_error = None
+                db.session.commit()
 
                 print(f"[LOGBOOK AGENT] Submitting to Hedera HCS...", flush=True)
 
-                # Use per-user credentials for submission
-                tx_id = submit_to_hcs_for_activity(activity)
+                try:
+                    tx_id = submit_to_hcs_for_activity(activity)
+                except Exception as e:
+                    _persist_logbook_failed(activity, str(e))
+                    reward_queued = _enqueue_reward_once(activity.id)
+                    compliance_queued = _enqueue_compliance_once(activity.id)
+                    db.session.commit()
+                    print(
+                        f"[LOGBOOK AGENT] Enqueued downstream: RewardAgent={reward_queued}, ComplianceAgent={compliance_queued}",
+                        flush=True
+                    )
+                    print(f"[LOGBOOK AGENT ERROR] {type(e).__name__}: {e}", flush=True)
+                    return False
 
                 print(f"[LOGBOOK AGENT] ✓ HCS submission successful", flush=True)
                 print(f"[LOGBOOK AGENT] Transaction ID: {tx_id}", flush=True)
@@ -212,7 +290,11 @@ class LogbookAgent:
                 activity.logbook_status = "anchored"
                 db.session.commit()
 
+                compliance_queued = _enqueue_compliance_once(activity.id)
+                db.session.commit()
+
                 print(f"[LOGBOOK AGENT] Activity logged with tx_id", flush=True)
+                print(f"[LOGBOOK AGENT] Enqueued downstream: ComplianceAgent={compliance_queued}", flush=True)
                 print(f"{'='*80}\n", flush=True)
 
                 return True
@@ -220,25 +302,33 @@ class LogbookAgent:
             except subprocess.TimeoutExpired:
                 print(f"[LOGBOOK AGENT ERROR] Hedera script timed out", flush=True)
                 try:
+                    _persist_logbook_failed(activity, "HCS submission timeout")
                     if activity:
-                        activity.hedera_tx_id = None
-                        activity.logbook_status = "failed"
-                        activity.last_error = "HCS submission timeout"
+                        reward_queued = _enqueue_reward_once(activity.id)
+                        compliance_queued = _enqueue_compliance_once(activity.id)
                         db.session.commit()
+                        print(
+                            f"[LOGBOOK AGENT] Enqueued downstream: RewardAgent={reward_queued}, ComplianceAgent={compliance_queued}",
+                            flush=True
+                        )
                 except Exception:
                     pass
                 print(f"{'='*80}\n", flush=True)
-                return "done"
+                return False
 
             except Exception as e:
                 print(f"[LOGBOOK AGENT ERROR] {type(e).__name__}: {str(e)}", flush=True)
                 try:
+                    _persist_logbook_failed(activity, str(e))
                     if activity:
-                        activity.hedera_tx_id = None
-                        activity.logbook_status = "failed"
-                        activity.last_error = str(e)[:512]
+                        reward_queued = _enqueue_reward_once(activity.id)
+                        compliance_queued = _enqueue_compliance_once(activity.id)
                         db.session.commit()
+                        print(
+                            f"[LOGBOOK AGENT] Enqueued downstream: RewardAgent={reward_queued}, ComplianceAgent={compliance_queued}",
+                            flush=True
+                        )
                 except Exception:
                     pass
                 print(f"{'='*80}\n", flush=True)
-                return "done"
+                return False

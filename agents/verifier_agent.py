@@ -90,12 +90,12 @@ class VerifierAgent:
                 
                 db.session.commit()
 
+                logbook_queued = _enqueue_agent_once(activity.id, "LogbookAgent", "log")
                 reward_queued = _enqueue_agent_once(activity.id, "RewardAgent", "reward")
-                compliance_queued = _enqueue_agent_once(activity.id, "ComplianceAgent", "attest")
                 db.session.commit()
                 print(f"[VERIFIER AGENT] Database updated", flush=True)
                 print(
-                    f"[VERIFIER AGENT] Enqueued downstream: RewardAgent={reward_queued}, ComplianceAgent={compliance_queued}",
+                    f"[VERIFIER AGENT] Enqueued downstream: LogbookAgent={logbook_queued}, RewardAgent={reward_queued}",
                     flush=True
                 )
                 print(f"{'='*80}\n", flush=True)

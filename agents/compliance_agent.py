@@ -5,6 +5,7 @@ Emits final attestation record to HCS for audit/compliance.
 
 from extensions import db
 from models import Activity
+import os
 
 
 class ComplianceAgent:
@@ -33,10 +34,27 @@ class ComplianceAgent:
 
             print(f"[COMPLIANCE AGENT] Recording attestation for activity {activity_id}", flush=True)
 
-            # Hackathon: just mark as attested
-            # Future: submit a second HCS message to an "attestations" topic
+            # Hackathon: only mark as attested after Logbook reached the correct terminal state.
+            # DEMO_MODE=1  -> logbook_status must be demo_skipped
+            # DEMO_MODE=0  -> logbook_status must be anchored AND hedera_tx_id must exist
+            demo_mode = os.getenv("DEMO_MODE", "0") == "1"
+            log_status = getattr(activity, "logbook_status", None)
+            tx_id = getattr(activity, "hedera_tx_id", None)
+
+            if demo_mode:
+                if log_status != "demo_skipped":
+                    activity.last_error = "Compliance blocked: logbook not demo_skipped yet"
+                    db.session.commit()
+                    print(f"[COMPLIANCE AGENT] Skipping: {activity.last_error}", flush=True)
+                    return "skip"
+            else:
+                if log_status != "anchored" or not tx_id:
+                    activity.last_error = "Compliance blocked: logbook not anchored yet"
+                    db.session.commit()
+                    print(f"[COMPLIANCE AGENT] Skipping: {activity.last_error}", flush=True)
+                    return "skip"
+
             activity.pipeline_stage = "attested"
-            
             print(f"[COMPLIANCE AGENT] ✓ Attestation recorded", flush=True)
 
             db.session.commit()

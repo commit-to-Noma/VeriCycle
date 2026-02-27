@@ -1,5 +1,6 @@
 import time
 from datetime import datetime, timezone
+from sqlalchemy import case
 
 from extensions import db
 from models import AgentTask, AgentLog, Activity
@@ -42,9 +43,17 @@ def run_worker_loop(poll_interval=1.0):
         try:
             with app.app_context():
                 # Only pick queued tasks; done/failed/running tasks are never re-executed
+                priority_order = case(
+                    (AgentTask.agent_name == "CollectorAgent", 1),
+                    (AgentTask.agent_name == "VerifierAgent", 2),
+                    (AgentTask.agent_name == "LogbookAgent", 3),
+                    (AgentTask.agent_name == "RewardAgent", 4),
+                    (AgentTask.agent_name == "ComplianceAgent", 5),
+                    else_=99,
+                )
                 task = (AgentTask.query
                     .filter(AgentTask.status == "queued")
-                    .order_by(AgentTask.id.asc())
+                    .order_by(priority_order.asc(), AgentTask.id.asc())
                     .first())
 
                 if not task:
@@ -75,19 +84,21 @@ def run_worker_loop(poll_interval=1.0):
                         _log(task.activity_id, task.agent_name, f"START task_id={task.id}")
                         db.session.commit()
 
+                        run_result = None
                         try:
-                            agent.process(task.activity_id)
-
-                            # Completed this task execution (including skip/terminal signals)
-                            task.status = "done"
-                            _log(task.activity_id, task.agent_name, "DONE")
-                            db.session.commit()
+                            run_result = agent.process(task.activity_id)
                         except Exception as e:
                             task.last_error = f"{type(e).__name__}: {str(e)}"[:512]
                             task.status = "failed"
                             _log(task.activity_id, task.agent_name, f"ERROR {type(e).__name__}: {str(e)}", level="error")
                             db.session.commit()
                             print(f"[WORKER TASK ERROR] task_id={task.id} {type(e).__name__}: {e}", flush=True)
+                        finally:
+                            if task.status == "running":
+                                task.status = "done"
+                                task.last_error = None
+                                _log(task.activity_id, task.agent_name, f"DONE result={run_result}")
+                                db.session.commit()
 
             # Sleep between polls
             time.sleep(poll_interval)

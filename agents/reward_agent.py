@@ -31,6 +31,19 @@ class RewardAgent:
                 print(f"[REWARD AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
                 return "skip"
 
+            # Reward must only finalize after Logbook reached terminal success for mode.
+            # DEMO_MODE=1  -> demo_skipped
+            # DEMO_MODE=0  -> anchored
+            if activity.logbook_status not in ("anchored", "demo_skipped", "offchain_final"):
+                activity.last_error = "Reward blocked: logbook not finalized yet"
+                db.session.commit()
+                print(
+                    f"[REWARD AGENT] Skipping: {activity.last_error} "
+                    f"(logbook_status={activity.logbook_status})",
+                    flush=True
+                )
+                return "skip"
+
             print(f"[REWARD AGENT] Crediting rewards for activity {activity_id}", flush=True)
 
             # Get the user
@@ -49,6 +62,7 @@ class RewardAgent:
             # Hackathon: just mark as verified (future: update balance, HTS transfer, etc.)
             activity.status = "verified"
             activity.pipeline_stage = "rewarded"
+            activity.last_error = None
             
             print(f"[REWARD AGENT] ✓ Rewards processed", flush=True)
 

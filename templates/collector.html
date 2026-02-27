@@ -109,24 +109,25 @@
                                     <tbody id="activity-tbody">
                                         {% for act in activities %}
                                             {% set display_status = act.status or act.verified_status %}
-                                            {% set hidden = display_status in ['failed', 'rejected'] %}
+                                            {% set status_raw = (display_status or '')|string %}
+                                            {% set status_lower = status_raw|lower %}
+                                            {% set status_label = 'Hedera delayed (retry)' if ('pending' in status_lower and 'hedera' in status_lower) else display_status %}
+                                            {% set hidden = status_lower in ['failed', 'rejected'] %}
                                             <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}" style="border-bottom: 1px solid #2a2a2a;">
                                                 <td style="padding: 0.5rem;">{{ act.desc }}</td>
                                                 <td style="padding: 0.5rem;">{{ act.amount }}</td>
                                                 <td style="padding: 0.5rem;">
                                                     {% if hidden %}
-                                                        <span class="status-muted">{{ display_status }} <span class="status-note">(hidden)</span></span>
+                                                        <span class="status-muted">{{ status_label }} <span class="status-note">(hidden)</span></span>
                                                     {% else %}
-                                                        {{ display_status }}
+                                                        {{ status_label }}
                                                     {% endif %}
                                                 </td>
                                                 <td style="padding: 0.5rem;">
                                                     {% if act.proof_bundle_url %}
                                                         <a href="{{ act.proof_bundle_url }}">Download Proof</a>
-                                                    {% elif act.id and act.proof_hash %}
-                                                        <a href="/api/proof-bundle/{{ act.id }}">Download Proof</a>
                                                     {% elif act.id %}
-                                                        <a href="/api/proof-bundle/{{ act.id }}">Generate Proof</a>
+                                                        <a href="/api/proof-bundle/{{ act.id }}">Download Proof</a>
                                                     {% else %}
                                                         —
                                                     {% endif %}
@@ -136,6 +137,15 @@
                                                         <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">
                                                             View on Hedera
                                                         </a>
+                                                    {% elif act.logbook_status == "demo_skipped" %}
+                                                        Demo mode: Hedera skipped
+                                                    {% elif act.logbook_status == "offchain_final" %}
+                                                        Off-chain proof finalized (Hedera unavailable — retry later)
+                                                        <form method="post" action="/admin/retry-logbook/{{ act.id }}" style="display:inline; margin:0 0 0 8px;">
+                                                            <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
+                                                        </form>
+                                                    {% elif demo_mode and ((not act.logbook_status) or act.logbook_status == "pending") %}
+                                                        Demo mode: processing...
                                                     {% elif act.logbook_status == "failed" or act.pipeline_stage == "log_failed" %}
                                                            <form method="post" action="/admin/retry-logbook/{{ act.id }}" style="display:inline; margin:0;">
                                                                <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Hedera delayed (retry)</button>
@@ -222,6 +232,7 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const demoMode = {{ 'true' if demo_mode else 'false' }};
         
         // --- 1. GLOBAL VARIABLES ---
         const generateButton = document.getElementById('generate-btn');
@@ -686,9 +697,19 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
+            const normalizeStatusLabel = (value) => {
+                const status = (value || '').toString();
+                const lower = status.toLowerCase();
+                const normalized = lower.replace(/[_\s-]+/g, ' ');
+                if (normalized.includes('pending') && normalized.includes('hedera')) {
+                    return 'Hedera delayed (retry)';
+                }
+                return status;
+            };
+
             (currentData.timeline || []).forEach(act => {
                 const rawStatus = (act.status || act.verified_status || '').toString();
-                const displayStatus = rawStatus || 'pending';
+                const displayStatus = normalizeStatusLabel(rawStatus || 'pending');
                 const statusLower = displayStatus.toLowerCase();
                 const hidden = statusLower === 'failed' || statusLower === 'rejected';
                 const amount = Number(act.amount) || 0;
@@ -701,6 +722,21 @@
                 const txCell = (() => {
                     if (act.hedera_tx_id) return toHashScanTxLink(act.hedera_tx_id);
                     const logbookStatus = (act.logbook_status || '').toLowerCase();
+                    if (logbookStatus === 'demo_skipped') {
+                        return 'Demo mode: Hedera skipped';
+                    }
+                    if (logbookStatus === 'offchain_final') {
+                        if (act.id) {
+                            return `Off-chain proof finalized (Hedera unavailable — retry later)
+                                <form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0 0 0 8px;">
+                                    <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
+                                </form>`;
+                        }
+                        return 'Off-chain proof finalized (Hedera unavailable — retry later)';
+                    }
+                    if (demoMode && (!logbookStatus || logbookStatus === 'pending')) {
+                        return 'Demo mode: processing...';
+                    }
                     if (logbookStatus === 'failed' || (act.pipeline_stage || '').toLowerCase() === 'log_failed') {
                         if (act.id) {
                             return `<form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0;">
@@ -714,10 +750,10 @@
 
                 const proofCell = (() => {
                     if (act.proof_bundle_url) {
-                        return `<a href="${act.proof_bundle_url}">${act.proof_hash ? 'Download Proof' : 'Generate Proof'}</a>`;
+                        return `<a href="${act.proof_bundle_url}">Download Proof</a>`;
                     }
                     if (!act.id) return '—';
-                    return `<a href="/api/proof-bundle/${encodeURIComponent(act.id)}">${act.proof_hash ? 'Download Proof' : 'Generate Proof'}</a>`;
+                    return `<a href="/api/proof-bundle/${encodeURIComponent(act.id)}">Download Proof</a>`;
                 })();
 
                 row.innerHTML = `

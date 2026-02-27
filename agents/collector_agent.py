@@ -4,7 +4,25 @@ Now a lightweight stage-setter for the multi-agent pipeline.
 """
 
 from extensions import db
-from models import Activity
+from models import Activity, AgentTask
+
+
+def _enqueue_verifier_once(activity_id: int) -> bool:
+    existing = AgentTask.query.filter(
+        AgentTask.activity_id == activity_id,
+        AgentTask.agent_name == "VerifierAgent",
+        AgentTask.status.in_(["queued", "running", "done"])
+    ).first()
+    if existing:
+        return False
+
+    db.session.add(AgentTask(
+        activity_id=activity_id,
+        agent_name="VerifierAgent",
+        task_type="verify",
+        status="queued"
+    ))
+    return True
 
 
 class CollectorAgent:
@@ -29,9 +47,29 @@ class CollectorAgent:
                     print(f"[AGENT ERROR] Activity {activity_id} not found", flush=True)
                     return False
 
-                # Only process if activity is newly created
-                if activity.pipeline_stage != "created":
-                    print(f"[AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
+                # Monotonic stage guard: never move an activity "backwards"
+                STAGE_RANK = {
+                    "created": 0,
+                    "collected": 1,
+                    "verified": 2,
+                    "log_failed": 3,
+                    "logged": 4,
+                    "rewarded": 5,
+                    "attested": 6,
+                    "rejected": 99,   # terminal
+                }
+
+                cur = activity.pipeline_stage or "created"
+                cur_rank = STAGE_RANK.get(cur, 0)
+
+                # If we've already reached collected or beyond, CollectorAgent must not rewrite stage.
+                if cur_rank >= STAGE_RANK["collected"]:
+                    print(f"[AGENT] CollectorAgent: already past collected (stage={cur}); skipping without changes", flush=True)
+                    return "skip"
+
+                # If not exactly "created", also skip (covers any unexpected pre-created states)
+                if cur != "created":
+                    print(f"[AGENT] Skipping (stage={cur})", flush=True)
                     return "skip"
 
                 print(f"[AGENT] Activity loaded: desc='{activity.desc}', amount={activity.amount}", flush=True)
@@ -55,7 +93,11 @@ class CollectorAgent:
                 activity.attempt_count = (activity.attempt_count or 0) + 1
                 db.session.commit()
 
+                verifier_queued = _enqueue_verifier_once(activity.id)
+                db.session.commit()
+
                 print(f"[AGENT] Activity marked as 'collected', ready for verification", flush=True)
+                print(f"[AGENT] Enqueued downstream: VerifierAgent={verifier_queued}", flush=True)
                 print(f"{'='*80}\n", flush=True)
 
                 return True

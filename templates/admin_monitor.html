@@ -82,159 +82,263 @@ color: #58a6ff;
 	<a href="/home">Home</a>
 </p>
 
-<div class="card" id="demo-mode-card">Demo Mode: loading...</div>
+<div class="card" id="demoModeCard">Demo Mode: ...</div>
 
 <div class="card" id="queue-summary">Queue: loading...</div>
+
+<button id="createDemoDepositBtn" style="margin:8px 0;">Create Demo Deposit</button>
+
+<form method="post" action="/admin/cleanup-stale-running" style="margin:8px 0;">
+	<button type="submit">Mark Running as Failed</button>
+</form>
+
+<label style="display:block;margin:10px 0;">
+	<input type="checkbox" id="showFailed" />
+	Show failed tasks
+</label>
+
+<div id="autoVerifyStatus" class="card" style="margin-top:8px;color:#9ad7a6;font-weight:600;">Auto-verify pending...</div>
 
 <div id="activities"></div>
 
 <script>
 
+let demoMode = false;
+
 fetch("/api/config")
 	.then(r => r.json())
 	.then(cfg => {
-		const el = document.getElementById("demo-mode-card");
-		const on = !!(cfg && cfg.demo_mode);
-		el.innerHTML = `<h3>Demo Mode: ${on ? "ON" : "OFF"}</h3>`;
-		el.style.color = on ? "#9ad7a6" : "#ff6b6b";
+		demoMode = !!(cfg && cfg.demo_mode);
+		const el = document.getElementById("demoModeCard");
+		el.innerText = "Demo Mode: " + (demoMode ? "ON" : "OFF");
 	})
 	.catch(() => {
-		const el = document.getElementById("demo-mode-card");
-		el.innerHTML = "<h3>Demo Mode: unavailable</h3>";
+		const el = document.getElementById("demoModeCard");
+		el.innerText = "Demo Mode: unknown";
 	});
 
-fetch("/api/admin/queue")
-	.then(r => r.json())
-	.then(q => {
-		const el = document.getElementById("queue-summary");
-		el.innerHTML = `
-			<h3>Queue Summary</h3>
-			<p>Queued: ${q.queued ?? 0} | Running: ${q.running ?? 0} | Failed: ${q.failed ?? 0} | Done: ${q.done ?? 0}</p>
-			<p id="auto-verify-status" style="margin-top:8px;color:#9ad7a6;font-weight:600;">Auto-verify pending...</p>
-		`;
-	})
-	.catch(() => {
-		const el = document.getElementById("queue-summary");
-		el.innerHTML = "<h3>Queue Summary</h3><p>Unable to load queue state.</p>";
-	});
-
-fetch("/api/admin/activities")
-
-.then(r => r.json())
-
-.then(data => {
-const container = document.getElementById("activities");
-const autoVerifyStatus = document.getElementById("auto-verify-status");
-
-if (!data || data.length === 0) {
-container.innerHTML = "<div class='card'><p>No activities yet. Create a deposit from /collector, then refresh.</p></div>";
-if (autoVerifyStatus) {
-	autoVerifyStatus.textContent = "Auto-verify complete: no activities";
-	autoVerifyStatus.style.color = "#9ad7a6";
-}
-return;
+function loadQueueSummary() {
+	fetch("/api/admin/queue")
+		.then(r => r.json())
+		.then(q => {
+			const el = document.getElementById("queue-summary");
+			el.innerHTML = `
+				<h3>Queue Summary</h3>
+				<p>Queued: ${q.queued ?? 0} | Running: ${q.running ?? 0} | Failed: ${q.failed ?? 0} | Done: ${q.done ?? 0}</p>
+			`;
+		})
+		.catch(() => {
+			const el = document.getElementById("queue-summary");
+			el.innerHTML = "<h3>Queue Summary</h3><p>Unable to load queue state.</p>";
+		});
 }
 
-let autoTotal = data.length;
-let autoDone = 0;
-let autoVerified = 0;
-let autoMismatch = 0;
+loadQueueSummary();
 
-if (autoVerifyStatus) {
-	autoVerifyStatus.textContent = `Auto-verify running... (0/${autoTotal})`;
-	autoVerifyStatus.style.color = "#d8dee9";
-}
-
-data.forEach(a => {
-const parsedTime = new Date(a.timestamp);
-const exactTime = Number.isNaN(parsedTime.getTime())
-	? (a.timestamp || "Unknown")
-	: parsedTime.toLocaleString([], {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-		hour: "2-digit",
-		minute: "2-digit",
-		second: "2-digit",
-		hour12: false
-	});
-
-let html = `
-
-<div class="card">
-
-<h3>Deposit ${a.id}</h3>
-
-<p>Deposit: ${a.desc || "Not specified"}</p>
-
-<p>Amount: ${a.amount}</p>
-
-<p>Date/Time: ${exactTime}</p>
-
-`;
-
-if (a.hedera_tx_id){
-
-html += `<p>
-<a href="https://hashscan.io/testnet/transaction/${a.hedera_tx_id}" target="_blank">
-View on Hedera
-</a>
-<button style="margin-left:10px" onclick="verifyMirror(${a.id})">Verify on Mirror</button>
-<span id="mirror_${a.id}" style="margin-left:10px"></span>
-</p>`;
-}
-
-else {
-
-html += `<p>Hedera delayed (retry)</p>
-
-<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
-
-}
-
-html += `<p>
-<button style="margin-top:10px" onclick="verifyProof(${a.id})">Verify Proof Hash</button>
-<button style="margin-top:10px;margin-left:10px" onclick="regenerateProof(${a.id})">Regenerate Proof Bundle</button>
-<span id="proof_${a.id}" style="margin-left:10px"></span>
-</p>`;
-
-html += `<h4>Agent Pipeline</h4>`;
-
-(a.tasks || []).forEach(t => {
-
-html += `<p>${t.agent} : ${t.status}</p>`;
-
-});
-
-html += "</div>";
-
-container.innerHTML += html;
-
-verifyProof(a.id).then(result => {
-	autoDone += 1;
-	if (result === "verified") autoVerified += 1;
-	if (result === "mismatch" || result === "error") autoMismatch += 1;
-
-	if (autoVerifyStatus) {
-		if (autoDone < autoTotal) {
-			autoVerifyStatus.textContent = `Auto-verify running... (${autoDone}/${autoTotal})`;
-			autoVerifyStatus.style.color = "#d8dee9";
-		} else {
-			autoVerifyStatus.textContent = `Auto-verify complete: ${autoVerified} verified, ${autoMismatch} issues`;
-			autoVerifyStatus.style.color = autoMismatch > 0 ? "#ff6b6b" : "#9ad7a6";
-		}
+function normalizeStatusLabel(value) {
+	const status = (value || "").toString().trim();
+	if (!status) return status;
+	const lower = status.toLowerCase();
+	const normalized = lower.replace(/[_\s-]+/g, " ");
+	if (normalized.includes("pending") && normalized.includes("hedera")) {
+		return "Hedera delayed (retry)";
 	}
+	return status;
+}
+
+let adminActivities = [];
+let proofVerifyCache = new Map();
+
+function paintProofStatus(id, result) {
+	const el = document.getElementById("proof_" + id);
+	if (!el) return;
+	if (result === "verified") {
+		el.textContent = "Proof hash OK";
+		el.className = "verify-badge ok";
+		return;
+	}
+	if (result === "mismatch") {
+		el.textContent = "Proof hash MISMATCH";
+		el.className = "verify-badge bad";
+		return;
+	}
+	if (result === "failed") {
+		el.textContent = "Proof verify failed";
+		el.className = "verify-badge bad";
+		return;
+	}
+	el.textContent = "Proof verify error";
+	el.className = "verify-badge bad";
+}
+
+function restoreProofStatusesFromCache() {
+	proofVerifyCache.forEach((value, id) => {
+		paintProofStatus(id, value);
+	});
+}
+
+function renderActivities(data) {
+	const container = document.getElementById("activities");
+	if (!container) return;
+	container.innerHTML = "";
+
+	if (!data || data.length === 0) {
+		container.innerHTML = "<div class='card'><p>No activities yet. Create a deposit from /collector, then refresh.</p></div>";
+		return;
+	}
+
+	const showFailed = document.getElementById("showFailed")?.checked;
+
+	data.forEach(a => {
+		const tasks = Array.isArray(a.tasks) ? a.tasks : [];
+		const hasFailedTask = tasks.some(t => (t.status || "").toLowerCase() === "failed");
+		if (!showFailed && hasFailedTask) return;
+
+		const parsedTime = new Date(a.timestamp);
+		const exactTime = Number.isNaN(parsedTime.getTime())
+			? (a.timestamp || "Unknown")
+			: parsedTime.toLocaleString([], {
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+				hour: "2-digit",
+				minute: "2-digit",
+				second: "2-digit",
+				hour12: false
+			});
+
+		let html = `
+		<div class="card">
+		<h3>Deposit ${a.id}</h3>
+		<p>Deposit: ${a.desc || "Not specified"}</p>
+		<p>Amount: ${a.amount}</p>
+		<p>Date/Time: ${exactTime}</p>
+		`;
+
+		const logbookStatus = (a.logbook_status || "").toString().toLowerCase();
+
+		if (a.hedera_tx_id) {
+			html += `<p>
+			<a href="https://hashscan.io/testnet/transaction/${a.hedera_tx_id}" target="_blank">
+			View on Hedera
+			</a>
+			<button style="margin-left:10px" onclick="verifyMirror(${a.id})">Verify on Mirror</button>
+			<span id="mirror_${a.id}" style="margin-left:10px"></span>
+			</p>`;
+		} else if (logbookStatus === "demo_skipped") {
+			html += `<p>Demo mode: Hedera skipped</p>`;
+		} else if (logbookStatus === "offchain_final") {
+			html += `<p>Off-chain proof finalized (Hedera unavailable — retry later)</p>
+			<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
+		} else if (demoMode && (!logbookStatus || logbookStatus === "pending")) {
+			html += `<p>Demo mode: processing...</p>`;
+		} else {
+			html += `<p>Hedera delayed (retry)</p>
+			<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
+		}
+
+		html += `<p>
+		<button style="margin-top:10px" onclick="verifyProof(${a.id})">Verify Proof Hash</button>
+		<button style="margin-top:10px;margin-left:10px" onclick="regenerateProof(${a.id})">Regenerate Proof Bundle</button>
+		<span id="proof_${a.id}" style="margin-left:10px"></span>
+		</p>`;
+
+		html += `<h4>Agent Pipeline</h4>`;
+		tasks.forEach(t => {
+			const label = normalizeStatusLabel(t.status);
+			html += `<p>${t.agent} : ${label}${t.last_error ? ` (${t.last_error})` : ""}</p>`;
+		});
+
+		html += "</div>";
+		container.innerHTML += html;
+	});
+}
+
+function runAutoVerify(data) {
+	const status = document.getElementById("autoVerifyStatus");
+	const proofIds = Array.from(document.querySelectorAll("span[id^='proof_']"))
+		.map(el => Number((el.id || "").replace("proof_", "")))
+		.filter(id => Number.isFinite(id));
+
+	if (!proofIds.length) {
+		if (status) status.innerText = "Auto-verify complete: no activities";
+		return;
+	}
+
+	if (status) status.innerText = "Auto-verify running...";
+
+	let okCount = 0;
+	let badCount = 0;
+
+	Promise.all(proofIds.map(id => {
+		return fetch("/api/proof-bundle/" + id)
+			.catch(() => null)
+			.then(() => verifyProof(id, true))
+			.then(result => {
+			if (result === "verified") okCount++;
+			else badCount++;
+		});
+	})).then(() => {
+		if (status) status.innerText = `Auto-verify complete: ${okCount} verified, ${badCount} issues`;
+	});
+}
+
+function loadActivities() {
+	fetch("/api/admin/activities")
+		.then(r => r.json())
+		.then(data => {
+			adminActivities = Array.isArray(data) ? data : [];
+			renderActivities(adminActivities);
+			runAutoVerify();
+			loadQueueSummary();
+		})
+		.catch(() => {
+			const container = document.getElementById("activities");
+			if (container) {
+				container.innerHTML = "<div class='card'><p>Unable to load activities.</p></div>";
+			}
+			const status = document.getElementById("autoVerifyStatus");
+			if (status) status.innerText = "Auto-verify error";
+		});
+}
+
+document.getElementById("showFailed").addEventListener("change", () => {
+	renderActivities(adminActivities);
+	restoreProofStatusesFromCache();
+	runAutoVerify();
 });
 
+document.getElementById("createDemoDepositBtn").addEventListener("click", () => {
+	const btn = document.getElementById("createDemoDepositBtn");
+	if (btn) btn.disabled = true;
+	fetch("/api/simulate-deposit", { method: "POST" })
+		.then(() => {
+			setTimeout(() => {
+				loadActivities();
+				if (btn) btn.disabled = false;
+			}, 1200);
+		})
+		.catch(() => {
+			if (btn) btn.disabled = false;
+		});
 });
-});
+
+loadActivities();
 
 
 function retry(id){
 
-fetch("/admin/retry-logbook/" + id)
-
-.then(() => location.reload());
+fetch("/admin/retry-logbook/" + id, {
+	method: "POST",
+	headers: {
+		"X-Requested-With": "XMLHttpRequest"
+	}
+})
+	.then(() => {
+		setTimeout(() => {
+			loadActivities();
+		}, 1000);
+	});
 
 }
 
@@ -262,19 +366,26 @@ fetch("/api/mirror-verify/" + id)
 	});
 }
 
-function verifyProof(id){
+function verifyProof(id, force = false){
 const el = document.getElementById("proof_" + id);
 if (!el) return Promise.resolve("error");
+
+if (!force && proofVerifyCache.has(id)) {
+	const cached = proofVerifyCache.get(id);
+	paintProofStatus(id, cached);
+	return Promise.resolve(cached);
+}
+
 el.textContent = "Checking...";
 el.className = "";
 
+const controller = new AbortController();
 const timeoutMs = 10000;
-const timeoutPromise = new Promise((_, reject) => {
-	setTimeout(() => reject(new Error("timeout")), timeoutMs);
-});
+const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-return Promise.race([fetch("/api/proof-verify/" + id), timeoutPromise])
+return fetch("/api/proof-verify/" + id, { signal: controller.signal })
 	.then(async r => {
+		clearTimeout(timeoutId);
 		if (!r || !r.ok) {
 			const j = r ? await r.json().catch(() => ({})) : {};
 			throw j;
@@ -284,18 +395,20 @@ return Promise.race([fetch("/api/proof-verify/" + id), timeoutPromise])
 	.then(data => {
 		const match = !!(data && (data.match === true || data.hash_match === true));
 		if (match) {
-			el.textContent = "Proof hash OK";
-			el.className = "verify-badge ok";
+			proofVerifyCache.set(id, "verified");
+			paintProofStatus(id, "verified");
 			return "verified";
 		}
-		el.textContent = "Proof hash MISMATCH";
-		el.className = "verify-badge bad";
+		proofVerifyCache.set(id, "mismatch");
+		paintProofStatus(id, "mismatch");
 		return "mismatch";
 	})
-	.catch(() => {
-		el.textContent = "Proof verify error";
-		el.className = "verify-badge bad";
-		return "error";
+	.catch((err) => {
+		clearTimeout(timeoutId);
+		const result = err && err.name === "AbortError" ? "failed" : "error";
+		proofVerifyCache.set(id, result);
+		paintProofStatus(id, result);
+		return result;
 	});
 }
 
@@ -311,7 +424,7 @@ fetch("/api/proof-bundle/" + id)
 		if (!r.ok) throw new Error("regen failed");
 		return r.blob();
 	})
-	.then(() => verifyProof(id))
+	.then(() => verifyProof(id, true))
 	.catch(() => {
 		if (el) {
 			el.textContent = "Proof regenerate failed";
