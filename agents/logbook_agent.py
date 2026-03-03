@@ -7,6 +7,7 @@ Uses per-user Hedera credentials first, with operator fallback.
 import subprocess
 import re
 import os
+from datetime import datetime, timezone
 from extensions import db
 from models import Activity, User, AgentTask
 
@@ -45,6 +46,10 @@ def _enqueue_reward_once(activity_id: int) -> bool:
         status="queued"
     ))
     return True
+
+
+def _queue_state_label(was_queued: bool) -> str:
+    return "queued" if was_queued else "already_queued"
 
 def _extract_tx_id(stdout: str) -> str | None:
     # strict: TX_ID=0.0.x@seconds.nanoseconds
@@ -181,10 +186,14 @@ def submit_to_hcs_for_activity(activity: Activity) -> str:
 def _persist_logbook_failed(activity: Activity | None, err_msg: str):
     if not activity:
         return
+    now_utc = datetime.now(timezone.utc)
     activity.hedera_tx_id = None
+    activity.logbook_tx_id = None
     activity.logbook_status = "offchain_final"
+    activity.logbook_last_error = (err_msg or "HCS submission failed")[:500]
+    activity.logbook_finalized_at = now_utc
     activity.pipeline_stage = "logged"
-    activity.last_error = (err_msg or "HCS submission failed")[:512]
+    activity.last_error = None
     db.session.commit()
 
 
@@ -214,7 +223,19 @@ class LogbookAgent:
 
                 # Idempotency: if already logged to HCS, skip
                 if activity.hedera_tx_id:
+                    activity.logbook_status = activity.logbook_status or "anchored"
+                    activity.logbook_tx_id = activity.logbook_tx_id or activity.hedera_tx_id
+                    activity.logbook_finalized_at = activity.logbook_finalized_at or datetime.now(timezone.utc)
+                    activity.logbook_last_error = None
+                    db.session.commit()
+                    reward_queued = _enqueue_reward_once(activity.id)
+                    compliance_queued = _enqueue_compliance_once(activity.id)
+                    db.session.commit()
                     print("[LOGBOOK AGENT] Already logged; skipping", flush=True)
+                    print(
+                        f"[LOGBOOK AGENT] Downstream queue state: RewardAgent={_queue_state_label(reward_queued)}, ComplianceAgent={_queue_state_label(compliance_queued)}",
+                        flush=True,
+                    )
                     return "done"
 
                 if os.getenv("DEMO_MODE", "0") == "1":
@@ -222,6 +243,9 @@ class LogbookAgent:
 
                     try:
                         activity.logbook_status = "demo_skipped"
+                        activity.logbook_tx_id = None
+                        activity.logbook_last_error = None
+                        activity.logbook_finalized_at = datetime.now(timezone.utc)
                     except Exception:
                         pass
 
@@ -229,9 +253,13 @@ class LogbookAgent:
                     activity.last_error = None
                     db.session.commit()
 
+                    reward_queued = _enqueue_reward_once(activity.id)
                     compliance_queued = _enqueue_compliance_once(activity.id)
                     db.session.commit()
-                    print(f"[LOGBOOK AGENT] Enqueued downstream: ComplianceAgent={compliance_queued}", flush=True)
+                    print(
+                        f"[LOGBOOK AGENT] Downstream queue state: RewardAgent={_queue_state_label(reward_queued)}, ComplianceAgent={_queue_state_label(compliance_queued)}",
+                        flush=True,
+                    )
 
                     try:
                         from app import log_agent_event
@@ -262,6 +290,7 @@ class LogbookAgent:
                     return "skip"
 
                 activity.logbook_status = "pending"
+                activity.logbook_last_error = None
                 activity.last_error = None
                 db.session.commit()
 
@@ -270,31 +299,52 @@ class LogbookAgent:
                 try:
                     tx_id = submit_to_hcs_for_activity(activity)
                 except Exception as e:
-                    _persist_logbook_failed(activity, str(e))
+                    reason = _summarize_error(e)
+                    _persist_logbook_failed(activity, reason)
                     reward_queued = _enqueue_reward_once(activity.id)
                     compliance_queued = _enqueue_compliance_once(activity.id)
                     db.session.commit()
+                    try:
+                        from app import log_agent_event
+                        log_agent_event(activity.id, "LogbookAgent", "info", activity.pipeline_stage, None, f"offchain_finalized: {reason}")
+                        db.session.commit()
+                    except Exception:
+                        pass
                     print(
-                        f"[LOGBOOK AGENT] Enqueued downstream: RewardAgent={reward_queued}, ComplianceAgent={compliance_queued}",
+                        f"[LOGBOOK AGENT] Downstream queue state: RewardAgent={_queue_state_label(reward_queued)}, ComplianceAgent={_queue_state_label(compliance_queued)}",
                         flush=True
                     )
-                    print(f"[LOGBOOK AGENT ERROR] {type(e).__name__}: {e}", flush=True)
-                    return False
+                    print(f"LogbookAgent: HCS submit failed -> offchain_final (anchor pending): {reason}", flush=True)
+                    return "offchain_final"
 
                 print(f"[LOGBOOK AGENT] ✓ HCS submission successful", flush=True)
                 print(f"[LOGBOOK AGENT] Transaction ID: {tx_id}", flush=True)
+                print(f"LogbookAgent: anchored tx_id={tx_id}", flush=True)
 
                 activity.hedera_tx_id = tx_id
+                activity.logbook_tx_id = tx_id
                 activity.status = "verified"
                 activity.last_error = None
                 activity.logbook_status = "anchored"
+                activity.logbook_last_error = None
+                activity.logbook_finalized_at = datetime.now(timezone.utc)
                 db.session.commit()
+                try:
+                    from app import log_agent_event
+                    log_agent_event(activity.id, "LogbookAgent", "info", activity.pipeline_stage, tx_id, f"anchored: tx_id={tx_id}")
+                    db.session.commit()
+                except Exception:
+                    pass
 
                 compliance_queued = _enqueue_compliance_once(activity.id)
+                reward_queued = _enqueue_reward_once(activity.id)
                 db.session.commit()
 
                 print(f"[LOGBOOK AGENT] Activity logged with tx_id", flush=True)
-                print(f"[LOGBOOK AGENT] Enqueued downstream: ComplianceAgent={compliance_queued}", flush=True)
+                print(
+                    f"[LOGBOOK AGENT] Downstream queue state: RewardAgent={_queue_state_label(reward_queued)}, ComplianceAgent={_queue_state_label(compliance_queued)}",
+                    flush=True,
+                )
                 print(f"{'='*80}\n", flush=True)
 
                 return True
@@ -307,28 +357,43 @@ class LogbookAgent:
                         reward_queued = _enqueue_reward_once(activity.id)
                         compliance_queued = _enqueue_compliance_once(activity.id)
                         db.session.commit()
+                        try:
+                            from app import log_agent_event
+                            log_agent_event(activity.id, "LogbookAgent", "info", activity.pipeline_stage, None, "offchain_finalized: HCS submission timeout")
+                            db.session.commit()
+                        except Exception:
+                            pass
                         print(
-                            f"[LOGBOOK AGENT] Enqueued downstream: RewardAgent={reward_queued}, ComplianceAgent={compliance_queued}",
+                            f"[LOGBOOK AGENT] Downstream queue state: RewardAgent={_queue_state_label(reward_queued)}, ComplianceAgent={_queue_state_label(compliance_queued)}",
                             flush=True
                         )
+                        print("LogbookAgent: HCS submit failed -> offchain_final (anchor pending): HCS submission timeout", flush=True)
                 except Exception:
                     pass
                 print(f"{'='*80}\n", flush=True)
-                return False
+                return "offchain_final"
 
             except Exception as e:
                 print(f"[LOGBOOK AGENT ERROR] {type(e).__name__}: {str(e)}", flush=True)
                 try:
-                    _persist_logbook_failed(activity, str(e))
+                    reason = _summarize_error(e)
+                    _persist_logbook_failed(activity, reason)
                     if activity:
                         reward_queued = _enqueue_reward_once(activity.id)
                         compliance_queued = _enqueue_compliance_once(activity.id)
                         db.session.commit()
+                        try:
+                            from app import log_agent_event
+                            log_agent_event(activity.id, "LogbookAgent", "info", activity.pipeline_stage, None, f"offchain_finalized: {reason}")
+                            db.session.commit()
+                        except Exception:
+                            pass
                         print(
-                            f"[LOGBOOK AGENT] Enqueued downstream: RewardAgent={reward_queued}, ComplianceAgent={compliance_queued}",
+                            f"[LOGBOOK AGENT] Downstream queue state: RewardAgent={_queue_state_label(reward_queued)}, ComplianceAgent={_queue_state_label(compliance_queued)}",
                             flush=True
                         )
+                        print(f"LogbookAgent: HCS submit failed -> offchain_final (anchor pending): {reason}", flush=True)
                 except Exception:
                     pass
                 print(f"{'='*80}\n", flush=True)
-                return False
+                return "offchain_final"

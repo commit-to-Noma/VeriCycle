@@ -30,7 +30,13 @@ class Activity(db.Model):
     agent_processed = db.Column(db.Boolean, default=False)
     hedera_tx_id = db.Column(db.String(150), nullable=True)
     proof_hash = db.Column(db.String(64), nullable=True)
-    logbook_status = db.Column(db.String(20), default="pending")  # pending|failed|anchored
+    logbook_status = db.Column(db.String(20), default="pending")  # pending|anchored|offchain_final|demo_skipped|failed
+    logbook_tx_id = db.Column(db.String(150), nullable=True)
+    logbook_last_error = db.Column(db.Text, nullable=True)
+    logbook_finalized_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    reward_status = db.Column(db.String(40), nullable=True)  # paid|finalized_no_transfer
+    reward_tx_id = db.Column(db.String(150), nullable=True)
+    reward_last_error = db.Column(db.Text, nullable=True)
     trust_weight = db.Column(db.Float, default=1.0)
     
     # PIPELINE FIELDS (for multi-agent coordinator)

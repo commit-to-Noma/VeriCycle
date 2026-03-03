@@ -13,7 +13,8 @@ function sleep(ms) {
 async function submitOnce(operatorId, operatorKey, topicId, payload) {
   const client = Client.forTestnet();
   client.setOperator(operatorId, operatorKey);
-  client.setMaxAttempts(1);
+  const maxAttempts = Number(process.env.HEDERA_MAX_ATTEMPTS || 5);
+  client.setMaxAttempts(Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAttempts : 5);
   if (typeof client.setRequestTimeout === "function") {
     client.setRequestTimeout(15000);
   }

@@ -100,6 +100,7 @@
 
                                 <table id="activity-table" style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
                                     <tr style="text-align:left; border-bottom: 1px solid #444;">
+                                        <th style="padding: 0.5rem;">Date/Time</th>
                                         <th style="padding: 0.5rem;">Description</th>
                                         <th style="padding: 0.5rem;">Amount</th>
                                         <th style="padding: 0.5rem;">Status</th>
@@ -113,12 +114,20 @@
                                             {% set status_lower = status_raw|lower %}
                                             {% set status_label = 'Hedera delayed (retry)' if ('pending' in status_lower and 'hedera' in status_lower) else display_status %}
                                             {% set hidden = status_lower in ['failed', 'rejected'] %}
+                                            {% set proof_final = act.logbook_status in ['anchored', 'offchain_final', 'demo_skipped'] %}
                                             <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}" style="border-bottom: 1px solid #2a2a2a;">
+                                                <td style="padding: 0.5rem; white-space: nowrap;">{{ act.timestamp }}</td>
                                                 <td style="padding: 0.5rem;">{{ act.desc }}</td>
                                                 <td style="padding: 0.5rem;">{{ act.amount }}</td>
                                                 <td style="padding: 0.5rem;">
                                                     {% if hidden %}
                                                         <span class="status-muted">{{ status_label }} <span class="status-note">(hidden)</span></span>
+                                                    {% elif proof_final and act.logbook_status == 'anchored' %}
+                                                        <span style="color:#4CAF50; font-weight:600;">Proof finalized · Hedera anchored</span>
+                                                    {% elif proof_final and act.logbook_status == 'offchain_final' %}
+                                                        <span style="color:#4CAF50; font-weight:600;">Proof finalized · Anchor pending/unavailable</span>
+                                                    {% elif proof_final and act.logbook_status == 'demo_skipped' %}
+                                                        <span style="color:#4CAF50; font-weight:600;">Proof finalized · Demo skipped</span>
                                                     {% else %}
                                                         {{ status_label }}
                                                     {% endif %}
@@ -134,26 +143,32 @@
                                                 </td>
                                                 <td style="padding: 0.5rem;">
                                                     {% if act.hedera_tx_id %}
-                                                        <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">
-                                                            View on Hedera
-                                                        </a>
+                                                        <div>Anchor: <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
                                                     {% elif act.logbook_status == "demo_skipped" %}
                                                         Demo mode: Hedera skipped
                                                     {% elif act.logbook_status == "offchain_final" %}
-                                                        Off-chain proof finalized (Hedera unavailable — retry later)
+                                                        On-chain anchor: Pending/Unavailable
                                                         <form method="post" action="/admin/retry-logbook/{{ act.id }}" style="display:inline; margin:0 0 0 8px;">
                                                             <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
                                                         </form>
                                                     {% elif demo_mode and ((not act.logbook_status) or act.logbook_status == "pending") %}
                                                         Demo mode: processing...
                                                     {% elif act.logbook_status == "failed" or act.pipeline_stage == "log_failed" %}
-                                                           <form method="post" action="/admin/retry-logbook/{{ act.id }}" style="display:inline; margin:0;">
-                                                               <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Hedera delayed (retry)</button>
-                                                           </form>
+                                                        On-chain anchor: Failed
+                                                        <form method="post" action="/admin/retry-logbook/{{ act.id }}" style="display:inline; margin:0 0 0 8px;">
+                                                            <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
+                                                        </form>
                                                     {% elif not act.hedera_tx_id %}
-                                                        Hedera delayed (retry)
+                                                        On-chain anchor: Pending/Unavailable
                                                     {% else %}
                                                         —
+                                                    {% endif %}
+                                                    {% if act.reward_tx_id %}
+                                                        <div style="margin-top:4px;">Reward: <a href="https://hashscan.io/testnet/transaction/{{ act.reward_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
+                                                    {% elif act.reward_status == "finalized_no_transfer" %}
+                                                        <div style="margin-top:4px;">Reward: Finalized (no transfer)</div>
+                                                    {% elif act.pipeline_stage in ["rewarded", "attested"] %}
+                                                        <div style="margin-top:4px;">Reward: Pending</div>
                                                     {% endif %}
                                                 </td>
                                             </tr>
@@ -707,12 +722,37 @@
                 return status;
             };
 
-            (currentData.timeline || []).forEach(act => {
+            const sortedTimeline = [...(currentData.timeline || [])].sort((left, right) => {
+                const leftTs = new Date(left?.timestamp || '').getTime();
+                const rightTs = new Date(right?.timestamp || '').getTime();
+                const leftSafe = Number.isNaN(leftTs) ? 0 : leftTs;
+                const rightSafe = Number.isNaN(rightTs) ? 0 : rightTs;
+                return rightSafe - leftSafe;
+            });
+
+            sortedTimeline.forEach(act => {
                 const rawStatus = (act.status || act.verified_status || '').toString();
                 const displayStatus = normalizeStatusLabel(rawStatus || 'pending');
                 const statusLower = displayStatus.toLowerCase();
                 const hidden = statusLower === 'failed' || statusLower === 'rejected';
                 const amount = Number(act.amount) || 0;
+                const logbookStatus = (act.logbook_status || '').toLowerCase();
+
+                const statusCell = (() => {
+                    if (hidden) {
+                        return `<span class="status-muted">${displayStatus} <span class="status-note">(hidden)</span></span>`;
+                    }
+                    if (logbookStatus === 'anchored') {
+                        return '<span style="color:#4CAF50; font-weight:600;">Proof finalized · Hedera anchored</span>';
+                    }
+                    if (logbookStatus === 'offchain_final') {
+                        return '<span style="color:#4CAF50; font-weight:600;">Proof finalized · Anchor pending/unavailable</span>';
+                    }
+                    if (logbookStatus === 'demo_skipped') {
+                        return '<span style="color:#4CAF50; font-weight:600;">Proof finalized · Demo skipped</span>';
+                    }
+                    return displayStatus;
+                })();
 
                 const row = document.createElement('tr');
                 row.className = `activity-row${hidden ? ' hidden-status' : ''}`;
@@ -720,32 +760,44 @@
                 row.style.borderBottom = '1px solid #2a2a2a';
 
                 const txCell = (() => {
-                    if (act.hedera_tx_id) return toHashScanTxLink(act.hedera_tx_id);
-                    const logbookStatus = (act.logbook_status || '').toLowerCase();
+                    const rewardLine = (() => {
+                        if ((act.reward_status || '').toLowerCase() === 'paid' && act.reward_tx_id) {
+                            return `<div style="margin-top:4px;">Reward: ${toHashScanTxLink(act.reward_tx_id)}</div>`;
+                        }
+                        if ((act.reward_status || '').toLowerCase() === 'finalized_no_transfer') {
+                            return '<div style="margin-top:4px;">Reward: Finalized (no transfer)</div>';
+                        }
+                        const stage = (act.pipeline_stage || '').toLowerCase();
+                        if (stage === 'rewarded' || stage === 'attested') return '<div style="margin-top:4px;">Reward: Pending</div>';
+                        return '';
+                    })();
+
+                    if (act.hedera_tx_id) return `Anchor: ${toHashScanTxLink(act.hedera_tx_id)}${rewardLine}`;
                     if (logbookStatus === 'demo_skipped') {
-                        return 'Demo mode: Hedera skipped';
+                        return `Demo mode: Hedera skipped${rewardLine}`;
                     }
                     if (logbookStatus === 'offchain_final') {
                         if (act.id) {
-                            return `Off-chain proof finalized (Hedera unavailable — retry later)
+                            return `On-chain anchor: Pending/Unavailable
                                 <form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0 0 0 8px;">
                                     <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
-                                </form>`;
+                                </form>${rewardLine}`;
                         }
-                        return 'Off-chain proof finalized (Hedera unavailable — retry later)';
+                        return `On-chain anchor: Pending/Unavailable${rewardLine}`;
                     }
                     if (demoMode && (!logbookStatus || logbookStatus === 'pending')) {
-                        return 'Demo mode: processing...';
+                        return `Demo mode: processing...${rewardLine}`;
                     }
                     if (logbookStatus === 'failed' || (act.pipeline_stage || '').toLowerCase() === 'log_failed') {
                         if (act.id) {
-                            return `<form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0;">
-                                <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Hedera delayed (retry)</button>
-                            </form>`;
+                            return `On-chain anchor: Failed
+                            <form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0 0 0 8px;">
+                                <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
+                            </form>${rewardLine}`;
                         }
-                        return 'Hedera delayed (retry)';
+                        return `On-chain anchor: Failed${rewardLine}`;
                     }
-                    return 'Hedera delayed (retry)';
+                    return `On-chain anchor: Pending/Unavailable${rewardLine}`;
                 })();
 
                 const proofCell = (() => {
@@ -757,9 +809,10 @@
                 })();
 
                 row.innerHTML = `
+                    <td style="padding: 0.5rem; white-space: nowrap;">${formatDateTimeDisplay(act.timestamp)}</td>
                     <td style="padding: 0.5rem;">${act.desc || ''}</td>
                     <td style="padding: 0.5rem;">${amount.toFixed(2)}</td>
-                    <td style="padding: 0.5rem;">${hidden ? `<span class="status-muted">${displayStatus} <span class="status-note">(hidden)</span></span>` : displayStatus}</td>
+                    <td style="padding: 0.5rem;">${statusCell}</td>
                     <td style="padding: 0.5rem;">${proofCell}</td>
                     <td style="padding: 0.5rem;">${txCell}</td>
                 `;

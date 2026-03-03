@@ -5,7 +5,6 @@ Emits final attestation record to HCS for audit/compliance.
 
 from extensions import db
 from models import Activity
-import os
 
 
 class ComplianceAgent:
@@ -27,32 +26,19 @@ class ComplianceAgent:
                 print(f"[COMPLIANCE AGENT ERROR] Activity {activity_id} not found", flush=True)
                 return "done"  # nothing to do
 
-            # Deferred Hedera mode: compliance runs after reward finalization
+            # Deferred mode: compliance runs only after reward finalization
             if activity.pipeline_stage != "rewarded":
                 print(f"[COMPLIANCE AGENT] Skipping (stage={activity.pipeline_stage})", flush=True)
                 return "skip"
 
             print(f"[COMPLIANCE AGENT] Recording attestation for activity {activity_id}", flush=True)
 
-            # Hackathon: only mark as attested after Logbook reached the correct terminal state.
-            # DEMO_MODE=1  -> logbook_status must be demo_skipped
-            # DEMO_MODE=0  -> logbook_status must be anchored AND hedera_tx_id must exist
-            demo_mode = os.getenv("DEMO_MODE", "0") == "1"
-            log_status = getattr(activity, "logbook_status", None)
-            tx_id = getattr(activity, "hedera_tx_id", None)
-
-            if demo_mode:
-                if log_status != "demo_skipped":
-                    activity.last_error = "Compliance blocked: logbook not demo_skipped yet"
-                    db.session.commit()
-                    print(f"[COMPLIANCE AGENT] Skipping: {activity.last_error}", flush=True)
-                    return "skip"
-            else:
-                if log_status != "anchored" or not tx_id:
-                    activity.last_error = "Compliance blocked: logbook not anchored yet"
-                    db.session.commit()
-                    print(f"[COMPLIANCE AGENT] Skipping: {activity.last_error}", flush=True)
-                    return "skip"
+            reward_status = getattr(activity, "reward_status", None)
+            if reward_status not in ("paid", "finalized_no_transfer"):
+                activity.last_error = "Compliance blocked: reward not finalized yet"
+                db.session.commit()
+                print(f"[COMPLIANCE AGENT] Skipping: {activity.last_error}", flush=True)
+                return "skip"
 
             activity.pipeline_stage = "attested"
             print(f"[COMPLIANCE AGENT] ✓ Attestation recorded", flush=True)

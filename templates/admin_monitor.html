@@ -63,6 +63,37 @@ background: #B71C1C;
 color: #ffffff;
 }
 
+.decision-feed {
+background: #0f141b;
+border: 1px solid #2a3340;
+border-radius: 6px;
+padding: 10px;
+max-height: 220px;
+overflow-y: auto;
+font-size: 12px;
+}
+
+.decision-item {
+padding: 6px 0;
+border-bottom: 1px solid #1f2833;
+}
+
+.decision-item.info {
+color: #c7d2e1;
+}
+
+.decision-item.warn {
+color: #f9c27a;
+}
+
+.decision-item.error {
+color: #ff9aa2;
+}
+
+.decision-item:last-child {
+border-bottom: none;
+}
+
 a {
 
 color: #58a6ff;
@@ -97,13 +128,57 @@ color: #58a6ff;
 	Show failed tasks
 </label>
 
+<label style="display:block;margin:10px 0;">
+	<input type="checkbox" id="showDebug" />
+	Debug details
+</label>
+
+<label style="display:block;margin:10px 0;">
+	Date Range:
+	<select id="dateRange" style="margin-left:8px;">
+		<option value="today">Today</option>
+		<option value="7d">Last 7 days</option>
+		<option value="all" selected>All</option>
+	</select>
+</label>
+
 <div id="autoVerifyStatus" class="card" style="margin-top:8px;color:#9ad7a6;font-weight:600;">Auto-verify pending...</div>
 
 <div id="activities"></div>
+<div id="activity-controls" class="card" style="display:none;"></div>
 
 <script>
 
 let demoMode = false;
+const ACTIVITY_PAGE_SIZE = 8;
+let visibleActivityCount = ACTIVITY_PAGE_SIZE;
+const DATE_RANGE_STORAGE_KEY = "vericycle_admin_date_range";
+
+function restoreDateRangeSelection() {
+	const select = document.getElementById("dateRange");
+	if (!select) return;
+	const saved = localStorage.getItem(DATE_RANGE_STORAGE_KEY);
+	if (saved && ["today", "7d", "all"].includes(saved)) {
+		select.value = saved;
+	}
+}
+
+function activityInRange(activity, range) {
+	if (range === "all") return true;
+	const timeValue = new Date(activity?.timestamp || "").getTime();
+	if (Number.isNaN(timeValue)) return false;
+
+	const now = new Date();
+	if (range === "today") {
+		const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+		return timeValue >= startOfDay;
+	}
+	if (range === "7d") {
+		const sevenDaysAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+		return timeValue >= sevenDaysAgo;
+	}
+	return true;
+}
 
 fetch("/api/config")
 	.then(r => r.json())
@@ -179,8 +254,13 @@ function restoreProofStatusesFromCache() {
 
 function renderActivities(data) {
 	const container = document.getElementById("activities");
+	const controls = document.getElementById("activity-controls");
 	if (!container) return;
 	container.innerHTML = "";
+	if (controls) {
+		controls.style.display = "none";
+		controls.innerHTML = "";
+	}
 
 	if (!data || data.length === 0) {
 		container.innerHTML = "<div class='card'><p>No activities yet. Create a deposit from /collector, then refresh.</p></div>";
@@ -188,11 +268,29 @@ function renderActivities(data) {
 	}
 
 	const showFailed = document.getElementById("showFailed")?.checked;
+	const showDebug = document.getElementById("showDebug")?.checked;
+	const dateRange = document.getElementById("dateRange")?.value || "all";
 
-	data.forEach(a => {
+	const sorted = [...data].sort((left, right) => {
+		const leftTs = new Date(left?.timestamp || "").getTime();
+		const rightTs = new Date(right?.timestamp || "").getTime();
+		const leftSafe = Number.isNaN(leftTs) ? 0 : leftTs;
+		const rightSafe = Number.isNaN(rightTs) ? 0 : rightTs;
+		if (rightSafe !== leftSafe) return rightSafe - leftSafe;
+		return (Number(right?.id) || 0) - (Number(left?.id) || 0);
+	});
+
+	const filtered = sorted.filter(a => {
 		const tasks = Array.isArray(a.tasks) ? a.tasks : [];
 		const hasFailedTask = tasks.some(t => (t.status || "").toLowerCase() === "failed");
-		if (!showFailed && hasFailedTask) return;
+		if (!(showFailed || !hasFailedTask)) return false;
+		return activityInRange(a, dateRange);
+	});
+
+	const visible = filtered.slice(0, visibleActivityCount);
+
+	visible.forEach(a => {
+		const tasks = Array.isArray(a.tasks) ? a.tasks : [];
 
 		const parsedTime = new Date(a.timestamp);
 		const exactTime = Number.isNaN(parsedTime.getTime())
@@ -216,9 +314,27 @@ function renderActivities(data) {
 		`;
 
 		const logbookStatus = (a.logbook_status || "").toString().toLowerCase();
+		const rewardStatus = (a.reward_status || "").toString().toLowerCase();
+		const collectorDone = tasks.some(t => t.agent === "CollectorAgent" && (t.status || "").toLowerCase() === "done");
+		const verifierDone = tasks.some(t => t.agent === "VerifierAgent" && (t.status || "").toLowerCase() === "done");
+		const rewardDone = tasks.some(t => t.agent === "RewardAgent" && (t.status || "").toLowerCase() === "done");
+
+		let logbookFlow = "⏳ Pending";
+		if (logbookStatus === "anchored") logbookFlow = "✅ Final (Anchored)";
+		else if (logbookStatus === "offchain_final") logbookFlow = "✅ Final (Off-chain)";
+		else if (logbookStatus === "demo_skipped") logbookFlow = "✅ Final (Demo skipped)";
+		else if (logbookStatus === "failed") logbookFlow = "❌ Failed";
+
+		html += `<p>
+		Collector ${collectorDone ? "✅" : "⏳"} |
+		Verifier ${verifierDone ? "✅" : "⏳"} |
+		Logbook ${logbookFlow} |
+		Reward ${rewardDone ? "✅" : "⏳"}
+		</p>`;
 
 		if (a.hedera_tx_id) {
 			html += `<p>
+			On-chain anchor: Anchored ·
 			<a href="https://hashscan.io/testnet/transaction/${a.hedera_tx_id}" target="_blank">
 			View on Hedera
 			</a>
@@ -226,15 +342,40 @@ function renderActivities(data) {
 			<span id="mirror_${a.id}" style="margin-left:10px"></span>
 			</p>`;
 		} else if (logbookStatus === "demo_skipped") {
-			html += `<p>Demo mode: Hedera skipped</p>`;
+			html += `<p>On-chain anchor: Demo skipped</p>`;
 		} else if (logbookStatus === "offchain_final") {
-			html += `<p>Off-chain proof finalized (Hedera unavailable — retry later)</p>
+			html += `<p>On-chain anchor: Pending/Unavailable</p>
 			<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
+			if (showDebug && a.logbook_last_error) {
+				html += `<p style="color:#f9c27a;">Debug: ${a.logbook_last_error}</p>`;
+			}
+		} else if (logbookStatus === "failed") {
+			html += `<p>On-chain anchor: Failed</p>
+			<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
+			if (showDebug && a.logbook_last_error) {
+				html += `<p style="color:#f9c27a;">Debug: ${a.logbook_last_error}</p>`;
+			}
 		} else if (demoMode && (!logbookStatus || logbookStatus === "pending")) {
-			html += `<p>Demo mode: processing...</p>`;
+			html += `<p>On-chain anchor: Processing...</p>`;
 		} else {
-			html += `<p>Hedera delayed (retry)</p>
+			html += `<p>On-chain anchor: Pending/Unavailable</p>
 			<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
+		}
+
+		if (rewardStatus === "paid" && a.reward_tx_id) {
+			html += `<p>
+			Reward transfer: Complete ·
+			<a href="https://hashscan.io/testnet/transaction/${a.reward_tx_id}" target="_blank">
+			View Reward TX
+			</a>
+			</p>`;
+		} else if (rewardStatus === "finalized_no_transfer") {
+			html += `<p>Reward: Finalized (no transfer)</p>`;
+			if (showDebug && a.reward_last_error) {
+				html += `<p style="color:#f9c27a;">Debug: ${a.reward_last_error}</p>`;
+			}
+		} else if (rewardDone) {
+			html += `<p>Reward: Pending</p>`;
 		}
 
 		html += `<p>
@@ -246,12 +387,88 @@ function renderActivities(data) {
 		html += `<h4>Agent Pipeline</h4>`;
 		tasks.forEach(t => {
 			const label = normalizeStatusLabel(t.status);
-			html += `<p>${t.agent} : ${label}${t.last_error ? ` (${t.last_error})` : ""}</p>`;
+			html += `<p>${t.agent} : ${label}${showDebug && t.error ? ` (${t.error})` : ""}</p>`;
 		});
+
+		html += `<h4>Agent Decision Feed</h4>
+		<p style="margin:0 0 8px 0; color:#a8b3c2;">Chronological reasons and stage transitions</p>
+		<div id="feed_${a.id}" class="decision-feed">Loading decisions...</div>
+		<p style="margin-top:8px;"><button onclick="refreshFeed(${a.id})">Refresh Feed</button></p>`;
 
 		html += "</div>";
 		container.innerHTML += html;
+		loadDecisionFeed(a.id);
 	});
+
+	if (controls) {
+		const remaining = Math.max(0, filtered.length - visible.length);
+		const shownText = `Showing ${visible.length} of ${filtered.length} transactions (newest first)`;
+		if (remaining > 0) {
+			controls.style.display = "block";
+			controls.innerHTML = `<p style="margin:0 0 8px 0;">${shownText}</p>
+			<button onclick="loadMoreActivities()">Load older transactions (${remaining} remaining)</button>`;
+		} else if (filtered.length > ACTIVITY_PAGE_SIZE) {
+			controls.style.display = "block";
+			controls.innerHTML = `<p style="margin:0;">${shownText}</p>`;
+		}
+	}
+}
+
+function loadMoreActivities() {
+	visibleActivityCount += ACTIVITY_PAGE_SIZE;
+	renderActivities(adminActivities);
+	restoreProofStatusesFromCache();
+	runAutoVerify();
+}
+
+function formatFeedTimestamp(value) {
+	if (!value) return "Unknown time";
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) return value;
+	return parsed.toLocaleString();
+}
+
+function loadDecisionFeed(activityId) {
+	const target = document.getElementById(`feed_${activityId}`);
+	if (!target) return;
+	target.textContent = "Loading decisions...";
+
+	fetch(`/api/admin/activity-events/${activityId}`)
+		.then(async r => {
+			if (!r.ok) {
+				const payload = await r.json().catch(() => ({}));
+				throw payload;
+			}
+			return r.json();
+		})
+		.then(payload => {
+			const events = Array.isArray(payload?.events) ? payload.events : [];
+			if (!events.length) {
+				target.innerHTML = "No decisions yet.";
+				return;
+			}
+
+			target.innerHTML = events.map(e => {
+				const levelRaw = (e.level || "info").toString().toLowerCase();
+				const level = levelRaw.toUpperCase();
+				const levelClass = (levelRaw === "error" || levelRaw === "failed")
+					? "error"
+					: ((levelRaw === "warn" || levelRaw === "warning") ? "warn" : "info");
+				const when = formatFeedTimestamp(e.created_at);
+				const stage = e.pipeline_stage ? ` · stage=${e.pipeline_stage}` : "";
+				const tx = e.tx_id ? ` · tx=${e.tx_id}` : "";
+				const err = e.last_error ? ` · error=${e.last_error}` : "";
+				const details = document.getElementById("showDebug")?.checked ? `${tx}${err}` : "";
+				return `<div class="decision-item ${levelClass}">[${when}] <strong>${e.agent || "Agent"}</strong> ${level}: ${e.message || ""}${stage}${details}</div>`;
+			}).join("");
+		})
+		.catch(() => {
+			target.textContent = "Unable to load decisions.";
+		});
+}
+
+function refreshFeed(activityId) {
+	loadDecisionFeed(activityId);
 }
 
 function runAutoVerify(data) {
@@ -288,6 +505,7 @@ function loadActivities() {
 		.then(r => r.json())
 		.then(data => {
 			adminActivities = Array.isArray(data) ? data : [];
+			visibleActivityCount = ACTIVITY_PAGE_SIZE;
 			renderActivities(adminActivities);
 			runAutoVerify();
 			loadQueueSummary();
@@ -307,6 +525,22 @@ document.getElementById("showFailed").addEventListener("change", () => {
 	restoreProofStatusesFromCache();
 	runAutoVerify();
 });
+
+document.getElementById("showDebug").addEventListener("change", () => {
+	renderActivities(adminActivities);
+	restoreProofStatusesFromCache();
+	runAutoVerify();
+});
+
+document.getElementById("dateRange").addEventListener("change", () => {
+	localStorage.setItem(DATE_RANGE_STORAGE_KEY, document.getElementById("dateRange")?.value || "all");
+	visibleActivityCount = ACTIVITY_PAGE_SIZE;
+	renderActivities(adminActivities);
+	restoreProofStatusesFromCache();
+	runAutoVerify();
+});
+
+restoreDateRangeSelection();
 
 document.getElementById("createDemoDepositBtn").addEventListener("click", () => {
 	const btn = document.getElementById("createDemoDepositBtn");

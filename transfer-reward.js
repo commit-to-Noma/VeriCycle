@@ -16,7 +16,15 @@ if (!collectorId || !rewardAmount) {
 
 // Load operator credentials and token id from environment
 const operatorId = process.env.OPERATOR_ID;
-const operatorKey = PrivateKey.fromStringDer(process.env.OPERATOR_KEY);
+const operatorKeyRaw = process.env.OPERATOR_KEY;
+let operatorKey = null;
+if (operatorKeyRaw) {
+  try {
+    operatorKey = PrivateKey.fromString(operatorKeyRaw);
+  } catch {
+    operatorKey = PrivateKey.fromStringDer(operatorKeyRaw);
+  }
+}
 const ecoCoinTokenId = process.env.ECOCOIN_TOKEN_ID;
 if (!operatorId || !operatorKey || !ecoCoinTokenId) {
   throw new Error("Error: Please check your .env file. All variables must be set.");
@@ -37,15 +45,19 @@ async function main() {
   const signedTx = await transaction.sign(operatorKey);
   const txResponse = await signedTx.execute(client);
   const receipt = await txResponse.getReceipt(client);
+  const txId = txResponse.transactionId?.toString?.() || "";
 
   console.log("-----------------------------------");
   console.log(`✅ Reward of ${rewardAmount} ECO sent to ${collectorId}: ${receipt.status.toString()}`);
+  if (txId) {
+    console.log(`TX_ID=${txId}`);
+  }
   console.log("-----------------------------------");
 
   client.close();
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error(`ERROR=${error?.message || String(error)}`);
   process.exit(1);
 });

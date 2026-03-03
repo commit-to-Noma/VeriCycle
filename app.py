@@ -158,6 +158,24 @@ def ensure_activity_columns():
     if "logbook_status" not in existing:
         db.session.execute(text("ALTER TABLE activity ADD COLUMN logbook_status VARCHAR(20) DEFAULT 'pending'"))
 
+    if "logbook_tx_id" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN logbook_tx_id VARCHAR(150)"))
+
+    if "logbook_last_error" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN logbook_last_error TEXT"))
+
+    if "logbook_finalized_at" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN logbook_finalized_at DATETIME"))
+
+    if "reward_tx_id" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN reward_tx_id VARCHAR(150)"))
+
+    if "reward_status" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN reward_status VARCHAR(40)"))
+
+    if "reward_last_error" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN reward_last_error TEXT"))
+
     db.session.commit()
 
 
@@ -183,6 +201,15 @@ def backfill_activity_proof_hashes():
                 act.proof_hash = stable_hash
             if not getattr(act, "logbook_status", None):
                 act.logbook_status = "anchored" if act.hedera_tx_id else "pending"
+            if not getattr(act, "logbook_tx_id", None) and act.hedera_tx_id:
+                act.logbook_tx_id = act.hedera_tx_id
+            if (
+                getattr(act, "logbook_status", None) in {"anchored", "offchain_final", "demo_skipped"}
+                and not getattr(act, "logbook_finalized_at", None)
+            ):
+                act.logbook_finalized_at = datetime.now(timezone.utc)
+            if getattr(act, "pipeline_stage", None) in {"rewarded", "attested"} and not getattr(act, "reward_status", None):
+                act.reward_status = "paid" if getattr(act, "reward_tx_id", None) else "finalized_no_transfer"
 
         db.session.commit()
     except Exception as e:
@@ -889,9 +916,15 @@ def get_dashboard_data():
                 'amount': a.amount,
                 'status': a.status,
                 'hedera_tx_id': a.hedera_tx_id,
+                'logbook_tx_id': a.logbook_tx_id,
                 'proof_hash': proof_hash,
                 'proof_bundle_url': f'/api/proof-bundle/{a.id}',
                 'logbook_status': a.logbook_status,
+                'logbook_last_error': a.logbook_last_error,
+                'logbook_finalized_at': a.logbook_finalized_at.isoformat() if a.logbook_finalized_at else None,
+                'reward_status': a.reward_status,
+                'reward_tx_id': a.reward_tx_id,
+                'reward_last_error': a.reward_last_error,
                 'pipeline_stage': a.pipeline_stage,
                 'last_error': a.last_error,
             })
@@ -1063,6 +1096,8 @@ def _build_proof_payload(activity=None, fallback_activity_id='', fallback_timest
     effective_amount = activity.amount if activity and activity.amount is not None else fallback_amount
     effective_stage = "recorded"
     effective_hedera_tx_id = activity.hedera_tx_id if activity else None
+    effective_reward_tx_id = activity.reward_tx_id if activity else None
+    effective_reward_status = activity.reward_status if activity else None
 
     payload_data = {
         "vericycle_version": "hackathon-2026",
@@ -1073,6 +1108,8 @@ def _build_proof_payload(activity=None, fallback_activity_id='', fallback_timest
         "amount": float(effective_amount) if effective_amount is not None else None,
         "stage": effective_stage,
         "hedera_tx_id": effective_hedera_tx_id,
+        "reward_status": effective_reward_status,
+        "reward_tx_id": effective_reward_tx_id,
         "agent_approvals": agent_approvals,
     }
     return payload_data
@@ -1224,7 +1261,7 @@ def get_agent_status():
         )
 
         latest_tx = (
-            None if agent_name != "LogbookAgent" else (
+            None if agent_name not in ("LogbookAgent", "RewardAgent") else (
                 AgentLog.query
                 .filter(
                     AgentLog.agent_name == agent_name,
@@ -1252,7 +1289,7 @@ def get_agent_status():
             "agent": agent_name,
             "health": health,
             "last_seen": _normalize_ts(latest_log.created_at if latest_log else None),
-            "last_tx": latest_tx.hedera_tx_id if (agent_name == "LogbookAgent" and latest_tx) else None,
+            "last_tx": latest_tx.hedera_tx_id if latest_tx else None,
             "last_error": last_error_msg,
         })
 
@@ -1388,6 +1425,12 @@ def api_admin_activities():
             'stage': activity.pipeline_stage,
             'logbook_status': activity.logbook_status,
             'hedera_tx_id': activity.hedera_tx_id,
+            'reward_status': activity.reward_status,
+            'reward_tx_id': activity.reward_tx_id,
+            'reward_last_error': activity.reward_last_error,
+            'logbook_tx_id': activity.logbook_tx_id,
+            'logbook_last_error': activity.logbook_last_error,
+            'logbook_finalized_at': activity.logbook_finalized_at.isoformat() if activity.logbook_finalized_at else None,
             'proof': f'/api/proof-bundle/{activity.id}',
             'tasks': task_data,
         })
@@ -1410,6 +1453,42 @@ def api_admin_queue():
         "running": running,
         "failed": failed,
         "done": done,
+    })
+
+
+@app.route('/api/admin/activity-events/<int:activity_id>')
+@login_required
+def api_admin_activity_events(activity_id):
+    if not is_admin_user():
+        abort(403)
+
+    activity = db.session.get(Activity, activity_id)
+    if not activity:
+        abort(404)
+
+    rows = (
+        AgentLog.query
+        .filter_by(activity_id=activity_id)
+        .order_by(AgentLog.id.asc())
+        .all()
+    )
+
+    events = []
+    for row in rows:
+        events.append({
+            "id": row.id,
+            "created_at": row.created_at,
+            "agent": row.agent_name,
+            "level": row.level,
+            "message": row.message,
+            "pipeline_stage": row.pipeline_stage,
+            "tx_id": row.hedera_tx_id,
+            "last_error": row.last_error,
+        })
+
+    return jsonify({
+        "activity_id": activity_id,
+        "events": events,
     })
 
 
