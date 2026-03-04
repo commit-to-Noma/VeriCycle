@@ -144,13 +144,15 @@ def submit_to_hcs_for_activity(activity: Activity) -> str:
     user = User.query.get(activity.user_id)
     base_env = os.environ.copy()
     primary_error = None
+    from app import get_user_private_key
+    user_private_key = get_user_private_key(user)
 
-    has_user_creds = bool(user and user.hedera_account_id and user.hedera_private_key)
+    has_user_creds = bool(user and user.hedera_account_id and user_private_key)
     if has_user_creds:
         print(f"[LOGBOOK AGENT] Primary signer: user account {user.hedera_account_id}", flush=True)
         user_env = base_env.copy()
         user_env["OPERATOR_ID"] = user.hedera_account_id
-        user_env["OPERATOR_KEY"] = user.hedera_private_key
+        user_env["OPERATOR_KEY"] = user_private_key
         user_env["VERICYCLE_PROOF_HASH"] = activity.proof_hash or ""
         try:
             return _run_submit_script(activity.id, user_env)
@@ -189,8 +191,12 @@ def _persist_logbook_failed(activity: Activity | None, err_msg: str):
     now_utc = datetime.now(timezone.utc)
     activity.hedera_tx_id = None
     activity.logbook_tx_id = None
+    activity.hcs_tx_id = None
     activity.logbook_status = "offchain_final"
     activity.logbook_last_error = (err_msg or "HCS submission failed")[:500]
+    activity.reputation_delta = -0.05
+    activity.verifier_reputation = max(0.0, (activity.verifier_reputation or 0.85) + activity.reputation_delta)
+    activity.trust_weight = activity.verifier_reputation
     activity.logbook_finalized_at = now_utc
     activity.pipeline_stage = "logged"
     activity.last_error = None
@@ -225,8 +231,13 @@ class LogbookAgent:
                 if activity.hedera_tx_id:
                     activity.logbook_status = activity.logbook_status or "anchored"
                     activity.logbook_tx_id = activity.logbook_tx_id or activity.hedera_tx_id
+                    activity.hcs_tx_id = activity.hcs_tx_id or activity.logbook_tx_id or activity.hedera_tx_id
                     activity.logbook_finalized_at = activity.logbook_finalized_at or datetime.now(timezone.utc)
                     activity.logbook_last_error = None
+                    if activity.logbook_status == "anchored":
+                        activity.reputation_delta = 0.02
+                        activity.verifier_reputation = min(1.0, (activity.verifier_reputation or 0.85) + 0.02)
+                        activity.trust_weight = activity.verifier_reputation
                     db.session.commit()
                     reward_queued = _enqueue_reward_once(activity.id)
                     compliance_queued = _enqueue_compliance_once(activity.id)
@@ -244,6 +255,7 @@ class LogbookAgent:
                     try:
                         activity.logbook_status = "demo_skipped"
                         activity.logbook_tx_id = None
+                        activity.hcs_tx_id = None
                         activity.logbook_last_error = None
                         activity.logbook_finalized_at = datetime.now(timezone.utc)
                     except Exception:
@@ -317,17 +329,21 @@ class LogbookAgent:
                     print(f"LogbookAgent: HCS submit failed -> offchain_final (anchor pending): {reason}", flush=True)
                     return "offchain_final"
 
-                print(f"[LOGBOOK AGENT] ✓ HCS submission successful", flush=True)
+                print(f"[LOGBOOK AGENT] HCS submission successful", flush=True)
                 print(f"[LOGBOOK AGENT] Transaction ID: {tx_id}", flush=True)
                 print(f"LogbookAgent: anchored tx_id={tx_id}", flush=True)
 
                 activity.hedera_tx_id = tx_id
                 activity.logbook_tx_id = tx_id
+                activity.hcs_tx_id = tx_id
                 activity.status = "verified"
                 activity.last_error = None
                 activity.logbook_status = "anchored"
                 activity.logbook_last_error = None
                 activity.logbook_finalized_at = datetime.now(timezone.utc)
+                activity.reputation_delta = 0.02
+                activity.verifier_reputation = min(1.0, (activity.verifier_reputation or 0.85) + 0.02)
+                activity.trust_weight = activity.verifier_reputation
                 db.session.commit()
                 try:
                     from app import log_agent_event

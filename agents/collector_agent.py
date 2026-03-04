@@ -86,7 +86,7 @@ class CollectorAgent:
                     print(f"[AGENT] Activity REJECTED: invalid amount", flush=True)
                     return False
 
-                print(f"[AGENT] Validation PASSED ✓", flush=True)
+                print(f"[AGENT] Validation PASSED", flush=True)
 
                 # Mark as collected and ready for verification
                 activity.pipeline_stage = "collected"

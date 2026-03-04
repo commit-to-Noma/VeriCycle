@@ -9,6 +9,8 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(60), nullable=False)
     hedera_account_id = db.Column(db.String(100), nullable=True)
     hedera_private_key = db.Column(db.String(255), nullable=True)
+    hedera_private_key_encrypted = db.Column(db.Text, nullable=True)
+    hedera_key_version = db.Column(db.String(20), nullable=True)
     
     full_name = db.Column(db.String(100), nullable=True)
     phone_number = db.Column(db.String(20), nullable=True)
@@ -38,6 +40,14 @@ class Activity(db.Model):
     reward_tx_id = db.Column(db.String(150), nullable=True)
     reward_last_error = db.Column(db.Text, nullable=True)
     trust_weight = db.Column(db.Float, default=1.0)
+    verifier_reputation = db.Column(db.Float, default=0.85)
+    reputation_delta = db.Column(db.Float, default=0.0)
+    confidence_score = db.Column(db.Float, default=0.0)
+
+    # Explicit tx fields for judge clarity
+    hcs_tx_id = db.Column(db.String(150), nullable=True)
+    hts_tx_id = db.Column(db.String(150), nullable=True)
+    compliance_tx_id = db.Column(db.String(150), nullable=True)
     
     # PIPELINE FIELDS (for multi-agent coordinator)
     pipeline_stage = db.Column(db.String(50), default="created")  # created -> collected -> verified -> logged -> rewarded -> attested
@@ -70,6 +80,37 @@ class AgentTask(db.Model):
                            onupdate=lambda: datetime.now(timezone.utc))
 
     activity = db.relationship('Activity', backref=db.backref('tasks', lazy=True))
+
+
+class DeadLetterTask(db.Model):
+    __tablename__ = "dead_letter_task"
+
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('agent_task.id'), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=False)
+    agent_name = db.Column(db.String(50), nullable=False)
+    attempts = db.Column(db.Integer, nullable=False, default=0)
+    reason = db.Column(db.String(512), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="open")  # open|requeued
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                           default=lambda: datetime.now(timezone.utc))
+    resolved_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    task = db.relationship('AgentTask', backref=db.backref('dead_letter_entries', lazy=True))
+    activity = db.relationship('Activity', backref=db.backref('dead_letter_entries', lazy=True))
+
+
+class AdminAuditLog(db.Model):
+    __tablename__ = "admin_audit_log"
+
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                           default=lambda: datetime.now(timezone.utc))
+    admin_email = db.Column(db.String(120), nullable=False)
+    action = db.Column(db.String(80), nullable=False)
+    target_type = db.Column(db.String(40), nullable=True)
+    target_id = db.Column(db.String(80), nullable=True)
+    details = db.Column(db.String(512), nullable=True)
 
 class Location(db.Model):
     __tablename__ = "location"
@@ -141,3 +182,21 @@ class AgentLog(db.Model):
     pipeline_stage = db.Column(db.String(50), nullable=True)
     hedera_tx_id = db.Column(db.String(150), nullable=True)
     last_error = db.Column(db.String(512), nullable=True)
+
+
+class AgentCommerceEvent(db.Model):
+    __tablename__ = "agent_commerce_event"
+
+    id = db.Column(db.Integer, primary_key=True)
+    activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"), nullable=False)
+    payer_agent = db.Column(db.String(64), nullable=False)
+    payee_agent = db.Column(db.String(64), nullable=False)
+    reason = db.Column(db.String(128), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    token_id = db.Column(db.String(100), nullable=True)
+    tx_id = db.Column(db.String(150), nullable=True)
+    status = db.Column(db.String(40), nullable=False, default="finalized_no_transfer")
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                           default=lambda: datetime.now(timezone.utc))
+
+    activity = db.relationship("Activity", backref=db.backref("commerce_events", lazy=True))

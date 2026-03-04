@@ -1,0 +1,10 @@
+VeriCycle judge proof checklist
+===============================
+
+1) Admin monitor activity detail for Deposit 55 (or exported fallback id)
+2) Proof bundle JSON download / hash verification badge
+3) HashScan page for HCS tx
+   https://hashscan.io/testnet/transaction/0.0.8041229@1772553131.547319124
+4) HashScan page for HTS tx
+   https://hashscan.io/testnet/transaction/0.0.8041229@1772553137.236211395
+5) Any compliance completion evidence (tx id / offchain id)

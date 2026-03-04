@@ -116,8 +116,14 @@ color: #58a6ff;
 <div class="card" id="demoModeCard">Demo Mode: ...</div>
 
 <div class="card" id="queue-summary">Queue: loading...</div>
+<div class="card" id="judge-summary">Judge Summary: loading...</div>
+<div class="card" id="demo-profile-card">Demo profile: loading...</div>
+<div class="card" id="ops-alerts">Ops alerts: loading...</div>
+<div class="card" id="dead-letter-card">Dead letter queue: loading...</div>
+<div class="card" id="audit-card">Admin audit: loading...</div>
 
 <button id="createDemoDepositBtn" style="margin:8px 0;">Create Demo Deposit</button>
+<button id="generateEvidencePackBtn" style="margin:8px 0 8px 8px;">Generate Demo Evidence Pack</button>
 
 <form method="post" action="/admin/cleanup-stale-running" style="margin:8px 0;">
 	<button type="submit">Mark Running as Failed</button>
@@ -199,12 +205,88 @@ function loadQueueSummary() {
 			const el = document.getElementById("queue-summary");
 			el.innerHTML = `
 				<h3>Queue Summary</h3>
-				<p>Queued: ${q.queued ?? 0} | Running: ${q.running ?? 0} | Failed: ${q.failed ?? 0} | Done: ${q.done ?? 0}</p>
+				<p>Queued: ${q.queued ?? 0} | Running: ${q.running ?? 0} | Failed: ${q.failed ?? 0} | Dead Letter: ${q.dead_letter ?? 0} | Done: ${q.done ?? 0}</p>
+				<p>Stalled running: ${q.stalled_running ?? 0}</p>
 			`;
 		})
 		.catch(() => {
 			const el = document.getElementById("queue-summary");
 			el.innerHTML = "<h3>Queue Summary</h3><p>Unable to load queue state.</p>";
+		});
+}
+
+function loadDemoProfile() {
+	fetch("/api/admin/demo-profile")
+		.then(r => r.json())
+		.then(data => {
+			const el = document.getElementById("demo-profile-card");
+			if (!el) return;
+			const mismatches = data?.mismatches || {};
+			const mismatchKeys = Object.keys(mismatches);
+			el.innerHTML = `<h3>Deterministic Demo Profile</h3><p>Name: ${data?.name || "unknown"}</p>` +
+				(mismatchKeys.length
+					? `<p style="color:#f9c27a;">Environment drift on: ${mismatchKeys.join(", ")}</p>`
+					: `<p style="color:#9ad7a6;">Environment matches expected profile.</p>`);
+		});
+}
+
+function loadOpsAlerts() {
+	fetch("/api/admin/alerts")
+		.then(r => r.json())
+		.then(data => {
+			const alerts = Array.isArray(data?.alerts) ? data.alerts : [];
+			const el = document.getElementById("ops-alerts");
+			if (!el) return;
+			el.innerHTML = `<h3>Live Ops Alerts</h3>` + alerts.map(a => `<p>[${a.level}] ${a.code}: ${a.message}</p>`).join("");
+		})
+		.catch(() => {
+			const el = document.getElementById("ops-alerts");
+			if (el) el.innerHTML = "<h3>Live Ops Alerts</h3><p>Unable to load alerts.</p>";
+		});
+}
+
+function requeueDeadLetter(id) {
+	fetch(`/admin/requeue-dead-letter/${id}`, { method: "POST" })
+		.then(() => {
+			loadDeadLetter();
+			loadQueueSummary();
+		});
+}
+
+function loadDeadLetter() {
+	fetch("/api/admin/dead-letter")
+		.then(r => r.json())
+		.then(data => {
+			const rows = Array.isArray(data?.rows) ? data.rows : [];
+			const el = document.getElementById("dead-letter-card");
+			if (!el) return;
+			if (!rows.length) {
+				el.innerHTML = "<h3>Dead Letter Queue</h3><p>No dead-letter tasks.</p>";
+				return;
+			}
+			el.innerHTML = `<h3>Dead Letter Queue</h3>` + rows.slice(0, 8).map(r =>
+				`<p>#${r.id} activity=${r.activity_id} agent=${r.agent_name} attempts=${r.attempts} status=${r.status}<br>${r.reason}<br><button onclick="requeueDeadLetter(${r.id})">Requeue</button></p>`
+			).join("");
+		})
+		.catch(() => {
+			const el = document.getElementById("dead-letter-card");
+			if (el) el.innerHTML = "<h3>Dead Letter Queue</h3><p>Unable to load dead-letter queue.</p>";
+		});
+}
+
+function loadAudit() {
+	fetch("/api/admin/audit-log")
+		.then(r => r.json())
+		.then(data => {
+			const rows = Array.isArray(data?.rows) ? data.rows : [];
+			const el = document.getElementById("audit-card");
+			if (!el) return;
+			el.innerHTML = `<h3>Admin Audit Trail</h3>` +
+				(rows.slice(0, 8).map(r => `<p>${r.created_at || ""} · ${r.admin_email} · ${r.action} · ${r.target_type || "-"}:${r.target_id || "-"}<br>${r.details || ""}</p>`).join("") || "<p>No audit events yet.</p>");
+		})
+		.catch(() => {
+			const el = document.getElementById("audit-card");
+			if (el) el.innerHTML = "<h3>Admin Audit Trail</h3><p>Unable to load audit events.</p>";
 		});
 }
 
@@ -252,6 +334,45 @@ function restoreProofStatusesFromCache() {
 	});
 }
 
+function txLink(txId, label = "View on Hedera") {
+	if (!txId) return "—";
+	return `<a href="https://hashscan.io/testnet/transaction/${txId}" target="_blank">${label}</a>`;
+}
+
+function stepDone(a, tasks, step) {
+	const logbookStatus = (a.logbook_status || "").toString().toLowerCase();
+	const rewardStatus = (a.reward_status || "").toString().toLowerCase();
+	const stage = (a.stage || "").toString().toLowerCase();
+	if (step === "CollectorAgent") return tasks.some(t => t.agent === "CollectorAgent" && (t.status || "").toLowerCase() === "done");
+	if (step === "VerifierAgent") return tasks.some(t => t.agent === "VerifierAgent" && (t.status || "").toLowerCase() === "done");
+	if (step === "LogbookAgent") return ["anchored", "offchain_final", "demo_skipped"].includes(logbookStatus);
+	if (step === "RewardAgent") return ["paid", "finalized_no_transfer"].includes(rewardStatus);
+	if (step === "ComplianceAgent") return stage === "attested";
+	return false;
+}
+
+function updateJudgeSummary(filtered) {
+	const el = document.getElementById("judge-summary");
+	if (!el) return;
+
+	const rows = Array.isArray(filtered) ? filtered : [];
+	const total = rows.length;
+	const anchored = rows.filter(a => (a.logbook_status || "").toLowerCase() === "anchored").length;
+	const paid = rows.filter(a => (a.reward_status || "").toLowerCase() === "paid").length;
+	const fallback = rows.filter(a => (a.reward_status || "").toLowerCase() === "finalized_no_transfer").length;
+	const attested = rows.filter(a => (a.stage || "").toLowerCase() === "attested").length;
+
+	const latestPaid = rows.find(a => (a.reward_status || "").toLowerCase() === "paid" && (a.hts_tx_id || a.reward_tx_id));
+	const latestHcs = rows.find(a => (a.logbook_status || "").toLowerCase() === "anchored" && (a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id));
+
+	el.innerHTML = `
+		<h3>Judge Summary</h3>
+		<p>Total: ${total} | HCS anchored: ${anchored} | HTS paid: ${paid} | Fallback: ${fallback} | Attested: ${attested}</p>
+		<p>Latest paid HTS: ${latestPaid ? txLink(latestPaid.hts_tx_id || latestPaid.reward_tx_id) : "—"}</p>
+		<p>Latest anchored HCS: ${latestHcs ? txLink(latestHcs.hcs_tx_id || latestHcs.logbook_tx_id || latestHcs.hedera_tx_id) : "—"}</p>
+	`;
+}
+
 function renderActivities(data) {
 	const container = document.getElementById("activities");
 	const controls = document.getElementById("activity-controls");
@@ -287,6 +408,8 @@ function renderActivities(data) {
 		return activityInRange(a, dateRange);
 	});
 
+	updateJudgeSummary(filtered);
+
 	const visible = filtered.slice(0, visibleActivityCount);
 
 	visible.forEach(a => {
@@ -315,67 +438,57 @@ function renderActivities(data) {
 
 		const logbookStatus = (a.logbook_status || "").toString().toLowerCase();
 		const rewardStatus = (a.reward_status || "").toString().toLowerCase();
-		const collectorDone = tasks.some(t => t.agent === "CollectorAgent" && (t.status || "").toLowerCase() === "done");
-		const verifierDone = tasks.some(t => t.agent === "VerifierAgent" && (t.status || "").toLowerCase() === "done");
-		const rewardDone = tasks.some(t => t.agent === "RewardAgent" && (t.status || "").toLowerCase() === "done");
 
-		let logbookFlow = "⏳ Pending";
-		if (logbookStatus === "anchored") logbookFlow = "✅ Final (Anchored)";
-		else if (logbookStatus === "offchain_final") logbookFlow = "✅ Final (Off-chain)";
-		else if (logbookStatus === "demo_skipped") logbookFlow = "✅ Final (Demo skipped)";
-		else if (logbookStatus === "failed") logbookFlow = "❌ Failed";
+		const steps = [
+			{ key: "CollectorAgent", label: "Collector" },
+			{ key: "VerifierAgent", label: "Verifier" },
+			{ key: "LogbookAgent", label: "Logbook(HCS)" },
+			{ key: "RewardAgent", label: "Reward(HTS)" },
+			{ key: "ComplianceAgent", label: "Compliance" }
+		];
 
-		html += `<p>
-		Collector ${collectorDone ? "✅" : "⏳"} |
-		Verifier ${verifierDone ? "✅" : "⏳"} |
-		Logbook ${logbookFlow} |
-		Reward ${rewardDone ? "✅" : "⏳"}
-		</p>`;
+		html += `<h4>Pipeline Steps</h4>`;
+		steps.forEach(step => {
+			const done = stepDone(a, tasks, step.key);
+			const statusBadge = done ? "✅" : "⏳";
+			const task = tasks.find(t => t.agent === step.key) || {};
+			const timestamp = exactTime;
+			let txRef = "—";
+			if (step.key === "LogbookAgent") txRef = txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id);
+			if (step.key === "RewardAgent") txRef = txLink(a.hts_tx_id || a.reward_tx_id);
+			if (step.key === "ComplianceAgent") txRef = a.compliance_tx_id || "done";
 
-		if (a.hedera_tx_id) {
-			html += `<p>
-			On-chain anchor: Anchored ·
-			<a href="https://hashscan.io/testnet/transaction/${a.hedera_tx_id}" target="_blank">
-			View on Hedera
-			</a>
-			<button style="margin-left:10px" onclick="verifyMirror(${a.id})">Verify on Mirror</button>
-			<span id="mirror_${a.id}" style="margin-left:10px"></span>
-			</p>`;
-		} else if (logbookStatus === "demo_skipped") {
-			html += `<p>On-chain anchor: Demo skipped</p>`;
-		} else if (logbookStatus === "offchain_final") {
-			html += `<p>On-chain anchor: Pending/Unavailable</p>
-			<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
+			html += `<p>${step.label} ${statusBadge} · ${timestamp} · TX: ${txRef}</p>`;
+			if (showDebug && task.error) {
+				html += `<p style="color:#f9c27a;">Debug: ${task.error}</p>`;
+			}
+		});
+
+		html += `<p>trust_weight: ${(a.trust_weight ?? 0).toFixed(2)} · verifier_reputation: ${(a.verifier_reputation ?? 0).toFixed(2)} · reputation_delta: ${((a.reputation_delta ?? 0) >= 0 ? "+" : "") + (a.reputation_delta ?? 0).toFixed(2)}</p>`;
+		html += `<p>confidence_score: ${((a.confidence_score ?? 0) * 100).toFixed(1)}%</p>`;
+		html += `<p>HCS: ${txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id)} | HTS: ${txLink(a.hts_tx_id || a.reward_tx_id)} | Compliance: ${a.compliance_tx_id || "done"}</p>`;
+
+		if (logbookStatus === "offchain_final" || logbookStatus === "failed" || (!demoMode && (!logbookStatus || logbookStatus === "pending"))) {
+			html += `<p><button onclick="retry(${a.id})">Retry Hedera Log</button></p>`;
 			if (showDebug && a.logbook_last_error) {
 				html += `<p style="color:#f9c27a;">Debug: ${a.logbook_last_error}</p>`;
 			}
-		} else if (logbookStatus === "failed") {
-			html += `<p>On-chain anchor: Failed</p>
-			<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
-			if (showDebug && a.logbook_last_error) {
-				html += `<p style="color:#f9c27a;">Debug: ${a.logbook_last_error}</p>`;
-			}
-		} else if (demoMode && (!logbookStatus || logbookStatus === "pending")) {
-			html += `<p>On-chain anchor: Processing...</p>`;
-		} else {
-			html += `<p>On-chain anchor: Pending/Unavailable</p>
-			<button onclick="retry(${a.id})">Retry Hedera Log</button>`;
 		}
 
-		if (rewardStatus === "paid" && a.reward_tx_id) {
-			html += `<p>
-			Reward transfer: Complete ·
-			<a href="https://hashscan.io/testnet/transaction/${a.reward_tx_id}" target="_blank">
-			View Reward TX
-			</a>
-			</p>`;
-		} else if (rewardStatus === "finalized_no_transfer") {
-			html += `<p>Reward: Finalized (no transfer)</p>`;
-			if (showDebug && a.reward_last_error) {
-				html += `<p style="color:#f9c27a;">Debug: ${a.reward_last_error}</p>`;
-			}
-		} else if (rewardDone) {
-			html += `<p>Reward: Pending</p>`;
+		if (rewardStatus === "finalized_no_transfer" && showDebug && a.reward_last_error) {
+			html += `<p style="color:#f9c27a;">Debug: ${a.reward_last_error}</p>`;
+		}
+
+		const commerceEvents = Array.isArray(a.commerce_events) ? a.commerce_events : [];
+		html += `<h4>Agent Commerce Events</h4>`;
+		if (!commerceEvents.length) {
+			html += `<p>No commerce events yet.</p>`;
+		} else {
+			commerceEvents.forEach(ev => {
+				const amt = Number(ev.amount || 0).toFixed(2);
+				const tx = ev.tx_id ? txLink(ev.tx_id) : "—";
+				html += `<p>${ev.payer_agent} → ${ev.payee_agent} | ${ev.reason} | ${amt} ECO | ${tx} | ${ev.status}</p>`;
+			});
 		}
 
 		html += `<p>
@@ -509,6 +622,10 @@ function loadActivities() {
 			renderActivities(adminActivities);
 			runAutoVerify();
 			loadQueueSummary();
+			loadOpsAlerts();
+			loadDeadLetter();
+			loadAudit();
+			loadDemoProfile();
 		})
 		.catch(() => {
 			const container = document.getElementById("activities");
@@ -554,6 +671,33 @@ document.getElementById("createDemoDepositBtn").addEventListener("click", () => 
 		})
 		.catch(() => {
 			if (btn) btn.disabled = false;
+		});
+});
+
+document.getElementById("generateEvidencePackBtn").addEventListener("click", () => {
+	const btn = document.getElementById("generateEvidencePackBtn");
+	if (btn) {
+		btn.disabled = true;
+		btn.textContent = "Generating...";
+	}
+	fetch("/api/admin/generate-evidence-pack", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ profile: "judge_testnet_v1" })
+	})
+		.then(r => r.json())
+		.then(payload => {
+			if (payload?.download_url) {
+				window.open(payload.download_url, "_blank");
+			}
+			setTimeout(() => loadActivities(), 1000);
+		})
+		.catch(() => null)
+		.finally(() => {
+			if (btn) {
+				btn.disabled = false;
+				btn.textContent = "Generate Demo Evidence Pack";
+			}
 		});
 });
 

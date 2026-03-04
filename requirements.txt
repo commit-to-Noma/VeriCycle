@@ -7,3 +7,4 @@ qrcode
 Pillow
 gunicorn
 python-dotenv
+cryptography

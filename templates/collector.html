@@ -177,6 +177,12 @@
                                 </table>
             </div>
 
+            <div class="card" id="collector-proof-summary" style="grid-column: 1 / -1; margin-top: 0;">
+                <h3>Proof Snapshot</h3>
+                <p class="mockup-subtitle">Quick view of finalized proofs for judges and demos.</p>
+                <div id="collector-proof-summary-content" style="color:#aaa;">Loading proof summary...</div>
+            </div>
+
         </div>
 
     <!-- This is the new 2-column QR card -->
@@ -346,6 +352,31 @@
         function toHashScanTxLink(txId) {
             if (!txId) return '—';
             return `<a href="https://hashscan.io/testnet/transaction/${encodeURIComponent(txId)}" target="_blank" rel="noopener">View on Hedera</a>`;
+        }
+
+        function statusBadge(label, tone) {
+            return `<span class="status-badge status-${tone}">${escapeHtml(label)}</span>`;
+        }
+
+        function proofSnapshotCard(items) {
+            const rows = Array.isArray(items) ? items : [];
+            const total = rows.length;
+            const anchored = rows.filter(x => (x.logbook_status || '').toLowerCase() === 'anchored').length;
+            const paid = rows.filter(x => (x.reward_status || '').toLowerCase() === 'paid').length;
+            const fallback = rows.filter(x => (x.reward_status || '').toLowerCase() === 'finalized_no_transfer').length;
+            const latestAnchored = rows.find(x => (x.logbook_status || '').toLowerCase() === 'anchored' && (x.hcs_tx_id || x.logbook_tx_id || x.hedera_tx_id));
+            const latestPaid = rows.find(x => (x.reward_status || '').toLowerCase() === 'paid' && (x.hts_tx_id || x.reward_tx_id));
+
+            return `
+                <div class="proof-summary-grid">
+                    <div class="proof-summary-chip"><strong>${total}</strong><span>Total Rows</span></div>
+                    <div class="proof-summary-chip"><strong>${anchored}</strong><span>HCS Anchored</span></div>
+                    <div class="proof-summary-chip"><strong>${paid}</strong><span>HTS Paid</span></div>
+                    <div class="proof-summary-chip"><strong>${fallback}</strong><span>Fallback</span></div>
+                </div>
+                <p style="margin:10px 0 0 0;">Latest HCS: ${latestAnchored ? toHashScanTxLink(latestAnchored.hcs_tx_id || latestAnchored.logbook_tx_id || latestAnchored.hedera_tx_id) : '—'}</p>
+                <p style="margin:6px 0 0 0;">Latest HTS: ${latestPaid ? toHashScanTxLink(latestPaid.hts_tx_id || latestPaid.reward_tx_id) : '—'}</p>
+            `;
         }
 
         function formatDateTimeDisplay(value) {
@@ -730,6 +761,11 @@
                 return rightSafe - leftSafe;
             });
 
+            const proofSummaryEl = document.getElementById('collector-proof-summary-content');
+            if (proofSummaryEl) {
+                proofSummaryEl.innerHTML = proofSnapshotCard(sortedTimeline);
+            }
+
             sortedTimeline.forEach(act => {
                 const rawStatus = (act.status || act.verified_status || '').toString();
                 const displayStatus = normalizeStatusLabel(rawStatus || 'pending');
@@ -740,18 +776,18 @@
 
                 const statusCell = (() => {
                     if (hidden) {
-                        return `<span class="status-muted">${displayStatus} <span class="status-note">(hidden)</span></span>`;
+                        return `${statusBadge(displayStatus, 'muted')} <span class="status-note">(hidden)</span>`;
                     }
                     if (logbookStatus === 'anchored') {
-                        return '<span style="color:#4CAF50; font-weight:600;">Proof finalized · Hedera anchored</span>';
+                        return `${statusBadge('Proof finalized', 'ok')} ${statusBadge('Hedera anchored', 'ok-soft')}`;
                     }
                     if (logbookStatus === 'offchain_final') {
-                        return '<span style="color:#4CAF50; font-weight:600;">Proof finalized · Anchor pending/unavailable</span>';
+                        return `${statusBadge('Proof finalized', 'ok')} ${statusBadge('Anchor pending', 'warn')}`;
                     }
                     if (logbookStatus === 'demo_skipped') {
-                        return '<span style="color:#4CAF50; font-weight:600;">Proof finalized · Demo skipped</span>';
+                        return `${statusBadge('Proof finalized', 'ok')} ${statusBadge('Demo skipped', 'muted')}`;
                     }
-                    return displayStatus;
+                    return statusBadge(displayStatus || 'pending', 'pending');
                 })();
 
                 const row = document.createElement('tr');
@@ -760,52 +796,54 @@
                 row.style.borderBottom = '1px solid #2a2a2a';
 
                 const txCell = (() => {
+                    const hcsTx = act.hcs_tx_id || act.logbook_tx_id || act.hedera_tx_id;
+                    const htsTx = act.hts_tx_id || act.reward_tx_id;
                     const rewardLine = (() => {
-                        if ((act.reward_status || '').toLowerCase() === 'paid' && act.reward_tx_id) {
-                            return `<div style="margin-top:4px;">Reward: ${toHashScanTxLink(act.reward_tx_id)}</div>`;
+                        if ((act.reward_status || '').toLowerCase() === 'paid' && htsTx) {
+                            return `<div class="tx-line">HTS: ${toHashScanTxLink(htsTx)}</div>`;
                         }
                         if ((act.reward_status || '').toLowerCase() === 'finalized_no_transfer') {
-                            return '<div style="margin-top:4px;">Reward: Finalized (no transfer)</div>';
+                            return `<div class="tx-line">HTS: ${statusBadge('finalized_no_transfer', 'warn')}</div>`;
                         }
                         const stage = (act.pipeline_stage || '').toLowerCase();
-                        if (stage === 'rewarded' || stage === 'attested') return '<div style="margin-top:4px;">Reward: Pending</div>';
+                        if (stage === 'rewarded' || stage === 'attested') return `<div class="tx-line">HTS: ${statusBadge('pending', 'pending')}</div>`;
                         return '';
                     })();
 
-                    if (act.hedera_tx_id) return `Anchor: ${toHashScanTxLink(act.hedera_tx_id)}${rewardLine}`;
+                    if (hcsTx) return `<div class="tx-line">HCS: ${toHashScanTxLink(hcsTx)}</div>${rewardLine}`;
                     if (logbookStatus === 'demo_skipped') {
-                        return `Demo mode: Hedera skipped${rewardLine}`;
+                        return `<div class="tx-line">HCS: Demo skipped</div>${rewardLine}`;
                     }
                     if (logbookStatus === 'offchain_final') {
                         if (act.id) {
-                            return `On-chain anchor: Pending/Unavailable
+                            return `<div class="tx-line">HCS: Pending/Unavailable</div>
                                 <form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0 0 0 8px;">
                                     <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
                                 </form>${rewardLine}`;
                         }
-                        return `On-chain anchor: Pending/Unavailable${rewardLine}`;
+                        return `<div class="tx-line">HCS: Pending/Unavailable</div>${rewardLine}`;
                     }
                     if (demoMode && (!logbookStatus || logbookStatus === 'pending')) {
-                        return `Demo mode: processing...${rewardLine}`;
+                        return `<div class="tx-line">HCS: processing...</div>${rewardLine}`;
                     }
                     if (logbookStatus === 'failed' || (act.pipeline_stage || '').toLowerCase() === 'log_failed') {
                         if (act.id) {
-                            return `On-chain anchor: Failed
+                            return `<div class="tx-line">HCS: Failed</div>
                             <form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0 0 0 8px;">
                                 <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
                             </form>${rewardLine}`;
                         }
-                        return `On-chain anchor: Failed${rewardLine}`;
+                        return `<div class="tx-line">HCS: Failed</div>${rewardLine}`;
                     }
-                    return `On-chain anchor: Pending/Unavailable${rewardLine}`;
+                    return `<div class="tx-line">HCS: Pending/Unavailable</div>${rewardLine}`;
                 })();
 
                 const proofCell = (() => {
                     if (act.proof_bundle_url) {
-                        return `<a href="${act.proof_bundle_url}">Download Proof</a>`;
+                        return `<a href="${act.proof_bundle_url}" class="proof-link">Download Proof</a>`;
                     }
                     if (!act.id) return '—';
-                    return `<a href="/api/proof-bundle/${encodeURIComponent(act.id)}">Download Proof</a>`;
+                    return `<a href="/api/proof-bundle/${encodeURIComponent(act.id)}" class="proof-link">Download Proof</a>`;
                 })();
 
                 row.innerHTML = `

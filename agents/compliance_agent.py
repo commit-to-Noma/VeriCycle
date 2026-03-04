@@ -41,10 +41,11 @@ class ComplianceAgent:
                 return "skip"
 
             activity.pipeline_stage = "attested"
-            print(f"[COMPLIANCE AGENT] ✓ Attestation recorded", flush=True)
+            activity.compliance_tx_id = activity.compliance_tx_id or f"offchain_attest:{activity.id}"
+            print(f"[COMPLIANCE AGENT] Attestation recorded", flush=True)
 
             db.session.commit()
-            print(f"[COMPLIANCE AGENT] Activity marked as 'attested' ✓", flush=True)
+            print(f"[COMPLIANCE AGENT] Activity marked as 'attested'", flush=True)
             print(f"[COMPLIANCE AGENT] Pipeline complete for activity {activity_id}", flush=True)
             print(f"{'='*80}\n", flush=True)
 

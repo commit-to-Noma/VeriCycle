@@ -28,6 +28,7 @@ from datetime import datetime, timezone, date, timedelta
 from flask_login import login_user, login_required, logout_user, current_user
 import qrcode
 import io
+import zipfile
 import subprocess
 import os 
 import requests
@@ -35,6 +36,7 @@ import json
 import hashlib
 import re 
 import threading
+from collections import defaultdict
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import text
 from urllib.parse import urlencode
@@ -90,9 +92,11 @@ login_manager.login_message_category = None
 # 3. DATABASE MODEL
 # - Define `User` and `Activity` models used across routes.
 # -----------------------------------------------------------------
-from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask
+from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask, AgentCommerceEvent, DeadLetterTask, AdminAuditLog
 from extensions import db as _db  # ensure db is available for seed helper
 from agents.proof_utils import build_proof_hash
+from demo_profile import DEMO_PROFILES, apply_demo_profile, profile_health
+from security_utils import encrypt_text, decrypt_text
 
 
 def stable_proof_input(bundle: dict) -> dict:
@@ -114,6 +118,68 @@ def stable_proof_input(bundle: dict) -> dict:
 def compute_proof_sha256(stable_dict: dict) -> str:
     canonical = json.dumps(stable_dict, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def safe_encrypt_private_key(value: str | None) -> tuple[str | None, str | None]:
+    if not value:
+        return None, None
+    try:
+        return encrypt_text(value), "fernet-v1"
+    except Exception:
+        return None, None
+
+
+def get_user_private_key(user: User | None) -> str | None:
+    if not user:
+        return None
+    if getattr(user, "hedera_private_key_encrypted", None):
+        try:
+            return decrypt_text(user.hedera_private_key_encrypted)
+        except Exception:
+            return None
+    return getattr(user, "hedera_private_key", None)
+
+
+def confidence_score_for_activity(activity: Activity) -> float:
+    trust = float(activity.trust_weight or 0.0)
+    rep = float(activity.verifier_reputation or 0.0)
+    stage = (activity.pipeline_stage or "").lower()
+    logbook = (activity.logbook_status or "").lower()
+    reward = (activity.reward_status or "").lower()
+
+    stage_score = {
+        "created": 0.10,
+        "collected": 0.25,
+        "verified": 0.45,
+        "logged": 0.65,
+        "rewarded": 0.85,
+        "attested": 1.00,
+        "rejected": 0.0,
+    }.get(stage, 0.15)
+
+    logbook_bonus = 0.1 if logbook == "anchored" else (0.03 if logbook in {"offchain_final", "demo_skipped"} else 0.0)
+    reward_bonus = 0.1 if reward == "paid" else (0.05 if reward == "finalized_no_transfer" else 0.0)
+
+    score = (0.45 * trust) + (0.30 * rep) + (0.25 * stage_score) + logbook_bonus + reward_bonus
+    return max(0.0, min(1.0, round(score, 3)))
+
+
+def hashscan_link(tx_id: str | None) -> str | None:
+    if not tx_id:
+        return None
+    return f"https://hashscan.io/testnet/transaction/{tx_id}"
+
+
+def audit_admin_action(action: str, target_type: str | None = None, target_id: str | None = None, details: str | None = None):
+    if not is_admin_user():
+        return
+    db.session.add(AdminAuditLog(
+        admin_email=getattr(current_user, "email", "unknown@admin"),
+        action=(action or "")[:80],
+        target_type=(target_type or "")[:40] if target_type else None,
+        target_id=(str(target_id) if target_id is not None else None),
+        details=(details or "")[:512] if details else None,
+    ))
 
 
 def seed_layer0_if_empty():
@@ -176,6 +242,107 @@ def ensure_activity_columns():
     if "reward_last_error" not in existing:
         db.session.execute(text("ALTER TABLE activity ADD COLUMN reward_last_error TEXT"))
 
+    if "verifier_reputation" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN verifier_reputation FLOAT DEFAULT 0.85"))
+
+    if "reputation_delta" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN reputation_delta FLOAT DEFAULT 0"))
+
+    if "hcs_tx_id" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN hcs_tx_id VARCHAR(150)"))
+
+    if "hts_tx_id" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN hts_tx_id VARCHAR(150)"))
+
+    if "compliance_tx_id" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN compliance_tx_id VARCHAR(150)"))
+
+    if "confidence_score" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN confidence_score FLOAT DEFAULT 0"))
+
+    user_cols = db.session.execute(text("PRAGMA table_info(user)")).mappings().all()
+    user_existing = {c.get("name") for c in user_cols}
+
+    if "hedera_private_key_encrypted" not in user_existing:
+        db.session.execute(text("ALTER TABLE user ADD COLUMN hedera_private_key_encrypted TEXT"))
+
+    if "hedera_key_version" not in user_existing:
+        db.session.execute(text("ALTER TABLE user ADD COLUMN hedera_key_version VARCHAR(20)"))
+
+    task_cols = db.session.execute(text("PRAGMA table_info(agent_task)")).mappings().all()
+    task_existing = {c.get("name") for c in task_cols}
+
+    if "attempts" not in task_existing:
+        db.session.execute(text("ALTER TABLE agent_task ADD COLUMN attempts INTEGER DEFAULT 0"))
+
+    if "next_run_at" not in task_existing:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        db.session.execute(text(f"ALTER TABLE agent_task ADD COLUMN next_run_at DATETIME DEFAULT '{now_iso}'"))
+
+    if "last_error" not in task_existing:
+        db.session.execute(text("ALTER TABLE agent_task ADD COLUMN last_error VARCHAR(512)"))
+
+    if "created_at" not in task_existing:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        db.session.execute(text(f"ALTER TABLE agent_task ADD COLUMN created_at DATETIME DEFAULT '{now_iso}'"))
+
+    if "updated_at" not in task_existing:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        db.session.execute(text(f"ALTER TABLE agent_task ADD COLUMN updated_at DATETIME DEFAULT '{now_iso}'"))
+
+    commerce_tables = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_commerce_event'"))
+    if not commerce_tables.scalar():
+        db.session.execute(text("""
+            CREATE TABLE agent_commerce_event (
+                id INTEGER NOT NULL,
+                activity_id INTEGER NOT NULL,
+                payer_agent VARCHAR(64) NOT NULL,
+                payee_agent VARCHAR(64) NOT NULL,
+                reason VARCHAR(128) NOT NULL,
+                amount FLOAT NOT NULL,
+                token_id VARCHAR(100),
+                tx_id VARCHAR(150),
+                status VARCHAR(40) NOT NULL,
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                FOREIGN KEY(activity_id) REFERENCES activity (id)
+            )
+        """))
+
+    dlq_tables = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='dead_letter_task'"))
+    if not dlq_tables.scalar():
+        db.session.execute(text("""
+            CREATE TABLE dead_letter_task (
+                id INTEGER NOT NULL,
+                task_id INTEGER NOT NULL,
+                activity_id INTEGER NOT NULL,
+                agent_name VARCHAR(50) NOT NULL,
+                attempts INTEGER NOT NULL,
+                reason VARCHAR(512) NOT NULL,
+                status VARCHAR(20) NOT NULL,
+                created_at DATETIME NOT NULL,
+                resolved_at DATETIME,
+                PRIMARY KEY (id),
+                FOREIGN KEY(task_id) REFERENCES agent_task (id),
+                FOREIGN KEY(activity_id) REFERENCES activity (id)
+            )
+        """))
+
+    audit_tables = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='admin_audit_log'"))
+    if not audit_tables.scalar():
+        db.session.execute(text("""
+            CREATE TABLE admin_audit_log (
+                id INTEGER NOT NULL,
+                created_at DATETIME NOT NULL,
+                admin_email VARCHAR(120) NOT NULL,
+                action VARCHAR(80) NOT NULL,
+                target_type VARCHAR(40),
+                target_id VARCHAR(80),
+                details VARCHAR(512),
+                PRIMARY KEY (id)
+            )
+        """))
+
     db.session.commit()
 
 
@@ -203,6 +370,8 @@ def backfill_activity_proof_hashes():
                 act.logbook_status = "anchored" if act.hedera_tx_id else "pending"
             if not getattr(act, "logbook_tx_id", None) and act.hedera_tx_id:
                 act.logbook_tx_id = act.hedera_tx_id
+            if not getattr(act, "hcs_tx_id", None):
+                act.hcs_tx_id = act.logbook_tx_id or act.hedera_tx_id
             if (
                 getattr(act, "logbook_status", None) in {"anchored", "offchain_final", "demo_skipped"}
                 and not getattr(act, "logbook_finalized_at", None)
@@ -210,10 +379,37 @@ def backfill_activity_proof_hashes():
                 act.logbook_finalized_at = datetime.now(timezone.utc)
             if getattr(act, "pipeline_stage", None) in {"rewarded", "attested"} and not getattr(act, "reward_status", None):
                 act.reward_status = "paid" if getattr(act, "reward_tx_id", None) else "finalized_no_transfer"
+            if not getattr(act, "hts_tx_id", None):
+                act.hts_tx_id = act.reward_tx_id
+            if getattr(act, "verifier_reputation", None) is None:
+                act.verifier_reputation = 0.85
+            if getattr(act, "reputation_delta", None) is None:
+                act.reputation_delta = 0.0
 
         db.session.commit()
     except Exception as e:
         print(f"[BACKEND] Proof-hash backfill skipped: {e}", flush=True)
+
+
+def migrate_private_keys_to_encrypted():
+    try:
+        users = User.query.all()
+        changed = 0
+        for user in users:
+            plain = getattr(user, "hedera_private_key", None)
+            encrypted = getattr(user, "hedera_private_key_encrypted", None)
+            if plain and not encrypted:
+                encrypted_value, version = safe_encrypt_private_key(plain)
+                if encrypted_value:
+                    user.hedera_private_key_encrypted = encrypted_value
+                    user.hedera_key_version = version
+                    user.hedera_private_key = None
+                    changed += 1
+        if changed:
+            db.session.commit()
+            print(f"[SECURITY] Encrypted {changed} user Hedera private keys", flush=True)
+    except Exception as e:
+        print(f"[SECURITY] Private key migration skipped: {e}", flush=True)
 
 # Ensure tables exist (create after models are imported so metadata is registered)
 with app.app_context():
@@ -221,6 +417,7 @@ with app.app_context():
     try:
         ensure_activity_columns()
         backfill_activity_proof_hashes()
+        migrate_private_keys_to_encrypted()
     except Exception as e:
         print(f"[BACKEND] Activity schema ensure skipped: {e}", flush=True)
     # Seed Layer 0 household/location/schedule data if empty
@@ -350,9 +547,14 @@ def signup():
             print(f"--- SUCCESS: Created Hedera Account {new_id} ---")
 
             hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            encrypted_key, key_version = safe_encrypt_private_key(new_key)
             new_user = User(
                 email=email, password_hash=hashed_password, 
-                hedera_account_id=new_id, hedera_private_key=new_key, role=role
+                hedera_account_id=new_id,
+                hedera_private_key=(new_key if not encrypted_key else None),
+                hedera_private_key_encrypted=encrypted_key,
+                hedera_key_version=key_version,
+                role=role
             )
             db.session.add(new_user)
             db.session.commit()
@@ -389,9 +591,14 @@ def signup():
             print(f"--- SUCCESS: Created Hedera Account {new_id} for Center ---")
 
             hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            encrypted_key, key_version = safe_encrypt_private_key(new_key)
             new_user = User(
                 email=email, password_hash=hashed_password, 
-                hedera_account_id=new_id, hedera_private_key=new_key, role=role,
+                hedera_account_id=new_id,
+                hedera_private_key=(new_key if not encrypted_key else None),
+                hedera_private_key_encrypted=encrypted_key,
+                hedera_key_version=key_version,
+                role=role,
                 full_name=f"{email.split('@')[0]} Center",
                 phone_number="011 123 4567",
                 id_number="VERIFIED-CENTER-001",
@@ -486,6 +693,54 @@ def public_data():
         error=error,
         active_page='public_data',
     )
+
+
+@app.get('/proof-integrity')
+def proof_integrity():
+    return render_template('proof_integrity.html', active_page='proof_integrity')
+
+
+@app.post('/api/public/proof-verify')
+def api_public_proof_verify():
+    payload = request.get_json(silent=True) or {}
+    raw = payload.get("payload")
+
+    if isinstance(raw, str):
+        try:
+            proof = json.loads(raw)
+        except Exception as exc:
+            return jsonify({"ok": False, "error": f"Invalid JSON: {exc}"}), 400
+    elif isinstance(raw, dict):
+        proof = raw
+    else:
+        proof = payload if isinstance(payload, dict) else {}
+
+    if not isinstance(proof, dict) or not proof:
+        return jsonify({"ok": False, "error": "Missing proof payload"}), 400
+
+    stable = stable_proof_input(proof)
+    computed = compute_proof_sha256(stable)
+    provided = (proof.get("proof_hash") or proof.get("proof_sha256") or "").strip().lower()
+    passed = bool(provided) and provided == computed.lower()
+
+    tx_ids = {
+        "hcs_tx_id": proof.get("hcs_tx_id") or proof.get("hedera_tx_id"),
+        "hts_tx_id": proof.get("hts_tx_id") or proof.get("reward_tx_id"),
+        "compliance_tx_id": proof.get("compliance_tx_id"),
+    }
+
+    return jsonify({
+        "ok": True,
+        "pass": passed,
+        "provided_hash": provided or None,
+        "computed_hash": computed,
+        "stable_fields": list(stable.keys()),
+        "tx_ids": tx_ids,
+        "hashscan_links": {
+            "hcs": hashscan_link(tx_ids["hcs_tx_id"]),
+            "hts": hashscan_link(tx_ids["hts_tx_id"]),
+        }
+    })
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -916,6 +1171,9 @@ def get_dashboard_data():
                 'amount': a.amount,
                 'status': a.status,
                 'hedera_tx_id': a.hedera_tx_id,
+                'hcs_tx_id': a.hcs_tx_id,
+                'hts_tx_id': a.hts_tx_id,
+                'compliance_tx_id': a.compliance_tx_id,
                 'logbook_tx_id': a.logbook_tx_id,
                 'proof_hash': proof_hash,
                 'proof_bundle_url': f'/api/proof-bundle/{a.id}',
@@ -925,6 +1183,10 @@ def get_dashboard_data():
                 'reward_status': a.reward_status,
                 'reward_tx_id': a.reward_tx_id,
                 'reward_last_error': a.reward_last_error,
+                'trust_weight': a.trust_weight,
+                'verifier_reputation': a.verifier_reputation,
+                'reputation_delta': a.reputation_delta,
+                'confidence_score': confidence_score_for_activity(a),
                 'pipeline_stage': a.pipeline_stage,
                 'last_error': a.last_error,
             })
@@ -1384,6 +1646,187 @@ def api_config():
     return jsonify({"demo_mode": DEMO_MODE})
 
 
+def _create_demo_activity_for_user(user: User, slot_idx: int) -> int:
+    amount_by_slot = [147.5, 132.0, 118.0]
+    amount = amount_by_slot[slot_idx % len(amount_by_slot)]
+    activity = Activity(
+        user_id=user.id,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        desc=f"Judge Demo Drop-off #{slot_idx + 1} (10.0kg of Cans)",
+        amount=amount,
+        status="pending",
+        verified_status="pending",
+        logbook_status="pending",
+        pipeline_stage="created",
+    )
+    db.session.add(activity)
+    db.session.commit()
+
+    stable_bundle = {
+        "vericycle_version": "hackathon-2026",
+        "activity_id": activity.id,
+        "timestamp": activity.timestamp,
+        "user": user.email,
+        "description": activity.desc,
+        "amount": float(activity.amount),
+        "stage": "recorded",
+    }
+    activity.proof_hash = compute_proof_sha256(stable_proof_input(stable_bundle))
+    db.session.commit()
+    from agents.task_enqueue import enqueue_pipeline
+    enqueue_pipeline(activity.id)
+    return activity.id
+
+
+def _wait_for_attested(activity_ids: list[int], timeout_seconds: int = 240) -> tuple[bool, dict]:
+    deadline = datetime.now(timezone.utc) + timedelta(seconds=timeout_seconds)
+    final_rows = {}
+    while datetime.now(timezone.utc) < deadline:
+        rows = Activity.query.filter(Activity.id.in_(activity_ids)).all()
+        for row in rows:
+            final_rows[row.id] = row
+        if len(final_rows) == len(activity_ids) and all((r.pipeline_stage or "").lower() == "attested" for r in final_rows.values()):
+            return True, final_rows
+        db.session.expire_all()
+        import time
+        time.sleep(2)
+    return False, final_rows
+
+
+def _export_evidence_pack(activity_rows: list[Activity], profile_name: str) -> str:
+    artifacts_dir = os.path.join(basedir, "artifacts")
+    os.makedirs(artifacts_dir, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    pack_dir = os.path.join(artifacts_dir, f"evidence_pack_{stamp}")
+    os.makedirs(pack_dir, exist_ok=True)
+
+    index_rows = []
+    screenshot_lines = [
+        "VeriCycle judge evidence checklist",
+        "================================",
+        f"Profile: {profile_name}",
+        "",
+    ]
+
+    for activity in activity_rows:
+        payload_data = _build_proof_payload(activity=activity)
+        proof_sha256 = _compute_proof_sha256(payload_data)
+        payload_data["proof_hash"] = proof_sha256
+        payload_data["proof_sha256"] = proof_sha256
+        payload_data["hcs_tx_id"] = activity.hcs_tx_id or activity.logbook_tx_id or activity.hedera_tx_id
+        payload_data["hts_tx_id"] = activity.hts_tx_id or activity.reward_tx_id
+        payload_data["compliance_tx_id"] = activity.compliance_tx_id
+        payload_data["hashscan_links"] = {
+            "hcs": hashscan_link(payload_data.get("hcs_tx_id")),
+            "hts": hashscan_link(payload_data.get("hts_tx_id")),
+        }
+
+        file_name = f"proof-bundle-{activity.id}.json"
+        with open(os.path.join(pack_dir, file_name), "w", encoding="utf-8") as f:
+            json.dump(payload_data, f, ensure_ascii=False, indent=2)
+
+        screenshot_lines.append(f"Activity {activity.id}: admin detail + proof verify")
+        screenshot_lines.append(f"HCS: {payload_data['hashscan_links']['hcs'] or '[missing]'}")
+        screenshot_lines.append(f"HTS: {payload_data['hashscan_links']['hts'] or '[missing]'}")
+        screenshot_lines.append("")
+
+        index_rows.append({
+            "activity_id": activity.id,
+            "stage": activity.pipeline_stage,
+            "logbook_status": activity.logbook_status,
+            "reward_status": activity.reward_status,
+            "hcs_tx_id": payload_data.get("hcs_tx_id"),
+            "hts_tx_id": payload_data.get("hts_tx_id"),
+            "proof_file": file_name,
+            "confidence_score": confidence_score_for_activity(activity),
+        })
+
+    with open(os.path.join(pack_dir, "screenshots_required.txt"), "w", encoding="utf-8") as f:
+        f.write("\n".join(screenshot_lines))
+
+    with open(os.path.join(pack_dir, "summary.json"), "w", encoding="utf-8") as f:
+        json.dump({
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "profile": profile_name,
+            "activities": index_rows,
+        }, f, ensure_ascii=False, indent=2)
+
+    zip_name = f"evidence_pack_{stamp}.zip"
+    zip_path = os.path.join(artifacts_dir, zip_name)
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for file_name in os.listdir(pack_dir):
+            full = os.path.join(pack_dir, file_name)
+            zf.write(full, arcname=file_name)
+    return zip_name
+
+
+@app.get('/api/admin/demo-profile')
+@login_required
+def api_admin_demo_profile():
+    if not is_admin_user():
+        abort(403)
+    name = request.args.get("name", "judge_testnet_v1")
+    payload = profile_health(name)
+    payload["available_profiles"] = list(DEMO_PROFILES.keys())
+    return jsonify(payload)
+
+
+@app.post('/api/admin/apply-demo-profile')
+@login_required
+def api_admin_apply_demo_profile():
+    if not is_admin_user():
+        abort(403)
+    body = request.get_json(silent=True) or {}
+    name = body.get("name", "judge_testnet_v1")
+    applied = apply_demo_profile(name)
+    audit_admin_action("apply_demo_profile", "profile", name, "applied_to_process_env")
+    db.session.commit()
+    return jsonify({"ok": True, "name": name, "applied": applied, "health": profile_health(name)})
+
+
+@app.post('/api/admin/generate-evidence-pack')
+@login_required
+def api_admin_generate_evidence_pack():
+    if not is_admin_user():
+        abort(403)
+
+    body = request.get_json(silent=True) or {}
+    profile_name = body.get("profile", "judge_testnet_v1")
+    apply_demo_profile(profile_name)
+
+    collector = User.query.filter_by(email="test@gmail.com").first()
+    if not collector:
+        return jsonify({"ok": False, "error": "test@gmail.com not found"}), 400
+
+    activity_ids = [_create_demo_activity_for_user(collector, i) for i in range(3)]
+    ok, final_rows = _wait_for_attested(activity_ids)
+    rows = [final_rows.get(i) for i in activity_ids if final_rows.get(i)]
+
+    zip_name = _export_evidence_pack(rows, profile_name)
+    audit_admin_action("generate_evidence_pack", "batch", ",".join(str(i) for i in activity_ids), f"profile={profile_name}; attested={ok}")
+    db.session.commit()
+
+    return jsonify({
+        "ok": ok,
+        "profile": profile_name,
+        "activity_ids": activity_ids,
+        "download_url": f"/api/admin/evidence-pack/{zip_name}",
+        "message": "All activities attested" if ok else "Timed out waiting for attested on all activities",
+    })
+
+
+@app.get('/api/admin/evidence-pack/<path:file_name>')
+@login_required
+def api_admin_download_evidence_pack(file_name):
+    if not is_admin_user():
+        abort(403)
+    safe_name = os.path.basename(file_name)
+    full_path = os.path.join(basedir, "artifacts", safe_name)
+    if not os.path.exists(full_path):
+        abort(404)
+    return send_file(full_path, as_attachment=True, download_name=safe_name)
+
+
 @app.route('/api/admin/activities')
 @login_required
 def api_admin_activities():
@@ -1391,15 +1834,33 @@ def api_admin_activities():
         abort(403)
     activities = Activity.query.order_by(Activity.timestamp.asc()).all()
 
+    activity_ids = [a.id for a in activities]
+    tasks_by_activity = defaultdict(list)
+    events_by_activity = defaultdict(list)
+
+    if activity_ids:
+        all_tasks = (
+            AgentTask.query
+            .filter(AgentTask.activity_id.in_(activity_ids))
+            .order_by(AgentTask.activity_id.asc(), AgentTask.id.asc())
+            .all()
+        )
+        for task in all_tasks:
+            tasks_by_activity[task.activity_id].append(task)
+
+        all_events = (
+            AgentCommerceEvent.query
+            .filter(AgentCommerceEvent.activity_id.in_(activity_ids))
+            .order_by(AgentCommerceEvent.activity_id.asc(), AgentCommerceEvent.id.asc())
+            .all()
+        )
+        for event in all_events:
+            events_by_activity[event.activity_id].append(event)
+
     result = []
 
     for activity in activities:
-        tasks = (
-            AgentTask.query
-            .filter_by(activity_id=activity.id)
-            .order_by(AgentTask.id.asc())
-            .all()
-        )
+        tasks = tasks_by_activity.get(activity.id, [])
 
         latest_by_agent = {}
         for t in tasks:
@@ -1423,14 +1884,36 @@ def api_admin_activities():
             'desc': activity.desc,
             'amount': activity.amount,
             'stage': activity.pipeline_stage,
+            'trust_weight': activity.trust_weight,
+            'verifier_reputation': activity.verifier_reputation,
+            'reputation_delta': activity.reputation_delta,
+            'confidence_score': confidence_score_for_activity(activity),
             'logbook_status': activity.logbook_status,
             'hedera_tx_id': activity.hedera_tx_id,
+            'hcs_tx_id': activity.hcs_tx_id,
             'reward_status': activity.reward_status,
             'reward_tx_id': activity.reward_tx_id,
+            'hts_tx_id': activity.hts_tx_id,
+            'compliance_tx_id': activity.compliance_tx_id,
             'reward_last_error': activity.reward_last_error,
             'logbook_tx_id': activity.logbook_tx_id,
             'logbook_last_error': activity.logbook_last_error,
             'logbook_finalized_at': activity.logbook_finalized_at.isoformat() if activity.logbook_finalized_at else None,
+            'commerce_events': [
+                {
+                    'id': event.id,
+                    'activity_id': event.activity_id,
+                    'payer_agent': event.payer_agent,
+                    'payee_agent': event.payee_agent,
+                    'reason': event.reason,
+                    'amount': event.amount,
+                    'token_id': event.token_id,
+                    'tx_id': event.tx_id,
+                    'status': event.status,
+                    'created_at': event.created_at.isoformat() if event.created_at else None,
+                }
+                for event in events_by_activity.get(activity.id, [])
+            ],
             'proof': f'/api/proof-bundle/{activity.id}',
             'tasks': task_data,
         })
@@ -1447,12 +1930,154 @@ def api_admin_queue():
     running = AgentTask.query.filter_by(status="running").count()
     failed = AgentTask.query.filter_by(status="failed").count()
     done = AgentTask.query.filter_by(status="done").count()
+    dead_letter = AgentTask.query.filter_by(status="dead_letter").count()
+
+    stall_cutoff = datetime.now(timezone.utc) - timedelta(minutes=3)
+    stalled_running = AgentTask.query.filter(
+        AgentTask.status == "running",
+        AgentTask.updated_at < stall_cutoff
+    ).count()
 
     return jsonify({
         "queued": pending,
         "running": running,
         "failed": failed,
         "done": done,
+        "dead_letter": dead_letter,
+        "stalled_running": stalled_running,
+    })
+
+
+@app.route('/api/admin/alerts')
+@login_required
+def api_admin_alerts():
+    if not is_admin_user():
+        abort(403)
+
+    alerts = []
+    now = datetime.now(timezone.utc)
+
+    stalled_cutoff = now - timedelta(minutes=3)
+    stalled_count = AgentTask.query.filter(
+        AgentTask.status == "running",
+        AgentTask.updated_at < stalled_cutoff
+    ).count()
+    if stalled_count > 0:
+        alerts.append({"level": "warn", "code": "QUEUE_STALL", "message": f"{stalled_count} running tasks appear stalled (>3 min)."})
+
+    lag_cutoff = now - timedelta(minutes=5)
+    lagging_hcs = Activity.query.filter(
+        Activity.logbook_status == "pending",
+        Activity.pipeline_stage.in_(["verified", "logged", "rewarded"])
+    ).all()
+    filtered_lagging = []
+    for activity in lagging_hcs:
+        ts_raw = activity.timestamp or ""
+        try:
+            ts_dt = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+            if ts_dt < lag_cutoff:
+                filtered_lagging.append(activity)
+        except Exception:
+            continue
+    lagging_hcs = filtered_lagging
+    if lagging_hcs:
+        alerts.append({"level": "warn", "code": "HCS_LATENCY", "message": f"{len(lagging_hcs)} activities pending HCS for >5 min."})
+
+    token_id = os.getenv("ECOCOIN_TOKEN_ID")
+    treasury_id = os.getenv("ECOCOIN_TREASURY_ID") or os.getenv("OPERATOR_ID")
+    if token_id and treasury_id:
+        try:
+            bal_url = f"https://testnet.mirrornode.hedera.com/api/v1/tokens/{token_id}/balances"
+            resp = requests.get(bal_url, params={"account.id": treasury_id, "limit": 1}, timeout=10)
+            resp.raise_for_status()
+            rows = (resp.json() or {}).get("balances") or []
+            bal = int(rows[0].get("balance", 0)) if rows else 0
+            if bal < 25:
+                alerts.append({"level": "warn", "code": "LOW_SENDER_BALANCE", "message": f"Treasury ECO balance is low ({bal} units)."})
+        except Exception as exc:
+            alerts.append({"level": "info", "code": "BALANCE_CHECK_SKIPPED", "message": f"Balance check unavailable: {type(exc).__name__}"})
+
+    if not alerts:
+        alerts.append({"level": "ok", "code": "HEALTHY", "message": "No active ops alerts."})
+
+    return jsonify({"alerts": alerts})
+
+
+@app.route('/api/admin/dead-letter')
+@login_required
+def api_admin_dead_letter():
+    if not is_admin_user():
+        abort(403)
+
+    rows = (
+        DeadLetterTask.query
+        .order_by(DeadLetterTask.id.desc())
+        .limit(100)
+        .all()
+    )
+    return jsonify({
+        "rows": [
+            {
+                "id": row.id,
+                "task_id": row.task_id,
+                "activity_id": row.activity_id,
+                "agent_name": row.agent_name,
+                "attempts": row.attempts,
+                "reason": row.reason,
+                "status": row.status,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+                "resolved_at": row.resolved_at.isoformat() if row.resolved_at else None,
+            }
+            for row in rows
+        ]
+    })
+
+
+@app.post('/admin/requeue-dead-letter/<int:dead_letter_id>')
+@login_required
+def admin_requeue_dead_letter(dead_letter_id):
+    if not is_admin_user():
+        abort(403)
+
+    row = db.session.get(DeadLetterTask, dead_letter_id)
+    if not row:
+        abort(404)
+
+    task = db.session.get(AgentTask, row.task_id)
+    if not task:
+        abort(404)
+
+    task.status = "queued"
+    task.attempts = 0
+    task.last_error = None
+    task.next_run_at = datetime.now(timezone.utc)
+    row.status = "requeued"
+    row.resolved_at = datetime.now(timezone.utc)
+    audit_admin_action("requeue_dead_letter", "dead_letter_task", str(dead_letter_id), f"task_id={task.id}")
+    db.session.commit()
+    return jsonify({"ok": True, "task_id": task.id, "activity_id": task.activity_id})
+
+
+@app.get('/api/admin/audit-log')
+@login_required
+def api_admin_audit_log():
+    if not is_admin_user():
+        abort(403)
+
+    rows = AdminAuditLog.query.order_by(AdminAuditLog.id.desc()).limit(100).all()
+    return jsonify({
+        "rows": [
+            {
+                "id": row.id,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+                "admin_email": row.admin_email,
+                "action": row.action,
+                "target_type": row.target_type,
+                "target_id": row.target_id,
+                "details": row.details,
+            }
+            for row in rows
+        ]
     })
 
 
@@ -1489,6 +2114,42 @@ def api_admin_activity_events(activity_id):
     return jsonify({
         "activity_id": activity_id,
         "events": events,
+    })
+
+
+@app.route('/api/admin/commerce-events/<int:activity_id>')
+@login_required
+def api_admin_commerce_events(activity_id):
+    if not is_admin_user():
+        abort(403)
+
+    activity = db.session.get(Activity, activity_id)
+    if not activity:
+        abort(404)
+
+    rows = (
+        AgentCommerceEvent.query
+        .filter_by(activity_id=activity_id)
+        .order_by(AgentCommerceEvent.id.asc())
+        .all()
+    )
+
+    return jsonify({
+        "activity_id": activity_id,
+        "events": [
+            {
+                "id": row.id,
+                "payer_agent": row.payer_agent,
+                "payee_agent": row.payee_agent,
+                "reason": row.reason,
+                "amount": row.amount,
+                "token_id": row.token_id,
+                "tx_id": row.tx_id,
+                "status": row.status,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ],
     })
 
 
@@ -1538,6 +2199,7 @@ def admin_clear_logs():
     keep = 200
     keep_subquery = db.session.query(AgentLog.id).order_by(AgentLog.id.desc()).limit(keep).subquery()
     AgentLog.query.filter(~AgentLog.id.in_(keep_subquery)).delete(synchronize_session=False)
+    audit_admin_action("clear_logs", "agent_log", None, f"keep={keep}")
     db.session.commit()
     return redirect('/admin/monitor')
 
@@ -1559,6 +2221,7 @@ def admin_cleanup_stale_running():
         task.last_error = "stale running cleanup"
         log_agent_event(task.activity_id, "Admin", "error", "cleanup", None, "Marked stale running task as failed")
 
+    audit_admin_action("cleanup_stale_running", "agent_task", None, f"count={len(stale_tasks)}")
     db.session.commit()
     return redirect('/admin/monitor')
 
@@ -1572,6 +2235,7 @@ def admin_rerun(activity_id):
 
     if activity.pipeline_stage == "attested":
         log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "RERUN ignored (already attested)")
+        audit_admin_action("rerun_ignored", "activity", str(activity_id), "already_attested")
         db.session.commit()
         return redirect('/admin/monitor')
 
@@ -1580,6 +2244,7 @@ def admin_rerun(activity_id):
     for name in ["CollectorAgent", "VerifierAgent", "LogbookAgent", "RewardAgent", "ComplianceAgent"]:
         enqueue_once(activity_id, name)
 
+    audit_admin_action("rerun", "activity", str(activity_id), "enqueued_full_pipeline")
     db.session.commit()
     return redirect('/admin/monitor')
 
@@ -1596,6 +2261,7 @@ def admin_retry_logbook(activity_id):
 
     if activity.hedera_tx_id:
         log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "LOGBOOK RETRY ignored (already logged)")
+        audit_admin_action("retry_logbook_ignored", "activity", str(activity_id), "already_logged")
         db.session.commit()
         if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'ok': True, 'status': 'already_logged'}), 200
@@ -1603,6 +2269,7 @@ def admin_retry_logbook(activity_id):
 
     if activity.pipeline_stage not in ("log_failed", "verified", "logged", "rewarded", "attested"):
         log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "LOGBOOK RETRY ignored (invalid stage)")
+        audit_admin_action("retry_logbook_ignored", "activity", str(activity_id), f"invalid_stage={activity.pipeline_stage}")
         db.session.commit()
         if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'ok': False, 'status': 'invalid_stage'}), 409
@@ -1610,6 +2277,7 @@ def admin_retry_logbook(activity_id):
 
     if logbook_retry_blocked(activity_id):
         log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "Retry blocked (already attempted/active)")
+        audit_admin_action("retry_logbook_blocked", "activity", str(activity_id), "already_active_or_recent")
         db.session.commit()
         if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'ok': False, 'status': 'blocked'}), 409
@@ -1628,6 +2296,7 @@ def admin_retry_logbook(activity_id):
         status="queued"
     ))
     log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "Enqueued Logbook retry")
+    audit_admin_action("retry_logbook", "activity", str(activity_id), "queued_logbook")
     db.session.commit()
 
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':

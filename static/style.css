@@ -3311,6 +3311,84 @@ img.logo {
 }
 .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
 
+/* Collector timeline clarity polish (non-breaking UI only) */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1.6;
+    font-weight: 600;
+    margin-right: 6px;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+}
+
+.status-ok {
+    background: rgba(76, 175, 80, 0.18);
+    color: #9be3a0;
+    border-color: rgba(76, 175, 80, 0.35);
+}
+
+.status-ok-soft {
+    background: rgba(13, 71, 161, 0.18);
+    color: #99c0ff;
+    border-color: rgba(13, 71, 161, 0.35);
+}
+
+.status-warn {
+    background: rgba(229, 115, 115, 0.18);
+    color: #ffc4c4;
+    border-color: rgba(229, 115, 115, 0.35);
+}
+
+.status-pending {
+    background: rgba(170, 170, 170, 0.2);
+    color: #d6d6d6;
+    border-color: rgba(170, 170, 170, 0.35);
+}
+
+.status-muted {
+    background: rgba(120, 120, 120, 0.2);
+    color: #cfcfcf;
+    border-color: rgba(120, 120, 120, 0.3);
+}
+
+.tx-line {
+    margin-top: 4px;
+}
+
+.proof-link {
+    font-weight: 600;
+}
+
+.proof-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.proof-summary-chip {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.proof-summary-chip strong {
+    font-size: 20px;
+    color: #f4f4f4;
+}
+
+.proof-summary-chip span {
+    color: #9f9f9f;
+    font-size: 12px;
+}
+
 .step-box {
     padding: 1.5rem;
     border: 1px solid #30363d;

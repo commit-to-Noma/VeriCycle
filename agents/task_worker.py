@@ -1,9 +1,9 @@
 import time
-from datetime import datetime, timezone
-from sqlalchemy import case
+from datetime import datetime, timezone, timedelta
+from sqlalchemy import case, or_
 
 from extensions import db
-from models import AgentTask, AgentLog, Activity
+from models import AgentTask, AgentLog, Activity, DeadLetterTask
 from agents.collector_agent import CollectorAgent
 from agents.verifier_agent import VerifierAgent
 from agents.logbook_agent import LogbookAgent
@@ -18,7 +18,9 @@ AGENT_MAP = {
     "ComplianceAgent": ComplianceAgent(),
 }
 
-# Backoff schedule per attempt index (1-based)
+BACKOFF_SECONDS = [5, 20, 60]
+
+
 def _log(activity_id: int, agent_name: str, message: str, level: str = "info"):
     ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     activity = db.session.get(Activity, activity_id)
@@ -32,6 +34,29 @@ def _log(activity_id: int, agent_name: str, message: str, level: str = "info"):
         hedera_tx_id=getattr(activity, "hedera_tx_id", None) if activity else None,
         last_error=getattr(activity, "last_error", None) if activity else None,
     ))
+
+
+def _schedule_retry(task: AgentTask, reason: str):
+    attempts = int(task.attempts or 0)
+    if attempts >= 3:
+        task.status = "dead_letter"
+        task.last_error = (reason or "Task failed after max retries")[:512]
+        db.session.add(DeadLetterTask(
+            task_id=task.id,
+            activity_id=task.activity_id,
+            agent_name=task.agent_name,
+            attempts=attempts,
+            reason=task.last_error,
+            status="open",
+        ))
+        _log(task.activity_id, task.agent_name, f"DEAD_LETTER attempts={attempts} reason={task.last_error}", level="error")
+        return
+
+    wait_seconds = BACKOFF_SECONDS[min(max(attempts - 1, 0), len(BACKOFF_SECONDS) - 1)]
+    task.status = "queued"
+    task.last_error = (reason or "retry scheduled")[:512]
+    task.next_run_at = datetime.now(timezone.utc) + timedelta(seconds=wait_seconds)
+    _log(task.activity_id, task.agent_name, f"RETRY attempts={attempts} backoff={wait_seconds}s reason={task.last_error}", level="warn")
 
 def run_worker_loop(poll_interval=1.0):
     print("[WORKER] AgentTask worker loop started", flush=True)
@@ -52,7 +77,10 @@ def run_worker_loop(poll_interval=1.0):
                     else_=99,
                 )
                 task = (AgentTask.query
-                    .filter(AgentTask.status == "queued")
+                    .filter(
+                        AgentTask.status == "queued",
+                        or_(AgentTask.next_run_at.is_(None), AgentTask.next_run_at <= datetime.now(timezone.utc))
+                    )
                     .order_by(priority_order.asc(), AgentTask.id.asc())
                     .first())
 
@@ -62,6 +90,7 @@ def run_worker_loop(poll_interval=1.0):
                 else:
                     # lock task so it cannot be picked again
                     task.status = "running"
+                    task.attempts = int(task.attempts or 0) + 1
                     db.session.commit()
 
                     # Refresh activity and skip if activity is in a terminal state
@@ -87,9 +116,12 @@ def run_worker_loop(poll_interval=1.0):
                         run_result = None
                         try:
                             run_result = agent.process(task.activity_id)
+                            if run_result is False:
+                                _schedule_retry(task, "Agent returned False")
+                                db.session.commit()
+                                continue
                         except Exception as e:
-                            task.last_error = f"{type(e).__name__}: {str(e)}"[:512]
-                            task.status = "failed"
+                            _schedule_retry(task, f"{type(e).__name__}: {str(e)}")
                             _log(task.activity_id, task.agent_name, f"ERROR {type(e).__name__}: {str(e)}", level="error")
                             db.session.commit()
                             print(f"[WORKER TASK ERROR] task_id={task.id} {type(e).__name__}: {e}", flush=True)

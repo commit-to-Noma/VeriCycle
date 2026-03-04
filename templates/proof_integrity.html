@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proof Integrity Checker - VeriCycle</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-theme">
+    {% include '_navbar.html' %}
+    <main class="container" style="max-width: 920px; margin-top: 24px;">
+        <div class="card">
+            <h2>Proof Integrity Checker</h2>
+            <p class="mockup-subtitle">Paste a proof JSON payload and verify its hash integrity instantly.</p>
+            <textarea id="proofInput" rows="16" style="width:100%; background:#121212; color:#f4f4f4; border:1px solid #333; border-radius:8px; padding:10px;" placeholder='{"proof_hash":"...", "activity_id": ...}'></textarea>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button id="verifyBtn" class="btn-primary">Verify Proof</button>
+                <button id="clearBtn" class="btn-secondary">Clear</button>
+            </div>
+        </div>
+
+        <div class="card" id="proofResult">
+            <h3>Result</h3>
+            <p>Awaiting verification...</p>
+        </div>
+    </main>
+
+    <script>
+    document.getElementById("verifyBtn").addEventListener("click", async () => {
+        const input = document.getElementById("proofInput").value || "";
+        const result = document.getElementById("proofResult");
+        result.innerHTML = "<h3>Result</h3><p>Verifying...</p>";
+
+        try {
+            const response = await fetch("/api/public/proof-verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ payload: input })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.ok) {
+                throw new Error(data.error || "Verification failed");
+            }
+
+            const hcs = data?.hashscan_links?.hcs ? `<a href="${data.hashscan_links.hcs}" target="_blank">HCS transaction</a>` : "—";
+            const hts = data?.hashscan_links?.hts ? `<a href="${data.hashscan_links.hts}" target="_blank">HTS transaction</a>` : "—";
+            const status = data.pass ? "PASS" : "FAIL";
+            const tone = data.pass ? "#9ad7a6" : "#ff9aa2";
+
+            result.innerHTML = `
+                <h3>Result</h3>
+                <p style="color:${tone}; font-weight:700;">${status}</p>
+                <p>Provided hash: ${data.provided_hash || "(missing)"}</p>
+                <p>Computed hash: ${data.computed_hash}</p>
+                <p>Matched tx IDs: HCS=${data?.tx_ids?.hcs_tx_id || "—"}, HTS=${data?.tx_ids?.hts_tx_id || "—"}, Compliance=${data?.tx_ids?.compliance_tx_id || "—"}</p>
+                <p>HashScan links: ${hcs} | ${hts}</p>
+            `;
+        } catch (err) {
+            result.innerHTML = `<h3>Result</h3><p style="color:#ff9aa2;">Error: ${err.message || err}</p>`;
+        }
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+        document.getElementById("proofInput").value = "";
+        document.getElementById("proofResult").innerHTML = "<h3>Result</h3><p>Awaiting verification...</p>";
+    });
+    </script>
+</body>
+</html>

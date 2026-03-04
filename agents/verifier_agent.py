@@ -60,15 +60,19 @@ class VerifierAgent:
                     activity.verified_status = "rejected"
                     activity.pipeline_stage = "rejected"
                     activity.trust_weight = 0.0
+                    activity.verifier_reputation = max(0.0, (activity.verifier_reputation or 0.85) - 0.05)
+                    activity.reputation_delta = -0.05
                     activity.last_error = "Verification failed: invalid amount"
                     db.session.commit()
-                    print(f"[VERIFIER AGENT] ❌ REJECTED: invalid amount", flush=True)
+                    print(f"[VERIFIER AGENT] REJECTED: invalid amount", flush=True)
                     print(f"{'='*80}\n", flush=True)
                     return False
 
                 # Simple trust scoring (can expand with user history, center reputation, etc.)
                 # For now: base trust of 0.85 for valid activities
                 activity.trust_weight = 0.85
+                activity.verifier_reputation = 0.85
+                activity.reputation_delta = 0.0
                 activity.verified_status = "verified"
                 activity.pipeline_stage = "verified"
                 activity.logbook_status = activity.logbook_status or "pending"
@@ -86,7 +90,7 @@ class VerifierAgent:
                 }
                 activity.proof_hash = compute_proof_sha256(stable_proof_input(stable_bundle))
                 
-                print(f"[VERIFIER AGENT] ✓ VERIFIED: trust_weight={activity.trust_weight}", flush=True)
+                print(f"[VERIFIER AGENT] VERIFIED: trust_weight={activity.trust_weight}", flush=True)
                 
                 db.session.commit()
 

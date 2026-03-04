@@ -1,0 +1,72 @@
+{
+  "requested_activity_id": 55,
+  "exported_activity_id": 55,
+  "exported_at": "2026-03-03T16:30:46.663812+00:00",
+  "collector_email": "test@gmail.com",
+  "timestamp": "2026-03-03T15:52:13.250542+00:00",
+  "description": "Verified Drop-off (10.0kg of Cans)",
+  "amount": 147.5,
+  "pipeline_stage": "attested",
+  "trust_weight": 0.85,
+  "proof_hash": "5f42cbe38f330d391d3022c69d2430118afadeb217004e03dd265a242f22ce99",
+  "statuses": {
+    "logbook_status": "anchored",
+    "reward_status": "paid"
+  },
+  "tx_ids": {
+    "hcs_tx_id": "0.0.8041229@1772553131.547319124",
+    "hts_tx_id": "0.0.8041229@1772553137.236211395",
+    "compliance_tx_id": null
+  },
+  "hashscan_links": {
+    "hcs": "https://hashscan.io/testnet/transaction/0.0.8041229@1772553131.547319124",
+    "hts": "https://hashscan.io/testnet/transaction/0.0.8041229@1772553137.236211395"
+  },
+  "agent_tasks": [
+    {
+      "id": 295,
+      "agent": "CollectorAgent",
+      "task_type": "collect",
+      "status": "done",
+      "attempts": 0,
+      "last_error": null,
+      "updated_at": "2026-03-03T15:52:13.370465"
+    },
+    {
+      "id": 296,
+      "agent": "VerifierAgent",
+      "task_type": "verify",
+      "status": "done",
+      "attempts": 0,
+      "last_error": null,
+      "updated_at": "2026-03-03T15:52:14.551752"
+    },
+    {
+      "id": 297,
+      "agent": "LogbookAgent",
+      "task_type": "log",
+      "status": "done",
+      "attempts": 0,
+      "last_error": null,
+      "updated_at": "2026-03-03T15:52:21.118294"
+    },
+    {
+      "id": 298,
+      "agent": "RewardAgent",
+      "task_type": "reward",
+      "status": "done",
+      "attempts": 0,
+      "last_error": null,
+      "updated_at": "2026-03-03T15:52:26.676732"
+    },
+    {
+      "id": 299,
+      "agent": "ComplianceAgent",
+      "task_type": "attest",
+      "status": "done",
+      "attempts": 0,
+      "last_error": null,
+      "updated_at": "2026-03-03T15:52:27.795716"
+    }
+  ]
+}
