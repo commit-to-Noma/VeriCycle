@@ -111,8 +111,61 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
+    flex-wrap: nowrap;
     width: 95%;
     max-width: none;
+}
+
+.navbar nav.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow-x: auto;
+}
+
+.navbar .nav-dropdown {
+    position: relative;
+}
+
+.navbar .dropdown-toggle {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.navbar .dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 999;
+    min-width: 220px;
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.navbar .dropdown-item {
+    display: block;
+    color: #f4f4f4;
+    text-decoration: none;
+    padding: 8px 10px;
+    border-radius: 6px;
+}
+
+.navbar .dropdown-item:hover {
+    background-color: #333;
+}
+
+.navbar .dropdown:hover .dropdown-menu,
+.navbar .dropdown:focus-within .dropdown-menu {
+    display: block;
 }
 h1.logo {
     color: #4CAF50;
@@ -150,6 +203,9 @@ img.logo {
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
     border: 1px solid #4CAF50;
 }
+
+.debug-details summary { cursor: pointer; }
+.debug-details { margin-top: 10px; }
 
 /* --- Homepage Hero Section --- */
 .hero {
@@ -1701,6 +1757,52 @@ html, body {
     color: #f4f4f4;
     font-size: 1.4rem;
 }
+
+@media (max-width: 900px) {
+    .app-dashboard .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .app-dashboard .card,
+    .app-dashboard .kpi-card,
+    .app-dashboard .chart-card {
+        min-height: 0;
+    }
+
+    .app-dashboard .proof-income {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.8rem;
+    }
+
+    .app-dashboard #activity-section,
+    .app-dashboard #agent-status-section {
+        overflow-x: auto;
+    }
+}
+
+.app-dashboard #activity-table tbody tr,
+.app-dashboard #agent-status-panel tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.app-dashboard #activity-table tbody tr:hover,
+.app-dashboard #agent-status-panel tbody tr:hover {
+    background-color: #252525;
+}
+
+.app-dashboard .card:hover {
+    transition: box-shadow 0.2s ease;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.event-empty-state {
+    text-align: center;
+    color: #aaa;
+    font-style: italic;
+    padding: 1rem;
+}
 /* --- END OF FIX --- */
 .tooltip:before {
     content: attr(data-tooltip);
@@ -2489,6 +2591,8 @@ input[type="number"] {
     display: flex;
     justify-content: space-between; /* This pushes them apart */
     align-items: center;
+    gap: 16px;
+    flex-wrap: nowrap;
 }
 
 .logo-link {

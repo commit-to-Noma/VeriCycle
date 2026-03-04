@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Collector Dashboard - VeriCycle</title>
+    <title>Observer Console - VeriCycle</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,7 +15,7 @@
     <main class="container app-dashboard" style="overflow:visible;">
         <div class="dashboard-header">
             <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
-            <p>Here is your recycling progress.</p>
+            <p><strong>Observer Console</strong> · Agent-verified event and proof activity.</p>
         </div>
 
         <div class="dashboard-grid">
@@ -65,37 +65,40 @@
                     <h3 style="margin-bottom: 0.25rem;">Proof of Income Report</h3>
                     <p style="color: #aaa; margin: 0; font-size: 0.9rem;">Download your official verified transaction history.</p>
                 </div>
-                <a href="{{ url_for('static', filename='sample_report.pdf') }}" target="_blank" class="btn-secondary" style="margin-top: 0;">
+                <a href="{{ url_for('download_income_report_pdf') }}" target="_blank" class="btn-secondary" style="margin-top: 0;">
                     Download PDF 📄
                 </a>
             </div>
 
             <div class="card" id="agent-status-section" style="grid-column: 1 / -1; margin-top: 0;">
-                <h3>Agent Status</h3>
-                <p class="mockup-subtitle">Live snapshot of OpenClaw agents</p>
+                <h3>Agent Snapshot</h3>
+                <p class="mockup-subtitle">Agents are running. View full details in <a href="/admin/monitor">Admin Monitor</a>.</p>
 
-                <div id="agent-status-panel">
-                    <table style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
-                        <thead>
-                            <tr style="text-align:left; border-bottom: 1px solid #444;">
-                                <th style="padding: 0.5rem;">Agent</th>
-                                <th style="padding: 0.5rem;">Health</th>
-                                <th style="padding: 0.5rem;">Last Seen</th>
-                                <th style="padding: 0.5rem;">Last TX</th>
-                                <th style="padding: 0.5rem;">Last Error</th>
-                            </tr>
-                        </thead>
-                        <tbody id="agent-status-tbody">
-                            <tr>
-                                <td colspan="5" style="padding: 0.75rem; color: #aaa;">Loading agent snapshot...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <details class="debug-details">
+                    <summary>Show agent table (debug)</summary>
+                    <div id="agent-status-panel">
+                        <table style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
+                            <thead>
+                                <tr style="text-align:left; border-bottom: 1px solid #444;">
+                                    <th style="padding: 0.5rem;">Agent</th>
+                                    <th style="padding: 0.5rem;">Health</th>
+                                    <th style="padding: 0.5rem;">Last Seen</th>
+                                    <th style="padding: 0.5rem;">Last TX</th>
+                                    <th style="padding: 0.5rem;">Last Error</th>
+                                </tr>
+                            </thead>
+                            <tbody id="agent-status-tbody">
+                                <tr>
+                                    <td colspan="5" style="padding: 0.75rem; color: #aaa;">Loading agent snapshot...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
             </div>
 
             <div class="card" id="activity-section" style="grid-column: 1 / -1; margin-top: 0;">
-                <h3>Activity Timeline</h3>
+                <h3>Event Stream</h3>
                 <p class="mockup-subtitle">HCS-verified log (newest first)</p>
 
                                 <table id="activity-table" style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
@@ -245,7 +248,7 @@
 
     <div class="card" style="background-color: #333; border: 1px solid #E57373;">
          <button class="btn-primary" id="simulate-deposit-btn" style="background-color: #0D47A1; width: 100%; box-sizing: border-box;">
-            Refresh Balance (Simulate Scan)
+            Trigger Scan Event
         </button>
     </div>
 
@@ -764,6 +767,20 @@
             const proofSummaryEl = document.getElementById('collector-proof-summary-content');
             if (proofSummaryEl) {
                 proofSummaryEl.innerHTML = proofSnapshotCard(sortedTimeline);
+            }
+
+            if (!sortedTimeline.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="event-empty-state">
+                            You haven't made any drop-offs yet. Generate your first QR code below to get started!
+                        </td>
+                    </tr>
+                `;
+                if (proofSummaryEl) {
+                    proofSummaryEl.innerHTML = '<div class="event-empty-state">No proof snapshots yet. Your verified activity will appear here.</div>';
+                }
+                return;
             }
 
             sortedTimeline.forEach(act => {

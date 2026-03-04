@@ -94,6 +94,29 @@ color: #ff9aa2;
 border-bottom: none;
 }
 
+.golden-runs-grid {
+display: grid;
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 10px;
+}
+
+.golden-run-tile {
+background: #0f141b;
+border: 1px solid #2a3340;
+border-radius: 8px;
+padding: 10px;
+}
+
+.golden-run-tile h4 {
+margin: 0 0 8px 0;
+font-size: 14px;
+}
+
+.golden-run-tile p {
+margin: 6px 0;
+font-size: 12px;
+}
+
 a {
 
 color: #58a6ff;
@@ -117,6 +140,7 @@ color: #58a6ff;
 
 <div class="card" id="queue-summary">Queue: loading...</div>
 <div class="card" id="judge-summary">Judge Summary: loading...</div>
+<div class="card" id="golden-runs-card">Golden Runs: loading...</div>
 <div class="card" id="demo-profile-card">Demo profile: loading...</div>
 <div class="card" id="ops-alerts">Ops alerts: loading...</div>
 <div class="card" id="dead-letter-card">Dead letter queue: loading...</div>
@@ -373,6 +397,84 @@ function updateJudgeSummary(filtered) {
 	`;
 }
 
+function findGoldenRuns(rows) {
+	const source = Array.isArray(rows) ? rows : [];
+	const perfect = source.find(a => {
+		const anchored = (a.logbook_status || "").toLowerCase() === "anchored";
+		const paid = (a.reward_status || "").toLowerCase() === "paid";
+		const attested = (a.stage || "").toLowerCase() === "attested";
+		return anchored && paid && attested;
+	});
+
+	const resilience = source.find(a => {
+		const anchored = (a.logbook_status || "").toLowerCase() === "anchored";
+		const hasRetrySignal = Number(a.logbook_retries || 0) > 0
+			|| Number(a.logbook_retry_count || 0) > 0
+			|| !!a.logbook_last_error
+			|| (Array.isArray(a.tasks) && a.tasks.some(t => {
+				const agent = (t.agent || "").toLowerCase();
+				const status = (t.status || "").toLowerCase();
+				return agent.includes("logbook") && status === "failed";
+			}));
+		return anchored && hasRetrySignal;
+	});
+
+	const rejected = source.find(a => {
+		const stage = (a.stage || "").toLowerCase();
+		const status = (a.status || a.verified_status || "").toLowerCase();
+		const taskRejected = Array.isArray(a.tasks) && a.tasks.some(t => {
+			const s = (t.status || "").toLowerCase();
+			return s === "failed" || s === "rejected";
+		});
+		return stage === "rejected" || status === "rejected" || taskRejected;
+	});
+
+	return { perfect, resilience, rejected };
+}
+
+function renderGoldenRunTile(title, activity) {
+	if (!activity) {
+		return `
+			<div class="golden-run-tile">
+				<h4>${title}</h4>
+				<p>Activity ID: —</p>
+				<p>HCS: —</p>
+				<p>HTS: —</p>
+				<p>Proof verify: pending</p>
+			</div>
+		`;
+	}
+
+	const hcsTx = activity.hcs_tx_id || activity.logbook_tx_id || activity.hedera_tx_id;
+	const htsTx = activity.hts_tx_id || activity.reward_tx_id;
+	const proofState = proofVerifyCache.get(activity.id) === "verified" ? "OK" : "pending";
+
+	return `
+		<div class="golden-run-tile">
+			<h4>${title}</h4>
+			<p>Activity ID: ${activity.id}</p>
+			<p>HCS: ${txLink(hcsTx)}</p>
+			<p>HTS: ${txLink(htsTx)}</p>
+			<p>Proof verify: ${proofState}</p>
+		</div>
+	`;
+}
+
+function updateGoldenRuns(filtered) {
+	const el = document.getElementById("golden-runs-card");
+	if (!el) return;
+
+	const runs = findGoldenRuns(filtered);
+	el.innerHTML = `
+		<h3>Golden Runs</h3>
+		<div class="golden-runs-grid">
+			${renderGoldenRunTile("Perfect flow (anchored + paid + attested)", runs.perfect)}
+			${renderGoldenRunTile("Resilience flow (retry → anchored)", runs.resilience)}
+			${renderGoldenRunTile("Rejected flow (guardrails)", runs.rejected)}
+		</div>
+	`;
+}
+
 function renderActivities(data) {
 	const container = document.getElementById("activities");
 	const controls = document.getElementById("activity-controls");
@@ -384,6 +486,7 @@ function renderActivities(data) {
 	}
 
 	if (!data || data.length === 0) {
+		updateGoldenRuns([]);
 		container.innerHTML = "<div class='card'><p>No activities yet. Create a deposit from /collector, then refresh.</p></div>";
 		return;
 	}
@@ -409,6 +512,7 @@ function renderActivities(data) {
 	});
 
 	updateJudgeSummary(filtered);
+	updateGoldenRuns(filtered);
 
 	const visible = filtered.slice(0, visibleActivityCount);
 

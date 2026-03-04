@@ -1278,6 +1278,180 @@ def get_dashboard_data():
     return jsonify(data)
 
 
+@app.get('/api/income-report.pdf')
+@login_required
+def download_income_report_pdf():
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import mm
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+    except Exception:
+        return jsonify({
+            "ok": False,
+            "error": "PDF dependency missing. Install reportlab to enable this feature."
+        }), 500
+
+    verified_activities = (
+        Activity.query
+        .filter_by(user_id=current_user.id)
+        .filter((Activity.verified_status == "verified") | (Activity.status == "verified"))
+        .order_by(Activity.timestamp.desc())
+        .limit(100)
+        .all()
+    )
+
+    total_eco = 0.0
+    total_kg = 0.0
+    for activity in verified_activities:
+        try:
+            total_eco += float(activity.amount or 0)
+        except Exception:
+            total_eco += 0.0
+        match = re.search(r'(\d+\.?\d*)\s*kg', activity.desc or '')
+        if match:
+            try:
+                total_kg += float(match.group(1))
+            except Exception:
+                pass
+
+    report_buffer = io.BytesIO()
+    document = SimpleDocTemplate(
+        report_buffer,
+        pagesize=A4,
+        rightMargin=18 * mm,
+        leftMargin=18 * mm,
+        topMargin=16 * mm,
+        bottomMargin=16 * mm,
+        title="VeriCycle Proof of Income Report"
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "TitleStyle",
+        parent=styles["Title"],
+        fontSize=18,
+        leading=22,
+        textColor=colors.HexColor("#0f2463"),
+        spaceAfter=4,
+    )
+    subtitle_style = ParagraphStyle(
+        "SubtitleStyle",
+        parent=styles["Normal"],
+        fontSize=10,
+        textColor=colors.HexColor("#4a5568"),
+        spaceAfter=8,
+    )
+    body_style = ParagraphStyle(
+        "BodyStyle",
+        parent=styles["Normal"],
+        fontSize=9,
+        leading=13,
+    )
+
+    story = []
+
+    logo_path = os.path.join(app.root_path, 'static', 'logo.png')
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=20 * mm, height=20 * mm)
+        header_table = Table(
+            [[logo, Paragraph("<b>VeriCycle</b><br/>Proof of Income Report", title_style)]],
+            colWidths=[24 * mm, 150 * mm]
+        )
+        header_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        story.append(header_table)
+    else:
+        story.append(Paragraph("VeriCycle Proof of Income Report", title_style))
+
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    story.append(Paragraph(f"Generated: {generated_at}", subtitle_style))
+
+    collector_name = (current_user.full_name or "Collector").strip()
+    collector_email = (current_user.email or "").strip()
+    summary_rows = [
+        ["Collector", collector_name],
+        ["Email", collector_email],
+        ["Verified transactions", str(len(verified_activities))],
+        ["Total income (ECO)", f"{total_eco:,.2f}"],
+        ["Total recycled (kg)", f"{total_kg:,.1f}"],
+    ]
+    summary_table = Table(summary_rows, colWidths=[48 * mm, 124 * mm])
+    summary_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f1f5f9")),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#1f2937")),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    story.append(summary_table)
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph("<b>Verified Activity Ledger</b>", body_style))
+    story.append(Spacer(1, 4))
+
+    ledger_rows = [["Date", "Description", "Amount (ECO)", "Hedera Reference"]]
+    for activity in verified_activities[:20]:
+        timestamp = activity.timestamp
+        if hasattr(timestamp, "strftime"):
+            date_text = timestamp.strftime("%Y-%m-%d")
+        else:
+            date_text = str(timestamp)[:10]
+        tx_id = activity.hcs_tx_id or activity.logbook_tx_id or activity.hedera_tx_id or "Pending"
+        ledger_rows.append([
+            date_text,
+            activity.desc or "—",
+            f"{float(activity.amount or 0):,.2f}",
+            tx_id,
+        ])
+
+    ledger_table = Table(ledger_rows, colWidths=[24 * mm, 82 * mm, 25 * mm, 41 * mm])
+    ledger_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f2463")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(ledger_table)
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph(
+        "This report summarizes verified VeriCycle collection activity and can be used as supporting proof of income history.",
+        body_style,
+    ))
+
+    document.build(story)
+    report_buffer.seek(0)
+
+    filename = f"vericycle-income-report-{current_user.id}-{date.today().isoformat()}.pdf"
+    return send_file(
+        report_buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
 @app.get('/api/proof-bundle/<int:activity_id>')
 @login_required
 def download_proof_bundle(activity_id):
