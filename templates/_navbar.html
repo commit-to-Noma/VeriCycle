@@ -1,58 +1,124 @@
 <header class="navbar">
-    <div class="container">
+    <div class="nav-shell">
         <a href="{{ url_for('home') }}" class="logo-link">
             <img src="{{ url_for('static', filename='logo.png') }}" alt="VeriCycle Logo" class="logo">
             <span>VeriCycle</span>
         </a>
-        <nav class="nav-links">
+
+        <nav class="nav-primary" aria-label="Primary">
+            <a href="{{ url_for('home') }}" class="nav-button {% if request.path == url_for('home') %}active{% endif %}">Home</a>
+
             {% if current_user.is_authenticated %}
-                
-                <a href="{{ url_for('home') }}" class="nav-button {% if active_page == 'home' %}active{% endif %}">Home</a>
-                
                 {% if current_user.role == 'center' %}
-                    <a href="{{ url_for('center_dashboard') }}" class="nav-button {% if active_page == 'dashboard' %}active{% endif %}">Observer Console</a>
+                    <a href="{{ url_for('center_dashboard') }}" class="nav-button {% if request.path.startswith('/center') %}active{% endif %}">Observer Console</a>
                 {% else %}
-                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if active_page == 'dashboard' %}active{% endif %}">Observer Console</a>
+                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Observer Console</a>
                 {% endif %}
-
-                <a href="{{ url_for('proof_integrity') }}" class="nav-button {% if active_page == 'proof_integrity' %}active{% endif %}">Proof Verifier</a>
-                <a href="{{ url_for('admin_monitor') }}" class="nav-button {% if active_page == 'admin_monitor' %}active{% endif %}">Admin Monitor</a>
-
-                <div class="nav-dropdown dropdown">
-                    <button class="nav-button dropdown-toggle" type="button" id="devMenuBtn" aria-haspopup="true" aria-expanded="false">
-                        Developer Tools
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="devMenuBtn">
-                        <a class="dropdown-item" href="{{ url_for('public_data') }}">Mirror Node Feed (Dev)</a>
-                        <a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a>
-                        {% if current_user.role == 'collector' %}
-                            <a class="dropdown-item" href="{{ url_for('household_dashboard') }}">Household</a>
-                            <a class="dropdown-item" href="{{ url_for('search') }}">Find Center</a>
-                            <a class="dropdown-item" href="{{ url_for('network') }}">Event Stream</a>
-                        {% endif %}
-                    </div>
-                </div>
-
+                <a href="/proof-hub" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
+                <a href="{{ url_for('admin_monitor') }}" class="nav-button {% if request.path.startswith('/admin/monitor') %}active{% endif %}">Admin Monitor</a>
                 <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
-            
             {% else %}
-
-                <a href="{{ url_for('home') }}" class="nav-button active">Home</a>
-                <a href="#" class="nav-button js-open-auth" data-form="login">Dashboard</a>
-                <a href="{{ url_for('proof_integrity') }}" class="nav-button {% if active_page == 'proof_integrity' %}active{% endif %}">Proof Verifier</a>
-                <div class="nav-dropdown dropdown">
-                    <button class="nav-button dropdown-toggle" type="button" id="devMenuBtnGuest" aria-haspopup="true" aria-expanded="false">
-                        Developer Tools
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="devMenuBtnGuest">
-                        <a class="dropdown-item" href="{{ url_for('public_data') }}">Mirror Node Feed (Dev)</a>
-                    </div>
-                </div>
-                <a href="#" class="nav-button js-open-auth" data-form="login">Find Center</a>
-                <a href="#" class="nav-button js-open-auth" data-form="login">Network</a>
-                <a href="#" class="nav-button-primary js-open-auth" data-form="signup">Sign Up</a>
-
+                <a href="{{ url_for('login') }}?next=/collector" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Observer Console</a>
+                <a href="{{ url_for('login') }}?next=/proof-hub" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
+                <a href="{{ url_for('login') }}?next=/admin/monitor" class="nav-button {% if request.path.startswith('/admin/monitor') %}active{% endif %}">Admin Monitor</a>
+                <a href="{{ url_for('login') }}" class="nav-button">Log In</a>
             {% endif %}
         </nav>
+
+        <div class="nav-tools-dropdown">
+            <button class="nav-tools-toggle" id="navToolsToggle" type="button" aria-expanded="false">
+                Developer Tools ▾
+            </button>
+            <div class="nav-tools-menu" id="navToolsMenu">
+                <a href="{{ url_for('public_data') }}">Mirror Node Feed (Dev)</a>
+                <a href="{{ url_for('proof_integrity') }}">Proof Verifier</a>
+                <a href="{{ url_for('profile') }}">Profile</a>
+            </div>
+        </div>
+
+        <button class="nav-burger" id="navBurger" type="button" aria-label="Open menu" aria-controls="navDrawer" aria-expanded="false">
+            ☰
+        </button>
     </div>
 </header>
+
+<div class="nav-drawer-overlay" id="navDrawerOverlay"></div>
+
+<aside class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="nav-drawer-header">
+        <strong>Menu</strong>
+        <button class="nav-drawer-close" id="navDrawerClose" type="button" aria-label="Close menu">✕</button>
+    </div>
+
+    <nav class="nav-drawer-links" aria-label="All routes">
+        <a href="{{ url_for('home') }}">Home</a>
+
+        {% if current_user.is_authenticated %}
+            {% if current_user.role == 'center' %}
+                <a href="{{ url_for('center_dashboard') }}">Observer Console</a>
+            {% else %}
+                <a href="{{ url_for('collector_dashboard') }}">Observer Console</a>
+            {% endif %}
+            <a href="/proof-hub">Proof Hub</a>
+            <a href="{{ url_for('admin_monitor') }}">Admin Monitor</a>
+            <a href="{{ url_for('proof_integrity') }}">Proof Verifier</a>
+            <a href="{{ url_for('public_data') }}">Mirror Node Feed (Dev)</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Log Out</a>
+        {% else %}
+            <a href="{{ url_for('login') }}?next=/collector">Observer Console</a>
+            <a href="{{ url_for('login') }}?next=/proof-hub">Proof Hub</a>
+            <a href="{{ url_for('login') }}?next=/admin/monitor">Admin Monitor</a>
+            <a href="{{ url_for('proof_integrity') }}">Proof Verifier</a>
+            <a href="{{ url_for('public_data') }}">Mirror Node Feed (Dev)</a>
+            <a href="{{ url_for('login') }}?next=/profile">Profile</a>
+            <a href="{{ url_for('login') }}">Log In</a>
+        {% endif %}
+    </nav>
+</aside>
+
+<script>
+(() => {
+    const burger = document.getElementById("navBurger");
+    const drawer = document.getElementById("navDrawer");
+    const overlay = document.getElementById("navDrawerOverlay");
+    const closeBtn = document.getElementById("navDrawerClose");
+    const toolsToggle = document.getElementById("navToolsToggle");
+    const toolsMenu = document.getElementById("navToolsMenu");
+
+    if (burger && drawer && overlay && closeBtn) {
+        function openDrawer() {
+            drawer.classList.add("open");
+            overlay.classList.add("open");
+            drawer.setAttribute("aria-hidden", "false");
+            burger.setAttribute("aria-expanded", "true");
+            document.body.classList.add("drawer-open");
+        }
+
+        function closeDrawer() {
+            drawer.classList.remove("open");
+            overlay.classList.remove("open");
+            drawer.setAttribute("aria-hidden", "true");
+            burger.setAttribute("aria-expanded", "false");
+            document.body.classList.remove("drawer-open");
+        }
+
+        burger.addEventListener("click", openDrawer);
+        closeBtn.addEventListener("click", closeDrawer);
+        overlay.addEventListener("click", closeDrawer);
+    }
+
+    if (toolsToggle && toolsMenu) {
+        toolsToggle.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const open = toolsMenu.classList.toggle("open");
+            toolsToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+
+        document.addEventListener("click", () => {
+            toolsMenu.classList.remove("open");
+            toolsToggle.setAttribute("aria-expanded", "false");
+        });
+    }
+})();
+</script>

@@ -1,17 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - VeriCycle</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body class="dark-theme">
-    
-    {% include '_navbar.html' %}
+{% extends "base.html" %}
 
-    <main class="container app-dashboard" style="overflow:visible;">
+{% block content %}
         <div class="dashboard-header">
             <h2>My Profile</h2>
             <p>Keep your account details up to date.</p>
@@ -85,14 +74,27 @@
 
         <div class="form-group">
             <label>Your Private Key (Keep this secret!)</label>
-            <input type="text" value="{{ current_user.hedera_private_key or 'N/A (Center Account)' }}" readonly disabled>
+            <div class="wallet-secret-row">
+                <input id="privateKeyField" type="password" readonly value="{{ current_user.hedera_private_key or '' }}">
+                <button type="button" class="btn-secondary" id="togglePrivateKey">Show</button>
+            </div>
         </div>
 
         <p class="form-note">
             <strong>This is your wallet.</strong> You can import this account into a wallet like <a href="https://www.hashpack.app/" target="_blank" style="color: #2196F3;">HashPack</a> at any time using your Private Key.
         </p>
     </div>
-    </main>
+    <script>
+    (() => {
+        const field = document.getElementById("privateKeyField");
+        const btn = document.getElementById("togglePrivateKey");
+        if (!field || !btn) return;
 
-</body>
-</html>
+        btn.addEventListener("click", () => {
+            const hidden = field.type === "password";
+            field.type = hidden ? "text" : "password";
+            btn.textContent = hidden ? "Hide" : "Show";
+        });
+    })();
+    </script>
+{% endblock %}

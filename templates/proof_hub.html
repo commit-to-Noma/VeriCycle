@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h2>Proof Hub</h2>
+    <p>Hedera verification workspace for judges: inspect anchored evidence and export proof documentation.</p>
+</div>
+
+<div class="proof-hub-grid">
+    <section class="card proof-hub-card">
+        <h3>Hedera Evidence</h3>
+        <div class="proof-evidence-grid">
+            <div class="proof-summary-chip">
+                <strong>{{ evidence.latest_hcs_tx or '—' }}</strong>
+                <span>Latest HCS anchored tx</span>
+                {% if evidence.latest_hcs_link %}<a href="{{ evidence.latest_hcs_link }}" target="_blank" rel="noopener">Open</a>{% endif %}
+            </div>
+            <div class="proof-summary-chip">
+                <strong>{{ evidence.latest_hts_tx or '—' }}</strong>
+                <span>Latest HTS paid tx</span>
+                {% if evidence.latest_hts_link %}<a href="{{ evidence.latest_hts_link }}" target="_blank" rel="noopener">Open</a>{% endif %}
+            </div>
+            <div class="proof-summary-chip">
+                <strong>{{ evidence.latest_commerce_tx or '—' }}</strong>
+                <span>Latest Agent Commerce Event tx</span>
+                {% if evidence.latest_commerce_link %}<a href="{{ evidence.latest_commerce_link }}" target="_blank" rel="noopener">Open</a>{% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="card proof-hub-card">
+        <h3>Proof Tools</h3>
+        <div class="proof-tools-row">
+            <a class="btn-primary" href="{{ url_for('proof_integrity') }}">Open Proof Verifier</a>
+            <a class="btn-primary" href="/api/income-report.pdf" target="_blank">Download Proof-of-Income PDF</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

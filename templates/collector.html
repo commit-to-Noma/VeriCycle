@@ -1,114 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Observer Console - VeriCycle</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
-    <link rel="stylesheet" href="/static/style.css">
+{% extends "base.html" %}
+
+{% block content %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-</head>
-<body class="dark-theme">
-    {% include '_navbar.html' %}
-
-    <main class="container app-dashboard" style="overflow:visible;">
         <div class="dashboard-header">
             <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
             <p><strong>Observer Console</strong> · Agent-verified event and proof activity.</p>
         </div>
 
-        <div class="dashboard-grid">
-            
-            <div class="kpi-card">
-                <h3>
-                    Current EcoCoin Balance
-                    <span class="tooltip" data-tooltip="This shows your current account balance available to spend or withdraw.">ⓘ</span>
-                </h3>
-                <p class="kpi-value" id="kpi-ecocoin">--</p>
-                
-                <a href="{{ url_for('swap') }}" class="btn-primary" style="width: 100%; box-sizing: border-box; margin-top: 1.5rem; text-align: center;">
-                    Wallet & Exchange
-                </a>
-            </div>
-            
-            <div class="kpi-card">
-                <h3>Total Kilograms Recycled</h3>
-                <p class="kpi-value" id="kpi-kg">--</p>
-            </div>
-
-            <div class="chart-card">
-                <h3>Personal Goal</h3>
-                <p class="chart-label" id="personal-goal-label">-- / -- kg</p>
-                
-                <div class="chart-canvas-container">
-                    <span class="chart-percentage" id="personal-percent">--%</span>
-                    <canvas id="personalGoalChart"></canvas>
-                </div>
-            </div>
-            
-            <div class="chart-card">
-                <h3>
-                    Neighborhood Goal
-                    <span class="tooltip" data-tooltip="Your neighborhood (Sandton) is a high-activity area, so you earn a +2.5% bonus on all EcoCoin payouts!">ⓘ</span>
-                </h3>
-                <p class="chart-label" id="neighborhood-goal-label">-- / -- kg</p>
-                
-                <div class="chart-canvas-container">
-                    <span class="chart-percentage" id="neighborhood-percent">--%</span>
-                    <canvas id="neighborhoodGoalChart"></canvas>
-                </div>
+        <section class="observer-shell">
+            <div class="observer-hero-row">
+                <div class="kpi-card metric-card">
+                    <h3>
+                        Current EcoCoin Balance
+                        <span class="tooltip" data-tooltip="This shows your current account balance available to spend or withdraw.">ⓘ</span>
+                    </h3>
+                    <p class="kpi-value" id="kpi-ecocoin">--</p>
                 </div>
 
-            <div class="card proof-income" style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem; min-height: 0; height: auto;">
-                <div>
-                    <h3 style="margin-bottom: 0.25rem;">Proof of Income Report</h3>
-                    <p style="color: #aaa; margin: 0; font-size: 0.9rem;">Download your official verified transaction history.</p>
+                <div class="kpi-card metric-card">
+                    <h3>Total Kilograms Recycled</h3>
+                    <p class="kpi-value" id="kpi-kg">--</p>
                 </div>
-                <a href="{{ url_for('download_income_report_pdf') }}" target="_blank" class="btn-secondary" style="margin-top: 0;">
-                    Download PDF 📄
-                </a>
-            </div>
 
-            <div class="card" id="agent-status-section" style="grid-column: 1 / -1; margin-top: 0;">
-                <h3>Agent Snapshot</h3>
-                <p class="mockup-subtitle">Agents are running. View full details in <a href="/admin/monitor">Admin Monitor</a>.</p>
+                <div class="chart-card metric-card">
+                    <h3>Personal Goal</h3>
+                    <p class="chart-label" id="personal-goal-label">-- / -- kg</p>
 
-                <details class="debug-details">
-                    <summary>Show agent table (debug)</summary>
-                    <div id="agent-status-panel">
-                        <table style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
-                            <thead>
-                                <tr style="text-align:left; border-bottom: 1px solid #444;">
-                                    <th style="padding: 0.5rem;">Agent</th>
-                                    <th style="padding: 0.5rem;">Health</th>
-                                    <th style="padding: 0.5rem;">Last Seen</th>
-                                    <th style="padding: 0.5rem;">Last TX</th>
-                                    <th style="padding: 0.5rem;">Last Error</th>
-                                </tr>
-                            </thead>
-                            <tbody id="agent-status-tbody">
-                                <tr>
-                                    <td colspan="5" style="padding: 0.75rem; color: #aaa;">Loading agent snapshot...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="chart-canvas-container">
+                        <span class="chart-percentage" id="personal-percent">--%</span>
+                        <canvas id="personalGoalChart"></canvas>
                     </div>
-                </details>
+                </div>
+
+                <div class="chart-card metric-card">
+                    <h3>
+                        Neighborhood Goal
+                        <span class="tooltip" data-tooltip="Your neighborhood (Sandton) is a high-activity area, so you earn a +2.5% bonus on all EcoCoin payouts!">ⓘ</span>
+                    </h3>
+                    <p class="chart-label" id="neighborhood-goal-label">-- / -- kg</p>
+
+                    <div class="chart-canvas-container">
+                        <span class="chart-percentage" id="neighborhood-percent">--%</span>
+                        <canvas id="neighborhoodGoalChart"></canvas>
+                    </div>
+                </div>
             </div>
 
-            <div class="card" id="activity-section" style="grid-column: 1 / -1; margin-top: 0;">
+            <div class="observer-main-grid">
+                <div class="card observer-ledger" id="activity-section">
                 <h3>Event Stream</h3>
                 <p class="mockup-subtitle">HCS-verified log (newest first)</p>
 
-                                <table id="activity-table" style="width:100%; border-collapse: collapse; margin-top: 0.5rem;">
-                                    <tr style="text-align:left; border-bottom: 1px solid #444;">
-                                        <th style="padding: 0.5rem;">Date/Time</th>
-                                        <th style="padding: 0.5rem;">Description</th>
-                                        <th style="padding: 0.5rem;">Amount</th>
-                                        <th style="padding: 0.5rem;">Status</th>
-                                        <th style="padding: 0.5rem;">Proof Bundle</th>
-                                        <th style="padding: 0.5rem;">Hedera TX</th>
+                                <table id="activity-table" class="event-table">
+                                    <tr>
+                                        <th>Date/Time</th>
+                                        <th>Description</th>
+                                        <th>Amount</th>
+                                        <th>Settlement</th>
+                                        <th>Proof Bundle</th>
+                                        <th>Hedera TX</th>
                                     </tr>
                                     <tbody id="activity-tbody">
                                         {% for act in activities %}
@@ -118,24 +69,24 @@
                                             {% set status_label = 'Hedera delayed (retry)' if ('pending' in status_lower and 'hedera' in status_lower) else display_status %}
                                             {% set hidden = status_lower in ['failed', 'rejected'] %}
                                             {% set proof_final = act.logbook_status in ['anchored', 'offchain_final', 'demo_skipped'] %}
-                                            <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}" style="border-bottom: 1px solid #2a2a2a;">
-                                                <td style="padding: 0.5rem; white-space: nowrap;">{{ act.timestamp }}</td>
-                                                <td style="padding: 0.5rem;">{{ act.desc }}</td>
-                                                <td style="padding: 0.5rem;">{{ act.amount }}</td>
-                                                <td style="padding: 0.5rem;">
+                                            <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}">
+                                                <td>{{ act.timestamp }}</td>
+                                                <td>{{ act.desc }}</td>
+                                                <td>{{ act.amount }}</td>
+                                                <td>
                                                     {% if hidden %}
                                                         <span class="status-muted">{{ status_label }} <span class="status-note">(hidden)</span></span>
                                                     {% elif proof_final and act.logbook_status == 'anchored' %}
-                                                        <span style="color:#4CAF50; font-weight:600;">Proof finalized · Hedera anchored</span>
+                                                        <span class="status-badge status-badge-paid">Anchored</span>
                                                     {% elif proof_final and act.logbook_status == 'offchain_final' %}
-                                                        <span style="color:#4CAF50; font-weight:600;">Proof finalized · Anchor pending/unavailable</span>
+                                                        <span class="status-badge status-badge-fallback">Fallback (Off-chain final)</span>
                                                     {% elif proof_final and act.logbook_status == 'demo_skipped' %}
-                                                        <span style="color:#4CAF50; font-weight:600;">Proof finalized · Demo skipped</span>
+                                                        <span class="status-badge status-badge-fallback">Fallback (Demo skipped)</span>
                                                     {% else %}
                                                         {{ status_label }}
                                                     {% endif %}
                                                 </td>
-                                                <td style="padding: 0.5rem;">
+                                                <td>
                                                     {% if act.proof_bundle_url %}
                                                         <a href="{{ act.proof_bundle_url }}">Download Proof</a>
                                                     {% elif act.id %}
@@ -144,22 +95,22 @@
                                                         —
                                                     {% endif %}
                                                 </td>
-                                                <td style="padding: 0.5rem;">
+                                                <td>
                                                     {% if act.hedera_tx_id %}
                                                         <div>Anchor: <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
                                                     {% elif act.logbook_status == "demo_skipped" %}
                                                         Demo mode: Hedera skipped
                                                     {% elif act.logbook_status == "offchain_final" %}
                                                         On-chain anchor: Pending/Unavailable
-                                                        <form method="post" action="/admin/retry-logbook/{{ act.id }}" style="display:inline; margin:0 0 0 8px;">
-                                                            <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
+                                                        <form method="post" action="/admin/retry-logbook/{{ act.id }}" class="inline-retry-form">
+                                                            <button type="submit" class="btn-secondary btn-compact">Retry Hedera Log</button>
                                                         </form>
                                                     {% elif demo_mode and ((not act.logbook_status) or act.logbook_status == "pending") %}
                                                         Demo mode: processing...
                                                     {% elif act.logbook_status == "failed" or act.pipeline_stage == "log_failed" %}
                                                         On-chain anchor: Failed
-                                                        <form method="post" action="/admin/retry-logbook/{{ act.id }}" style="display:inline; margin:0 0 0 8px;">
-                                                            <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
+                                                        <form method="post" action="/admin/retry-logbook/{{ act.id }}" class="inline-retry-form">
+                                                            <button type="submit" class="btn-secondary btn-compact">Retry Hedera Log</button>
                                                         </form>
                                                     {% elif not act.hedera_tx_id %}
                                                         On-chain anchor: Pending/Unavailable
@@ -167,26 +118,44 @@
                                                         —
                                                     {% endif %}
                                                     {% if act.reward_tx_id %}
-                                                        <div style="margin-top:4px;">Reward: <a href="https://hashscan.io/testnet/transaction/{{ act.reward_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
+                                                        <div class="tx-subline">Reward: <a href="https://hashscan.io/testnet/transaction/{{ act.reward_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
                                                     {% elif act.reward_status == "finalized_no_transfer" %}
-                                                        <div style="margin-top:4px;">Reward: Finalized (no transfer)</div>
+                                                        <div class="tx-subline">Reward: Finalized (no transfer)</div>
                                                     {% elif act.pipeline_stage in ["rewarded", "attested"] %}
-                                                        <div style="margin-top:4px;">Reward: Pending</div>
+                                                        <div class="tx-subline">Reward: Pending</div>
                                                     {% endif %}
                                                 </td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
-            </div>
+                </div>
 
-            <div class="card" id="collector-proof-summary" style="grid-column: 1 / -1; margin-top: 0;">
-                <h3>Proof Snapshot</h3>
-                <p class="mockup-subtitle">Quick view of finalized proofs for judges and demos.</p>
-                <div id="collector-proof-summary-content" style="color:#aaa;">Loading proof summary...</div>
-            </div>
+                <aside class="observer-side-column">
+                    <div class="kpi-card live-health-card" id="live-health-card">
+                        <h3>Live System Health</h3>
+                        <p class="mockup-subtitle">Automation agents are processing in background.</p>
+                        <div class="live-health-row">
+                            <span id="system-health-dot" class="health-dot"></span>
+                            <strong id="system-health-text">Checking...</strong>
+                        </div>
+                        <small id="system-health-detail" class="muted-detail">Waiting for agent status...</small>
+                    </div>
 
-        </div>
+                    <div class="card observer-actions-card">
+                        <h3>Action Center</h3>
+                        <p class="mockup-subtitle">Trigger verified recycling events and submit drop-off records.</p>
+                        <div class="observer-action-stack">
+                            <a href="{{ url_for('swap') }}" class="btn-primary">Wallet & Exchange</a>
+                            <button class="btn-primary" id="trigger-deposit-btn">
+                                Trigger Recycling Event
+                            </button>
+                            <p class="mockup-subtitle">Collector → Verifier → Logbook → Reward → Compliance</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
 
     <!-- This is the new 2-column QR card -->
     <div class="card">
@@ -224,39 +193,20 @@
         </div>
     </a>
 
-    <div class="card" id="faq-section">
-        <h3>Need Help?</h3>
-        <p class="mockup-subtitle">Find answers to common questions about your dashboard.</p>
-        
-        <div class="faq-grid">
-            <ul class="faq-list">
-                <li><a href="#">How is my "Total EcoCoin" calculated?</a></li>
-                <li><a href="#">What is a "Personal Goal"?</a></li>
-                <li><a href="#">Why hasn't my drop-off appeared yet?</a></li>
-                <li><a href="#">How do I find my Hedera wallet keys?</a></li>
-            </ul>
-            <ul class="faq-list">
-                <li><a href="#">What is the "Neighborhood Goal"?</a></li>
-                <li><a href="#">How do I redeem my EcoCoin for ZAR?</a></li>
-                <li><a href="#">Can I change my weekly goal?</a></li>
-                <li><a href="#">How do I update my profile information?</a></li>
-            </ul>
-        </div>
-    </div>
-
-    
-
-    <div class="card" style="background-color: #333; border: 1px solid #E57373;">
-         <button class="btn-primary" id="simulate-deposit-btn" style="background-color: #0D47A1; width: 100%; box-sizing: border-box;">
-            Trigger Scan Event
-        </button>
-    </div>
-
     </main>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const demoMode = {{ 'true' if demo_mode else 'false' }};
+        const faqPanels = Array.from(document.querySelectorAll('.faq-accordion details'));
+        faqPanels.forEach((panel) => {
+            panel.addEventListener('toggle', () => {
+                if (!panel.open) return;
+                faqPanels.forEach((other) => {
+                    if (other !== panel) other.open = false;
+                });
+            });
+        });
         
         // --- 1. GLOBAL VARIABLES ---
         const generateButton = document.getElementById('generate-btn');
@@ -397,6 +347,35 @@
             return `<span style="color:${color}; font-weight:600; text-transform:capitalize;">${escapeHtml(norm)}</span>`;
         }
 
+        function renderSystemHealth(data) {
+            const dot = document.getElementById('system-health-dot');
+            const text = document.getElementById('system-health-text');
+            const detail = document.getElementById('system-health-detail');
+            if (!dot || !text || !detail) return;
+
+            const agents = Array.isArray(data?.agents) ? data.agents : [];
+            if (!agents.length) {
+                dot.className = 'health-dot health-dot-warn';
+                text.textContent = 'No agent status yet';
+                detail.textContent = 'Waiting for first heartbeat.';
+                return;
+            }
+
+            const hasDegraded = agents.some(a => (a?.health || '').toLowerCase() === 'degraded');
+            const healthyCount = agents.filter(a => (a?.health || '').toLowerCase() === 'ok').length;
+
+            if (hasDegraded) {
+                dot.className = 'health-dot health-dot-warn';
+                text.textContent = 'Degraded';
+                detail.textContent = `${healthyCount}/${agents.length} agents healthy.`;
+                return;
+            }
+
+            dot.className = 'health-dot health-dot-ok';
+            text.textContent = 'Operational';
+            detail.textContent = `${healthyCount}/${agents.length} agents healthy.`;
+        }
+
         function renderAgentStatusPanel(data) {
             const tbody = document.getElementById('agent-status-tbody');
             if (!tbody) return;
@@ -429,8 +408,10 @@
             try {
                 const response = await fetch('/api/agent-status');
                 const payload = await response.json();
+                renderSystemHealth(payload);
                 renderAgentStatusPanel(payload);
             } catch (error) {
+                renderSystemHealth({ agents: [] });
                 const tbody = document.getElementById('agent-status-tbody');
                 if (tbody) {
                     tbody.innerHTML = '<tr><td colspan="5" style="padding: 0.75rem; color: #E57373;">Unable to load agent status.</td></tr>';
@@ -540,7 +521,7 @@
         async function handleDeposit() {
             try {
                 // Show loading state
-                document.getElementById('simulate-deposit-btn').disabled = true;
+                document.getElementById('trigger-deposit-btn').disabled = true;
                 
                 // Call backend to create activity and process it
                 const response = await fetch('/api/simulate-deposit', {
@@ -552,7 +533,7 @@
                 
                 if (!response.ok || result.total_eco === undefined) {
                     alert('Error: ' + (result.error || 'Failed to process deposit'));
-                    document.getElementById('simulate-deposit-btn').disabled = false;
+                    document.getElementById('trigger-deposit-btn').disabled = false;
                     return;
                 }
                 
@@ -593,7 +574,7 @@
                 document.getElementById('success-modal').style.display = 'flex';
                 modalConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
                 
-                document.getElementById('simulate-deposit-btn').disabled = false;
+                document.getElementById('trigger-deposit-btn').disabled = false;
 
                 // After re-rendering activities, ensure hidden rows stay hidden
                 applyHiddenStatusStyles();
@@ -602,7 +583,7 @@
             } catch (e) {
                 console.error('[FRONTEND] Error in handleDeposit:', e);
                 alert('Error processing deposit');
-                document.getElementById('simulate-deposit-btn').disabled = false;
+                document.getElementById('trigger-deposit-btn').disabled = false;
             }
         }
 
@@ -790,21 +771,23 @@
                 const hidden = statusLower === 'failed' || statusLower === 'rejected';
                 const amount = Number(act.amount) || 0;
                 const logbookStatus = (act.logbook_status || '').toLowerCase();
+                const rewardStatus = (act.reward_status || '').toLowerCase();
 
-                const statusCell = (() => {
-                    if (hidden) {
-                        return `${statusBadge(displayStatus, 'muted')} <span class="status-note">(hidden)</span>`;
+                const settlementBadge = (() => {
+                    if (hidden || (act.pipeline_stage || '').toLowerCase() === 'rejected') {
+                        return statusBadge('Rejected', 'warn');
                     }
                     if (logbookStatus === 'anchored') {
-                        return `${statusBadge('Proof finalized', 'ok')} ${statusBadge('Hedera anchored', 'ok-soft')}`;
+                        return statusBadge('Anchored', 'ok');
                     }
-                    if (logbookStatus === 'offchain_final') {
-                        return `${statusBadge('Proof finalized', 'ok')} ${statusBadge('Anchor pending', 'warn')}`;
+                    if (logbookStatus === 'offchain_final' || logbookStatus === 'demo_skipped' || rewardStatus === 'finalized_no_transfer') {
+                        return statusBadge('Fallback (Off-chain final)', 'muted');
                     }
-                    if (logbookStatus === 'demo_skipped') {
-                        return `${statusBadge('Proof finalized', 'ok')} ${statusBadge('Demo skipped', 'muted')}`;
-                    }
-                    return statusBadge(displayStatus || 'pending', 'pending');
+                    return statusBadge('Fallback (Off-chain final)', 'pending');
+                })();
+
+                const statusCell = (() => {
+                    return settlementBadge;
                 })();
 
                 const row = document.createElement('tr');
@@ -832,24 +815,12 @@
                         return `<div class="tx-line">HCS: Demo skipped</div>${rewardLine}`;
                     }
                     if (logbookStatus === 'offchain_final') {
-                        if (act.id) {
-                            return `<div class="tx-line">HCS: Pending/Unavailable</div>
-                                <form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0 0 0 8px;">
-                                    <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
-                                </form>${rewardLine}`;
-                        }
                         return `<div class="tx-line">HCS: Pending/Unavailable</div>${rewardLine}`;
                     }
                     if (demoMode && (!logbookStatus || logbookStatus === 'pending')) {
                         return `<div class="tx-line">HCS: processing...</div>${rewardLine}`;
                     }
                     if (logbookStatus === 'failed' || (act.pipeline_stage || '').toLowerCase() === 'log_failed') {
-                        if (act.id) {
-                            return `<div class="tx-line">HCS: Failed</div>
-                            <form method="post" action="/admin/retry-logbook/${encodeURIComponent(act.id)}" style="display:inline; margin:0 0 0 8px;">
-                                <button type="submit" class="btn-secondary" style="margin:0; padding:0.25rem 0.6rem; font-size:0.8rem;">Retry Hedera Log</button>
-                            </form>${rewardLine}`;
-                        }
                         return `<div class="tx-line">HCS: Failed</div>${rewardLine}`;
                     }
                     return `<div class="tx-line">HCS: Pending/Unavailable</div>${rewardLine}`;
@@ -864,19 +835,19 @@
                 })();
 
                 row.innerHTML = `
-                    <td style="padding: 0.5rem; white-space: nowrap;">${formatDateTimeDisplay(act.timestamp)}</td>
-                    <td style="padding: 0.5rem;">${act.desc || ''}</td>
-                    <td style="padding: 0.5rem;">${amount.toFixed(2)}</td>
-                    <td style="padding: 0.5rem;">${statusCell}</td>
-                    <td style="padding: 0.5rem;">${proofCell}</td>
-                    <td style="padding: 0.5rem;">${txCell}</td>
+                    <td>${formatDateTimeDisplay(act.timestamp)}</td>
+                    <td>${act.desc || ''}</td>
+                    <td>${amount.toFixed(2)}</td>
+                    <td>${statusCell}</td>
+                    <td>${proofCell}</td>
+                    <td>${txCell}</td>
                 `;
                 tbody.appendChild(row);
             });
         }
 
         // --- EVENT LISTENERS ---
-        document.getElementById('simulate-deposit-btn').addEventListener('click', handleDeposit);
+        document.getElementById('trigger-deposit-btn').addEventListener('click', handleDeposit);
         
         document.getElementById('modal-close-btn').addEventListener('click', function() {
             const successModalEl = document.getElementById('success-modal');
@@ -938,5 +909,4 @@
             <button class="btn-primary-large btn-form" id="modal-close-btn">Awesome!</button>
         </div>
     </div>
-</body>
-</html>
+{% endblock %}

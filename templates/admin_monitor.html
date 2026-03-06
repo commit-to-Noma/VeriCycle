@@ -1,181 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends "base.html" %}
 
-<title>VeriCycle Admin Monitor</title>
-
-<link rel="stylesheet" href="/static/style.css">
-
-<style>
-
-body {
-
-font-family: Arial;
-
-background: #0b0f14;
-
-color: white;
-
-padding: 20px;
-
-}
-
-.card {
-
-background: #151b22;
-
-padding: 15px;
-
-margin-bottom: 15px;
-
-border-radius: 8px;
-
-}
-
-button {
-
-background: #2ecc71;
-
-border: none;
-
-padding: 8px;
-
-cursor: pointer;
-
-}
-
-.verify-badge {
-display: inline-block;
-padding: 4px 8px;
-border-radius: 6px;
-font-size: 12px;
-font-weight: 700;
-margin-left: 10px;
-}
-
-.verify-badge.ok {
-background: #0b6623;
-color: #ffffff;
-}
-
-.verify-badge.bad {
-background: #B71C1C;
-color: #ffffff;
-}
-
-.decision-feed {
-background: #0f141b;
-border: 1px solid #2a3340;
-border-radius: 6px;
-padding: 10px;
-max-height: 220px;
-overflow-y: auto;
-font-size: 12px;
-}
-
-.decision-item {
-padding: 6px 0;
-border-bottom: 1px solid #1f2833;
-}
-
-.decision-item.info {
-color: #c7d2e1;
-}
-
-.decision-item.warn {
-color: #f9c27a;
-}
-
-.decision-item.error {
-color: #ff9aa2;
-}
-
-.decision-item:last-child {
-border-bottom: none;
-}
-
-.golden-runs-grid {
-display: grid;
-grid-template-columns: repeat(3, minmax(0, 1fr));
-gap: 10px;
-}
-
-.golden-run-tile {
-background: #0f141b;
-border: 1px solid #2a3340;
-border-radius: 8px;
-padding: 10px;
-}
-
-.golden-run-tile h4 {
-margin: 0 0 8px 0;
-font-size: 14px;
-}
-
-.golden-run-tile p {
-margin: 6px 0;
-font-size: 12px;
-}
-
-a {
-
-color: #58a6ff;
-
-}
-
-</style>
-
-</head>
-
-<body>
-
+{% block content %}
 <h1>VeriCycle Admin Monitor</h1>
 
-<p>
-	<a href="/collector">Back to Collector</a> |
-	<a href="/home">Home</a>
-</p>
+<h2 class="admin-section-title">System Diagnostics</h2>
 
-<div class="card" id="demoModeCard">Demo Mode: ...</div>
+<section class="system-diagnostics-grid">
+	<div class="card" id="demoModeCard">Demo Mode: ...</div>
+	<div class="card" id="queue-summary">Queue: loading...</div>
+	<div class="card" id="judge-summary">Judge Summary: loading...</div>
+	<div class="card" id="golden-runs-card">Golden Runs: loading...</div>
+	<div class="card" id="demo-profile-card">Demo profile: loading...</div>
+	<div class="card" id="ops-alerts">Ops alerts: loading...</div>
+	<div class="card" id="dead-letter-card">Dead letter queue: loading...</div>
+	<div class="card" id="audit-card">Admin audit: loading...</div>
+</section>
 
-<div class="card" id="queue-summary">Queue: loading...</div>
-<div class="card" id="judge-summary">Judge Summary: loading...</div>
-<div class="card" id="golden-runs-card">Golden Runs: loading...</div>
-<div class="card" id="demo-profile-card">Demo profile: loading...</div>
-<div class="card" id="ops-alerts">Ops alerts: loading...</div>
-<div class="card" id="dead-letter-card">Dead letter queue: loading...</div>
-<div class="card" id="audit-card">Admin audit: loading...</div>
+<div class="admin-actions-row">
+	<button id="createDemoDepositBtn" class="btn-primary">Create Demo Deposit</button>
+	<button id="generateEvidencePackBtn" class="btn-secondary">Generate Demo Evidence Pack</button>
 
-<button id="createDemoDepositBtn" style="margin:8px 0;">Create Demo Deposit</button>
-<button id="generateEvidencePackBtn" style="margin:8px 0 8px 8px;">Generate Demo Evidence Pack</button>
+	<form method="post" action="/admin/cleanup-stale-running" class="inline-form">
+		<button type="submit" class="btn-danger">Mark Running as Failed</button>
+	</form>
+</div>
 
-<form method="post" action="/admin/cleanup-stale-running" style="margin:8px 0;">
-	<button type="submit">Mark Running as Failed</button>
-</form>
-
-<label style="display:block;margin:10px 0;">
-	<input type="checkbox" id="showFailed" />
-	Show failed tasks
+<label class="admin-filter-row">
+	<input type="checkbox" id="hideFailed" checked />
+	Hide failed
 </label>
 
-<label style="display:block;margin:10px 0;">
+<label class="admin-filter-row">
 	<input type="checkbox" id="showDebug" />
 	Debug details
 </label>
 
-<label style="display:block;margin:10px 0;">
+<label class="admin-filter-row">
 	Date Range:
-	<select id="dateRange" style="margin-left:8px;">
+	<select id="dateRange" class="admin-select">
 		<option value="today">Today</option>
 		<option value="7d">Last 7 days</option>
 		<option value="all" selected>All</option>
 	</select>
 </label>
 
-<div id="autoVerifyStatus" class="card" style="margin-top:8px;color:#9ad7a6;font-weight:600;">Auto-verify pending...</div>
+<div id="autoVerifyStatus" class="card auto-verify-status">Auto-verify pending...</div>
 
 <div id="activities"></div>
-<div id="activity-controls" class="card" style="display:none;"></div>
+<div id="activity-controls" class="card activity-controls"></div>
 
 <script>
 
@@ -229,7 +101,7 @@ function loadQueueSummary() {
 			const el = document.getElementById("queue-summary");
 			el.innerHTML = `
 				<h3>Queue Summary</h3>
-				<p>Queued: ${q.queued ?? 0} | Running: ${q.running ?? 0} | Failed: ${q.failed ?? 0} | Dead Letter: ${q.dead_letter ?? 0} | Done: ${q.done ?? 0}</p>
+				<p>Queued: ${q.queued ?? 0} | Running: ${q.running ?? 0} | Failed: ${q.failed ?? 0} | Dead Letter: ${q.dead_letter ?? 0} | Completed: ${q.done ?? 0}</p>
 				<p>Stalled running: ${q.stalled_running ?? 0}</p>
 			`;
 		})
@@ -334,22 +206,22 @@ function paintProofStatus(id, result) {
 	const el = document.getElementById("proof_" + id);
 	if (!el) return;
 	if (result === "verified") {
-		el.textContent = "Proof hash OK";
-		el.className = "verify-badge ok";
+		el.textContent = "Verified";
+		el.className = "status-badge status-ok";
 		return;
 	}
 	if (result === "mismatch") {
-		el.textContent = "Proof hash MISMATCH";
-		el.className = "verify-badge bad";
+		el.textContent = "Mismatch";
+		el.className = "status-badge status-bad";
 		return;
 	}
 	if (result === "failed") {
-		el.textContent = "Proof verify failed";
-		el.className = "verify-badge bad";
+		el.textContent = "Failed";
+		el.className = "status-badge status-bad";
 		return;
 	}
-	el.textContent = "Proof verify error";
-	el.className = "verify-badge bad";
+	el.textContent = "Error";
+	el.className = "status-badge status-bad";
 }
 
 function restoreProofStatusesFromCache() {
@@ -391,9 +263,9 @@ function updateJudgeSummary(filtered) {
 
 	el.innerHTML = `
 		<h3>Judge Summary</h3>
-		<p>Total: ${total} | HCS anchored: ${anchored} | HTS paid: ${paid} | Fallback: ${fallback} | Attested: ${attested}</p>
-		<p>Latest paid HTS: ${latestPaid ? txLink(latestPaid.hts_tx_id || latestPaid.reward_tx_id) : "—"}</p>
-		<p>Latest anchored HCS: ${latestHcs ? txLink(latestHcs.hcs_tx_id || latestHcs.logbook_tx_id || latestHcs.hedera_tx_id) : "—"}</p>
+		<p>Total: ${total} | HCS Anchored: ${anchored} | HTS Paid: ${paid} | Fallback: ${fallback} | Attested: ${attested}</p>
+		<p>Latest HTS Paid: ${latestPaid ? txLink(latestPaid.hts_tx_id || latestPaid.reward_tx_id) : "—"}</p>
+		<p>Latest HCS Anchored: ${latestHcs ? txLink(latestHcs.hcs_tx_id || latestHcs.logbook_tx_id || latestHcs.hedera_tx_id) : "—"}</p>
 	`;
 }
 
@@ -440,14 +312,14 @@ function renderGoldenRunTile(title, activity) {
 				<p>Activity ID: —</p>
 				<p>HCS: —</p>
 				<p>HTS: —</p>
-				<p>Proof verify: pending</p>
+				<p>Proof Verify: Pending</p>
 			</div>
 		`;
 	}
 
 	const hcsTx = activity.hcs_tx_id || activity.logbook_tx_id || activity.hedera_tx_id;
 	const htsTx = activity.hts_tx_id || activity.reward_tx_id;
-	const proofState = proofVerifyCache.get(activity.id) === "verified" ? "OK" : "pending";
+	const proofState = proofVerifyCache.get(activity.id) === "verified" ? "Verified" : "Pending";
 
 	return `
 		<div class="golden-run-tile">
@@ -455,7 +327,7 @@ function renderGoldenRunTile(title, activity) {
 			<p>Activity ID: ${activity.id}</p>
 			<p>HCS: ${txLink(hcsTx)}</p>
 			<p>HTS: ${txLink(htsTx)}</p>
-			<p>Proof verify: ${proofState}</p>
+			<p>Proof Verify: ${proofState}</p>
 		</div>
 	`;
 }
@@ -468,9 +340,69 @@ function updateGoldenRuns(filtered) {
 	el.innerHTML = `
 		<h3>Golden Runs</h3>
 		<div class="golden-runs-grid">
-			${renderGoldenRunTile("Perfect flow (anchored + paid + attested)", runs.perfect)}
-			${renderGoldenRunTile("Resilience flow (retry → anchored)", runs.resilience)}
+			${renderGoldenRunTile("Perfect flow (Anchored + Paid + Attested)", runs.perfect)}
+			${renderGoldenRunTile("Resilience flow (Retry → Anchored)", runs.resilience)}
 			${renderGoldenRunTile("Rejected flow (guardrails)", runs.rejected)}
+		</div>
+	`;
+}
+
+function settlementBadgeClass(activity) {
+	const reward = (activity?.reward_status || "").toString().toLowerCase();
+	const logbook = (activity?.logbook_status || "").toString().toLowerCase();
+	if (reward === "paid") return "status-badge-paid";
+	if (reward === "finalized_no_transfer" || logbook === "offchain_final") return "status-badge-fallback";
+	if (reward === "failed" || logbook === "failed") return "status-badge-failed";
+	return "status-badge-pending";
+}
+
+function renderAdminSummaryPanels(filtered, showDebug) {
+	const rows = Array.isArray(filtered) ? filtered : [];
+	const commerceEvents = rows
+		.flatMap(a => Array.isArray(a.commerce_events) ? a.commerce_events.map(ev => ({ ...ev, activity_id: a.id })) : [])
+		.sort((left, right) => (Number(right?.id) || 0) - (Number(left?.id) || 0))
+		.slice(0, 8);
+
+	const agents = ["CollectorAgent", "VerifierAgent", "LogbookAgent", "RewardAgent", "ComplianceAgent"];
+	const societyStats = agents.map((agent) => {
+		const completed = rows.filter((activity) => stepDone(activity, Array.isArray(activity.tasks) ? activity.tasks : [], agent)).length;
+		const scoreKey = {
+			CollectorAgent: "collector_reputation",
+			VerifierAgent: "verifier_reputation",
+			LogbookAgent: "logbook_reputation",
+			RewardAgent: "reward_reputation",
+			ComplianceAgent: "compliance_reputation"
+		}[agent];
+		const numericScores = rows
+			.map(r => Number(r?.[scoreKey]))
+			.filter(v => Number.isFinite(v));
+		const avgScore = numericScores.length
+			? (numericScores.reduce((sum, value) => sum + value, 0) / numericScores.length).toFixed(2)
+			: "N/A";
+		return `<p><strong>${agent.replace("Agent", "")}</strong> · Anchored records: ${completed} · Reputation: ${avgScore}</p>`;
+	});
+
+	return `
+		<div class="admin-panels-grid">
+			<div class="card">
+				<h3>Agent Commerce Ledger</h3>
+				<p style="margin:0 0 8px 0; color:#a8b3c2;">Verifier fees and inter-agent settlements proving value exchange.</p>
+				<div class="admin-simple-list">
+					${commerceEvents.length ? commerceEvents.map(ev => {
+						const amount = Number(ev.amount || 0).toFixed(2);
+						const tx = ev.tx_id ? txLink(ev.tx_id, "Open") : "—";
+						return `<p>#${ev.activity_id} · ${ev.payer_agent} → ${ev.payee_agent} · ${ev.reason || "Transfer"} · ${amount} ECO · ${tx}</p>`;
+					}).join("") : "<p>No commerce transactions yet.</p>"}
+				</div>
+			</div>
+
+			<div class="card">
+				<h3>Agent Society Overview</h3>
+				<p style="margin:0 0 8px 0; color:#a8b3c2;">Per-agent throughput and real-time reputation signals.</p>
+				<div class="admin-simple-list">
+					${societyStats.join("")}
+				</div>
+			</div>
 		</div>
 	`;
 }
@@ -491,7 +423,7 @@ function renderActivities(data) {
 		return;
 	}
 
-	const showFailed = document.getElementById("showFailed")?.checked;
+	const hideFailed = document.getElementById("hideFailed")?.checked;
 	const showDebug = document.getElementById("showDebug")?.checked;
 	const dateRange = document.getElementById("dateRange")?.value || "all";
 
@@ -507,7 +439,7 @@ function renderActivities(data) {
 	const filtered = sorted.filter(a => {
 		const tasks = Array.isArray(a.tasks) ? a.tasks : [];
 		const hasFailedTask = tasks.some(t => (t.status || "").toLowerCase() === "failed");
-		if (!(showFailed || !hasFailedTask)) return false;
+		if (hideFailed && hasFailedTask) return false;
 		return activityInRange(a, dateRange);
 	});
 
@@ -515,6 +447,7 @@ function renderActivities(data) {
 	updateGoldenRuns(filtered);
 
 	const visible = filtered.slice(0, visibleActivityCount);
+	container.innerHTML = renderAdminSummaryPanels(filtered, showDebug);
 
 	visible.forEach(a => {
 		const tasks = Array.isArray(a.tasks) ? a.tasks : [];
@@ -532,14 +465,6 @@ function renderActivities(data) {
 				hour12: false
 			});
 
-		let html = `
-		<div class="card">
-		<h3>Deposit ${a.id}</h3>
-		<p>Deposit: ${a.desc || "Not specified"}</p>
-		<p>Amount: ${a.amount}</p>
-		<p>Date/Time: ${exactTime}</p>
-		`;
-
 		const logbookStatus = (a.logbook_status || "").toString().toLowerCase();
 		const rewardStatus = (a.reward_status || "").toString().toLowerCase();
 
@@ -551,69 +476,72 @@ function renderActivities(data) {
 			{ key: "ComplianceAgent", label: "Compliance" }
 		];
 
-		html += `<h4>Pipeline Steps</h4>`;
-		steps.forEach(step => {
+		const pipelineRows = steps.map(step => {
 			const done = stepDone(a, tasks, step.key);
 			const statusBadge = done ? "✅" : "⏳";
-			const task = tasks.find(t => t.agent === step.key) || {};
-			const timestamp = exactTime;
 			let txRef = "—";
 			if (step.key === "LogbookAgent") txRef = txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id);
 			if (step.key === "RewardAgent") txRef = txLink(a.hts_tx_id || a.reward_tx_id);
 			if (step.key === "ComplianceAgent") txRef = a.compliance_tx_id || "done";
+			return `<div class="pipeline-item ${done ? "done" : ""}"><strong>${statusBadge} ${step.label}</strong><br><span>${exactTime}</span><br><span>TX: ${txRef}</span></div>`;
+		}).join("");
 
-			html += `<p>${step.label} ${statusBadge} · ${timestamp} · TX: ${txRef}</p>`;
-			if (showDebug && task.error) {
-				html += `<p style="color:#f9c27a;">Debug: ${task.error}</p>`;
-			}
-		});
+		const statusLabel = normalizeStatusLabel(a.status || a.verified_status || rewardStatus || logbookStatus || "pending");
+		const evidenceLayer = `
+			<div class="admin-layer">
+				<h4>Core Evidence Links</h4>
+				<p style="margin:0 0 8px 0;">HCS Anchor: ${txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id)}</p>
+				<p style="margin:0 0 8px 0;">HTS Reward: ${txLink(a.hts_tx_id || a.reward_tx_id)}</p>
+				<p style="margin:0 0 8px 0;">Compliance TX: ${a.compliance_tx_id || "—"}</p>
+				<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+					<button class="btn-primary" onclick="verifyProof(${a.id})">Verify Proof Hash</button>
+					<button class="btn-secondary" onclick="regenerateProof(${a.id})">Regenerate Proof Bundle</button>
+					<span id="proof_${a.id}" style="align-self:center;"></span>
+				</div>
+			</div>
+		`;
 
-		html += `<p>trust_weight: ${(a.trust_weight ?? 0).toFixed(2)} · verifier_reputation: ${(a.verifier_reputation ?? 0).toFixed(2)} · reputation_delta: ${((a.reputation_delta ?? 0) >= 0 ? "+" : "") + (a.reputation_delta ?? 0).toFixed(2)}</p>`;
-		html += `<p>confidence_score: ${((a.confidence_score ?? 0) * 100).toFixed(1)}%</p>`;
-		html += `<p>HCS: ${txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id)} | HTS: ${txLink(a.hts_tx_id || a.reward_tx_id)} | Compliance: ${a.compliance_tx_id || "done"}</p>`;
+		const pipelineLayer = `
+			<div class="admin-layer">
+				<h4>Pipeline Overview</h4>
+				<p style="margin:0 0 8px 0;">Deposit: ${a.desc || "Not specified"} · Amount: ${a.amount} · Date/Time: ${exactTime}</p>
+				<span class="status-badge ${settlementBadgeClass(a)}">${statusLabel}</span>
+				<div class="pipeline-checks" style="margin-top:8px;">
+					${pipelineRows}
+				</div>
+			</div>
+		`;
 
-		if (logbookStatus === "offchain_final" || logbookStatus === "failed" || (!demoMode && (!logbookStatus || logbookStatus === "pending"))) {
-			html += `<p><button onclick="retry(${a.id})">Retry Hedera Log</button></p>`;
-			if (showDebug && a.logbook_last_error) {
-				html += `<p style="color:#f9c27a;">Debug: ${a.logbook_last_error}</p>`;
-			}
-		}
+		const rawLayer = `
+			<div class="admin-layer">
+				<details class="debug-details">
+					<summary>Raw Payload and Debug Data</summary>
+					<p>trust_weight: ${(a.trust_weight ?? 0).toFixed(2)} · verifier_reputation: ${(a.verifier_reputation ?? 0).toFixed(2)} · reputation_delta: ${((a.reputation_delta ?? 0) >= 0 ? "+" : "") + (a.reputation_delta ?? 0).toFixed(2)}</p>
+					<p>confidence_score: ${((a.confidence_score ?? 0) * 100).toFixed(1)}%</p>
+					${(logbookStatus === "offchain_final" || logbookStatus === "failed" || (!demoMode && (!logbookStatus || logbookStatus === "pending"))) ? `<p><button class="btn-secondary" onclick="retry(${a.id})">Retry Hedera Log</button></p>` : ""}
+					${(showDebug && a.logbook_last_error) ? `<p style="color:#f9c27a;">Debug: ${a.logbook_last_error}</p>` : ""}
+					${(showDebug && rewardStatus === "finalized_no_transfer" && a.reward_last_error) ? `<p style="color:#f9c27a;">Debug: ${a.reward_last_error}</p>` : ""}
+					<h4>Agent Pipeline Log</h4>
+					${tasks.map(t => `<p>${t.agent} : ${normalizeStatusLabel(t.status)}${showDebug && t.error ? ` (${t.error})` : ""}</p>`).join("") || "<p>No pipeline logs yet.</p>"}
+					<h4>Agent Decision Feed</h4>
+					<p style="margin:0 0 8px 0; color:#a8b3c2;">Chronological reasons and stage transitions</p>
+					<div id="feed_${a.id}" class="decision-feed">Loading decisions...</div>
+					<p style="margin-top:8px;"><button class="btn-secondary" onclick="refreshFeed(${a.id})">Refresh Feed</button></p>
+					<pre style="white-space:pre-wrap; max-height:220px; overflow:auto; border:1px solid #2a3340; padding:8px; border-radius:6px;">${JSON.stringify(a, null, 2)}</pre>
+				</details>
+			</div>
+		`;
 
-		if (rewardStatus === "finalized_no_transfer" && showDebug && a.reward_last_error) {
-			html += `<p style="color:#f9c27a;">Debug: ${a.reward_last_error}</p>`;
-		}
+		const html = `
+			<div class="card admin-transaction-card">
+				<h3>Deposit ${a.id}</h3>
+				${pipelineLayer}
+				${evidenceLayer}
+				${rawLayer}
+			</div>
+		`;
 
-		const commerceEvents = Array.isArray(a.commerce_events) ? a.commerce_events : [];
-		html += `<h4>Agent Commerce Events</h4>`;
-		if (!commerceEvents.length) {
-			html += `<p>No commerce events yet.</p>`;
-		} else {
-			commerceEvents.forEach(ev => {
-				const amt = Number(ev.amount || 0).toFixed(2);
-				const tx = ev.tx_id ? txLink(ev.tx_id) : "—";
-				html += `<p>${ev.payer_agent} → ${ev.payee_agent} | ${ev.reason} | ${amt} ECO | ${tx} | ${ev.status}</p>`;
-			});
-		}
-
-		html += `<p>
-		<button style="margin-top:10px" onclick="verifyProof(${a.id})">Verify Proof Hash</button>
-		<button style="margin-top:10px;margin-left:10px" onclick="regenerateProof(${a.id})">Regenerate Proof Bundle</button>
-		<span id="proof_${a.id}" style="margin-left:10px"></span>
-		</p>`;
-
-		html += `<h4>Agent Pipeline</h4>`;
-		tasks.forEach(t => {
-			const label = normalizeStatusLabel(t.status);
-			html += `<p>${t.agent} : ${label}${showDebug && t.error ? ` (${t.error})` : ""}</p>`;
-		});
-
-		html += `<h4>Agent Decision Feed</h4>
-		<p style="margin:0 0 8px 0; color:#a8b3c2;">Chronological reasons and stage transitions</p>
-		<div id="feed_${a.id}" class="decision-feed">Loading decisions...</div>
-		<p style="margin-top:8px;"><button onclick="refreshFeed(${a.id})">Refresh Feed</button></p>`;
-
-		html += "</div>";
-		container.innerHTML += html;
+		container.insertAdjacentHTML("beforeend", html);
 		loadDecisionFeed(a.id);
 	});
 
@@ -623,7 +551,7 @@ function renderActivities(data) {
 		if (remaining > 0) {
 			controls.style.display = "block";
 			controls.innerHTML = `<p style="margin:0 0 8px 0;">${shownText}</p>
-			<button onclick="loadMoreActivities()">Load older transactions (${remaining} remaining)</button>`;
+			<button class="btn-secondary" onclick="loadMoreActivities()">Load older transactions (${remaining} remaining)</button>`;
 		} else if (filtered.length > ACTIVITY_PAGE_SIZE) {
 			controls.style.display = "block";
 			controls.innerHTML = `<p style="margin:0;">${shownText}</p>`;
@@ -741,7 +669,7 @@ function loadActivities() {
 		});
 }
 
-document.getElementById("showFailed").addEventListener("change", () => {
+document.getElementById("hideFailed").addEventListener("change", () => {
 	renderActivities(adminActivities);
 	restoreProofStatusesFromCache();
 	runAutoVerify();
@@ -910,12 +838,10 @@ fetch("/api/proof-bundle/" + id)
 	.catch(() => {
 		if (el) {
 			el.textContent = "Proof regenerate failed";
-			el.className = "verify-badge bad";
+			el.className = "status-badge status-bad";
 		}
 	});
 }
 
 </script>
-
-</body>
-</html>
+{% endblock %}

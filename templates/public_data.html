@@ -13,6 +13,10 @@
 
 <div class="card" style="margin-top:12px;">
   <h3>Latest HCS Messages</h3>
+  <div style="display:flex; gap:10px; align-items:center; margin:10px 0 6px 0;">
+    <input id="mirrorFilter" type="text" placeholder="Filter by activity_id or tx_id" style="flex:1; min-width:280px;" />
+    <button type="button" id="clearMirrorFilter" class="btn-secondary" style="margin-top:0;">Clear</button>
+  </div>
 
   {% if messages and messages|length > 0 %}
     <table class="table" style="width:100%; margin-top:8px;">
@@ -26,16 +30,26 @@
       </thead>
       <tbody>
         {% for m in messages %}
-        <tr>
+        {% set parsed = m.parsed or {} %}
+        {% set activity_id = parsed.get('activity_id') if parsed is mapping else '' %}
+        {% set tx_id = m.tx_id or '' %}
+        <tr class="mirror-row" data-activity-id="{{ activity_id }}" data-tx-id="{{ tx_id }}">
           <td>{{ m.sequence_number }}</td>
           <td style="white-space:nowrap;">{{ m.consensus_timestamp }}</td>
           <td style="white-space:nowrap;">{{ m.tx_id if m.tx_id else "—" }}</td>
           <td style="max-width:760px; overflow-wrap:anywhere;">
-            {% if m.parsed %}
-              <pre style="margin:0; white-space:pre-wrap;">{{ m.parsed | tojson(indent=2) }}</pre>
-            {% else %}
-              <pre style="margin:0; white-space:pre-wrap;">{{ m.decoded }}</pre>
-            {% endif %}
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+              <button type="button" class="btn-secondary copy-decoded" style="margin-top:0;" data-decoded='{{ m.decoded | tojson }}'>Copy decoded message</button>
+              {% if activity_id %}<span class="status-badge status-ok-soft">activity_id: {{ activity_id }}</span>{% endif %}
+            </div>
+            <details class="debug-details">
+              <summary>Decoded Message</summary>
+              {% if m.parsed %}
+                <pre class="mirror-json">{{ m.parsed | tojson(indent=2) }}</pre>
+              {% else %}
+                <pre class="mirror-json">{{ m.decoded }}</pre>
+              {% endif %}
+            </details>
           </td>
         </tr>
         {% endfor %}
@@ -45,5 +59,49 @@
     <p>No messages returned yet.</p>
   {% endif %}
 </div>
+
+<script>
+  (function () {
+    const input = document.getElementById('mirrorFilter');
+    const clearBtn = document.getElementById('clearMirrorFilter');
+    const rows = Array.from(document.querySelectorAll('.mirror-row'));
+
+    function applyFilter() {
+      const q = (input?.value || '').trim().toLowerCase();
+      rows.forEach((row) => {
+        const activityId = (row.getAttribute('data-activity-id') || '').toLowerCase();
+        const txId = (row.getAttribute('data-tx-id') || '').toLowerCase();
+        const visible = !q || activityId.includes(q) || txId.includes(q);
+        row.style.display = visible ? '' : 'none';
+      });
+    }
+
+    input?.addEventListener('input', applyFilter);
+    clearBtn?.addEventListener('click', () => {
+      if (input) input.value = '';
+      applyFilter();
+    });
+
+    document.querySelectorAll('.copy-decoded').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const raw = button.getAttribute('data-decoded') || '""';
+        let decoded = '';
+        try {
+          decoded = JSON.parse(raw);
+        } catch (_) {
+          decoded = raw;
+        }
+        try {
+          await navigator.clipboard.writeText(String(decoded));
+          button.textContent = 'Copied';
+          setTimeout(() => { button.textContent = 'Copy decoded message'; }, 1000);
+        } catch (_) {
+          button.textContent = 'Copy failed';
+          setTimeout(() => { button.textContent = 'Copy decoded message'; }, 1200);
+        }
+      });
+    });
+  })();
+</script>
 
 {% endblock %}

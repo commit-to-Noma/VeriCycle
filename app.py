@@ -170,6 +170,50 @@ def hashscan_link(tx_id: str | None) -> str | None:
     return f"https://hashscan.io/testnet/transaction/{tx_id}"
 
 
+def _find_golden_runs(rows: list[Activity]) -> dict:
+    source = rows or []
+
+    perfect = next((a for a in source if
+        (a.logbook_status or "").lower() == "anchored"
+        and (a.reward_status or "").lower() == "paid"
+        and (a.pipeline_stage or "").lower() == "attested"
+    ), None)
+
+    resilience = next((a for a in source if
+        (a.logbook_status or "").lower() == "anchored"
+        and (
+            bool(a.logbook_last_error)
+            or (a.logbook_status or "").lower() in {"offchain_final", "failed"}
+        )
+    ), None)
+
+    rejected = next((a for a in source if
+        (a.pipeline_stage or "").lower() == "rejected"
+        or (a.status or a.verified_status or "").lower() == "rejected"
+    ), None)
+
+    return {
+        "perfect": perfect,
+        "resilience": resilience,
+        "rejected": rejected,
+    }
+
+
+def _proof_hub_evidence(rows: list[Activity]) -> dict:
+    latest_hcs = next((a for a in rows if (a.logbook_status or "").lower() == "anchored" and (a.hcs_tx_id or a.logbook_tx_id or a.hedera_tx_id)), None)
+    latest_hts = next((a for a in rows if (a.reward_status or "").lower() == "paid" and (a.hts_tx_id or a.reward_tx_id)), None)
+    latest_commerce = AgentCommerceEvent.query.order_by(AgentCommerceEvent.id.desc()).first()
+
+    return {
+        "latest_hcs_tx": (latest_hcs.hcs_tx_id or latest_hcs.logbook_tx_id or latest_hcs.hedera_tx_id) if latest_hcs else None,
+        "latest_hts_tx": (latest_hts.hts_tx_id or latest_hts.reward_tx_id) if latest_hts else None,
+        "latest_commerce_tx": getattr(latest_commerce, "tx_id", None),
+        "latest_hcs_link": hashscan_link((latest_hcs.hcs_tx_id or latest_hcs.logbook_tx_id or latest_hcs.hedera_tx_id) if latest_hcs else None),
+        "latest_hts_link": hashscan_link((latest_hts.hts_tx_id or latest_hts.reward_tx_id) if latest_hts else None),
+        "latest_commerce_link": hashscan_link(getattr(latest_commerce, "tx_id", None)),
+    }
+
+
 def audit_admin_action(action: str, target_type: str | None = None, target_id: str | None = None, details: str | None = None):
     if not is_admin_user():
         return
@@ -621,8 +665,11 @@ def signup():
         return redirect(url_for('home'))
 
 
-@app.route("/login", methods=['POST'])
+@app.route("/login", methods=['GET', 'POST'])
 def login():
+    if request.method == 'GET':
+        return render_template('login.html', active_page='login')
+
     email = request.form.get('email')
     password = request.form.get('password')
     user = User.query.filter_by(email=email).first()
@@ -630,7 +677,7 @@ def login():
     if user and bcrypt.check_password_hash(user.password_hash, password):
         login_user(user, remember=True)
         
-        next_page = request.args.get('next')
+        next_page = request.form.get('next') or request.args.get('next')
         
         # Ensure collectors have completed their profile
         if current_user.role == 'collector':
@@ -700,6 +747,24 @@ def proof_integrity():
     return render_template('proof_integrity.html', active_page='proof_integrity')
 
 
+@app.get('/proof-hub')
+@login_required
+def proof_hub():
+    if not is_admin_user():
+        abort(403)
+
+    rows = Activity.query.order_by(Activity.timestamp.desc()).all()
+    golden_runs = _find_golden_runs(rows)
+    evidence = _proof_hub_evidence(rows)
+
+    return render_template(
+        'proof_hub.html',
+        active_page='proof_hub',
+        golden_runs=golden_runs,
+        evidence=evidence,
+    )
+
+
 @app.post('/api/public/proof-verify')
 def api_public_proof_verify():
     payload = request.get_json(silent=True) or {}
@@ -756,7 +821,11 @@ def profile():
         return redirect(url_for('profile')) # Stay on profile page to avoid session confusion
 
     # GET request
-    return render_template('profile.html', active_page='profile')
+    return render_template(
+        'profile.html',
+        active_page='profile',
+        private_key_value=get_user_private_key(current_user) or 'N/A (Center Account)'
+    )
 
 @app.route('/collector')
 @login_required 
@@ -1812,7 +1881,7 @@ def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stag
 def admin_monitor():
     if not is_admin_user():
         abort(403)
-    return render_template('admin_monitor.html')
+    return render_template('admin_monitor.html', active_page='admin_monitor')
 
 
 @app.route('/api/config')

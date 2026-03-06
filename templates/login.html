@@ -12,7 +12,7 @@
         <div class="container">
             <h1 class="logo">VeriCycle</h1>
             <nav>
-                <a href="{{ url_for('index') }}" class="nav-button">Home</a>
+                <a href="{{ url_for('home') }}" class="nav-button">Home</a>
                 <!-- Open modal signup instead of navigating to a separate page -->
                 <a href="#" class="nav-button js-open-auth" data-form="signup">Sign Up</a>
             </nav>
@@ -33,6 +33,7 @@
             {% endwith %}
 
             <form action="{{ url_for('login') }}" method="POST" class="verify-form">
+                <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
                 <div class="form-group">
                     <label for="email">Email:</label>
                     <input type="email" id="email" name="email" required>
