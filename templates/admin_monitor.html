@@ -46,6 +46,12 @@
 
 <div id="autoVerifyStatus" class="card auto-verify-status">Auto-verify pending...</div>
 
+<section class="card">
+	<h2>Flagged Events</h2>
+	<div id="flagged-events-empty" style="display:none;">No flagged events.</div>
+	<div id="flagged-events-list"></div>
+</section>
+
 <div id="activities"></div>
 <div id="activity-controls" class="card activity-controls"></div>
 
@@ -197,6 +203,106 @@ function normalizeStatusLabel(value) {
 		return "Hedera delayed (retry)";
 	}
 	return status;
+}
+
+function loadFlaggedEvents() {
+	fetch('/api/review/events')
+		.then(async (res) => {
+			if (!res.ok) {
+				throw new Error(`status_${res.status}`);
+			}
+			return res.json();
+		})
+		.then((data) => {
+			const list = document.getElementById('flagged-events-list');
+			const empty = document.getElementById('flagged-events-empty');
+			if (!list || !empty) return;
+
+			list.innerHTML = '';
+			const rows = data.rows || [];
+			if (!rows.length) {
+				empty.style.display = 'block';
+				return;
+			}
+
+			empty.style.display = 'none';
+			rows.forEach((row) => {
+				const signalsHtml = (row.signals || []).map((s) =>
+					`<li>${s.signal_type} · weight ${s.weight} · ${s.is_positive ? 'positive' : 'negative'}</li>`
+				).join('');
+
+				const card = document.createElement('div');
+				card.className = 'flagged-event-card';
+				card.innerHTML = `
+					<div><strong>Event #${row.id}</strong> — ${row.desc}</div>
+					<div>Status: ${row.pipeline_stage}</div>
+					<div>Confidence: ${row.confidence_score}</div>
+					<div>Reason: ${row.review_reason || 'conflicting_or_insufficient_signals'}</div>
+					<div><a href="${row.proof_bundle_url}" target="_blank">Open proof bundle</a></div>
+					<ul>${signalsHtml}</ul>
+					<div class="actions">
+						<button class="btn-primary" onclick="approveFlaggedEvent(${row.id})">Approve</button>
+						<button class="btn-danger" onclick="rejectFlaggedEvent(${row.id})">Reject</button>
+					</div>
+					<hr>
+				`;
+				list.appendChild(card);
+			});
+		})
+		.catch((err) => {
+			const list = document.getElementById('flagged-events-list');
+			const empty = document.getElementById('flagged-events-empty');
+			const msg = (err && String(err.message || '').includes('status_403'))
+				? 'Unable to load flagged events (requires admin or center role).'
+				: 'Unable to load flagged events.';
+			if (list) list.innerHTML = `<p>${msg}</p>`;
+			if (empty) empty.style.display = 'none';
+		});
+}
+
+function approveFlaggedEvent(activityId) {
+	fetch(`/api/review/events/${activityId}/approve`, {
+		method: 'POST',
+		headers: { 'X-Requested-With': 'XMLHttpRequest' }
+	})
+		.then(r => r.json())
+		.then((data) => {
+			if (!data.ok) {
+				alert(data.error || 'Approve failed');
+				return;
+			}
+			loadFlaggedEvents();
+			loadActivities();
+		})
+		.catch(() => {
+			alert('Approve failed');
+		});
+}
+
+function rejectFlaggedEvent(activityId) {
+	const reason = prompt('Reason for rejection:', 'manager_rejected_after_review');
+	if (reason === null) return;
+
+	fetch(`/api/review/events/${activityId}/reject`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'X-Requested-With': 'XMLHttpRequest'
+		},
+		body: JSON.stringify({ reason })
+	})
+		.then(r => r.json())
+		.then((data) => {
+			if (!data.ok) {
+				alert(data.error || 'Reject failed');
+				return;
+			}
+			loadFlaggedEvents();
+			loadActivities();
+		})
+		.catch(() => {
+			alert('Reject failed');
+		});
 }
 
 let adminActivities = [];
@@ -642,6 +748,7 @@ function runAutoVerify(data) {
 		});
 	})).then(() => {
 		if (status) status.innerText = `Auto-verify complete: ${okCount} verified, ${badCount} issues`;
+		loadFlaggedEvents();
 	});
 }
 
@@ -653,6 +760,7 @@ function loadActivities() {
 			visibleActivityCount = ACTIVITY_PAGE_SIZE;
 			renderActivities(adminActivities);
 			runAutoVerify();
+			loadFlaggedEvents();
 			loadQueueSummary();
 			loadOpsAlerts();
 			loadDeadLetter();
@@ -666,6 +774,7 @@ function loadActivities() {
 			}
 			const status = document.getElementById("autoVerifyStatus");
 			if (status) status.innerText = "Auto-verify error";
+			loadFlaggedEvents();
 		});
 }
 
@@ -733,6 +842,7 @@ document.getElementById("generateEvidencePackBtn").addEventListener("click", () 
 		});
 });
 
+loadFlaggedEvents();
 loadActivities();
 
 

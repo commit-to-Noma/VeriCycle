@@ -1742,6 +1742,13 @@ def is_admin_user():
         return False
 
 
+def can_review_events():
+    try:
+        return current_user.is_authenticated and getattr(current_user, "role", None) in ("admin", "center")
+    except Exception:
+        return False
+
+
 def can_access_oversight():
     try:
         return current_user.is_authenticated
@@ -2121,7 +2128,7 @@ def _export_evidence_pack(activity_rows: list[Activity], profile_name: str) -> s
 @app.get('/api/admin/demo-profile')
 @login_required
 def api_admin_demo_profile():
-    if not is_admin_user():
+    if not can_review_events():
         abort(403)
     name = request.args.get("name", "judge_testnet_v1")
     payload = profile_health(name)
@@ -2188,7 +2195,7 @@ def api_admin_download_evidence_pack(file_name):
 @app.route('/api/admin/activities')
 @login_required
 def api_admin_activities():
-    if not is_admin_user():
+    if not can_review_events():
         abort(403)
     activities = Activity.query.order_by(Activity.timestamp.asc()).all()
 
@@ -2279,10 +2286,137 @@ def api_admin_activities():
     return jsonify(result)
 
 
+@app.get('/api/review/events')
+@login_required
+def api_review_events():
+    if not can_review_events():
+        abort(403)
+
+    rows = (
+        Activity.query
+        .filter(Activity.pipeline_stage == "needs_review")
+        .order_by(Activity.id.desc())
+        .all()
+    )
+
+    payload = []
+    for activity in rows:
+        signals = []
+        for signal in activity.signals:
+            signals.append({
+                "id": signal.id,
+                "signal_type": signal.signal_type,
+                "source_role": signal.source_role,
+                "value": signal.value,
+                "weight": signal.weight,
+                "is_positive": signal.is_positive,
+                "metadata": json.loads(signal.metadata_json) if signal.metadata_json else {},
+            })
+
+        payload.append({
+            "id": activity.id,
+            "timestamp": activity.timestamp,
+            "desc": activity.desc,
+            "amount": activity.amount,
+            "status": activity.status,
+            "verified_status": activity.verified_status,
+            "pipeline_stage": activity.pipeline_stage,
+            "confidence_score": activity.confidence_score,
+            "trust_weight": activity.trust_weight,
+            "review_status": activity.review_status,
+            "review_reason": activity.review_reason,
+            "proof_bundle_url": f"/api/proof-bundle/{activity.id}",
+            "signals": signals,
+        })
+
+    return jsonify({"rows": payload})
+
+
+@app.post('/api/review/events/<int:activity_id>/approve')
+@login_required
+def api_review_event_approve(activity_id):
+    if not can_review_events():
+        abort(403)
+
+    activity = db.session.get(Activity, activity_id)
+    if not activity:
+        abort(404)
+
+    if activity.pipeline_stage != "needs_review":
+        return jsonify({"ok": False, "error": "Event is not awaiting review"}), 409
+
+    activity.review_status = "approved"
+    activity.review_reason = None
+    activity.reviewed_by_user_id = current_user.id
+    activity.reviewed_at = datetime.now(timezone.utc)
+
+    activity.status = "verified"
+    activity.verified_status = "verified"
+    activity.pipeline_stage = "verified"
+
+    db.session.commit()
+
+    queued = enqueue_once(activity.id, "LogbookAgent")
+    log_agent_event(
+        activity.id,
+        "ManagerReview",
+        "info",
+        activity.pipeline_stage,
+        None,
+        f"Event approved by {current_user.email}; LogbookAgent queued={queued}"
+    )
+    audit_admin_action("approve_review_event", "activity", str(activity.id), f"queued_logbook={queued}")
+    db.session.commit()
+
+    return jsonify({"ok": True, "activity_id": activity.id, "queued_logbook": queued})
+
+
+@app.post('/api/review/events/<int:activity_id>/reject')
+@login_required
+def api_review_event_reject(activity_id):
+    if not can_review_events():
+        abort(403)
+
+    activity = db.session.get(Activity, activity_id)
+    if not activity:
+        abort(404)
+
+    if activity.pipeline_stage != "needs_review":
+        return jsonify({"ok": False, "error": "Event is not awaiting review"}), 409
+
+    body = request.get_json(silent=True) or {}
+    reason = (body.get("reason") or "manager_rejected_after_review").strip()[:255]
+
+    activity.review_status = "rejected"
+    activity.review_reason = reason
+    activity.reviewed_by_user_id = current_user.id
+    activity.reviewed_at = datetime.now(timezone.utc)
+
+    activity.status = "rejected"
+    activity.verified_status = "rejected"
+    activity.pipeline_stage = "rejected"
+    activity.last_error = reason
+
+    db.session.commit()
+
+    log_agent_event(
+        activity.id,
+        "ManagerReview",
+        "info",
+        activity.pipeline_stage,
+        None,
+        f"Event rejected by {current_user.email}: {reason}"
+    )
+    audit_admin_action("reject_review_event", "activity", str(activity.id), reason)
+    db.session.commit()
+
+    return jsonify({"ok": True, "activity_id": activity.id})
+
+
 @app.route('/api/admin/queue')
 @login_required
 def api_admin_queue():
-    if not is_admin_user():
+    if not can_review_events():
         abort(403)
     pending = AgentTask.query.filter_by(status="queued").count()
     running = AgentTask.query.filter_by(status="running").count()
@@ -2309,7 +2443,7 @@ def api_admin_queue():
 @app.route('/api/admin/alerts')
 @login_required
 def api_admin_alerts():
-    if not is_admin_user():
+    if not can_review_events():
         abort(403)
 
     alerts = []
@@ -2364,7 +2498,7 @@ def api_admin_alerts():
 @app.route('/api/admin/dead-letter')
 @login_required
 def api_admin_dead_letter():
-    if not is_admin_user():
+    if not can_review_events():
         abort(403)
 
     rows = (
@@ -2419,7 +2553,7 @@ def admin_requeue_dead_letter(dead_letter_id):
 @app.get('/api/admin/audit-log')
 @login_required
 def api_admin_audit_log():
-    if not is_admin_user():
+    if not can_review_events():
         abort(403)
 
     rows = AdminAuditLog.query.order_by(AdminAuditLog.id.desc()).limit(100).all()
@@ -2442,7 +2576,7 @@ def api_admin_audit_log():
 @app.route('/api/admin/activity-events/<int:activity_id>')
 @login_required
 def api_admin_activity_events(activity_id):
-    if not is_admin_user():
+    if not can_review_events():
         abort(403)
 
     activity = db.session.get(Activity, activity_id)
@@ -2478,7 +2612,7 @@ def api_admin_activity_events(activity_id):
 @app.route('/api/admin/commerce-events/<int:activity_id>')
 @login_required
 def api_admin_commerce_events(activity_id):
-    if not is_admin_user():
+    if not can_review_events():
         abort(403)
 
     activity = db.session.get(Activity, activity_id)
