@@ -50,11 +50,24 @@ class Activity(db.Model):
     compliance_tx_id = db.Column(db.String(150), nullable=True)
     
     # PIPELINE FIELDS (for multi-agent coordinator)
-    pipeline_stage = db.Column(db.String(50), default="created")  # created -> collected -> verified -> logged -> rewarded -> attested
+    pipeline_stage = db.Column(db.String(50), default="created")  # created -> signals_collected -> verified|needs_review -> logged -> rewarded -> attested
     last_error = db.Column(db.String(512), nullable=True)
     attempt_count = db.Column(db.Integer, default=0)
+    review_status = db.Column(db.String(30), nullable=True)  # pending_review|approved|rejected
+    review_reason = db.Column(db.String(255), nullable=True)
+    reviewed_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
-    user = db.relationship('User', backref=db.backref('activities', lazy=True))
+    user = db.relationship(
+        'User',
+        foreign_keys=[user_id],
+        backref=db.backref('activities', lazy=True, foreign_keys='Activity.user_id')
+    )
+    reviewed_by = db.relationship(
+        'User',
+        foreign_keys=[reviewed_by_user_id],
+        backref=db.backref('reviewed_activities', lazy=True, foreign_keys='Activity.reviewed_by_user_id')
+    )
 
 
 class AgentTask(db.Model):
@@ -182,6 +195,27 @@ class AgentLog(db.Model):
     pipeline_stage = db.Column(db.String(50), nullable=True)
     hedera_tx_id = db.Column(db.String(150), nullable=True)
     last_error = db.Column(db.String(512), nullable=True)
+
+
+class VerificationSignal(db.Model):
+    __tablename__ = "verification_signal"
+
+    id = db.Column(db.Integer, primary_key=True)
+    activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"), nullable=False)
+    signal_type = db.Column(db.String(50), nullable=False)  # resident_confirmation, collector_submission, qr_scan, photo_proof, schedule_match
+    source_role = db.Column(db.String(30), nullable=False)  # participant, operator, system
+    source_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+
+    value = db.Column(db.String(120), nullable=True)  # confirmed, missed, matched, uploaded, etc.
+    weight = db.Column(db.Float, nullable=False, default=0.0)
+    is_positive = db.Column(db.Boolean, nullable=False, default=True)
+
+    metadata_json = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                           default=lambda: datetime.now(timezone.utc))
+
+    activity = db.relationship("Activity", backref=db.backref("signals", lazy=True, cascade="all, delete-orphan"))
+    source_user = db.relationship("User", backref=db.backref("verification_signals", lazy=True))
 
 
 class AgentCommerceEvent(db.Model):

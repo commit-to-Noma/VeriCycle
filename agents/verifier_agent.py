@@ -4,7 +4,8 @@ Assigns trust_weight and decides verified/rejected status.
 """
 
 from extensions import db
-from models import Activity, AgentTask, User
+from models import Activity, AgentTask, User, VerificationSignal
+from agents.trust_engine import compute_signal_score, should_verify
 
 
 def _enqueue_agent_once(activity_id: int, agent_name: str, task_type: str) -> bool:
@@ -68,14 +69,27 @@ class VerifierAgent:
                     print(f"{'='*80}\n", flush=True)
                     return False
 
-                # Simple trust scoring (can expand with user history, center reputation, etc.)
-                # For now: base trust of 0.85 for valid activities
-                activity.trust_weight = 0.85
-                activity.verifier_reputation = 0.85
+                signals = VerificationSignal.query.filter_by(activity_id=activity.id).all()
+                score, has_conflict = compute_signal_score(signals)
+
+                activity.confidence_score = score
+                activity.trust_weight = score
+                activity.verifier_reputation = score
                 activity.reputation_delta = 0.0
-                activity.verified_status = "verified"
-                activity.pipeline_stage = "verified"
-                activity.logbook_status = activity.logbook_status or "pending"
+
+                if should_verify(score, has_conflict):
+                    activity.verified_status = "verified"
+                    activity.status = "verified"
+                    activity.pipeline_stage = "verified"
+                    activity.review_status = None
+                    activity.review_reason = None
+                    activity.logbook_status = activity.logbook_status or "pending"
+                else:
+                    activity.verified_status = "pending"
+                    activity.status = "needs_review"
+                    activity.pipeline_stage = "needs_review"
+                    activity.review_status = "pending_review"
+                    activity.review_reason = "conflicting_or_insufficient_signals"
 
                 user = db.session.get(User, activity.user_id)
                 from app import stable_proof_input, compute_proof_sha256
@@ -89,19 +103,23 @@ class VerifierAgent:
                     "stage": "recorded",
                 }
                 activity.proof_hash = compute_proof_sha256(stable_proof_input(stable_bundle))
-                
-                print(f"[VERIFIER AGENT] VERIFIED: trust_weight={activity.trust_weight}", flush=True)
+                print(
+                    f"[VERIFIER AGENT] score={score} has_conflict={has_conflict} stage={activity.pipeline_stage}",
+                    flush=True,
+                )
                 
                 db.session.commit()
 
-                logbook_queued = _enqueue_agent_once(activity.id, "LogbookAgent", "log")
-                reward_queued = _enqueue_agent_once(activity.id, "RewardAgent", "reward")
-                db.session.commit()
-                print(f"[VERIFIER AGENT] Database updated", flush=True)
-                print(
-                    f"[VERIFIER AGENT] Enqueued downstream: LogbookAgent={logbook_queued}, RewardAgent={reward_queued}",
-                    flush=True
-                )
+                if activity.pipeline_stage == "verified":
+                    logbook_queued = _enqueue_agent_once(activity.id, "LogbookAgent", "log")
+                    db.session.commit()
+                    print(f"[VERIFIER AGENT] Database updated", flush=True)
+                    print(
+                        f"[VERIFIER AGENT] Enqueued downstream: LogbookAgent={logbook_queued}",
+                        flush=True
+                    )
+                else:
+                    print("[VERIFIER AGENT] Activity needs review; downstream agents not enqueued", flush=True)
                 print(f"{'='*80}\n", flush=True)
 
                 return True

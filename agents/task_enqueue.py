@@ -8,7 +8,8 @@ PIPELINE_TASKS = [
 
 def enqueue_pipeline(activity_id: int):
     now = datetime.now(timezone.utc)
-    # Initial enqueue is Collector only. Downstream agents are enqueued by prior agents.
+    # Phase 1 signal flow: initial enqueue remains Collector only.
+    # Verifier/Logbook/Reward are conditionally enqueued downstream based on verification outcome.
     offsets = [0]
     for (agent_name, task_type), off in zip(PIPELINE_TASKS, offsets):
         db.session.add(AgentTask(

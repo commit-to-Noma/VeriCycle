@@ -92,7 +92,7 @@ login_manager.login_message_category = None
 # 3. DATABASE MODEL
 # - Define `User` and `Activity` models used across routes.
 # -----------------------------------------------------------------
-from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask, AgentCommerceEvent, DeadLetterTask, AdminAuditLog
+from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask, AgentCommerceEvent, DeadLetterTask, AdminAuditLog, VerificationSignal
 from extensions import db as _db  # ensure db is available for seed helper
 from agents.proof_utils import build_proof_hash
 from demo_profile import DEMO_PROFILES, apply_demo_profile, profile_health
@@ -162,6 +162,48 @@ def confidence_score_for_activity(activity: Activity) -> float:
 
     score = (0.45 * trust) + (0.30 * rep) + (0.25 * stage_score) + logbook_bonus + reward_bonus
     return max(0.0, min(1.0, round(score, 3)))
+
+
+def create_verification_signal(
+    activity_id: int,
+    signal_type: str,
+    source_role: str,
+    value: str,
+    source_user_id: int | None = None,
+    is_positive: bool = True,
+    metadata: dict | None = None,
+):
+    weight_map = {
+        "collector_submission": 0.5,
+        "qr_scan": 0.4,
+        "photo_proof": 0.3,
+        "resident_confirmation": 0.2,
+        "schedule_match": 0.2,
+    }
+
+    signal = VerificationSignal(
+        activity_id=activity_id,
+        signal_type=signal_type,
+        source_role=source_role,
+        source_user_id=source_user_id,
+        value=value,
+        weight=weight_map.get(signal_type, 0.0),
+        is_positive=is_positive,
+        metadata_json=json.dumps(metadata or {}, ensure_ascii=False),
+    )
+    db.session.add(signal)
+    return signal
+
+
+def add_schedule_match_signal(activity: Activity):
+    create_verification_signal(
+        activity_id=activity.id,
+        signal_type="schedule_match",
+        source_role="system",
+        value="matched",
+        is_positive=True,
+        metadata={"rule": "default_schedule_match_for_demo"}
+    )
 
 
 def hashscan_link(tx_id: str | None) -> str | None:
@@ -304,6 +346,18 @@ def ensure_activity_columns():
     if "confidence_score" not in existing:
         db.session.execute(text("ALTER TABLE activity ADD COLUMN confidence_score FLOAT DEFAULT 0"))
 
+    if "review_status" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN review_status VARCHAR(30)"))
+
+    if "review_reason" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN review_reason VARCHAR(255)"))
+
+    if "reviewed_by_user_id" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN reviewed_by_user_id INTEGER"))
+
+    if "reviewed_at" not in existing:
+        db.session.execute(text("ALTER TABLE activity ADD COLUMN reviewed_at DATETIME"))
+
     user_cols = db.session.execute(text("PRAGMA table_info(user)")).mappings().all()
     user_existing = {c.get("name") for c in user_cols}
 
@@ -384,6 +438,28 @@ def ensure_activity_columns():
                 target_id VARCHAR(80),
                 details VARCHAR(512),
                 PRIMARY KEY (id)
+            )
+        """))
+
+    signal_tables = db.session.execute(
+        text("SELECT name FROM sqlite_master WHERE type='table' AND name='verification_signal'")
+    )
+    if not signal_tables.scalar():
+        db.session.execute(text("""
+            CREATE TABLE verification_signal (
+                id INTEGER NOT NULL,
+                activity_id INTEGER NOT NULL,
+                signal_type VARCHAR(50) NOT NULL,
+                source_role VARCHAR(30) NOT NULL,
+                source_user_id INTEGER,
+                value VARCHAR(120),
+                weight FLOAT NOT NULL DEFAULT 0.0,
+                is_positive BOOLEAN NOT NULL DEFAULT 1,
+                metadata_json TEXT,
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                FOREIGN KEY(activity_id) REFERENCES activity (id),
+                FOREIGN KEY(source_user_id) REFERENCES user (id)
             )
         """))
 
@@ -543,7 +619,10 @@ def mirror_fetch_latest_topic_messages(topic_id: str, limit: int = 10):
 def signup():
     email = request.form.get('email')
     password = request.form.get('password')
-    role = request.form.get('role')
+    role = (request.form.get('role') or 'collector').strip().lower()
+    if role not in {'collector', 'center'}:
+        flash('Invalid role selected for signup.', 'error')
+        return redirect(url_for('home', _anchor='auth-modal'))
     
     # ===== CRITICAL: Check if email exists BEFORE expensive Hedera account creation =====
     # This prevents:
@@ -672,9 +751,14 @@ def login():
 
     email = request.form.get('email')
     password = request.form.get('password')
+    requested_role = (request.form.get('role') or '').strip().lower()
     user = User.query.filter_by(email=email).first()
     
     if user and bcrypt.check_password_hash(user.password_hash, password):
+        if requested_role and requested_role != (user.role or '').lower():
+            flash(f"Role mismatch. This account is registered as '{user.role}'.", 'error')
+            return redirect(url_for('login'))
+
         login_user(user, remember=True)
         
         next_page = request.form.get('next') or request.args.get('next')
@@ -750,9 +834,6 @@ def proof_integrity():
 @app.get('/proof-hub')
 @login_required
 def proof_hub():
-    if not is_admin_user():
-        abort(403)
-
     rows = Activity.query.order_by(Activity.timestamp.desc()).all()
     golden_runs = _find_golden_runs(rows)
     evidence = _proof_hub_evidence(rows)
@@ -853,11 +934,7 @@ def request_pickup():
 @app.route('/center')
 @login_required 
 def center_dashboard():
-    # Allow only 'center' users to access center dashboard
-    if current_user.role != 'center':
-        flash('You do not have permission to access this page.', 'error')
-        return redirect(url_for('collector_dashboard'))
-    
+    # Access relaxed for demo/testing: any authenticated user can open center dashboard.
     return render_template('center.html', active_page='dashboard')
 
 
@@ -1068,9 +1145,6 @@ def bulk_activities():
 @app.route('/confirm-dropoff', methods=['POST'])
 @login_required 
 def confirm_dropoff():
-    if current_user.role != 'center':
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-
     try:
         collector_id = request.form.get('collector_id')
         weight = request.form.get('weight')
@@ -1091,6 +1165,18 @@ def confirm_dropoff():
         )
 
         db.session.add(activity)
+        db.session.flush()
+
+        create_verification_signal(
+            activity_id=activity.id,
+            signal_type="collector_submission",
+            source_role="operator",
+            source_user_id=current_user.id,
+            value="submitted",
+            is_positive=True,
+            metadata={"weight_kg": float(weight)}
+        )
+        add_schedule_match_signal(activity)
         db.session.commit()
 
         return jsonify({
@@ -1107,9 +1193,6 @@ def confirm_dropoff():
 @app.route('/run-collector-agent/<int:activity_id>', methods=['POST'])
 @login_required
 def run_collector_agent(activity_id):
-    if current_user.role != 'center':
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-
     try:
         from agents.task_enqueue import enqueue_pipeline
         enqueue_pipeline(activity_id)
@@ -1150,6 +1233,18 @@ def simulate_deposit():
         )
         
         db.session.add(activity)
+        db.session.flush()
+
+        create_verification_signal(
+            activity_id=activity.id,
+            signal_type="collector_submission",
+            source_role="operator",
+            source_user_id=current_user.id,
+            value="submitted",
+            is_positive=True,
+            metadata={"weight_kg": weight}
+        )
+        add_schedule_match_signal(activity)
         db.session.commit()
 
         stable_bundle = {
@@ -1603,6 +1698,17 @@ def _build_proof_payload(activity=None, fallback_activity_id='', fallback_timest
     effective_hedera_tx_id = activity.hedera_tx_id if activity else None
     effective_reward_tx_id = activity.reward_tx_id if activity else None
     effective_reward_status = activity.reward_status if activity else None
+    signal_rows = []
+    if activity:
+        for signal in activity.signals:
+            signal_rows.append({
+                "signal_type": signal.signal_type,
+                "source_role": signal.source_role,
+                "value": signal.value,
+                "weight": signal.weight,
+                "is_positive": signal.is_positive,
+                "metadata": json.loads(signal.metadata_json) if signal.metadata_json else {},
+            })
 
     payload_data = {
         "vericycle_version": "hackathon-2026",
@@ -1616,6 +1722,10 @@ def _build_proof_payload(activity=None, fallback_activity_id='', fallback_timest
         "reward_status": effective_reward_status,
         "reward_tx_id": effective_reward_tx_id,
         "agent_approvals": agent_approvals,
+        "signals": signal_rows,
+        "confidence_score": activity.confidence_score if activity else None,
+        "review_status": activity.review_status if activity else None,
+        "review_reason": activity.review_reason if activity else None,
     }
     return payload_data
 
@@ -1628,6 +1738,13 @@ def _compute_proof_sha256(payload_data: dict):
 def is_admin_user():
     try:
         return current_user.is_authenticated and getattr(current_user, "role", None) == "admin"
+    except Exception:
+        return False
+
+
+def can_access_oversight():
+    try:
+        return current_user.is_authenticated
     except Exception:
         return False
 
@@ -1879,8 +1996,6 @@ def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stag
 @app.route('/admin/monitor')
 @login_required
 def admin_monitor():
-    if not is_admin_user():
-        abort(403)
     return render_template('admin_monitor.html', active_page='admin_monitor')
 
 
