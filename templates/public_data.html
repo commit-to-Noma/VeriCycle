@@ -15,7 +15,7 @@
   <h3>Latest HCS Messages</h3>
   <div style="display:flex; gap:10px; align-items:center; margin:10px 0 6px 0;">
     <input id="mirrorFilter" type="text" placeholder="Filter by activity_id or tx_id" style="flex:1; min-width:280px;" />
-    <button type="button" id="clearMirrorFilter" class="btn-secondary" style="margin-top:0;">Clear</button>
+    <button type="button" id="clearMirrorFilter" class="btn-secondary">Clear</button>
   </div>
 
   {% if messages and messages|length > 0 %}
@@ -39,7 +39,7 @@
           <td style="white-space:nowrap;">{{ m.tx_id if m.tx_id else "—" }}</td>
           <td style="max-width:760px; overflow-wrap:anywhere;">
             <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
-              <button type="button" class="btn-secondary copy-decoded" style="margin-top:0;" data-decoded='{{ m.decoded | tojson }}'>Copy decoded message</button>
+              <button type="button" class="btn-secondary copy-decoded" data-decoded='{{ m.decoded | tojson }}'>Copy decoded message</button>
               {% if activity_id %}<span class="status-badge status-ok-soft">activity_id: {{ activity_id }}</span>{% endif %}
             </div>
             <details class="debug-details">

@@ -2192,6 +2192,22 @@ def api_admin_download_evidence_pack(file_name):
     return send_file(full_path, as_attachment=True, download_name=safe_name)
 
 
+def normalize_status_label_for_api(activity: Activity) -> str:
+    stage = (activity.pipeline_stage or "").lower()
+    review = (activity.review_status or "").lower()
+    status = (activity.status or activity.verified_status or "").lower()
+
+    if review == "rejected" or stage == "rejected" or status == "rejected":
+        return "Rejected"
+    if review == "approved":
+        return "Verified"
+    if stage == "needs_review" or review == "pending_review":
+        return "Needs Review"
+    if stage in {"verified", "logged", "rewarded", "attested"} or status == "verified":
+        return "Verified"
+    return "Pending"
+
+
 @app.route('/api/admin/activities')
 @login_required
 def api_admin_activities():
@@ -2251,6 +2267,7 @@ def api_admin_activities():
             'status': activity.status,
             'verified_status': activity.verified_status,
             'stage': activity.pipeline_stage,
+            'display_status': normalize_status_label_for_api(activity),
             'review_status': activity.review_status,
             'review_reason': activity.review_reason,
             'trust_weight': activity.trust_weight,

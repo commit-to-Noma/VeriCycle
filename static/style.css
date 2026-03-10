@@ -5423,4 +5423,465 @@ body{
     }
 }
 
+/* Global scroll guardrail: use one page scrollbar across templates. */
+html {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+body {
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+}
+
+main.container,
+main.container.app-dashboard,
+main.container-wide,
+main.container-wide.app-dashboard {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+}
+
+/* Unified button system: final override for app-wide consistency. */
+:root {
+    --btn-radius: 10px;
+    --btn-height: 38px;
+    --btn-pad-x: 13px;
+    --btn-font-size: 0.92rem;
+    --btn-font-weight: 700;
+    --btn-primary-bg: linear-gradient(135deg, #047857, #0d9488);
+    --btn-primary-text: #e6fffb;
+    --btn-primary-border: rgba(45, 212, 191, 0.44);
+    --btn-primary-shadow: rgba(4, 120, 87, 0.34);
+    --btn-primary-glow: rgba(45, 212, 191, 0.16);
+    --btn-secondary-bg: rgba(148, 163, 184, 0.08);
+    --btn-secondary-border: rgba(148, 163, 184, 0.34);
+    --btn-secondary-text: #dbe7f6;
+    --btn-danger-bg: rgba(239, 68, 68, 0.18);
+    --btn-danger-border: rgba(239, 68, 68, 0.38);
+    --btn-danger-text: #fecaca;
+}
+
+.btn-primary,
+.btn-primary-large,
+.btn-glow-green,
+.btn-glow-blue,
+.btn-secondary,
+.btn-danger,
+.btn-action,
+.bank-button,
+.nav-button-primary,
+.btn-form,
+main button[type="submit"],
+main button[type="button"],
+main button:not([type]),
+main input[type="submit"],
+main input[type="button"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: var(--btn-height);
+    padding: 0 var(--btn-pad-x);
+    margin: 0;
+    border-radius: var(--btn-radius);
+    border: 1px solid transparent;
+    font-size: var(--btn-font-size);
+    font-weight: var(--btn-font-weight);
+    font-family: inherit;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.btn-primary,
+.btn-primary-large,
+.btn-glow-green,
+.btn-action,
+.bank-button,
+.nav-button-primary,
+main button[type="submit"],
+main input[type="submit"] {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border-color: var(--btn-primary-border);
+    box-shadow: 0 8px 18px var(--btn-primary-shadow), 0 0 0 1px var(--btn-primary-glow) inset;
+}
+
+.btn-glow-blue {
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+    color: #e6f2ff;
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 8px 18px rgba(56, 189, 248, 0.2);
+}
+
+.btn-secondary,
+main button[type="button"],
+main button:not([type]),
+main input[type="button"] {
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    border-color: var(--btn-secondary-border);
+    box-shadow: none;
+}
+
+.btn-danger {
+    background: var(--btn-danger-bg);
+    color: var(--btn-danger-text);
+    border-color: var(--btn-danger-border);
+    box-shadow: none;
+}
+
+.btn-primary:hover,
+.btn-primary-large:hover,
+.btn-glow-green:hover,
+.btn-glow-blue:hover,
+.btn-secondary:hover,
+.btn-danger:hover,
+.btn-action:hover,
+.bank-button:hover,
+.nav-button-primary:hover,
+main button[type="submit"]:hover,
+main button[type="button"]:hover,
+main button:not([type]):hover,
+main input[type="submit"]:hover,
+main input[type="button"]:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+}
+
+.btn-primary:disabled,
+.btn-primary-large:disabled,
+.btn-glow-green:disabled,
+.btn-glow-blue:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled,
+.btn-action:disabled,
+main button:disabled,
+main input:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-compact {
+    min-height: 28px;
+    padding: 0 9px;
+    font-size: 0.78rem;
+    border-radius: 8px;
+}
+
+.role-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--btn-secondary-border);
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.16s ease, filter 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.role-btn.active {
+    background: rgba(13, 148, 136, 0.16);
+    border-color: rgba(45, 212, 191, 0.34);
+    color: #ccfbf1;
+}
+
+.role-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+}
+
+.modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--btn-secondary-border);
+    background: rgba(15, 23, 42, 0.78);
+    color: #dbe7f6;
+    cursor: pointer;
+    transition: transform 0.16s ease, filter 0.16s ease, background 0.16s ease;
+}
+
+.modal-close:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+}
+
+.modal-close,
+.nav-drawer-close,
+.nav-burger {
+    font-family: inherit;
+}
+
+.navbar {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.76));
+    box-shadow: 0 10px 24px rgba(2, 6, 23, 0.35);
+}
+
+.nav-button.active {
+    box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.28), 0 8px 22px rgba(13, 148, 136, 0.16);
+}
+
+/* Admin monitor declutter pass: prioritize scanability and progressive disclosure. */
+.admin-diagnostics-fold {
+    margin-bottom: 12px;
+}
+
+.admin-diagnostics-fold > summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: #dbe7f6;
+    list-style: none;
+}
+
+.admin-diagnostics-fold > summary::-webkit-details-marker {
+    display: none;
+}
+
+.admin-diagnostics-fold > summary::after {
+    content: "Expand";
+    margin-left: 10px;
+    color: #8fb8b7;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.admin-diagnostics-fold[open] > summary::after {
+    content: "Collapse";
+}
+
+.admin-command-center {
+    margin: 12px 0;
+}
+
+.admin-control-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.admin-card-quick {
+    display: grid;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.42);
+}
+
+.admin-card-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    color: #cfd9e8;
+}
+
+.admin-card-details {
+    margin-top: 10px;
+}
+
+.admin-card-details > summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: #9bd6cf;
+    margin-bottom: 8px;
+}
+
+.admin-card-details[open] > summary {
+    color: #ccfbf1;
+}
+
+.admin-detail-tabs {
+    margin-top: 10px;
+}
+
+.admin-detail-tab {
+    margin-right: 8px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    background: rgba(15, 23, 42, 0.42);
+    color: #c7d2e1;
+    min-height: 30px;
+    padding: 0 11px;
+    border-radius: 9px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.admin-detail-tab.active {
+    border-color: rgba(45, 212, 191, 0.48);
+    background: rgba(13, 148, 136, 0.18);
+    color: #ccfbf1;
+}
+
+.admin-detail-pane {
+    margin-top: 4px;
+}
+
+/* Admin monitor typography/spacing polish (visual only, no behavior changes). */
+.app-dashboard > h1 {
+    margin: 0 0 14px 0;
+    font-size: clamp(1.85rem, 2.2vw, 2.35rem);
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+}
+
+.admin-section-title {
+    margin: 0 0 10px 0;
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.admin-command-center {
+    padding: 14px 16px;
+}
+
+.admin-actions-row {
+    margin: 8px 0 12px 0;
+}
+
+.admin-filter-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    font-size: 0.9rem;
+    color: #c8d3e4;
+}
+
+.admin-select {
+    margin-left: 4px;
+    min-height: 32px;
+    font-size: 0.9rem;
+}
+
+.auto-verify-status {
+    margin-top: 10px;
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    line-height: 1.35;
+}
+
+.system-diagnostics-grid .card {
+    padding: 14px;
+}
+
+.system-diagnostics-grid h3 {
+    margin: 0 0 8px 0;
+    font-size: 0.93rem;
+    line-height: 1.2;
+}
+
+.system-diagnostics-grid p {
+    margin: 0 0 6px 0;
+    font-size: 0.87rem;
+    line-height: 1.45;
+}
+
+.flagged-event-card {
+    padding: 12px;
+}
+
+.flagged-meta {
+    line-height: 1.4;
+    font-size: 0.92rem;
+}
+
+.selected-proof-panel {
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.proof-section h4 {
+    margin: 12px 0 8px 0;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+}
+
+.admin-transaction-card {
+    margin-top: 14px;
+    padding: 14px;
+}
+
+.admin-transaction-card > h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.06rem;
+    line-height: 1.2;
+}
+
+.admin-card-quick {
+    gap: 5px;
+    padding: 10px;
+}
+
+.admin-card-meta {
+    font-size: 0.91rem;
+    line-height: 1.35;
+}
+
+.admin-card-meta strong {
+    font-size: 0.98rem;
+}
+
+.admin-card-details {
+    margin-top: 8px;
+}
+
+.admin-card-details > summary {
+    font-size: 0.9rem;
+}
+
+.admin-detail-tab {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+}
+
+.admin-layer {
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+.admin-layer h4 {
+    margin: 0 0 8px 0;
+    font-size: 0.92rem;
+    letter-spacing: 0.02em;
+}
+
+.admin-simple-list p {
+    margin: 0 0 8px 0;
+    padding: 9px 11px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.activity-controls p {
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
 

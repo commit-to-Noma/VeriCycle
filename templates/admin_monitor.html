@@ -3,48 +3,56 @@
 {% block content %}
 <h1>VeriCycle Admin Monitor</h1>
 
-<h2 class="admin-section-title">System Diagnostics</h2>
+<details class="card admin-diagnostics-fold">
+	<summary>System Diagnostics</summary>
+	<section class="system-diagnostics-grid">
+		<div class="card" id="demoModeCard">Demo Mode: ...</div>
+		<div class="card" id="queue-summary">Queue: loading...</div>
+		<div class="card" id="judge-summary">Judge Summary: loading...</div>
+		<div class="card" id="golden-runs-card">Golden Runs: loading...</div>
+		<div class="card" id="demo-profile-card">Demo profile: loading...</div>
+		<div class="card" id="ops-alerts">Ops alerts: loading...</div>
+		<div class="card" id="dead-letter-card">Dead letter queue: loading...</div>
+		<div class="card" id="audit-card">Admin audit: loading...</div>
+	</section>
+</details>
 
-<section class="system-diagnostics-grid">
-	<div class="card" id="demoModeCard">Demo Mode: ...</div>
-	<div class="card" id="queue-summary">Queue: loading...</div>
-	<div class="card" id="judge-summary">Judge Summary: loading...</div>
-	<div class="card" id="golden-runs-card">Golden Runs: loading...</div>
-	<div class="card" id="demo-profile-card">Demo profile: loading...</div>
-	<div class="card" id="ops-alerts">Ops alerts: loading...</div>
-	<div class="card" id="dead-letter-card">Dead letter queue: loading...</div>
-	<div class="card" id="audit-card">Admin audit: loading...</div>
+<section class="card admin-command-center">
+	<h2 class="admin-section-title">Command Center</h2>
+	<div class="admin-actions-row">
+		<button id="createDemoDepositBtn" class="btn-primary">Create Demo Deposit</button>
+		<button id="generateEvidencePackBtn" class="btn-secondary">Generate Demo Evidence Pack</button>
+
+		<form method="post" action="/admin/cleanup-stale-running" class="inline-form">
+			<button type="submit" class="btn-danger">Mark Running as Failed</button>
+		</form>
+	</div>
+
+	<div class="admin-control-grid">
+		<label class="admin-filter-row">
+			<input type="checkbox" id="hideFailed" checked />
+			Hide failed
+		</label>
+
+		<label class="admin-filter-row">
+			<input type="checkbox" id="showDebug" />
+			Debug details
+		</label>
+
+		<label class="admin-filter-row">
+			Date Range:
+			<select id="dateRange" class="admin-select">
+				<option value="today">Today</option>
+				<option value="7d">Last 7 days</option>
+				<option value="all" selected>All</option>
+			</select>
+		</label>
+	</div>
+
+	<div id="autoVerifyStatus" class="card auto-verify-status">Auto-verify pending...</div>
 </section>
 
-<div class="admin-actions-row">
-	<button id="createDemoDepositBtn" class="btn-primary">Create Demo Deposit</button>
-	<button id="generateEvidencePackBtn" class="btn-secondary">Generate Demo Evidence Pack</button>
-
-	<form method="post" action="/admin/cleanup-stale-running" class="inline-form">
-		<button type="submit" class="btn-danger">Mark Running as Failed</button>
-	</form>
-</div>
-
-<label class="admin-filter-row">
-	<input type="checkbox" id="hideFailed" checked />
-	Hide failed
-</label>
-
-<label class="admin-filter-row">
-	<input type="checkbox" id="showDebug" />
-	Debug details
-</label>
-
-<label class="admin-filter-row">
-	Date Range:
-	<select id="dateRange" class="admin-select">
-		<option value="today">Today</option>
-		<option value="7d">Last 7 days</option>
-		<option value="all" selected>All</option>
-	</select>
-</label>
-
-<div id="autoVerifyStatus" class="card auto-verify-status">Auto-verify pending...</div>
+<h2 class="admin-section-title">Event Review</h2>
 
 <section class="admin-review-grid">
 	<section class="card">
@@ -240,19 +248,12 @@ function formatConfidenceScore(value) {
 function activityStatusBadges(activity) {
 	const stage = (activity?.pipeline_stage || activity?.stage || "").toString().toLowerCase();
 	const status = (activity?.status || activity?.verified_status || "").toString().toLowerCase();
-	const reviewStatus = (activity?.review_status || "").toString().toLowerCase();
 	const logbookStatus = (activity?.logbook_status || "").toString().toLowerCase();
 	const rewardStatus = (activity?.reward_status || "").toString().toLowerCase();
 
 	const items = [];
 	if (status === "verified" || ["verified", "logged", "rewarded", "attested"].includes(stage)) {
 		items.push({ label: "Verified", className: "badge-verified" });
-	}
-	if (stage === "needs_review" || reviewStatus === "pending_review" || reviewStatus === "pending") {
-		items.push({ label: "Needs Review", className: "badge-needs-review" });
-	}
-	if (stage === "rejected" || status === "rejected" || reviewStatus === "rejected") {
-		items.push({ label: "Rejected", className: "badge-rejected" });
 	}
 	if (logbookStatus === "anchored" || activity?.hcs_tx_id || activity?.logbook_tx_id || activity?.hedera_tx_id) {
 		items.push({ label: "Anchored", className: "badge-anchored" });
@@ -276,13 +277,8 @@ function renderActivityBadgeRow(activity) {
 	const badges = activityStatusBadges(activity)
 		.map((b) => `<span class="status-badge stream-badge ${b.className}">${b.label}</span>`)
 		.join("");
-
-	const confidence = `<span class="status-badge stream-badge badge-confidence">Original Confidence: ${formatConfidenceScore(activity?.confidence_score)}</span>`;
-	const review = activity?.review_status
-		? `<span class="status-badge stream-badge badge-review-short">Review: ${escapeHtml(toTitleCase(activity.review_status))}</span>`
-		: "";
-
-	return `<div class="activity-badge-row">${badges}${confidence}${review}</div>`;
+	if (!badges) return "";
+	return `<div class="activity-badge-row">${badges}</div>`;
 }
 
 function normalizeProofBundle(payload, fallbackActivityId) {
@@ -306,29 +302,48 @@ function renderProofPanel(bundle) {
 	if (!panel) return;
 
 	const signals = bundle.signals.length
-		? `<ul class="proof-list">${bundle.signals.map((s) => `<li>${escapeHtml(toTitleCase(s.signal_type || "signal"))} · ${s.is_positive ? "positive" : "negative"} · weight ${escapeHtml(s.weight ?? "0")}</li>`).join("")}</ul>`
+		? `<ul class="proof-list">${bundle.signals.map((s) => `<li><strong>${escapeHtml(toTitleCase(s.signal_type || "signal"))}</strong> · ${escapeHtml(toTitleCase(s.source_role || "unknown"))} · ${s.is_positive ? "positive" : "negative"} · value ${escapeHtml(s.value ?? "—")} · weight ${escapeHtml(s.weight ?? "0")}</li>`).join("")}</ul>`
 		: "<p>No signals recorded.</p>";
 
 	const approvals = bundle.agentApprovals.length
-		? `<ul class="proof-list">${bundle.agentApprovals.map((a) => `<li>${escapeHtml(a.agent || "Agent")}: ${escapeHtml(normalizeStatusLabel(a.status || "pending"))}</li>`).join("")}</ul>`
+		? `<ul class="proof-list">${bundle.agentApprovals.map((a) => `<li><strong>${escapeHtml(a.agent || "Agent")}</strong>: ${escapeHtml(normalizeStatusLabel(a.status || "pending"))}</li>`).join("")}</ul>`
 		: "<p>No agent approvals recorded.</p>";
 
 	panel.innerHTML = `
-		<div class="proof-grid">
-			<div><strong>Event ID:</strong> ${escapeHtml(bundle.eventId)}</div>
-			<div><strong>Description:</strong> ${escapeHtml(bundle.description)}</div>
-			<div><strong>Amount:</strong> ${escapeHtml(bundle.amount ?? "—")}</div>
-			<div><strong>Confidence score:</strong> ${formatConfidenceScore(bundle.confidenceScore)}</div>
-			<div><strong>Review status:</strong> ${escapeHtml(toTitleCase(bundle.reviewStatus))}</div>
-			<div><strong>Review reason:</strong> ${escapeHtml(bundle.reviewReason)}</div>
-			<div><strong>HCS tx ID:</strong> ${escapeHtml(bundle.hcsTxId)}</div>
-			<div><strong>HTS tx ID:</strong> ${escapeHtml(bundle.htsTxId)}</div>
+		<div class="proof-section">
+			<h4>Event Summary</h4>
+			<div class="proof-grid">
+				<div><strong>Event ID:</strong> ${escapeHtml(bundle.eventId)}</div>
+				<div><strong>Description:</strong> ${escapeHtml(bundle.description)}</div>
+				<div><strong>Amount:</strong> ${escapeHtml(bundle.amount ?? "—")}</div>
+				<div><strong>Confidence:</strong> ${formatConfidenceScore(bundle.confidenceScore)}</div>
+			</div>
+		</div>
+
+		<div class="proof-section">
+			<h4>Verification Summary</h4>
+			<div class="proof-grid">
+				<div><strong>Review status:</strong> ${escapeHtml(toTitleCase((bundle.reviewStatus || "—").replaceAll("_", " ")))}</div>
+				<div><strong>Review reason:</strong> ${escapeHtml(bundle.reviewReason)}</div>
+				<div><strong>HCS tx ID:</strong> ${escapeHtml(bundle.hcsTxId)}</div>
+				<div><strong>HTS tx ID:</strong> ${escapeHtml(bundle.htsTxId)}</div>
+			</div>
+		</div>
+
+		<div class="proof-section">
+			<h4>Evidence Signals</h4>
+			${signals}
+		</div>
+
+		<div class="proof-section">
+			<h4>Agent Decisions</h4>
+			${approvals}
+		</div>
+
+		<div class="proof-section">
+			<h4>Proof Integrity</h4>
 			<div><strong>Proof hash:</strong> <span class="proof-hash">${escapeHtml(bundle.proofHash)}</span></div>
 		</div>
-		<h4>Signals</h4>
-		${signals}
-		<h4>Agent approvals</h4>
-		${approvals}
 	`;
 }
 
@@ -368,7 +383,7 @@ function loadFlaggedEvents() {
 			if (!list || !empty) return;
 
 			list.innerHTML = '';
-			const rows = data.rows || [];
+			const rows = (data.rows || []).slice(0, 1);
 			if (!rows.length) {
 				empty.style.display = 'block';
 				return;
@@ -377,7 +392,7 @@ function loadFlaggedEvents() {
 			empty.style.display = 'none';
 			rows.forEach((row) => {
 				const signalsHtml = (row.signals || []).map((s) =>
-					`<span class="signal-chip">${escapeHtml(toTitleCase(s.signal_type))} (${s.is_positive ? 'positive' : 'negative'}, w=${escapeHtml(s.weight ?? 0)})</span>`
+					`<span class="signal-chip">${escapeHtml(toTitleCase((s.signal_type || 'signal').replaceAll('_', ' ')))} · ${s.is_positive ? 'positive' : 'negative'} · w=${escapeHtml(s.weight ?? 0)}</span>`
 				).join('');
 				const timestamp = row.timestamp ? new Date(row.timestamp).toLocaleString() : '—';
 
@@ -568,10 +583,7 @@ function renderGoldenRunTile(title, activity) {
 		return `
 			<div class="golden-run-tile">
 				<h4>${title}</h4>
-				<p>Activity ID: —</p>
-				<p>HCS: —</p>
-				<p>HTS: —</p>
-				<p>Proof Verify: Pending</p>
+				<p>No qualifying event yet</p>
 			</div>
 		`;
 	}
@@ -579,11 +591,15 @@ function renderGoldenRunTile(title, activity) {
 	const hcsTx = activity.hcs_tx_id || activity.logbook_tx_id || activity.hedera_tx_id;
 	const htsTx = activity.hts_tx_id || activity.reward_tx_id;
 	const proofState = proofVerifyCache.get(activity.id) === "verified" ? "Verified" : "Pending";
+	const finalStatus = activity.display_status || normalizeStatusLabel(activity.status || activity.verified_status || "pending");
+	const description = activity.desc || "Not specified";
 
 	return `
 		<div class="golden-run-tile">
 			<h4>${title}</h4>
 			<p>Activity ID: ${activity.id}</p>
+			<p>Description: ${escapeHtml(description)}</p>
+			<p>Final status: ${escapeHtml(finalStatus)}</p>
 			<p>HCS: ${txLink(hcsTx)}</p>
 			<p>HTS: ${txLink(htsTx)}</p>
 			<p>Proof Verify: ${proofState}</p>
@@ -666,6 +682,25 @@ function renderAdminSummaryPanels(filtered, showDebug) {
 	`;
 }
 
+function switchAdminCardTab(activityId, tabName) {
+	const root = document.getElementById(`card_tabs_${activityId}`);
+	if (!root) return;
+
+	root.querySelectorAll('.admin-detail-tab').forEach((btn) => {
+		const isActive = btn.dataset.tab === tabName;
+		btn.classList.toggle('active', isActive);
+	});
+
+	root.querySelectorAll('.admin-detail-pane').forEach((pane) => {
+		const isActive = pane.dataset.tab === tabName;
+		pane.style.display = isActive ? 'block' : 'none';
+	});
+
+	if (tabName === 'debug') {
+		loadDecisionFeed(activityId);
+	}
+}
+
 function renderActivities(data) {
 	const container = document.getElementById("activities");
 	const controls = document.getElementById("activity-controls");
@@ -745,7 +780,7 @@ function renderActivities(data) {
 			return `<div class="pipeline-item ${done ? "done" : ""}"><strong>${statusBadge} ${step.label}</strong><br><span>${exactTime}</span><br><span>TX: ${txRef}</span></div>`;
 		}).join("");
 
-		const statusLabel = escapeHtml(normalizeStatusLabel(a.status || a.verified_status || rewardStatus || logbookStatus || "pending"));
+		const statusLabel = escapeHtml(a.display_status || normalizeStatusLabel(a.status || a.verified_status || rewardStatus || logbookStatus || "pending"));
 		const evidenceLayer = `
 			<div class="admin-layer">
 				<h4>Core Evidence Links</h4>
@@ -764,8 +799,15 @@ function renderActivities(data) {
 		const pipelineLayer = `
 			<div class="admin-layer">
 				<h4>Pipeline Overview</h4>
-				<p style="margin:0 0 8px 0;">Deposit: ${escapeHtml(a.desc || "Not specified")} · Amount: ${escapeHtml(a.amount ?? "—")} · Date/Time: ${escapeHtml(exactTime)}</p>
-				<span class="status-badge ${settlementBadgeClass(a)}">${statusLabel}</span>
+				<div class="event-summary-block">
+					<div style="font-weight:700; font-size:16px; margin-bottom:6px;">${escapeHtml(a.desc || "Not specified")}</div>
+					<div style="color:#a8b3c2; margin-bottom:10px;">Amount: ${escapeHtml(a.amount ?? "—")} · Date/Time: ${escapeHtml(exactTime)}</div>
+					<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
+						<span class="status-badge ${settlementBadgeClass(a)}">${statusLabel}</span>
+						<span><strong>Confidence:</strong> ${formatConfidenceScore(a.confidence_score)}</span>
+						<span><strong>Review:</strong> ${escapeHtml(toTitleCase((a.review_status || "none").replaceAll("_", " ")))}</span>
+					</div>
+				</div>
 				${renderActivityBadgeRow(a)}
 				<div class="pipeline-checks" style="margin-top:8px;">
 					${pipelineRows}
@@ -778,7 +820,7 @@ function renderActivities(data) {
 				<details class="debug-details">
 					<summary>Raw Payload and Debug Data</summary>
 					<p>trust_weight: ${(a.trust_weight ?? 0).toFixed(2)} · verifier_reputation: ${(a.verifier_reputation ?? 0).toFixed(2)} · reputation_delta: ${((a.reputation_delta ?? 0) >= 0 ? "+" : "") + (a.reputation_delta ?? 0).toFixed(2)}</p>
-					<p>confidence_score: ${((a.confidence_score ?? 0) * 100).toFixed(1)}%</p>
+					<p>verification_confidence: ${formatConfidenceScore(a.confidence_score)} · lifecycle_confidence: ${formatConfidenceScore(a.lifecycle_confidence_score)}</p>
 					${(logbookStatus === "offchain_final" || logbookStatus === "failed" || (!demoMode && (!logbookStatus || logbookStatus === "pending"))) ? `<p><button class="btn-secondary" onclick="retry(${a.id})">Retry Hedera Log</button></p>` : ""}
 					${(showDebug && a.logbook_last_error) ? `<p style="color:#f9c27a;">Debug: ${a.logbook_last_error}</p>` : ""}
 					${(showDebug && rewardStatus === "finalized_no_transfer" && a.reward_last_error) ? `<p style="color:#f9c27a;">Debug: ${a.reward_last_error}</p>` : ""}
@@ -796,14 +838,45 @@ function renderActivities(data) {
 		const html = `
 			<div class="card admin-transaction-card">
 				<h3>Deposit ${a.id}</h3>
-				${pipelineLayer}
-				${evidenceLayer}
-				${rawLayer}
+				<div class="admin-card-quick">
+					<div class="admin-card-meta"><strong>${escapeHtml(a.desc || "Not specified")}</strong></div>
+					<div class="admin-card-meta">${escapeHtml(exactTime)} · Amount ${escapeHtml(a.amount ?? "—")}</div>
+					<div class="admin-card-meta">
+						<span class="status-badge ${settlementBadgeClass(a)}">${statusLabel}</span>
+						<span><strong>Confidence:</strong> ${formatConfidenceScore(a.confidence_score)}</span>
+						<span><strong>Review:</strong> ${escapeHtml(toTitleCase((a.review_status || "none").replaceAll("_", " ")))}</span>
+					</div>
+				</div>
+				<details class="admin-card-details" id="details_${a.id}">
+					<summary>Open full pipeline and evidence</summary>
+					<div class="admin-detail-tabs" id="card_tabs_${a.id}">
+						<button type="button" class="admin-detail-tab active" data-tab="pipeline" onclick="switchAdminCardTab(${a.id}, 'pipeline')">Pipeline</button>
+						<button type="button" class="admin-detail-tab" data-tab="evidence" onclick="switchAdminCardTab(${a.id}, 'evidence')">Evidence</button>
+						<button type="button" class="admin-detail-tab" data-tab="debug" onclick="switchAdminCardTab(${a.id}, 'debug')">Debug</button>
+
+						<div class="admin-detail-pane" data-tab="pipeline" style="display:block;">
+							${pipelineLayer}
+						</div>
+						<div class="admin-detail-pane" data-tab="evidence" style="display:none;">
+							${evidenceLayer}
+						</div>
+						<div class="admin-detail-pane" data-tab="debug" style="display:none;">
+							${rawLayer}
+						</div>
+					</div>
+				</details>
 			</div>
 		`;
 
 		container.insertAdjacentHTML("beforeend", html);
-		loadDecisionFeed(a.id);
+		const detailEl = document.getElementById(`details_${a.id}`);
+		if (detailEl) {
+			detailEl.addEventListener("toggle", () => {
+				if (detailEl.open) {
+					loadDecisionFeed(a.id);
+				}
+			});
+		}
 	});
 
 	if (controls) {
