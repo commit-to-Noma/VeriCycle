@@ -25,17 +25,6 @@
             {% endif %}
         </nav>
 
-        <div class="nav-tools-dropdown">
-            <button class="nav-tools-toggle" id="navToolsToggle" type="button" aria-expanded="false">
-                Developer Tools ▾
-            </button>
-            <div class="nav-tools-menu" id="navToolsMenu">
-                <a href="{{ url_for('public_data') }}">Mirror Node Feed (Dev)</a>
-                <a href="{{ url_for('proof_integrity') }}">Proof Verifier</a>
-                <a href="{{ url_for('profile') }}">Profile</a>
-            </div>
-        </div>
-
         <button class="nav-burger" id="navBurger" type="button" aria-label="Open menu" aria-controls="navDrawer" aria-expanded="false">
             ☰
         </button>
@@ -83,8 +72,6 @@
     const drawer = document.getElementById("navDrawer");
     const overlay = document.getElementById("navDrawerOverlay");
     const closeBtn = document.getElementById("navDrawerClose");
-    const toolsToggle = document.getElementById("navToolsToggle");
-    const toolsMenu = document.getElementById("navToolsMenu");
 
     if (burger && drawer && overlay && closeBtn) {
         function openDrawer() {
@@ -108,17 +95,5 @@
         overlay.addEventListener("click", closeDrawer);
     }
 
-    if (toolsToggle && toolsMenu) {
-        toolsToggle.addEventListener("click", (event) => {
-            event.stopPropagation();
-            const open = toolsMenu.classList.toggle("open");
-            toolsToggle.setAttribute("aria-expanded", open ? "true" : "false");
-        });
-
-        document.addEventListener("click", () => {
-            toolsMenu.classList.remove("open");
-            toolsToggle.setAttribute("aria-expanded", "false");
-        });
-    }
 })();
 </script>

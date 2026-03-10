@@ -1622,7 +1622,7 @@ def download_proof_bundle(activity_id):
     activity = db.session.get(Activity, activity_id)
     if not activity:
         abort(404)
-    if (activity.user_id != current_user.id) and (not is_admin_user()):
+    if (activity.user_id != current_user.id) and (not is_admin_user()) and (not can_review_events()):
         abort(403)
 
     payload_data = _build_proof_payload(activity=activity)
@@ -1814,7 +1814,7 @@ def verify_proof_bundle(activity_id):
     activity = db.session.get(Activity, activity_id)
     if not activity:
         abort(404)
-    if (activity.user_id != current_user.id) and (not is_admin_user()):
+    if (activity.user_id != current_user.id) and (not is_admin_user()) and (not can_review_events()):
         abort(403)
 
     payload_data = _build_proof_payload(activity=activity)
@@ -2248,11 +2248,22 @@ def api_admin_activities():
             'timestamp': activity.timestamp,
             'desc': activity.desc,
             'amount': activity.amount,
+            'status': activity.status,
+            'verified_status': activity.verified_status,
             'stage': activity.pipeline_stage,
+            'review_status': activity.review_status,
+            'review_reason': activity.review_reason,
             'trust_weight': activity.trust_weight,
             'verifier_reputation': activity.verifier_reputation,
             'reputation_delta': activity.reputation_delta,
-            'confidence_score': confidence_score_for_activity(activity),
+            # Keep confidence as the original verification-time signal score for judge clarity.
+            'confidence_score': (
+                activity.confidence_score
+                if activity.confidence_score is not None
+                else confidence_score_for_activity(activity)
+            ),
+            # Expose lifecycle score separately for diagnostics without affecting displayed confidence.
+            'lifecycle_confidence_score': confidence_score_for_activity(activity),
             'logbook_status': activity.logbook_status,
             'hedera_tx_id': activity.hedera_tx_id,
             'hcs_tx_id': activity.hcs_tx_id,
