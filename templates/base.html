@@ -8,8 +8,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="dark-theme">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     {% include '_navbar.html' %}
-    <main class="container app-dashboard">
+    <main id="main-content" class="container app-dashboard">
         {% block content %}{% endblock %}
     </main>
 </body>

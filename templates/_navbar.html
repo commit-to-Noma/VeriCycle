@@ -80,6 +80,7 @@
             drawer.setAttribute("aria-hidden", "false");
             burger.setAttribute("aria-expanded", "true");
             document.body.classList.add("drawer-open");
+            closeBtn.focus();
         }
 
         function closeDrawer() {
@@ -88,11 +89,17 @@
             drawer.setAttribute("aria-hidden", "true");
             burger.setAttribute("aria-expanded", "false");
             document.body.classList.remove("drawer-open");
+            burger.focus();
         }
 
         burger.addEventListener("click", openDrawer);
         closeBtn.addEventListener("click", closeDrawer);
         overlay.addEventListener("click", closeDrawer);
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && drawer.classList.contains("open")) {
+                closeDrawer();
+            }
+        });
     }
 
 })();

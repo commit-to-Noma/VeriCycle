@@ -1,150 +1,111 @@
-# VeriCycle - Verified Value ♻️
+# VeriCycle
 
-**Hedera Hello Future: Ascension Hackathon 2025 (Sustainability Track)**
+VeriCycle is verification infrastructure for recycling and waste activity. It uses autonomous agents to evaluate evidence signals, escalate low-confidence events for review, and anchor verified records to Hedera, creating trusted environmental records for communities, collectors, property managers, and sustainability programs.
 
-VeriCycle is a Web3 financial infrastructure designed to gamify and incentivize recycling at a global scale. We replace high-risk cash payments with **EcoCoin** which is a secure, verifiable reward token built on the Hedera network.
+## Why Hedera
 
-While our pilot focuses on South Africa's informal sector, our technology is a **Universal Recycling Protocol** designed to streamline waste management for every city on earth.
+Hedera is the trust layer. It provides immutable audit records, public verification, and programmable incentives.
 
-**Built by:** Nomathemba Ncube (The One Who Man Team)
+## Why agents
 
----
+Agents are the automation layer. They evaluate signals, assign confidence, escalate uncertain cases, and execute downstream actions only when events are trustworthy.
 
-## 🎯 The Problem: A Broken Incentive Model
-Recycling is currently a "burden" for citizens and a "logistics nightmare" for cities.
-1.  **The Informal Sector (The Job):** 90,000+ waste pickers in SA are unbanked and face theft risks daily because they are paid in physical cash.
-2.  **The Household (The Habit):** Regular citizens have no incentive to recycle other than "feeling good."
-3.  **The City (The Cost):** Municipalities spend millions on fuel collecting unsegregated waste, while streets remain dirty.
+## Problem solved
 
-## 💡 The Solution: Proof-of-Recycling
-VeriCycle solves this by turning recycling into a **verifiable financial asset**.
--   **For the Worker:** A digital wallet that builds a "Proof of Income" credit score.
--   **For the Household:** A gamified reward system (EcoCoin) that pays you to keep your city clean.
--   **For the City:** Real-time data on waste diversion to optimize logistics.
+Waste and recycling activity is often poorly documented, hard to verify, and easy to falsify. VeriCycle turns real-world recycling and waste events into auditable digital records.
 
----
+## Phase 5 locked demo stories
 
-## 🧪 How to Test (The Demo Flow)
+These are the only three stories used in judging.
 
-To experience the full "Center-to-Collector" verification loop without session conflicts, please follow this **Dual-Persona** guide.
+1. Perfect verified flow
+- Story: Event has enough signals, auto-verifies, anchors to Hedera, reward and compliance run.
+- Final state: Status Verified, confidence >= 0.7, review None, HCS present, HTS present if available, compliance present.
+- Label: Judge Demo Verified Event.
 
-### 🟢 Step 1: Setup (The Two Personas)
-Because browsers share cookies, you must use **two different window types** to simulate two different users at once.
+2. Approved review flow
+- Story: Low-signal event escalates, manager approves, autonomous pipeline resumes.
+- Final state: Status Verified, confidence 0.2, review Approved, HCS present, reward/compliance continue.
+- Label: Judge Demo Approved Review Event.
 
-1.  **Tab 1 (Normal Window) → The Collector**
-    * **Log In:** `demo@vericycle.com`
-    * **Password:** `H3dera!2025`
-    * *You will see the Collector Dashboard with an initial balance of 1175 ECO.*
+3. Rejected review flow
+- Story: Low-signal event escalates, manager rejects, pipeline stops.
+- Final state: Status Rejected, confidence 0.2, review Rejected, no HCS, no reward, no compliance progression.
+- Label: Judge Demo Rejected Review Event.
 
-2.  **Tab 2 (Incognito/Private Window) → The Recycling Center**
-    * **Log In:** `mpact@vericycle.com`
-    * **Password:** `Centerh3dera!`
-    * *You will see the Center Dashboard.*
+## Judge-safe sequence
 
----
+Use the exact screen-by-screen script in docs/phase5_judge_demo_script.md.
 
-### 🔵 Step 2: The Main Flow (Verify & Earn)
+## Setup and run
 
-1.  **In Tab 2 (Center):**
-    * Click the green **"Scan Collector QR Code"** button.
-    * Select **"Aluminum Cans"** and enter a weight (e.g., `10`).
-    * Click **"Verify & Pay"**.
-    * *Result:* You will see a green "Verification Successful!" banner, and the transaction will appear in the "Today" list.
+1. Install dependencies.
 
-2.  **Switch to Tab 1 (Collector):**
-    * **Magic Moment:** The balance should update automatically (via Broadcast Channel).
-    * *Backup:* If your browser blocks cross-window signals, simply click the **"Refresh Balance"** button at the bottom.
-    * *Result:* Confetti fires, balance increases, and the new transaction appears at the top of "Recent Activity."
+```bash
+pip install -r requirements.txt
+npm install
+```
 
-3.  **Cash Out (Collector):**
-    * Click the green **"Wallet & Exchange"** button.
-    * **Step 1:** Click **"Swap Now"** to convert ECO to HBAR (Simulated DEX).
-    * **Step 2:** Click **"Withdraw to Bank"** to cash out to ZAR.
-    * *Result:* You are redirected to the Dashboard, and a red "Withdrawal" entry appears in your history.
+2. Reset local database and seed accounts.
 
----
+```bash
+python scripts/reset_db.py
+```
 
-### 🔎 Step 3: Other Features to Explore
-
-While logged in as the **Collector (`demo@vericycle.com`)**, check out these features:
-
-* **📄 Proof of Income Report:** Click **"Download PDF"** on the dashboard to see the generated financial statement based on your HCS history.
-* **🚚 Smart Logistics:** Click **"Request a Pickup"**. This mockup auto-detects your neighborhood (Sandton) and offers a "High-Activity Discount."
-* **🌍 Live Platform Stats:** Go to the **Home** page to see the "Platform Growth" chart and "Live Activity" feed visualizing network performance.
-* **🔐 Self-Custody Wallet:** Go to **Profile** to see your real Hedera Account ID and Private Key, proving you own your data.
-
-## 💼 Business Model (Feasibility)
-VeriCycle is not a charity; it is a high-volume infrastructure play. We monetize the **data** and **efficiency**, not the user.
-
-### 1. Municipal Data Services (B2G)
-* **The Value:** Waste pickers save SA municipalities ~R750 million annually in landfill airspace.
-* **Our Revenue:** We charge the city a **Data Fee of R0.10 per kg** verified.
-* **The Scale:** At 100 tonnes/day, this generates **~R10,000/day** in revenue while saving the city 10x that amount.
-
-### 2. EPR Compliance Credits (B2B)
-* **The Value:** Brands (e.g., Coca-Cola) are legally required to prove they recycle.
-* **Our Revenue:** We sell **"Verified Plastic Credits"** at **R500 per tonne** based on our immutable Hedera logs.
-
-### 3. Financial Lead Generation (B2B)
-* **The Value:** Banks spend huge amounts to acquire new customers.
-* **Our Revenue:** We charge banks a **R50 Referral Fee** for every "Proof of Income" report that successfully opens a new bank account.
-* **The Scale:** With 90,000 unbanked collectors, this is a **R4.5 Million** untapped market opportunity.
-
----
-
-## 🌍 Global Vision & Impact
-We are launching in **South Africa** to solve a critical humanitarian crisis (safety for waste pickers), but the model scales globally:
-
-1.  **The Professional Recycler:** Gets safety, dignity, and banking access.
-2.  **The Eco-Conscious Citizen:** Gets rewarded for habits they already have.
-3.  **The New Adopter:** Is incentivized to start recycling for the first time to earn "Beer Money" or discounts.
-
-**Network Impact (Success Metrics):**
-* **User Volume:** Potential to onboard **90,000+ new users** in SA alone.
-* **Transaction Velocity:** Recycling happens daily. 90,000 users × 5 drops/day = **450,000 daily transactions** on Hedera HCS.
-
----
-
-## 💻 Technology Stack
--   **Blockchain:** Hedera (HTS for Tokens, HCS for Immutable Logs, Account Service for Wallets).
--   **Backend:** Python (Flask), SQLAlchemy.
--   **Frontend:** HTML5, CSS3, JavaScript (Chart.js).
--   **Deployment:** Render.
-
----
-
-## 🔗 Links
--   **Live Demo:** https://vericycle.onrender.com
--   **Pitch Deck:** https://github.com/commit-to-Noma/VeriCycle/blob/main/Vericycle%20Pitch%20Deck.pdf
--   **Video Demo:** https://youtu.be/Tj-i2-C7dGQ
-
----
-
-## Layering (Phase 1 Day 17)
-
-Layer 0: Household Scheduling + reliability (local SQLite) — locations, household profiles, and waste schedules are first-class objects.
-
-Layer 1: Hedera HCS logging + TX IDs + HashScan links.
-
-Layer 2: Optional HTS rewards (token transfers) — never blocks Layer 1.
-
-### Hackathon Demo Flow (Layer 0 testing)
-
-How to test the Household dashboard locally:
-
-1. Run the app:
+3. Start the app.
 
 ```bash
 python app.py
 ```
 
-2. In your browser, log in as `test@gmail.com` (use the seeded demo account flow in the app), then open:
+4. Start task worker in a second terminal.
 
-http://127.0.0.1:5000/household
+```bash
+python -m agents.task_worker
+```
 
-Expected: Page shows “Household Dashboard”, Location `Ruimsig, Johannesburg`, Reliability Score `1.00`, and a schedule table with at least:
+## Lock Phase 5 demo events
 
-- Recycling — Thu — 08:00-12:00
-- General Waste — Tue — 08:00-12:00
+Run this before recording or live judging:
 
-DB changes: On first run `location` and `waste_schedule` are seeded; after visiting `/household` a `household_profile` row is created for the logged-in user.
+```bash
+python scripts/prepare_phase5_demo_events.py
+```
+
+This script guarantees the three labeled judge events exist and prepares them for the live sequence:
+- verified auto-flow finalized
+- approved review flow waiting in needs_review (for live Approve click)
+- rejected review flow finalized
+
+## Accounts
+
+- admin@vericycle.com / Admin123!
+- test@gmail.com / Test123!
+- demo@vericycle.com / H3dera!2025
+- mpact@vericycle.com / Centerh3dera!
+
+## What to test in Phase 5
+
+1. Perfect verified flow
+- Auto-verifies
+- HCS link exists
+- Reward and compliance complete
+
+2. Approved review flow
+- Starts at needs_review
+- Approve works
+- Pipeline resumes
+
+3. Rejected review flow
+- Starts at needs_review
+- Reject works
+- Pipeline stops
+
+4. Proof panel
+- Approved event proof shows confidence 0.2
+- Verified event proof shows confidence 0.7
+- Proof hash visible in both
+
+## Submission narrative
+
+Use docs/submission_narrative_phase5.md for copy-paste final submission language.

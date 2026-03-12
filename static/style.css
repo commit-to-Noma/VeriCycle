@@ -28,6 +28,32 @@ body {
     color: #e0e0e0;
 }
 
+.skip-link {
+    position: absolute;
+    left: 12px;
+    top: -44px;
+    z-index: 2000;
+    padding: 0.6rem 0.8rem;
+    background: #4CAF50;
+    color: #0b130b;
+    font-weight: 700;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.skip-link:focus {
+    top: 12px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid #4CAF50;
+    outline-offset: 2px;
+}
+
 .container {
     width: 90%;
     max-width: 1000px;
@@ -405,6 +431,25 @@ img.logo {
     font-size: 2rem;
     margin-top: 0;
     margin-bottom: 2rem;
+}
+
+.platform-growth-header {
+    text-align: left;
+    margin-bottom: 2rem;
+}
+
+.platform-growth-header h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.platform-growth-header .activity-subtitle {
+    margin: 0;
+    text-align: left;
+    font-size: 1.2rem;
+    color: #aaa;
 }
 .activity-subtitle {
     font-size: 1.15rem;
@@ -883,9 +928,12 @@ html, body {
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.modal-overlay.open {
+    display: flex;
 }
 .modal-content {
     position: relative;
@@ -899,6 +947,15 @@ html, body {
     box-sizing: border-box; /* <-- Makes padding behave predictably */
     border: 1px solid #4CAF50; /* subtle green glow border */
     backdrop-filter: blur(10px); /* modern frosted effect */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 .modal-close {
     position: absolute;
@@ -965,6 +1022,10 @@ html, body {
     font-size: 1.25rem;
     color: #aaa;
     margin: 0;
+}
+
+.admin-command-center + .admin-section-title {
+    margin-top: 16px;
 }
 .dashboard-grid {
     display: grid;
@@ -5420,6 +5481,90 @@ body{
 
     .nav-burger {
         padding: 10px 12px;
+    }
+}
+
+/* === Mobile Consistency Pass (Home / Collector / Admin) === */
+@media (max-width: 1024px) {
+    .observer-hero-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .platform-growth-header h2 {
+        font-size: clamp(1.8rem, 5vw, 2.5rem);
+    }
+}
+
+@media (max-width: 760px) {
+    .hero {
+        padding: 2.5rem 0;
+    }
+
+    .hero h1 {
+        font-size: 2.15rem;
+    }
+
+    .hero h2 {
+        font-size: 1.2rem;
+    }
+
+    .hero .subtitle {
+        font-size: 0.98rem;
+        max-width: 92%;
+    }
+
+    .platform-growth-header {
+        margin-bottom: 1.25rem;
+    }
+
+    .platform-growth-header .activity-subtitle {
+        font-size: 1rem;
+    }
+
+    .dashboard-header {
+        margin-bottom: 1.25rem;
+    }
+
+    .dashboard-header h2 {
+        font-size: clamp(1.55rem, 6vw, 2rem);
+    }
+
+    .dashboard-header p {
+        font-size: 1rem;
+    }
+
+    .observer-hero-row {
+        grid-template-columns: 1fr;
+    }
+
+    .observer-main-grid {
+        gap: 12px;
+    }
+
+    .admin-control-grid,
+    .admin-filter-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .admin-actions-row {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .admin-actions-row .btn-primary,
+    .admin-actions-row .btn-secondary,
+    .admin-actions-row .btn-danger,
+    .observer-action-stack .btn-primary,
+    .cta-buttons .btn-primary-large,
+    .cta-buttons .btn-secondary {
+        width: 100%;
+        text-align: center;
+    }
+
+    .selected-proof-panel .proof-grid {
+        grid-template-columns: 1fr;
     }
 }
 

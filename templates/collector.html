@@ -5,7 +5,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
         <div class="dashboard-header">
             <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
-            <p><strong>Observer Console</strong> · Agent-verified event and proof activity.</p>
+            <p><strong>Observer Console</strong> · Track verified events, proof bundles, and Hedera settlement status.</p>
         </div>
 
         <section class="observer-shell">
@@ -143,10 +143,10 @@
                     </div>
 
                     <div class="card observer-actions-card">
-                        <h3>Action Center</h3>
+                        <h3>Quick Actions</h3>
                         <p class="mockup-subtitle">Trigger verified recycling events and submit drop-off records.</p>
                         <div class="observer-action-stack">
-                            <a href="{{ url_for('swap') }}" class="btn-primary">Wallet & Exchange</a>
+                            <a href="{{ url_for('swap') }}" class="btn-primary">Open Wallet & Exchange</a>
                             <button class="btn-primary" id="trigger-deposit-btn">
                                 Trigger Recycling Event
                             </button>
@@ -237,8 +237,6 @@
                 if (progress < 1) window.requestAnimationFrame(step);
             };
             window.requestAnimationFrame(step);
-        }
-
         // Smooth-scroll helper (animates scroll to top over `duration` ms)
         function smoothScrollToTop(duration = 350) {
             const start = document.documentElement.scrollTop || document.body.scrollTop || 0;

@@ -212,31 +212,83 @@ def hashscan_link(tx_id: str | None) -> str | None:
     return f"https://hashscan.io/testnet/transaction/{tx_id}"
 
 
+PHASE5_DEMO_LABELS = {
+    "verified": "Judge Demo Verified Event",
+    "approved": "Judge Demo Approved Review Event",
+    "rejected": "Judge Demo Rejected Review Event",
+}
+
+
+def _pick_latest_matching(rows: list[Activity], predicate) -> Activity | None:
+    for item in sorted((rows or []), key=lambda a: a.id, reverse=True):
+        if predicate(item):
+            return item
+    return None
+
+
 def _find_golden_runs(rows: list[Activity]) -> dict:
     source = rows or []
 
-    perfect = next((a for a in source if
-        (a.logbook_status or "").lower() == "anchored"
-        and (a.reward_status or "").lower() == "paid"
+    perfect = _pick_latest_matching(
+        source,
+        lambda a: (a.desc or "") == PHASE5_DEMO_LABELS["verified"]
         and (a.pipeline_stage or "").lower() == "attested"
-    ), None)
+        and (a.status or a.verified_status or "").lower() == "verified"
+        and (a.confidence_score or 0.0) >= 0.7
+        and (a.review_status in (None, "", "none"))
+        and bool(a.hcs_tx_id or a.logbook_tx_id or a.hedera_tx_id)
+        and bool(a.compliance_tx_id),
+    )
 
-    resilience = next((a for a in source if
-        (a.logbook_status or "").lower() == "anchored"
-        and (
-            bool(a.logbook_last_error)
-            or (a.logbook_status or "").lower() in {"offchain_final", "failed"}
+    approved = _pick_latest_matching(
+        source,
+        lambda a: (a.desc or "") == PHASE5_DEMO_LABELS["approved"]
+        and (a.pipeline_stage or "").lower() == "attested"
+        and (a.status or a.verified_status or "").lower() == "verified"
+        and (a.review_status or "").lower() == "approved"
+        and float(a.confidence_score or 0.0) == 0.2
+        and bool(a.hcs_tx_id or a.logbook_tx_id or a.hedera_tx_id),
+    )
+
+    rejected = _pick_latest_matching(
+        source,
+        lambda a: (a.desc or "") == PHASE5_DEMO_LABELS["rejected"]
+        and ((a.pipeline_stage or "").lower() == "rejected"
+             or (a.status or a.verified_status or "").lower() == "rejected")
+        and (a.review_status or "").lower() == "rejected"
+        and float(a.confidence_score or 0.0) == 0.2
+        and not bool(a.hcs_tx_id or a.logbook_tx_id or a.hedera_tx_id)
+        and not bool(a.reward_tx_id or a.hts_tx_id)
+        and not bool(a.compliance_tx_id),
+    )
+
+    # Fallback for sessions where labels are not prepared yet.
+    if not perfect:
+        perfect = _pick_latest_matching(
+            source,
+            lambda a: (a.logbook_status or "").lower() == "anchored"
+            and (a.reward_status or "").lower() == "paid"
+            and (a.pipeline_stage or "").lower() == "attested",
         )
-    ), None)
 
-    rejected = next((a for a in source if
-        (a.pipeline_stage or "").lower() == "rejected"
-        or (a.status or a.verified_status or "").lower() == "rejected"
-    ), None)
+    if not approved:
+        approved = _pick_latest_matching(
+            source,
+            lambda a: (a.review_status or "").lower() == "approved"
+            and (a.pipeline_stage or "").lower() in {"verified", "logged", "rewarded", "attested"}
+            and bool(a.hcs_tx_id or a.logbook_tx_id or a.hedera_tx_id),
+        )
+
+    if not rejected:
+        rejected = _pick_latest_matching(
+            source,
+            lambda a: (a.pipeline_stage or "").lower() == "rejected"
+            or (a.status or a.verified_status or "").lower() == "rejected",
+        )
 
     return {
         "perfect": perfect,
-        "resilience": resilience,
+        "approved": approved,
         "rejected": rejected,
     }
 

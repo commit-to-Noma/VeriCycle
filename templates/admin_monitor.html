@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>VeriCycle Admin Monitor</h1>
+<div class="dashboard-header">
+	<h2>VeriCycle Admin Monitor</h2>
+	<p>Operational oversight for review decisions, queue health, and deterministic demo evidence.</p>
+</div>
 
 <details class="card admin-diagnostics-fold">
 	<summary>System Diagnostics</summary>
@@ -18,10 +21,10 @@
 </details>
 
 <section class="card admin-command-center">
-	<h2 class="admin-section-title">Command Center</h2>
+	<h2 class="admin-section-title">Ops Command Center</h2>
 	<div class="admin-actions-row">
-		<button id="createDemoDepositBtn" class="btn-primary">Create Demo Deposit</button>
-		<button id="generateEvidencePackBtn" class="btn-secondary">Generate Demo Evidence Pack</button>
+		<button id="createDemoDepositBtn" class="btn-primary">Create Demo Event</button>
+		<button id="generateEvidencePackBtn" class="btn-secondary">Generate Evidence Pack</button>
 
 		<form method="post" action="/admin/cleanup-stale-running" class="inline-form">
 			<button type="submit" class="btn-danger">Mark Running as Failed</button>
@@ -545,37 +548,59 @@ function updateJudgeSummary(filtered) {
 
 function findGoldenRuns(rows) {
 	const source = Array.isArray(rows) ? rows : [];
-	const perfect = source.find(a => {
+	const sorted = [...source].sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+	const byLabel = (label, predicate) => sorted.find(a => (a.desc || "") === label && predicate(a));
+
+	const perfect = byLabel("Judge Demo Verified Event", (a) => {
+		const stage = (a.stage || "").toLowerCase();
+		const status = (a.status || a.verified_status || "").toLowerCase();
+		const review = (a.review_status || "").toLowerCase();
+		const confidence = Number(a.confidence_score || 0);
+		const hasHcs = !!(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id);
+		const hasCompliance = !!a.compliance_tx_id;
+		return stage === "attested" && status === "verified" && confidence >= 0.7 && !review && hasHcs && hasCompliance;
+	});
+
+	const approved = byLabel("Judge Demo Approved Review Event", (a) => {
+		const stage = (a.stage || "").toLowerCase();
+		const status = (a.status || a.verified_status || "").toLowerCase();
+		const review = (a.review_status || "").toLowerCase();
+		const confidence = Number(a.confidence_score || 0);
+		const hasHcs = !!(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id);
+		return stage === "attested" && status === "verified" && review === "approved" && confidence === 0.2 && hasHcs;
+	});
+
+	const rejected = byLabel("Judge Demo Rejected Review Event", (a) => {
+		const stage = (a.stage || "").toLowerCase();
+		const status = (a.status || a.verified_status || "").toLowerCase();
+		const review = (a.review_status || "").toLowerCase();
+		const confidence = Number(a.confidence_score || 0);
+		const hasHcs = !!(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id);
+		const hasReward = !!(a.reward_tx_id || a.hts_tx_id);
+		const hasCompliance = !!a.compliance_tx_id;
+		return (stage === "rejected" || status === "rejected") && review === "rejected" && confidence === 0.2 && !hasHcs && !hasReward && !hasCompliance;
+	});
+
+	const fallbackPerfect = perfect || sorted.find(a => {
 		const anchored = (a.logbook_status || "").toLowerCase() === "anchored";
 		const paid = (a.reward_status || "").toLowerCase() === "paid";
 		const attested = (a.stage || "").toLowerCase() === "attested";
 		return anchored && paid && attested;
 	});
 
-	const resilience = source.find(a => {
-		const anchored = (a.logbook_status || "").toLowerCase() === "anchored";
-		const hasRetrySignal = Number(a.logbook_retries || 0) > 0
-			|| Number(a.logbook_retry_count || 0) > 0
-			|| !!a.logbook_last_error
-			|| (Array.isArray(a.tasks) && a.tasks.some(t => {
-				const agent = (t.agent || "").toLowerCase();
-				const status = (t.status || "").toLowerCase();
-				return agent.includes("logbook") && status === "failed";
-			}));
-		return anchored && hasRetrySignal;
+	const fallbackApproved = approved || sorted.find(a => {
+		const stage = (a.stage || "").toLowerCase();
+		const review = (a.review_status || "").toLowerCase();
+		return review === "approved" && ["verified", "logged", "rewarded", "attested"].includes(stage);
 	});
 
-	const rejected = source.find(a => {
+	const fallbackRejected = rejected || sorted.find(a => {
 		const stage = (a.stage || "").toLowerCase();
 		const status = (a.status || a.verified_status || "").toLowerCase();
-		const taskRejected = Array.isArray(a.tasks) && a.tasks.some(t => {
-			const s = (t.status || "").toLowerCase();
-			return s === "failed" || s === "rejected";
-		});
-		return stage === "rejected" || status === "rejected" || taskRejected;
+		return stage === "rejected" || status === "rejected";
 	});
 
-	return { perfect, resilience, rejected };
+	return { perfect: fallbackPerfect, approved: fallbackApproved, rejected: fallbackRejected };
 }
 
 function renderGoldenRunTile(title, activity) {
@@ -615,8 +640,8 @@ function updateGoldenRuns(filtered) {
 	el.innerHTML = `
 		<h3>Golden Runs</h3>
 		<div class="golden-runs-grid">
-			${renderGoldenRunTile("Perfect flow (Anchored + Paid + Attested)", runs.perfect)}
-			${renderGoldenRunTile("Resilience flow (Retry → Anchored)", runs.resilience)}
+			${renderGoldenRunTile("Perfect verified flow", runs.perfect)}
+			${renderGoldenRunTile("Approved review flow", runs.approved)}
 			${renderGoldenRunTile("Rejected flow (guardrails)", runs.rejected)}
 		</div>
 	`;
@@ -1064,7 +1089,7 @@ document.getElementById("generateEvidencePackBtn").addEventListener("click", () 
 		.finally(() => {
 			if (btn) {
 				btn.disabled = false;
-				btn.textContent = "Generate Demo Evidence Pack";
+				btn.textContent = "Generate Evidence Pack";
 			}
 		});
 });
