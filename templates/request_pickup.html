@@ -11,7 +11,7 @@
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard" style="overflow:visible;">
-        <a href="{{ url_for('collector_dashboard') }}" class="back-link">← Back to Recycler Hub</a>
+        <a href="{{ url_for('home') }}" class="back-link">← Back to Home</a>
         <div class="dashboard-header">
             <h2>Create a Recycling Pickup Request</h2>
             <p>Create a pickup opportunity for recyclable materials from a business, building, or community location.</p>
@@ -107,7 +107,7 @@
                 Request location: <span id="success-neighborhood">Sandton</span>
             </h3>
 
-            <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Return to Recycler Hub</a>
+            <a href="{{ url_for('home') }}" class="btn-primary-large">Return Home</a>
         </div>
     </main>
 

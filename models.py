@@ -16,7 +16,7 @@ class User(db.Model, UserMixin):
     phone_number = db.Column(db.String(20), nullable=True)
     address = db.Column(db.String(200), nullable=True)
     id_number = db.Column(db.String(30), nullable=True)
-    role = db.Column(db.String(20), nullable=False, default='collector')
+    role = db.Column(db.String(20), nullable=False, default='collector')  # Phase 2: recycler may still persist as collector for compatibility.
 
 
 class Activity(db.Model):
