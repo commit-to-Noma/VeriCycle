@@ -142,6 +142,14 @@
                         <small id="system-health-detail" class="muted-detail">Waiting for agent status...</small>
                     </div>
 
+                    <div class="card observer-actions-card" id="pickup-opportunities-card">
+                        <h3>Pickup Opportunities</h3>
+                        <p class="mockup-subtitle">Available recycling requests from businesses and communities.</p>
+                        <div id="pickup-opportunities-list">
+                            <p>Loading opportunities...</p>
+                        </div>
+                    </div>
+
                     <div class="card observer-actions-card">
                         <h3>Quick Actions</h3>
                         <p class="mockup-subtitle">Record a recycling deposit or explore pickup opportunities in the network.</p>
@@ -150,7 +158,7 @@
                             <button class="btn-primary" id="trigger-deposit-btn">
                                 Trigger Recycling Event
                             </button>
-                            <a href="{{ url_for('request_pickup') }}" class="btn-secondary">View Pickup Opportunities</a>
+                            <a href="#pickup-opportunities-card" class="btn-secondary">View Pickup Opportunities</a>
                             <p class="mockup-subtitle">Recycler → Verifier → Logbook → Reward → Compliance</p>
                         </div>
                     </div>
@@ -183,12 +191,12 @@
 
     
 
-    <a href="{{ url_for('request_pickup') }}" class="pickup-card-link">
+    <a href="#pickup-opportunities-card" class="pickup-card-link">
         <div class="card pickup-card">
             <div class="pickup-icon">🚚</div>
             <div class="pickup-text">
                 <h3>Pickup Opportunities</h3>
-                <p>View or request recycling collection opportunities in your area.</p>
+                <p>View open recycling collection opportunities in your area.</p>
             </div>
             <div class="pickup-arrow">›</div>
         </div>
@@ -238,6 +246,8 @@
                 if (progress < 1) window.requestAnimationFrame(step);
             };
             window.requestAnimationFrame(step);
+        }
+
         // Smooth-scroll helper (animates scroll to top over `duration` ms)
         function smoothScrollToTop(duration = 350) {
             const start = document.documentElement.scrollTop || document.body.scrollTop || 0;
@@ -419,6 +429,78 @@
             }
         }
 
+        async function loadPickupOpportunities() {
+            const container = document.getElementById('pickup-opportunities-list');
+            if (!container) return;
+
+            try {
+                const res = await fetch('/api/opportunities/open');
+                if (!res.ok) {
+                    container.innerHTML = '<p>Unable to load pickup opportunities.</p>';
+                    return;
+                }
+                const data = await res.json();
+                const rows = Array.isArray(data.rows) ? data.rows : [];
+
+                if (!rows.length) {
+                    container.innerHTML = '<p>No open pickup opportunities yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = rows.map((row) => {
+                    const sourceLabel = row.source_role === 'business' ? 'Business' : 'Community';
+                    const material = escapeHtml(row.material_type);
+                    const weight = escapeHtml(row.estimated_kg);
+                    const location = escapeHtml(row.location);
+                    const requestedWindow = escapeHtml(row.requested_window || 'Standard window');
+                    const notes = row.notes ? `<div style="margin-top: 0.35rem; color: #aaa;">${escapeHtml(row.notes)}</div>` : '';
+
+                    return `
+                        <div class="card" style="margin-bottom: 0.75rem; padding: 1rem;">
+                            <strong>${sourceLabel} Pickup</strong><br>
+                            <span>${material} · ${weight} kg</span><br>
+                            <span>${location}</span><br>
+                            <span>${requestedWindow}</span>
+                            ${notes}
+                            <button class="btn-secondary btn-compact" onclick="acceptOpportunity(${Number(row.id)})" style="margin-top: 0.5rem;">
+                                Accept Job
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<p>Unable to load pickup opportunities.</p>';
+            }
+        }
+
+        async function acceptOpportunity(opportunityId) {
+            try {
+                const res = await fetch(`/api/opportunities/${opportunityId}/accept`, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) {
+                    alert('Could not accept opportunity');
+                    return;
+                }
+                const data = await res.json();
+
+                if (!data.ok) {
+                    alert(data.error || 'Could not accept opportunity');
+                    return;
+                }
+
+                alert('Pickup opportunity accepted.');
+                loadPickupOpportunities();
+            } catch (err) {
+                console.error(err);
+                alert('Could not accept opportunity');
+            }
+        }
+
+        window.acceptOpportunity = acceptOpportunity;
+
         // --- 3. QR CODE LOGIC ---
         generateButton.addEventListener('click', function() {
             if (!currentData.profile_complete) {
@@ -495,6 +577,7 @@
                 drawDashboard(currentData);
                 renderActivityList();
                 loadAgentStatus();
+                loadPickupOpportunities();
 
                 // If a pending animation was recorded (e.g. from a withdraw flag),
                 // run it immediately so the user sees the animated update on load.

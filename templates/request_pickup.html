@@ -11,7 +11,7 @@
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard" style="overflow:visible;">
-        <a href="{{ url_for('collector_dashboard') }}" class="back-link">← Back to Recycler Hub</a>
+        <a href="{{ url_for('home') }}" class="back-link">← Back to Home</a>
         <div class="dashboard-header">
             <h2>Create a Recycling Pickup Request</h2>
             <p>Create a pickup opportunity for recyclable materials from a business, building, or community location.</p>
@@ -107,7 +107,7 @@
                 Request location: <span id="success-neighborhood">Sandton</span>
             </h3>
 
-            <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Return to Recycler Hub</a>
+            <a href="{{ url_for('home') }}" class="btn-primary-large">Return Home</a>
         </div>
     </main>
 
@@ -233,15 +233,59 @@
             });
 
             // --- 4. NEW: The Confirmation Logic ---
-            confirmSlotButton.addEventListener('click', function() {
-                // A. Close the modal
-                closeModal();
+            confirmSlotButton.addEventListener('click', async function() {
+                const neighborhoodSelect = document.getElementById('neighborhood');
+                const materialSelect = document.getElementById('pickup-materials');
+                const weightSelect = document.getElementById('pickup-weight');
 
-                // B. Hide the main form
-                pickupCard.style.display = 'none';
+                const location = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text;
+                const material_type = materialSelect.value;
 
-                // C. Show the success card!
-                successCard.style.display = 'block';
+                let estimated_kg = 10;
+                if (weightSelect.value.includes('Under 10')) estimated_kg = 8;
+                if (weightSelect.value.includes('10 kg - 25 kg')) estimated_kg = 18;
+                if (weightSelect.value.includes('25 kg +')) estimated_kg = 30;
+
+                const selectedSlot = document.querySelector('input[name="slot"]:checked');
+                let requested_window = 'Standard window';
+                if (selectedSlot) {
+                    const slotLabel = selectedSlot.closest('.slot-option');
+                    requested_window = slotLabel ? slotLabel.innerText.replace(/\s+/g, ' ').trim() : 'Standard window';
+                }
+
+                confirmSlotButton.disabled = true;
+
+                try {
+                    const res = await fetch('/api/opportunities/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            material_type,
+                            estimated_kg,
+                            location,
+                            requested_window,
+                            notes: 'Created from pickup request UI'
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (!data.ok) {
+                        alert(data.error || 'Could not create pickup opportunity');
+                        return;
+                    }
+
+                    closeModal();
+                    pickupCard.style.display = 'none';
+                    successCard.style.display = 'block';
+                } catch (err) {
+                    console.error(err);
+                    alert('Could not create pickup opportunity');
+                } finally {
+                    confirmSlotButton.disabled = false;
+                }
             });
         });
     </script>

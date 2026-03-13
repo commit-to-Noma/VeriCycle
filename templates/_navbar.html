@@ -9,15 +9,20 @@
             <a href="{{ url_for('home') }}" class="nav-button {% if request.path == url_for('home') %}active{% endif %}">Home</a>
 
             {% if current_user.is_authenticated %}
-                {% if current_user.role == 'center' %}
+                {% if current_effective_role == 'center' %}
                     <a href="{{ url_for('center_dashboard') }}" class="nav-button {% if request.path.startswith('/center') %}active{% endif %}">Verification Center</a>
+                {% elif current_effective_role == 'admin' %}
+                    <a href="{{ url_for('admin_monitor') }}" class="nav-button {% if request.path.startswith('/admin/monitor') %}active{% endif %}">Admin Monitor</a>
                 {% else %}
                     <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Recycler Hub</a>
                 {% endif %}
-                <a href="{{ url_for('request_pickup') }}" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">Business Hub</a>
-                <a href="{{ url_for('household_dashboard') }}" class="nav-button {% if request.path.startswith('/household') %}active{% endif %}">Community Hub</a>
+                {% if current_effective_role in ['business', 'resident'] %}
+                    <a href="{{ url_for('request_pickup') }}" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">{% if current_effective_role == 'business' %}Business Hub{% else %}Request Pickup{% endif %}</a>
+                {% endif %}
+                {% if current_effective_role == 'resident' %}
+                    <a href="{{ url_for('household_dashboard') }}" class="nav-button {% if request.path.startswith('/household') %}active{% endif %}">Community Hub</a>
+                {% endif %}
                 <a href="/proof-hub" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
-                <a href="{{ url_for('admin_monitor') }}" class="nav-button {% if request.path.startswith('/admin/monitor') %}active{% endif %}">Admin Monitor</a>
                 <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
             {% else %}
                 <a href="{{ url_for('login') }}?next=/collector" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Recycler Hub</a>
@@ -48,15 +53,20 @@
         <a href="{{ url_for('home') }}">Home</a>
 
         {% if current_user.is_authenticated %}
-            {% if current_user.role == 'center' %}
+            {% if current_effective_role == 'center' %}
                 <a href="{{ url_for('center_dashboard') }}">Verification Center</a>
+            {% elif current_effective_role == 'admin' %}
+                <a href="{{ url_for('admin_monitor') }}">Admin Monitor</a>
             {% else %}
                 <a href="{{ url_for('collector_dashboard') }}">Recycler Hub</a>
             {% endif %}
-            <a href="{{ url_for('request_pickup') }}">Business Hub</a>
-            <a href="{{ url_for('household_dashboard') }}">Community Hub</a>
+            {% if current_effective_role in ['business', 'resident'] %}
+                <a href="{{ url_for('request_pickup') }}">{% if current_effective_role == 'business' %}Business Hub{% else %}Request Pickup{% endif %}</a>
+            {% endif %}
+            {% if current_effective_role == 'resident' %}
+                <a href="{{ url_for('household_dashboard') }}">Community Hub</a>
+            {% endif %}
             <a href="/proof-hub">Proof Hub</a>
-            <a href="{{ url_for('admin_monitor') }}">Admin Monitor</a>
             <a href="{{ url_for('proof_integrity') }}">Proof Verifier</a>
             <a href="{{ url_for('public_data') }}">Mirror Node Feed (Dev)</a>
             <a href="{{ url_for('profile') }}">Profile</a>

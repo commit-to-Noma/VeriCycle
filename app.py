@@ -92,7 +92,7 @@ login_manager.login_message_category = None
 # 3. DATABASE MODEL
 # - Define `User` and `Activity` models used across routes.
 # -----------------------------------------------------------------
-from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask, AgentCommerceEvent, DeadLetterTask, AdminAuditLog, VerificationSignal
+from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask, AgentCommerceEvent, DeadLetterTask, AdminAuditLog, VerificationSignal, PickupOpportunity, OpportunityAssignment
 from extensions import db as _db  # ensure db is available for seed helper
 from agents.proof_utils import build_proof_hash
 from demo_profile import DEMO_PROFILES, apply_demo_profile, profile_health
@@ -138,6 +138,82 @@ def get_user_private_key(user: User | None) -> str | None:
         except Exception:
             return None
     return getattr(user, "hedera_private_key", None)
+
+
+def normalize_role_value(role: str | None) -> str:
+    normalized = (role or "").strip().lower()
+    if normalized == "collector":
+        return "recycler"
+    return normalized
+
+
+def effective_role(user):
+    if not user:
+        return None
+    return normalize_role_value(getattr(user, "role", None))
+
+
+def is_recycler_user(user):
+    return effective_role(user) == "recycler"
+
+
+def is_business_user(user):
+    return effective_role(user) == "business"
+
+
+def is_resident_user(user):
+    return effective_role(user) == "resident"
+
+
+def is_center_user(user):
+    return effective_role(user) == "center"
+
+
+def is_admin_user(user=None):
+    target = user or current_user
+    try:
+        return target.is_authenticated and effective_role(target) == "admin"
+    except Exception:
+        return False
+
+
+def can_create_opportunity_business(user):
+    return is_business_user(user)
+
+
+def can_create_opportunity_resident(user):
+    return is_resident_user(user)
+
+
+def can_accept_opportunity_recycler(user):
+    return is_recycler_user(user)
+
+
+def can_verify_deposit_center(user):
+    return is_center_user(user) or is_admin_user(user)
+
+
+def role_home_endpoint_for(user) -> str:
+    role = effective_role(user)
+    if role == "center":
+        return "center_dashboard"
+    if role == "business":
+        return "request_pickup"
+    if role == "resident":
+        return "household_dashboard"
+    if role == "admin":
+        return "admin_monitor"
+    return "collector_dashboard"
+
+
+@app.context_processor
+def inject_role_helpers():
+    role = None
+    if current_user.is_authenticated:
+        role = effective_role(current_user)
+    return {
+        "current_effective_role": role,
+    }
 
 
 def confidence_score_for_activity(activity: Activity) -> float:
@@ -515,6 +591,46 @@ def ensure_activity_columns():
             )
         """))
 
+    pickup_table = db.session.execute(
+        text("SELECT name FROM sqlite_master WHERE type='table' AND name='pickup_opportunity'")
+    )
+    if not pickup_table.scalar():
+        db.session.execute(text("""
+            CREATE TABLE pickup_opportunity (
+                id INTEGER NOT NULL,
+                source_role VARCHAR(20) NOT NULL,
+                source_user_id INTEGER NOT NULL,
+                material_type VARCHAR(80) NOT NULL,
+                estimated_kg FLOAT NOT NULL,
+                location VARCHAR(200) NOT NULL,
+                requested_window VARCHAR(100),
+                status VARCHAR(30) NOT NULL DEFAULT 'open',
+                notes VARCHAR(500),
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                FOREIGN KEY(source_user_id) REFERENCES user (id)
+            )
+        """))
+
+    assignment_table = db.session.execute(
+        text("SELECT name FROM sqlite_master WHERE type='table' AND name='opportunity_assignment'")
+    )
+    if not assignment_table.scalar():
+        db.session.execute(text("""
+            CREATE TABLE opportunity_assignment (
+                id INTEGER NOT NULL,
+                opportunity_id INTEGER NOT NULL,
+                recycler_user_id INTEGER NOT NULL,
+                status VARCHAR(30) NOT NULL DEFAULT 'accepted',
+                accepted_at DATETIME NOT NULL,
+                linked_activity_id INTEGER,
+                PRIMARY KEY (id),
+                FOREIGN KEY(opportunity_id) REFERENCES pickup_opportunity (id),
+                FOREIGN KEY(recycler_user_id) REFERENCES user (id),
+                FOREIGN KEY(linked_activity_id) REFERENCES activity (id)
+            )
+        """))
+
     db.session.commit()
 
 
@@ -671,10 +787,13 @@ def mirror_fetch_latest_topic_messages(topic_id: str, limit: int = 10):
 def signup():
     email = request.form.get('email')
     password = request.form.get('password')
-    role = (request.form.get('role') or 'collector').strip().lower()
-    if role not in {'collector', 'center'}:
+    requested_role = normalize_role_value(request.form.get('role') or 'recycler')
+    if requested_role not in {'recycler', 'business', 'resident', 'center', 'admin'}:
         flash('Invalid role selected for signup.', 'error')
         return redirect(url_for('home', _anchor='auth-modal'))
+
+    # Phase 2 compatibility: keep recycler signups persisted as collector.
+    role = 'collector' if requested_role == 'recycler' else requested_role
     
     # ===== CRITICAL: Check if email exists BEFORE expensive Hedera account creation =====
     # This prevents:
@@ -693,8 +812,8 @@ def signup():
         new_id = None
         new_key = None
         
-        # Handle collector signup and create a Hedera account
-        if role == 'collector':
+        # Handle recycler/collector-compatible signup and create a Hedera account.
+        if role != 'center':
             print("--- CALLING HEDERA ENGINE: Creating new collector account... ---")
             operator_id = os.getenv("OPERATOR_ID")
             operator_key = os.getenv("OPERATOR_KEY")
@@ -734,7 +853,13 @@ def signup():
             db.session.add(new_user)
             db.session.commit()
             login_user(new_user)
-            return redirect(url_for('profile')) # COLLECTORS go to profile
+            if role == 'business':
+                return redirect(url_for('request_pickup'))
+            if role == 'resident':
+                return redirect(url_for('household_dashboard'))
+            if role == 'admin':
+                return redirect(url_for('admin_monitor'))
+            return redirect(url_for('profile'))
 
         # Handle center signup and create a Hedera account
         else: # role == 'center'
@@ -803,20 +928,26 @@ def login():
 
     email = request.form.get('email')
     password = request.form.get('password')
-    requested_role = (request.form.get('role') or '').strip().lower()
+    requested_role = normalize_role_value(request.form.get('role') or '')
+
+    if requested_role and requested_role not in {'recycler', 'business', 'resident', 'center', 'admin'}:
+        flash('Invalid role selected for login.', 'error')
+        return redirect(url_for('login'))
+
     user = User.query.filter_by(email=email).first()
     
     if user and bcrypt.check_password_hash(user.password_hash, password):
-        if requested_role and requested_role != (user.role or '').lower():
-            flash(f"Role mismatch. This account is registered as '{user.role}'.", 'error')
+        account_role = effective_role(user)
+        if requested_role and requested_role != account_role:
+            flash(f"Role mismatch. This account is registered as '{account_role}'.", 'error')
             return redirect(url_for('login'))
 
         login_user(user, remember=True)
         
         next_page = request.form.get('next') or request.args.get('next')
         
-        # Ensure collectors have completed their profile
-        if current_user.role == 'collector':
+        # Ensure recycler accounts (including legacy collector rows) complete profile.
+        if is_recycler_user(current_user):
             if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
                 flash('Please complete your profile to continue.', 'error')
                 return redirect(url_for('profile'))
@@ -825,10 +956,17 @@ def login():
         if next_page:
             return redirect(next_page)
         
-        # If they just logged in, send them to their correct dashboard
-        if current_user.role == 'center':
+        # If they just logged in, send them to their correct dashboard.
+        role = effective_role(current_user)
+        if role == 'center':
             return redirect(url_for('center_dashboard'))
-        else: # 'collector'
+        if role == 'business':
+            return redirect(url_for('request_pickup'))
+        if role == 'resident':
+            return redirect(url_for('household_dashboard'))
+        if role == 'admin':
+            return redirect(url_for('admin_monitor'))
+        else:  # recycler
             return redirect(url_for('collector_dashboard'))
             
     else:
@@ -963,7 +1101,11 @@ def profile():
 @app.route('/collector')
 @login_required 
 def collector_dashboard():
-    # Require profile completion for collectors
+    if not can_accept_opportunity_recycler(current_user):
+        flash('Recycler access is required for Recycler Hub.', 'error')
+        return redirect(url_for(role_home_endpoint_for(current_user)))
+
+    # Require profile completion for recycler users (including legacy collector rows).
     if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
         flash('You must complete your profile before accessing the dashboard.', 'error')
         return redirect(url_for('profile'))
@@ -980,13 +1122,132 @@ def collector_dashboard():
 @app.route('/request-pickup')
 @login_required 
 def request_pickup():
-    # We pass the user's address to pre-fill the form
+    if not (can_create_opportunity_business(current_user) or can_create_opportunity_resident(current_user)):
+        flash('Business or resident access is required for pickup requests.', 'error')
+        return redirect(url_for(role_home_endpoint_for(current_user)))
     return render_template('request_pickup.html', active_page='dashboard')
+
+
+@app.post('/api/opportunities/create')
+@login_required
+def api_create_opportunity():
+    role = effective_role(current_user)
+    if role not in ('business', 'resident'):
+        return jsonify({"ok": False, "error": "Unauthorized role"}), 403
+
+    data = request.get_json(silent=True) or request.form
+
+    material_type = (data.get('material_type') or '').strip()
+    estimated_kg_raw = data.get('estimated_kg')
+    location = (data.get('location') or '').strip()
+    requested_window = (data.get('requested_window') or '').strip()
+    notes = (data.get('notes') or '').strip()
+
+    if not material_type:
+        return jsonify({"ok": False, "error": "Material type is required"}), 400
+
+    try:
+        estimated_kg = float(estimated_kg_raw)
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "Estimated weight must be a number"}), 400
+
+    if estimated_kg <= 0:
+        return jsonify({"ok": False, "error": "Estimated weight must be greater than zero"}), 400
+
+    if not location:
+        return jsonify({"ok": False, "error": "Location is required"}), 400
+
+    opportunity = PickupOpportunity(
+        source_role='business' if role == 'business' else 'resident',
+        source_user_id=current_user.id,
+        material_type=material_type,
+        estimated_kg=estimated_kg,
+        location=location,
+        requested_window=requested_window or None,
+        notes=notes or None,
+        status='open',
+    )
+    db.session.add(opportunity)
+    db.session.commit()
+
+    return jsonify({
+        "ok": True,
+        "opportunity_id": opportunity.id,
+        "status": opportunity.status,
+    })
+
+
+@app.get('/api/opportunities/open')
+@login_required
+def api_list_open_opportunities():
+    rows = (
+        PickupOpportunity.query
+        .filter_by(status='open')
+        .order_by(PickupOpportunity.created_at.desc())
+        .all()
+    )
+
+    payload = []
+    for row in rows:
+        payload.append({
+            "id": row.id,
+            "source_role": row.source_role,
+            "material_type": row.material_type,
+            "estimated_kg": row.estimated_kg,
+            "location": row.location,
+            "requested_window": row.requested_window,
+            "notes": row.notes,
+            "status": row.status,
+            "created_at": row.created_at.isoformat() if row.created_at else None,
+        })
+
+    return jsonify({"rows": payload})
+
+
+@app.post('/api/opportunities/<int:opportunity_id>/accept')
+@login_required
+def api_accept_opportunity(opportunity_id):
+    if not can_accept_opportunity_recycler(current_user):
+        return jsonify({"ok": False, "error": "Only recyclers can accept pickup opportunities"}), 403
+
+    opportunity = db.session.get(PickupOpportunity, opportunity_id)
+    if not opportunity:
+        return jsonify({"ok": False, "error": "Opportunity not found"}), 404
+
+    existing = OpportunityAssignment.query.filter_by(
+        opportunity_id=opportunity.id,
+        recycler_user_id=current_user.id,
+    ).first()
+    if existing:
+        return jsonify({"ok": True, "assignment_id": existing.id, "already_exists": True})
+
+    if opportunity.status != 'open':
+        return jsonify({"ok": False, "error": "Opportunity is not open"}), 409
+
+    assignment = OpportunityAssignment(
+        opportunity_id=opportunity.id,
+        recycler_user_id=current_user.id,
+        status='accepted',
+    )
+    db.session.add(assignment)
+
+    opportunity.status = 'accepted'
+    db.session.commit()
+
+    return jsonify({
+        "ok": True,
+        "assignment_id": assignment.id,
+        "opportunity_id": opportunity.id,
+        "status": assignment.status,
+    })
 
 @app.route('/center')
 @login_required 
 def center_dashboard():
-    # Access relaxed for demo/testing: any authenticated user can open center dashboard.
+    if not can_verify_deposit_center(current_user):
+        flash('Center access is required for Verification Center.', 'error')
+        return redirect(url_for(role_home_endpoint_for(current_user)))
+
     return render_template('center.html', active_page='dashboard')
 
 
@@ -1005,6 +1266,10 @@ def recalc_reliability(location_id: int) -> float:
 @app.route('/household')
 @login_required
 def household_dashboard():
+    if not can_create_opportunity_resident(current_user):
+        flash('Resident access is required for Community Hub.', 'error')
+        return redirect(url_for(role_home_endpoint_for(current_user)))
+
     # Attach user to default location if no profile exists
     profile = HouseholdProfile.query.filter_by(user_id=current_user.id).first()
     if not profile:
@@ -1045,6 +1310,10 @@ def household_dashboard():
 @app.route("/household/pickup-action", methods=["POST"])
 @login_required
 def household_pickup_action():
+    if not can_create_opportunity_resident(current_user):
+        flash('Resident access is required for Community Hub.', 'error')
+        return redirect(url_for(role_home_endpoint_for(current_user)))
+
     action = request.form.get("action")
     stream = request.form.get("stream")
     if action not in ("confirmed", "missed") or not stream:
@@ -1083,6 +1352,10 @@ def household_pickup_action():
 @app.route("/household/set-location", methods=["POST"])
 @login_required
 def set_household_location():
+    if not can_create_opportunity_resident(current_user):
+        flash('Resident access is required for Community Hub.', 'error')
+        return redirect(url_for(role_home_endpoint_for(current_user)))
+
     location_id = request.form.get("location_id", type=int)
     if not location_id:
         flash("Pick a location.", "error")
@@ -1787,16 +2060,9 @@ def _compute_proof_sha256(payload_data: dict):
     return compute_proof_sha256(stable)
 
 
-def is_admin_user():
-    try:
-        return current_user.is_authenticated and getattr(current_user, "role", None) == "admin"
-    except Exception:
-        return False
-
-
 def can_review_events():
     try:
-        return current_user.is_authenticated and getattr(current_user, "role", None) in ("admin", "center")
+        return current_user.is_authenticated and can_verify_deposit_center(current_user)
     except Exception:
         return False
 
@@ -2828,7 +3094,7 @@ def admin_retry_logbook(activity_id):
     if not activity:
         abort(404)
 
-    if activity.user_id != current_user.id and current_user.role not in ('admin', 'center'):
+    if activity.user_id != current_user.id and not can_verify_deposit_center(current_user):
         abort(403)
 
     if activity.hedera_tx_id:
@@ -2887,7 +3153,7 @@ def admin_agents():
     Agent Monitor: Shows recent activities with pipeline status
     Displays: status, pipeline_stage, trust_weight, hedera_tx_id, last_error
     """
-    if current_user.role not in ('admin', 'center'):
+    if not can_verify_deposit_center(current_user):
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:

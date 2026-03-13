@@ -1,41 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <main class="container">
-        <div class="card auth-card">
-            <h2>Redirecting…</h2>
-            <p>This page has been replaced by the modal signup. Redirecting you to the homepage where you can sign up.</p>
-            <p>If you are not redirected automatically, <a href="{{ url_for('home') }}#signup">click here</a>.</p>
-        </div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - VeriCycle</title>
+</head>
+<body>
+    <main>
+        <h2>Redirecting...</h2>
+        <p>This page now uses the home page auth modal.</p>
+        <p>If you are not redirected automatically, <a href="{{ url_for('home') }}#signup">open signup</a>.</p>
     </main>
 
     <script>
-        // Redirect to the homepage and open the signup modal
         window.location.href = "{{ url_for('home') }}#signup";
     </script>
-</body>
-</html>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                    <div class="form-group">
-                        <label>Register as:</label>
-                        <div class="radio-group">
-                            <label><input type="radio" name="role" value="collector" checked> Collector</label>
-                            <label><input type="radio" name="role" value="center"> Center</label>
-                        </div>
-                    </div>
-                <button type="submit" class="btn-primary-large btn-form">Create Account</button>
-            </form>
-            <p>
-                Already have an account? 
-                <a href="{{ url_for('login') }}" class="link-secondary">Log In here</a>
-            </p>
-        </div>
-    </main>
-
 </body>
 </html>

@@ -106,6 +106,23 @@ This script guarantees the three labeled judge events exist and prepares them fo
 - Verified event proof shows confidence 0.7
 - Proof hash visible in both
 
+## Phase 2 role access smoke check
+
+Run this before starting Phase 3 role/capability work:
+
+```bash
+python scripts/test_phase2_roles_smoke.py
+```
+
+Expected output:
+- PHASE2_ROLE_SMOKE: PASS
+
+This validates role routing/guards for recycler, business, resident, center, and admin across:
+- /collector
+- /request-pickup
+- /household
+- /center
+
 ## Submission narrative
 
 Use docs/submission_narrative_phase5.md for copy-paste final submission language.

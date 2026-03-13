@@ -16,7 +16,7 @@ class User(db.Model, UserMixin):
     phone_number = db.Column(db.String(20), nullable=True)
     address = db.Column(db.String(200), nullable=True)
     id_number = db.Column(db.String(30), nullable=True)
-    role = db.Column(db.String(20), nullable=False, default='collector')
+    role = db.Column(db.String(20), nullable=False, default='collector')  # Phase 2: recycler may still persist as collector for compatibility.
 
 
 class Activity(db.Model):
@@ -234,3 +234,70 @@ class AgentCommerceEvent(db.Model):
                            default=lambda: datetime.now(timezone.utc))
 
     activity = db.relationship("Activity", backref=db.backref("commerce_events", lazy=True))
+
+
+class PickupOpportunity(db.Model):
+    __tablename__ = "pickup_opportunity"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    source_role = db.Column(db.String(20), nullable=False)  # business | resident
+    source_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    material_type = db.Column(db.String(80), nullable=False)
+    estimated_kg = db.Column(db.Float, nullable=False)
+    location = db.Column(db.String(200), nullable=False)
+    requested_window = db.Column(db.String(100), nullable=True)
+
+    status = db.Column(db.String(30), nullable=False, default="open")
+    # open | accepted | completed | cancelled
+
+    notes = db.Column(db.String(500), nullable=True)
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    source_user = db.relationship(
+        "User",
+        backref=db.backref("pickup_opportunities", lazy=True),
+        foreign_keys=[source_user_id]
+    )
+
+
+class OpportunityAssignment(db.Model):
+    __tablename__ = "opportunity_assignment"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    opportunity_id = db.Column(db.Integer, db.ForeignKey("pickup_opportunity.id"), nullable=False)
+    recycler_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    status = db.Column(db.String(30), nullable=False, default="accepted")
+    # accepted | submitted | completed | cancelled
+
+    accepted_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    linked_activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"), nullable=True)
+
+    opportunity = db.relationship(
+        "PickupOpportunity",
+        backref=db.backref("assignments", lazy=True, cascade="all, delete-orphan")
+    )
+
+    recycler_user = db.relationship(
+        "User",
+        backref=db.backref("opportunity_assignments", lazy=True),
+        foreign_keys=[recycler_user_id]
+    )
+
+    linked_activity = db.relationship(
+        "Activity",
+        backref=db.backref("opportunity_assignment", uselist=False)
+    )

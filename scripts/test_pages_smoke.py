@@ -60,7 +60,7 @@ def run_collector_checks(client):
     force_login(client, collector)
     expect_status(client, "/collector", (200, 302))
     expect_status(client, "/profile", (200,))
-    expect_status(client, "/request-pickup", (200,))
+    expect_status(client, "/request-pickup", (302,))
     expect_status(client, "/household", (200, 302))
     expect_status(client, "/search", (200,))
     expect_status(client, "/network", (200,))

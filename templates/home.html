@@ -63,7 +63,7 @@
                 </div>
             {% else %}
                 <div class="cta-buttons">
-                    {% if current_user.role == 'center' %}
+                    {% if current_effective_role == 'center' %}
                         <a href="{{ url_for('center_dashboard') }}" class="btn-primary-large">Go to Verification Center</a>
                     {% else %}
                         <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to Recycler Hub</a>
@@ -198,10 +198,13 @@
                     <div class="form-group">
                         <label>Register as:</label>
                         <div class="role-selector">
-                            <button type="button" class="role-btn active" data-role="collector">Recycler</button>
+                            <button type="button" class="role-btn active" data-role="recycler">Recycler</button>
+                            <button type="button" class="role-btn" data-role="business">Business</button>
+                            <button type="button" class="role-btn" data-role="resident">Resident</button>
                             <button type="button" class="role-btn" data-role="center">Center</button>
+                            <button type="button" class="role-btn" data-role="admin">Admin</button>
                         </div>
-                        <input type="hidden" id="role-input" name="role" value="collector">
+                        <input type="hidden" id="role-input" name="role" value="recycler">
                     </div>
                     <div class="form-group">
                         <label for="signup-email">Email:</label>
@@ -229,7 +232,9 @@
                     <div class="form-group">
                         <label for="login-role">Log in as:</label>
                         <select id="login-role" name="role" required>
-                            <option value="collector">Recycler</option>
+                            <option value="recycler">Recycler</option>
+                            <option value="business">Business</option>
+                            <option value="resident">Resident</option>
                             <option value="center">Center</option>
                             <option value="admin">Admin</option>
                         </select>
