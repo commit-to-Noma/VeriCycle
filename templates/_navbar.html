@@ -10,15 +10,20 @@
 
             {% if current_user.is_authenticated %}
                 {% if current_user.role == 'center' %}
-                    <a href="{{ url_for('center_dashboard') }}" class="nav-button {% if request.path.startswith('/center') %}active{% endif %}">Observer Console</a>
+                    <a href="{{ url_for('center_dashboard') }}" class="nav-button {% if request.path.startswith('/center') %}active{% endif %}">Verification Center</a>
                 {% else %}
-                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Observer Console</a>
+                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Recycler Hub</a>
                 {% endif %}
+                <a href="{{ url_for('request_pickup') }}" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">Business Hub</a>
+                <a href="{{ url_for('household_dashboard') }}" class="nav-button {% if request.path.startswith('/household') %}active{% endif %}">Community Hub</a>
                 <a href="/proof-hub" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
                 <a href="{{ url_for('admin_monitor') }}" class="nav-button {% if request.path.startswith('/admin/monitor') %}active{% endif %}">Admin Monitor</a>
                 <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
             {% else %}
-                <a href="{{ url_for('login') }}?next=/collector" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Observer Console</a>
+                <a href="{{ url_for('login') }}?next=/collector" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Recycler Hub</a>
+                <a href="{{ url_for('login') }}?next=/request-pickup" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">Business Hub</a>
+                <a href="{{ url_for('login') }}?next={{ url_for('household_dashboard') }}" class="nav-button {% if request.path.startswith('/household') %}active{% endif %}">Community Hub</a>
+                <a href="{{ url_for('login') }}?next=/center" class="nav-button {% if request.path.startswith('/center') %}active{% endif %}">Verification Center</a>
                 <a href="{{ url_for('login') }}?next=/proof-hub" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
                 <a href="{{ url_for('login') }}?next=/admin/monitor" class="nav-button {% if request.path.startswith('/admin/monitor') %}active{% endif %}">Admin Monitor</a>
                 <a href="{{ url_for('login') }}" class="nav-button">Log In</a>
@@ -44,10 +49,12 @@
 
         {% if current_user.is_authenticated %}
             {% if current_user.role == 'center' %}
-                <a href="{{ url_for('center_dashboard') }}">Observer Console</a>
+                <a href="{{ url_for('center_dashboard') }}">Verification Center</a>
             {% else %}
-                <a href="{{ url_for('collector_dashboard') }}">Observer Console</a>
+                <a href="{{ url_for('collector_dashboard') }}">Recycler Hub</a>
             {% endif %}
+            <a href="{{ url_for('request_pickup') }}">Business Hub</a>
+            <a href="{{ url_for('household_dashboard') }}">Community Hub</a>
             <a href="/proof-hub">Proof Hub</a>
             <a href="{{ url_for('admin_monitor') }}">Admin Monitor</a>
             <a href="{{ url_for('proof_integrity') }}">Proof Verifier</a>
@@ -55,7 +62,10 @@
             <a href="{{ url_for('profile') }}">Profile</a>
             <a href="{{ url_for('logout') }}">Log Out</a>
         {% else %}
-            <a href="{{ url_for('login') }}?next=/collector">Observer Console</a>
+            <a href="{{ url_for('login') }}?next=/collector">Recycler Hub</a>
+            <a href="{{ url_for('login') }}?next=/request-pickup">Business Hub</a>
+            <a href="{{ url_for('login') }}?next={{ url_for('household_dashboard') }}">Community Hub</a>
+            <a href="{{ url_for('login') }}?next=/center">Verification Center</a>
             <a href="{{ url_for('login') }}?next=/proof-hub">Proof Hub</a>
             <a href="{{ url_for('login') }}?next=/admin/monitor">Admin Monitor</a>
             <a href="{{ url_for('proof_integrity') }}">Proof Verifier</a>

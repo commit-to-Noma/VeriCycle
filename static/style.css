@@ -2532,6 +2532,139 @@ input[type="number"] {
 }
 .back-link:hover { color: #4CAF50; }
 
+/* --- Request Pickup Page (scoped) --- */
+.request-pickup-page .pickup-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.request-pickup-page .pickup-cost-card {
+    background-color: #121212;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.request-pickup-page .pickup-cost-header {
+    text-align: center;
+}
+
+.request-pickup-page .pickup-cost-icon {
+    font-size: 3rem;
+}
+
+.request-pickup-page .pickup-cost-title {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #4CAF50;
+    margin-top: 0.5rem;
+}
+
+.request-pickup-page .pickup-cost-desc {
+    color: #ccc;
+    text-align: center;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.request-pickup-page .pickup-total-line {
+    display: flex;
+    justify-content: space-between;
+    color: #aaa;
+    font-size: 0.9rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.request-pickup-page .pickup-total-final {
+    display: flex;
+    justify-content: space-between;
+    color: #f4f4f4;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+.request-pickup-page .pickup-cost-card .btn-primary-large {
+    margin-top: 1.5rem;
+}
+
+.request-pickup-page .pickup-note {
+    font-size: 0.8rem;
+    color: #777;
+    text-align: center;
+    margin-top: 1rem;
+    margin-bottom: 0;
+}
+
+.request-pickup-page .slots-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+}
+
+.request-pickup-page .slot-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: #333;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 2px solid #333;
+    cursor: pointer;
+}
+
+.request-pickup-page .slot-option:has(input:checked) {
+    border-color: #4CAF50;
+    background-color: #1e1e1e;
+}
+
+.request-pickup-page .slot-option input[type="radio"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex-shrink: 0;
+}
+
+.request-pickup-page .slot-details {
+    flex-grow: 1;
+}
+
+.request-pickup-page .slot-day {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f4f4f4;
+}
+
+.request-pickup-page .slot-time {
+    color: #aaa;
+}
+
+.request-pickup-page #slots-modal .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: #aaa;
+    font-size: 2rem;
+    font-weight: bold;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .request-pickup-page .pickup-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Single spacing control between Proof of Income and Recent Activity.
    Keep one authoritative rule here so you can tune the vertical gap easily. */
 #activity-section {

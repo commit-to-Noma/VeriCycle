@@ -7,21 +7,21 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="dark-theme">
+<body class="dark-theme request-pickup-page">
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard" style="overflow:visible;">
-        <a href="{{ url_for('collector_dashboard') }}" class="back-link">← Back to Dashboard</a>
+        <a href="{{ url_for('collector_dashboard') }}" class="back-link">← Back to Recycler Hub</a>
         <div class="dashboard-header">
-            <h2>Schedule a Pickup</h2>
-            <p>We'll come to you. Confirm your details below.</p>
+            <h2>Create a Recycling Pickup Request</h2>
+            <p>Create a pickup opportunity for recyclable materials from a business, building, or community location.</p>
         </div>
 
         <div class="card" id="pickup-card">
             <div class="pickup-form-grid">
 
                 <div class="pickup-form">
-                    <h3>Your Pickup Details</h3>
+                    <h3>Pickup Opportunity Details</h3>
 
                         <div class="form-group">
                             <label for="neighborhood">Select Your Neighborhood:</label>
@@ -37,7 +37,7 @@
                         </div>
 
                     <div class="form-group">
-                        <label for="pickup-materials">Materials for Pickup:</label>
+                        <label for="pickup-materials">Material Type:</label>
                         <select id="pickup-materials">
                             <option>Mixed (Paper, Plastic, Cans)</option>
                             <option>Mainly Paper/Cardboard</option>
@@ -58,34 +58,37 @@
 
                 <div class="pickup-cost-card">
                     <div class="pickup-cost-header">
-                        <span class="pickup-cost-icon">🎉</span>
-                        <span class="pickup-cost-title">High-Activity Discount Unlocked!</span>
+                        <span class="pickup-cost-icon">📌</span>
+                        <span class="pickup-cost-title">Recycling Opportunity Created</span>
                     </div>
 
                     <p class="pickup-cost-desc">
-                        Because your neighborhood has a high recycling activity rate, the
-                        <strong>ZAR 25.00 pickup fee is waived.</strong> This is our reward to the community!
+                        Pickup requests help connect recyclable waste to nearby recyclers and verified centers.
                     </p>
 
                     <div class="pickup-total-line">
-                        <span>Pickup Fee:</span>
-                        <span class="pickup-cost-strikethrough">ZAR 25.00</span>
+                        <span>Estimated Material:</span>
+                        <span id="summary-material">Mixed (Paper, Plastic, Cans)</span>
                     </div>
                     <div class="pickup-total-line">
-                        <span>Neighborhood Discount:</span>
-                        <span>- ZAR 25.00</span>
+                        <span>Estimated Weight:</span>
+                        <span id="summary-weight">Under 10 kg</span>
                     </div>
 
                     <div class="pickup-total-final">
-                        <span>Total Due:</span>
-                        <span>ZAR 0.00</span>
+                        <span>Pickup Priority:</span>
+                        <span>Standard</span>
+                    </div>
+                    <div class="pickup-total-line" style="margin-top: 0.75rem; border-top: 1px solid #333; padding-top: 0.75rem;">
+                        <span>Request Status:</span>
+                        <span>Ready to Publish</span>
                     </div>
                     
                     <button class="btn-primary-large btn-form" id="confirm-pickup-btn">
-                        Confirm Pickup for Tomorrow
+                        Confirm Pickup Request
                     </button>
                     <p class="pickup-note">
-                        Our truck will collect between 09:00 and 14:00.
+                        A nearby recycler or verified collection route will be able to fulfill this request.
                     </p>
                 </div>
             </div>
@@ -94,17 +97,17 @@
         <div class="card" id="success-card" style="display: none; text-align: center; padding: 3rem;">
             <div class="pickup-cost-icon" style="font-size: 4rem;">✅</div>
             
-            <h2 style="color: #4CAF50; margin-top: 1rem;">Pickup Confirmed!</h2>
+            <h2 style="color: #4CAF50; margin-top: 1rem;">Pickup Request Created!</h2>
             
             <p style="font-size: 1.1rem; color: #ccc;">
-                Your pickup for <strong id="success-neighborhood">Sandton</strong> is scheduled for:
+                Your recycling opportunity has been added to the VeriCycle network.
             </p>
             
             <h3 style="color: #f4f4f4; font-size: 1.5rem; margin: 0.5rem 0 2.5rem 0;">
-                Tomorrow (Wed, 15 Nov) between 10:00 - 12:00
+                Request location: <span id="success-neighborhood">Sandton</span>
             </h3>
 
-            <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Return to Dashboard</a>
+            <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Return to Recycler Hub</a>
         </div>
     </main>
 
@@ -112,9 +115,9 @@
         <div class="card modal-content" style="max-width: 500px;">
             <button class="modal-close js-close-modal">&times;</button>
             
-            <h2 style="text-align: center;">Available Slots (<span id="slots-neighborhood">Sandton</span>)</h2>
+            <h2 style="text-align: center;">Confirm Request Details (<span id="slots-neighborhood">Sandton</span>)</h2>
             <p style="text-align: center; color: #aaa; margin-top: -1rem;">
-                Based on your "Mixed" selection and optimizing for other pickups in your area.
+                Select a preferred request timing window for network coordination.
             </p>
 
             <div class="slots-list">
@@ -122,155 +125,30 @@
                     <input type="radio" name="slot" checked>
                     <div class="slot-details">
                         <span class="slot-day" id="slot-day-1">Tomorrow</span>
-                        <span class="slot-time">10:00 - 12:00</span>
+                        <span class="slot-time">Preferred window: 10:00 - 12:00</span>
                     </div>
                 </label>
                 <label class="slot-option">
                     <input type="radio" name="slot">
                     <div class="slot-details">
                         <span class="slot-day" id="slot-day-2">Tomorrow</span>
-                        <span class="slot-time">14:00 - 16:00</span>
+                        <span class="slot-time">Preferred window: 14:00 - 16:00</span>
                     </div>
                 </label>
                 <label class="slot-option">
                     <input type="radio" name="slot">
                     <div class="slot-details">
                         <span class="slot-day" id="slot-day-3">Day After</span>
-                        <span class="slot-time">09:00 - 11:00</span>
+                        <span class="slot-time">Preferred window: 09:00 - 11:00</span>
                     </div>
                 </label>
             </div>
 
             <button class="btn-primary-large btn-form" id="confirm-slot-btn">
-                Confirm 10:00 - 12:00 Slot
+                Confirm Request Window
             </button>
         </div>
     </div>
-
-    <style>
-        .pickup-form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-        .pickup-cost-card {
-            background-color: #121212;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-        }
-        .pickup-cost-header {
-            text-align: center;
-        }
-        .pickup-cost-icon {
-            font-size: 3rem;
-        }
-        .pickup-cost-title {
-            display: block;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #4CAF50; /* Green */
-            margin-top: 0.5rem;
-        }
-        .pickup-cost-desc {
-            color: #ccc;
-            text-align: center;
-            margin-top: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .pickup-total-line {
-            display: flex;
-            justify-content: space-between;
-            color: #aaa;
-            font-size: 0.9rem;
-            padding-bottom: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .pickup-cost-strikethrough {
-            text-decoration: line-through;
-        }
-        .pickup-total-final {
-            display: flex;
-            justify-content: space-between;
-            color: #f4f4f4;
-            font-size: 1.2rem;
-            font-weight: 600;
-            border-top: 1px solid #333;
-            padding-top: 1rem;
-            margin-top: 1rem;
-        }
-        .pickup-cost-card .btn-primary-large {
-            margin-top: 1.5rem;
-        }
-        .pickup-note {
-            font-size: 0.8rem;
-            color: #777;
-            text-align: center;
-            margin-top: 1rem;
-            margin-bottom: 0;
-        }
-
-        /* Mobile responsive */
-        @media (max-width: 900px) {
-            .pickup-form-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-
-    <style>
-        .slots-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin: 1.5rem 0;
-        }
-        .slot-option {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            background-color: #333;
-            padding: 1rem;
-            border-radius: 8px;
-            border: 2px solid #333;
-            cursor: pointer;
-        }
-        .slot-option:has(input:checked) {
-            border-color: #4CAF50;
-            background-color: #1e1e1e;
-        }
-        .slot-option input[type="radio"] {
-            width: 1.2rem;
-            height: 1.2rem;
-            flex-shrink: 0;
-        }
-        .slot-details {
-            flex-grow: 1;
-        }
-        .slot-day {
-            display: block;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #f4f4f4;
-        }
-        .slot-time {
-            color: #aaa;
-        }
-        #slots-modal .modal-close {
-            /* This just makes the close button work */
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            color: #aaa;
-            font-size: 2rem;
-            font-weight: bold;
-            border: none;
-            background: none;
-            cursor: pointer;
-        }
-    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -283,6 +161,10 @@
             const confirmSlotButton = document.getElementById('confirm-slot-btn');
             const pickupCard = document.getElementById('pickup-card');
             const successCard = document.getElementById('success-card');
+            const materialSelect = document.getElementById('pickup-materials');
+            const weightSelect = document.getElementById('pickup-weight');
+            const summaryMaterial = document.getElementById('summary-material');
+            const summaryWeight = document.getElementById('summary-weight');
 
             // --- NEW: DYNAMIC DATE LOGIC ---
             try {
@@ -306,6 +188,19 @@
             } catch (e) {
                 console.warn('Date rendering failed', e);
             }
+
+            function syncRequestSummary() {
+                if (summaryMaterial && materialSelect) {
+                    summaryMaterial.textContent = materialSelect.options[materialSelect.selectedIndex].text;
+                }
+                if (summaryWeight && weightSelect) {
+                    summaryWeight.textContent = weightSelect.options[weightSelect.selectedIndex].text;
+                }
+            }
+
+            syncRequestSummary();
+            if (materialSelect) materialSelect.addEventListener('change', syncRequestSummary);
+            if (weightSelect) weightSelect.addEventListener('change', syncRequestSummary);
 
             // --- 2. Open the modal ---
             pickupButton.addEventListener('click', function(e) {

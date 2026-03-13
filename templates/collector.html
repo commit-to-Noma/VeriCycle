@@ -5,7 +5,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
         <div class="dashboard-header">
             <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
-            <p><strong>Observer Console</strong> · Track verified events, proof bundles, and Hedera settlement status.</p>
+            <p><strong>Recycler Hub</strong> · Record recycling activity, track rewards, discover pickup opportunities, and view proof of income.</p>
         </div>
 
         <section class="observer-shell">
@@ -49,8 +49,8 @@
 
             <div class="observer-main-grid">
                 <div class="card observer-ledger" id="activity-section">
-                <h3>Event Stream</h3>
-                <p class="mockup-subtitle">HCS-verified log (newest first)</p>
+                <h3>Verified Recycling Activity</h3>
+                <p class="mockup-subtitle">Your verified recycling deposits and reward history</p>
 
                                 <table id="activity-table" class="event-table">
                                     <tr>
@@ -144,13 +144,14 @@
 
                     <div class="card observer-actions-card">
                         <h3>Quick Actions</h3>
-                        <p class="mockup-subtitle">Trigger verified recycling events and submit drop-off records.</p>
+                        <p class="mockup-subtitle">Record a recycling deposit or explore pickup opportunities in the network.</p>
                         <div class="observer-action-stack">
                             <a href="{{ url_for('swap') }}" class="btn-primary">Open Wallet & Exchange</a>
                             <button class="btn-primary" id="trigger-deposit-btn">
                                 Trigger Recycling Event
                             </button>
-                            <p class="mockup-subtitle">Collector → Verifier → Logbook → Reward → Compliance</p>
+                            <a href="{{ url_for('request_pickup') }}" class="btn-secondary">View Pickup Opportunities</a>
+                            <p class="mockup-subtitle">Recycler → Verifier → Logbook → Reward → Compliance</p>
                         </div>
                     </div>
                 </aside>
@@ -162,7 +163,7 @@
         <div class="qr-grid">
 
             <div class="instructions">
-                <h3>How to Drop Off:</h3>
+                <h3>How to verify a drop-off</h3>
                 <ol>
                     <li>Press the "Generate" button below.</li>
                     <li>Show your unique QR code to the recycling center.</li>
@@ -186,8 +187,8 @@
         <div class="card pickup-card">
             <div class="pickup-icon">🚚</div>
             <div class="pickup-text">
-                <h3>Request a Pickup</h3>
-                <p>Have too much to drop off? Schedule a pickup from your location.</p>
+                <h3>Pickup Opportunities</h3>
+                <p>View or request recycling collection opportunities in your area.</p>
             </div>
             <div class="pickup-arrow">›</div>
         </div>

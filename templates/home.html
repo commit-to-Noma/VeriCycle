@@ -15,8 +15,8 @@
     <main id="main-content" class="hero">
         <div class="container">
             <h2>VeriCycle</h2>
-            <h1>Verified Value for Recycling.</h1>
-            <p class="subtitle">VeriCycle turns recycling activity into trusted, auditable records for collectors, centers, and communities.</p>
+            <h1>Verified Recycling for Recyclers, Businesses, and Communities.</h1>
+            <p class="subtitle">VeriCycle connects informal recyclers, businesses, recycling centers, and communities through a trusted recycling coordination network powered by Hedera.</p>
             <a href="#our-mission" class="btn-secondary">Learn About Our Mission</a>
             <div class="floating-fixed-icons" aria-hidden="true">
                 <div id="icon-final-trash" class="fixed-icon icon-bin" aria-hidden="true">
@@ -37,23 +37,23 @@
     <section class="cta-section">
         <div class="container-wide">
             <h2>Join the VeriCycle Network</h2>
-            <p class="cta-subtitle">Start in minutes and turn recycling activity into verified impact and rewards.</p>
+            <p class="cta-subtitle">Turn recyclable waste into verified income, accountability, and community impact.</p>
             <div class="advantages">
                 <div class="advantage-card">
-                    <h3>✅ Get Paid Safely.</h3>
-                    <p>Stop worrying about carrying cash. Your digital EcoCoin wallet is secure.</p>
+                    <h3>♻️ Recyclers earn verified value</h3>
+                    <p>Informal recyclers can record drop-offs, earn EcoCoin rewards, and build proof-of-income history.</p>
                 </div>
                 <div class="advantage-card">
-                    <h3>🤝 Get Paid Fairly.</h3>
-                    <p>Get a permanent, verifiable receipt for every drop-off. No more disputes.</p>
+                    <h3>🏢 Businesses create recycling opportunities</h3>
+                    <p>Restaurants, offices, and buildings can request recycling pickup and generate verified sustainability records.</p>
                 </div>
                 <div class="advantage-card">
-                    <h3>📈 Build Your Future.</h3>
-                    <p>Build a real, digital income history that can help you get bank loans.</p>
+                    <h3>🏘️ Communities help coordinate recycling</h3>
+                    <p>Residents can report recycling opportunities, request pickup, and support cleaner neighborhoods.</p>
                 </div>
                 <div class="advantage-card">
-                    <h3>💰 Earn More Than Cash.</h3>
-                    <p>Unlock "Bulk Bonuses" and other incentives only available to our 'Green Members'.</p>
+                    <h3>🔒 Hedera makes it trustworthy</h3>
+                    <p>Every verified recycling event can be anchored on Hedera, creating tamper-proof economic and environmental records.</p>
                 </div>
             </div>
             {% if not current_user.is_authenticated %}
@@ -63,7 +63,11 @@
                 </div>
             {% else %}
                 <div class="cta-buttons">
-                    <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to My Dashboard</a>
+                    {% if current_user.role == 'center' %}
+                        <a href="{{ url_for('center_dashboard') }}" class="btn-primary-large">Go to Verification Center</a>
+                    {% else %}
+                        <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to Recycler Hub</a>
+                    {% endif %}
                 </div>
             {% endif %}
         </div>
@@ -72,31 +76,31 @@
     <section class="how-it-works-section">
         <div class="container-wide">
             <h2>How VeriCycle Works</h2>
-            <p class="activity-subtitle">Our simple 4-step process turns your recycling into a verifiable reward.</p>
+            <p class="activity-subtitle">Our simple 4-step process connects the full recycling network.</p>
             <div class="how-it-works-grid">
                 <div class="step-card">
                     <span class="step-number">1</span>
                     <span class="step-icon">📝</span>
-                    <h3>Create Your Account</h3>
-                    <p>Sign up as a Collector to instantly create your secure, private Hedera wallet.</p>
+                    <h3>Create your role in the network</h3>
+                    <p>Join VeriCycle as a recycler, business, or community participant.</p>
                 </div>
                 <div class="step-card">
                     <span class="step-number">2</span>
                     <span class="step-icon">♻️</span>
-                    <h3>Drop Off &amp; Scan</h3>
-                    <p>Visit any Verified Center in our network and show them your unique QR code to be scanned.</p>
+                    <h3>Create or fulfill a recycling opportunity</h3>
+                    <p>Businesses and communities can request pickup, and recyclers can collect recyclable materials.</p>
                 </div>
                 <div class="step-card">
                     <span class="step-number">3</span>
-                    <span class="step-icon">💰</span>
-                    <h3>Get Paid Instantly</h3>
-                    <p>The center verifies your drop-off, and EcoCoin is sent directly to your wallet in seconds.</p>
+                    <span class="step-icon">✅</span>
+                    <h3>Verify the recycling event</h3>
+                    <p>Recycling centers confirm materials, and VeriCycle validates the event.</p>
                 </div>
                 <div class="step-card">
                     <span class="step-number">4</span>
-                    <span class="step-icon">🏦</span>
-                    <h3>Redeem for Cash</h3>
-                    <p>Use the "Rewards" page to redeem your EcoCoin for real ZAR, sent directly to your bank.</p>
+                    <span class="step-icon">💰</span>
+                    <h3>Earn rewards and proof</h3>
+                    <p>Verified events generate EcoCoin rewards and trusted Hedera-backed records.</p>
                 </div>
             </div>
         </div>
@@ -118,7 +122,7 @@
                     <div class="stats-grid-small">
                         <div class="stat-card-small">
                             <span class="stat-value-small">500+</span>
-                            <span class="stat-label-small">Active Collectors</span>
+                            <span class="stat-label-small">Active Recyclers</span>
                         </div>
                         <div class="stat-card-small">
                             <span class="stat-value-small">3</span>
@@ -156,19 +160,19 @@
                 <div class="advantage-card">
                     <h3>❓ The Problem We're Solving</h3>
                     <p>
-                        South Africa's recycling system depends on over 90,000 informal waste pickers. These collectors face <strong>social stigmatization, severe health risks</strong> from handling waste, and <strong>economic exploitation</strong> from cash-based middlemen. They have no way to build a formal financial history, trapping them in a high-risk, low-reward cycle.
+                        South Africa's recycling system depends on over 90,000 informal waste pickers. These collectors face <strong>social stigmatization, severe health risks</strong> from handling waste, and <strong>economic exploitation</strong> from cash-based middlemen. They have no way to build a formal financial history, trapping them in a high-risk, low-reward cycle. At the same time, businesses and communities often lack a reliable way to coordinate and verify recycling activity.
                     </p>
                 </div>
                 <div class="advantage-card">
                     <h3>✅ The VeriCycle Solution</h3>
                     <p>
-                        VeriCycle replaces this broken cash system with <strong>EcoCoin</strong>, a secure digital token on the Hedera network. We empower collectors by giving them a digital wallet, guaranteeing fair payment, and creating a <strong>permanent, verifiable record</strong> for every drop-off. This ensures transparency and builds trust for both the collector and the center.
+                        VeriCycle connects recyclers, businesses, recycling centers, and communities through a verified recycling network. Recyclers gain rewards and proof of income, businesses gain accountability records, and communities gain tools to coordinate recycling opportunities.
                     </p>
                 </div>
                 <div class="advantage-card">
                     <h3>📈 The Real-World Impact</h3>
                     <p>
-                        We are building a <strong>"Proof of Income"</strong> report for informal collectors, breaking the cycle of financial exclusion. But the VeriCycle model is universal: it rewards <strong>everyone</strong> for doing the right thing—from households who already recycle to new users we encourage to start. VeriCycle is uniquely able to deliver this because our verifiable, on-chain system creates a layer of trust that simple "points" apps cannot match. We are launching first in <strong>South Africa</strong>, with a clear vision to scale this powerful, transparent model globally.
+                        We are building a <strong>"Proof of Income"</strong> report for informal collectors, breaking the cycle of financial exclusion. VeriCycle expands beyond informal recyclers by allowing businesses to create recycling opportunities and communities to request or confirm pickup, while still keeping recyclers at the center of the economic value chain.
                     </p>
                 </div>
             </div>
@@ -194,7 +198,7 @@
                     <div class="form-group">
                         <label>Register as:</label>
                         <div class="role-selector">
-                            <button type="button" class="role-btn active" data-role="collector">Collector</button>
+                            <button type="button" class="role-btn active" data-role="collector">Recycler</button>
                             <button type="button" class="role-btn" data-role="center">Center</button>
                         </div>
                         <input type="hidden" id="role-input" name="role" value="collector">
@@ -225,7 +229,7 @@
                     <div class="form-group">
                         <label for="login-role">Log in as:</label>
                         <select id="login-role" name="role" required>
-                            <option value="collector">Collector</option>
+                            <option value="collector">Recycler</option>
                             <option value="center">Center</option>
                             <option value="admin">Admin</option>
                         </select>

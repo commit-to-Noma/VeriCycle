@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Household Dashboard - VeriCycle</title>
+  <title>Community Hub - VeriCycle</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -11,7 +11,8 @@
     {% include '_navbar.html' %}
 
     <main class="container">
-      <h2>Household Dashboard</h2>
+      <h2>Community Hub</h2>
+      <p class="muted">Report recycling issues, track neighborhood reliability, and support cleaner community recycling.</p>
 
       <div class="card">
         <h3>Location</h3>
@@ -35,7 +36,7 @@
       </div>
 
       <div class="card">
-        <h3>This Week’s Waste Schedule</h3>
+        <h3>This Week’s Community Pickup Schedule</h3>
         <table>
           <thead>
             <tr>
@@ -55,7 +56,7 @@
           </tbody>
         </table>
 
-        <h3>Pickup Actions</h3>
+        <h3>Community Pickup Actions</h3>
         <form method="POST" action="/household/pickup-action" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
           <label for="stream"><strong>Stream:</strong></label>
           <select name="stream" id="stream">
@@ -68,6 +69,7 @@
           <button type="submit" name="action" value="missed">Mark missed</button>
         </form>
 
+        <p class="muted">Residents can confirm or report missed pickups to improve neighborhood recycling accountability.</p>
         <p class="muted">Records today’s pickup outcome for the selected stream (Phase 1 Day 19).</p>
 
         <h3>Recent Pickup Events</h3>
