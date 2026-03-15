@@ -120,7 +120,15 @@
                                                     {% if act.reward_tx_id %}
                                                         <div class="tx-subline">Reward: <a href="https://hashscan.io/testnet/transaction/{{ act.reward_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
                                                     {% elif act.reward_status == "finalized_no_transfer" %}
-                                                        <div class="tx-subline">Reward: Finalized (no transfer)</div>
+                                                        <div class="tx-subline">
+                                                            Reward:
+                                                            {% set reward_error = (act.reward_last_error or '')|lower %}
+                                                            {% if 'insufficient_token_balance' in reward_error or 'treasury has zero eco balance' in reward_error or 'treasury' in reward_error and 'balance' in reward_error %}
+                                                                Treasury refill required
+                                                            {% else %}
+                                                                Reward finalized (no transfer)
+                                                            {% endif %}
+                                                        </div>
                                                     {% elif act.pipeline_stage in ["rewarded", "attested"] %}
                                                         <div class="tx-subline">Reward: Pending</div>
                                                     {% endif %}
@@ -147,6 +155,14 @@
                         <p class="mockup-subtitle">Available recycling requests from businesses and communities.</p>
                         <div id="pickup-opportunities-list">
                             <p>Loading opportunities...</p>
+                        </div>
+                    </div>
+
+                    <div class="card observer-actions-card" id="accepted-pickups-card">
+                        <h3>My Accepted Pickups</h3>
+                        <p class="mockup-subtitle">Submit collected materials for center verification.</p>
+                        <div id="accepted-pickups-list">
+                            <p>Loading accepted jobs...</p>
                         </div>
                     </div>
 
@@ -320,6 +336,42 @@
             return `<span class="status-badge status-${tone}">${escapeHtml(label)}</span>`;
         }
 
+        function isTreasuryRefillRequired(rewardLastError) {
+            const text = String(rewardLastError || '').toLowerCase();
+            return text.includes('insufficient_token_balance')
+                || text.includes('treasury has zero eco balance')
+                || (text.includes('treasury') && text.includes('balance'));
+        }
+
+        function rewardOutcomeLabel(activity) {
+            const rewardStatus = String(activity?.reward_status || '').toLowerCase();
+            const rewardError = activity?.reward_last_error || '';
+            if (rewardStatus === 'paid') return null;
+            if (rewardStatus === 'finalized_no_transfer') {
+                return isTreasuryRefillRequired(rewardError)
+                    ? 'Treasury refill required'
+                    : 'Reward finalized (no transfer)';
+            }
+            const stage = String(activity?.pipeline_stage || '').toLowerCase();
+            if (stage === 'rewarded' || stage === 'attested') return 'Reward pending';
+            return null;
+        }
+
+        function rewardOutcomeHtml(activity) {
+            const htsTx = activity?.hts_tx_id || activity?.reward_tx_id;
+            if (String(activity?.reward_status || '').toLowerCase() === 'paid' && htsTx) {
+                return `HTS: ${toHashScanTxLink(htsTx)}`;
+            }
+
+            const label = rewardOutcomeLabel(activity);
+            if (label) {
+                const tone = label === 'Treasury refill required' ? 'warn' : (label === 'Reward pending' ? 'pending' : 'muted');
+                return `HTS: ${statusBadge(label, tone)}`;
+            }
+
+            return 'HTS: —';
+        }
+
         function proofSnapshotCard(items) {
             const rows = Array.isArray(items) ? items : [];
             const total = rows.length;
@@ -328,16 +380,18 @@
             const fallback = rows.filter(x => (x.reward_status || '').toLowerCase() === 'finalized_no_transfer').length;
             const latestAnchored = rows.find(x => (x.logbook_status || '').toLowerCase() === 'anchored' && (x.hcs_tx_id || x.logbook_tx_id || x.hedera_tx_id));
             const latestPaid = rows.find(x => (x.reward_status || '').toLowerCase() === 'paid' && (x.hts_tx_id || x.reward_tx_id));
+            const latestFallback = rows.find(x => (x.reward_status || '').toLowerCase() === 'finalized_no_transfer');
+            const latestRewardLine = latestPaid ? rewardOutcomeHtml(latestPaid) : (latestFallback ? rewardOutcomeHtml(latestFallback) : 'HTS: —');
 
             return `
                 <div class="proof-summary-grid">
                     <div class="proof-summary-chip"><strong>${total}</strong><span>Total Rows</span></div>
                     <div class="proof-summary-chip"><strong>${anchored}</strong><span>HCS Anchored</span></div>
                     <div class="proof-summary-chip"><strong>${paid}</strong><span>HTS Paid</span></div>
-                    <div class="proof-summary-chip"><strong>${fallback}</strong><span>Fallback</span></div>
+                    <div class="proof-summary-chip"><strong>${fallback}</strong><span>No-transfer finalizations</span></div>
                 </div>
                 <p style="margin:10px 0 0 0;">Latest HCS: ${latestAnchored ? toHashScanTxLink(latestAnchored.hcs_tx_id || latestAnchored.logbook_tx_id || latestAnchored.hedera_tx_id) : '—'}</p>
-                <p style="margin:6px 0 0 0;">Latest HTS: ${latestPaid ? toHashScanTxLink(latestPaid.hts_tx_id || latestPaid.reward_tx_id) : '—'}</p>
+                <p style="margin:6px 0 0 0;">${latestRewardLine}</p>
             `;
         }
 
@@ -474,6 +528,72 @@
             }
         }
 
+        async function loadAcceptedAssignments() {
+            const container = document.getElementById('accepted-pickups-list');
+            if (!container) return;
+
+            try {
+                const res = await fetch('/api/opportunities/my-assignments');
+                if (!res.ok) {
+                    container.innerHTML = '<p>Unable to load accepted jobs.</p>';
+                    return;
+                }
+                const data = await res.json();
+                const rows = Array.isArray(data.rows) ? data.rows : [];
+
+                if (!rows.length) {
+                    container.innerHTML = '<p>No accepted pickups yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = rows.map((row) => {
+                    const canSubmit = row.status === 'accepted';
+                    const submitted = row.status === 'submitted';
+                    const completed = row.status === 'completed';
+                    const sourceLabel = row.source_role === 'business' ? 'Business' : 'Community';
+                    const material = escapeHtml(row.material_type || 'Mixed recyclables');
+                    const estimated = Number(row.estimated_kg || 0);
+                    const location = escapeHtml(row.location || 'Unknown location');
+                    const status = escapeHtml(row.status || 'unknown');
+                    const defaultMaterial = escapeHtml(row.material_type || '');
+                    const requestedWindow = escapeHtml(row.requested_window || 'Standard window');
+                    const estimatedReward = Number(row.estimated_reward_eco || 0);
+                    const verificationNotes = row.verification_notes ? `<div style="margin-top:0.5rem; color:#b8c1cc;">${escapeHtml(row.verification_notes)}</div>` : '';
+                    const linkedActivity = row.linked_activity_id ? `<div style="margin-top:0.35rem; color:#8fb3ff;">Pipeline activity #${Number(row.linked_activity_id)}</div>` : '';
+
+                    return `
+                        <div class="card" style="margin-bottom: 0.75rem; padding: 1rem;">
+                            <strong>${sourceLabel} Pickup</strong><br>
+                            <span>${material} · est. ${estimated.toFixed(1)} kg</span><br>
+                            <span>${location}</span><br>
+                            <span>${requestedWindow}</span><br>
+                            <span>Status: ${status}</span><br>
+                            ${estimatedReward > 0 ? `<span>Pipeline reward: ${estimatedReward.toFixed(2)} ECO</span><br>` : ''}
+
+                            ${canSubmit ? `
+                                <div style="margin-top:0.75rem;">
+                                    <input type="text" id="mat_${Number(row.assignment_id)}" placeholder="Material type" value="${defaultMaterial}" style="margin-bottom:0.5rem; width:100%;">
+                                    <input type="number" step="0.1" id="kg_${Number(row.assignment_id)}" placeholder="Actual weight (kg)" value="${estimated.toFixed(1)}" style="margin-bottom:0.5rem; width:100%;">
+                                    <textarea id="notes_${Number(row.assignment_id)}" placeholder="Notes (optional)" style="width:100%;"></textarea>
+                                    <button class="btn-secondary btn-compact" onclick="submitAssignment(${Number(row.assignment_id)})" style="margin-top:0.5rem;">
+                                        Submit to Center
+                                    </button>
+                                </div>
+                            ` : ''}
+
+                            ${submitted ? '<div style="margin-top:0.5rem;">Waiting for center verification.</div>' : ''}
+                            ${completed ? '<div style="margin-top:0.5rem;">Completed and verified.</div>' : ''}
+                            ${verificationNotes}
+                            ${linkedActivity}
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<p>Unable to load accepted jobs.</p>';
+            }
+        }
+
         async function acceptOpportunity(opportunityId) {
             try {
                 const res = await fetch(`/api/opportunities/${opportunityId}/accept`, {
@@ -493,13 +613,48 @@
 
                 alert('Pickup opportunity accepted.');
                 loadPickupOpportunities();
+                loadAcceptedAssignments();
             } catch (err) {
                 console.error(err);
                 alert('Could not accept opportunity');
             }
         }
 
+        async function submitAssignment(assignmentId) {
+            const materialType = document.getElementById(`mat_${assignmentId}`)?.value || '';
+            const weightKg = document.getElementById(`kg_${assignmentId}`)?.value || '';
+            const notes = document.getElementById(`notes_${assignmentId}`)?.value || '';
+
+            try {
+                const res = await fetch(`/api/assignments/${assignmentId}/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        material_type: materialType,
+                        weight_kg: weightKg,
+                        notes,
+                    }),
+                });
+
+                const data = await res.json();
+                if (!data.ok) {
+                    alert(data.error || 'Could not submit assignment');
+                    return;
+                }
+
+                alert('Pickup submitted to center for verification.');
+                loadAcceptedAssignments();
+            } catch (err) {
+                console.error(err);
+                alert('Could not submit assignment');
+            }
+        }
+
         window.acceptOpportunity = acceptOpportunity;
+        window.submitAssignment = submitAssignment;
 
         // --- 3. QR CODE LOGIC ---
         generateButton.addEventListener('click', function() {
@@ -578,6 +733,7 @@
                 renderActivityList();
                 loadAgentStatus();
                 loadPickupOpportunities();
+                loadAcceptedAssignments();
 
                 // If a pending animation was recorded (e.g. from a withdraw flag),
                 // run it immediately so the user sees the animated update on load.
@@ -879,17 +1035,9 @@
 
                 const txCell = (() => {
                     const hcsTx = act.hcs_tx_id || act.logbook_tx_id || act.hedera_tx_id;
-                    const htsTx = act.hts_tx_id || act.reward_tx_id;
                     const rewardLine = (() => {
-                        if ((act.reward_status || '').toLowerCase() === 'paid' && htsTx) {
-                            return `<div class="tx-line">HTS: ${toHashScanTxLink(htsTx)}</div>`;
-                        }
-                        if ((act.reward_status || '').toLowerCase() === 'finalized_no_transfer') {
-                            return `<div class="tx-line">HTS: ${statusBadge('finalized_no_transfer', 'warn')}</div>`;
-                        }
-                        const stage = (act.pipeline_stage || '').toLowerCase();
-                        if (stage === 'rewarded' || stage === 'attested') return `<div class="tx-line">HTS: ${statusBadge('pending', 'pending')}</div>`;
-                        return '';
+                        const rendered = rewardOutcomeHtml(act);
+                        return rendered ? `<div class="tx-line">${rendered}</div>` : '';
                     })();
 
                     if (hcsTx) return `<div class="tx-line">HCS: ${toHashScanTxLink(hcsTx)}</div>${rewardLine}`;

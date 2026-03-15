@@ -67,6 +67,14 @@
         </div>
 
         <div class="card">
+            <h3>Submitted Pickup Verifications</h3>
+            <p>Review recycler-submitted pickup jobs and finalize verified recycling events.</p>
+            <div id="submitted-assignments-list">
+                <p>Loading submitted pickups...</p>
+            </div>
+        </div>
+
+        <div class="card">
             <h3>Recent Verifications</h3>
             <div class="location-list" id="verification-list">
                 <h4 class="verification-date-header" id="today-header">Today</h4>
@@ -151,6 +159,87 @@ document.addEventListener('DOMContentLoaded', function() {
     const rewardTotal = document.getElementById('reward-total');
     let calculatedTotal = 0;
 
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    async function loadSubmittedAssignments() {
+        const container = document.getElementById('submitted-assignments-list');
+        if (!container) return;
+
+        try {
+            const res = await fetch('/api/center/submitted-assignments');
+            if (!res.ok) {
+                container.innerHTML = '<p>Unable to load submitted pickups.</p>';
+                return;
+            }
+
+            const data = await res.json();
+            const rows = Array.isArray(data.rows) ? data.rows : [];
+
+            if (!rows.length) {
+                container.innerHTML = '<p>No submitted pickups awaiting verification.</p>';
+                return;
+            }
+
+            container.innerHTML = rows.map((row) => {
+                const source = row.source_role === 'business' ? 'Business' : 'Community';
+                const recyclerEmail = escapeHtml(row.recycler_email || 'Unknown');
+                const material = escapeHtml(row.material_type || 'Mixed recyclables');
+                const weight = Number(row.weight_kg || 0).toFixed(1);
+                const reward = Number(row.estimated_reward_eco || 0).toFixed(2);
+                const location = escapeHtml(row.location || 'Unknown location');
+                const submittedAt = row.submitted_at ? new Date(row.submitted_at).toLocaleString() : '';
+
+                return `
+                    <div class="card" style="margin-bottom: 0.75rem; padding: 1rem;">
+                        <strong>${recyclerEmail}</strong><br>
+                        <span>${source} source</span><br>
+                        <span>${material} · ${weight} kg</span><br>
+                        <span>Pipeline reward: ${reward} ECO</span><br>
+                        <span>${location}</span><br>
+                        <span>${escapeHtml(submittedAt)}</span><br>
+                        <button class="btn-primary" onclick="verifySubmittedAssignment(${Number(row.assignment_id)})" style="margin-top: 0.5rem;">
+                            Verify Pickup
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = '<p>Unable to load submitted pickups.</p>';
+        }
+    }
+
+    async function verifySubmittedAssignment(assignmentId) {
+        try {
+            const res = await fetch(`/api/center/assignments/${assignmentId}/verify`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const data = await res.json();
+            if (!data.ok) {
+                alert(data.error || 'Could not verify submitted pickup');
+                return;
+            }
+
+            const rewardText = Number(data.reward_amount || 0).toFixed(2);
+            alert(`Pickup verified and sent into the Hedera pipeline. Reward: ${rewardText} ECO.`);
+            loadSubmittedAssignments();
+        } catch (err) {
+            console.error(err);
+            alert('Could not verify submitted pickup');
+        }
+    }
+
+    window.verifySubmittedAssignment = verifySubmittedAssignment;
+
     // Prices for materials
     const prices = {
         'cans': 50,
@@ -200,6 +289,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- NEW: Add event listeners to the form ---
     if (materialType) materialType.addEventListener('change', calculateReward);
     if (weightInput) weightInput.addEventListener('input', calculateReward);
+
+    loadSubmittedAssignments();
 
 
     // 1. When the "Scan" button is clicked

@@ -6,6 +6,7 @@ from models import VerificationSignal
 
 SIGNAL_WEIGHTS = {
     "collector_submission": 0.5,
+    "center_verification": 0.5,
     "qr_scan": 0.4,
     "photo_proof": 0.3,
     "resident_confirmation": 0.2,

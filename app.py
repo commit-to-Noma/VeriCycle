@@ -193,6 +193,36 @@ def can_verify_deposit_center(user):
     return is_center_user(user) or is_admin_user(user)
 
 
+DEMO_REWARD_RATE_BY_MATERIAL = {
+    "cans": 13.0,
+    "paper": 7.8,
+    "glass": 5.2,
+    "mixed recyclables": 10.0,
+}
+
+
+def normalize_material_key(material_type: str | None) -> str:
+    normalized = (material_type or "").strip().lower()
+    if not normalized:
+        return "mixed recyclables"
+    if "can" in normalized or "aluminum" in normalized or "metal" in normalized:
+        return "cans"
+    if "paper" in normalized or "cardboard" in normalized:
+        return "paper"
+    if "glass" in normalized:
+        return "glass"
+    return "mixed recyclables"
+
+
+def calculate_demo_reward_amount(material_type: str | None, weight_kg: float | int | None) -> float:
+    safe_weight = max(0.0, float(weight_kg or 0.0))
+    material_key = normalize_material_key(material_type)
+    base_rate = DEMO_REWARD_RATE_BY_MATERIAL.get(material_key, DEMO_REWARD_RATE_BY_MATERIAL["mixed recyclables"])
+    base_amount = safe_weight * base_rate
+    total_amount = base_amount + (base_amount * 0.025) + (base_amount * 0.01)
+    return round(min(200.0, max(1.0 if safe_weight > 0 else 0.0, total_amount)), 2)
+
+
 def role_home_endpoint_for(user) -> str:
     role = effective_role(user)
     if role == "center":
@@ -251,6 +281,7 @@ def create_verification_signal(
 ):
     weight_map = {
         "collector_submission": 0.5,
+        "center_verification": 0.5,
         "qr_scan": 0.4,
         "photo_proof": 0.3,
         "resident_confirmation": 0.2,
@@ -630,6 +661,33 @@ def ensure_activity_columns():
                 FOREIGN KEY(linked_activity_id) REFERENCES activity (id)
             )
         """))
+
+    assignment_cols = db.session.execute(text("PRAGMA table_info(opportunity_assignment)")).mappings().all()
+    assignment_existing = {c.get("name") for c in assignment_cols}
+
+    if "submitted_at" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN submitted_at DATETIME"))
+
+    if "submitted_material_type" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN submitted_material_type VARCHAR(80)"))
+
+    if "submitted_weight_kg" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN submitted_weight_kg FLOAT"))
+
+    if "submission_notes" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN submission_notes VARCHAR(500)"))
+
+    if "verified_by_center_id" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN verified_by_center_id INTEGER"))
+
+    if "verified_at" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN verified_at DATETIME"))
+
+    if "verification_status" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN verification_status VARCHAR(30)"))
+
+    if "verification_notes" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN verification_notes VARCHAR(500)"))
 
     db.session.commit()
 
@@ -1239,6 +1297,230 @@ def api_accept_opportunity(opportunity_id):
         "assignment_id": assignment.id,
         "opportunity_id": opportunity.id,
         "status": assignment.status,
+    })
+
+
+@app.get('/api/opportunities/my-assignments')
+@login_required
+def api_my_assignments():
+    if not can_accept_opportunity_recycler(current_user):
+        return jsonify({"rows": []})
+
+    rows = (
+        OpportunityAssignment.query
+        .filter_by(recycler_user_id=current_user.id)
+        .order_by(OpportunityAssignment.accepted_at.desc())
+        .all()
+    )
+
+    payload = []
+    for row in rows:
+        opp = row.opportunity
+        reward_estimate = calculate_demo_reward_amount(
+            row.submitted_material_type or (opp.material_type if opp else None),
+            row.submitted_weight_kg if row.submitted_weight_kg is not None else (opp.estimated_kg if opp else 0),
+        ) if (row.submitted_weight_kg is not None or (opp and opp.estimated_kg is not None)) else None
+        payload.append({
+            "assignment_id": row.id,
+            "opportunity_id": row.opportunity_id,
+            "status": row.status,
+            "accepted_at": row.accepted_at.isoformat() if row.accepted_at else None,
+            "submitted_at": row.submitted_at.isoformat() if row.submitted_at else None,
+            "submitted_material_type": row.submitted_material_type,
+            "submitted_weight_kg": row.submitted_weight_kg,
+            "verification_status": row.verification_status,
+            "verification_notes": row.verification_notes,
+            "linked_activity_id": row.linked_activity_id,
+            "estimated_reward_eco": reward_estimate,
+            "source_role": opp.source_role if opp else None,
+            "material_type": opp.material_type if opp else None,
+            "estimated_kg": opp.estimated_kg if opp else None,
+            "location": opp.location if opp else None,
+            "requested_window": opp.requested_window if opp else None,
+        })
+
+    return jsonify({"rows": payload})
+
+
+@app.post('/api/assignments/<int:assignment_id>/submit')
+@login_required
+def api_submit_assignment(assignment_id):
+    if not can_accept_opportunity_recycler(current_user):
+        return jsonify({"ok": False, "error": "Only recyclers can submit accepted jobs"}), 403
+
+    assignment = db.session.get(OpportunityAssignment, assignment_id)
+    if not assignment:
+        return jsonify({"ok": False, "error": "Assignment not found"}), 404
+
+    if assignment.recycler_user_id != current_user.id:
+        return jsonify({"ok": False, "error": "Not your assignment"}), 403
+
+    if assignment.status not in ('accepted',):
+        return jsonify({"ok": False, "error": "Assignment cannot be submitted from its current state"}), 409
+
+    data = request.get_json(silent=True) or request.form
+
+    material_type = (data.get('material_type') or '').strip()
+    notes = (data.get('notes') or '').strip()
+
+    try:
+        weight_kg = float(data.get('weight_kg'))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "Weight must be numeric"}), 400
+
+    if not material_type:
+        return jsonify({"ok": False, "error": "Material type is required"}), 400
+    if weight_kg <= 0:
+        return jsonify({"ok": False, "error": "Weight must be greater than zero"}), 400
+
+    assignment.submitted_at = datetime.now(timezone.utc)
+    assignment.submitted_material_type = material_type
+    assignment.submitted_weight_kg = weight_kg
+    assignment.submission_notes = notes or None
+    assignment.status = 'submitted'
+    assignment.verification_status = 'pending'
+
+    db.session.commit()
+
+    return jsonify({
+        "ok": True,
+        "assignment_id": assignment.id,
+        "status": assignment.status,
+        "verification_status": assignment.verification_status,
+    })
+
+
+@app.get('/api/center/submitted-assignments')
+@login_required
+def api_center_submitted_assignments():
+    if not can_verify_deposit_center(current_user):
+        return jsonify({"rows": []}), 403
+
+    rows = (
+        OpportunityAssignment.query
+        .filter(OpportunityAssignment.status == 'submitted')
+        .order_by(OpportunityAssignment.submitted_at.desc())
+        .all()
+    )
+
+    payload = []
+    for row in rows:
+        opp = row.opportunity
+        recycler = row.recycler_user
+        material_type = row.submitted_material_type or (opp.material_type if opp else None)
+        reward_estimate = calculate_demo_reward_amount(material_type, row.submitted_weight_kg)
+
+        payload.append({
+            "assignment_id": row.id,
+            "opportunity_id": row.opportunity_id,
+            "recycler_email": recycler.email if recycler else "Unknown",
+            "source_role": opp.source_role if opp else None,
+            "location": opp.location if opp else None,
+            "material_type": material_type,
+            "weight_kg": row.submitted_weight_kg,
+            "estimated_reward_eco": reward_estimate,
+            "notes": row.submission_notes,
+            "submitted_at": row.submitted_at.isoformat() if row.submitted_at else None,
+        })
+
+    return jsonify({"rows": payload})
+
+
+@app.post('/api/center/assignments/<int:assignment_id>/verify')
+@login_required
+def api_center_verify_assignment(assignment_id):
+    if not can_verify_deposit_center(current_user):
+        return jsonify({"ok": False, "error": "Only centers can verify submitted assignments"}), 403
+
+    assignment = db.session.get(OpportunityAssignment, assignment_id)
+    if not assignment:
+        return jsonify({"ok": False, "error": "Assignment not found"}), 404
+
+    if assignment.status != 'submitted':
+        return jsonify({"ok": False, "error": "Assignment is not ready for verification"}), 409
+
+    opp = assignment.opportunity
+    recycler = assignment.recycler_user
+
+    if not recycler:
+        return jsonify({"ok": False, "error": "Recycler not found"}), 400
+
+    material = assignment.submitted_material_type or (opp.material_type if opp else 'Mixed recyclables')
+    weight = float(assignment.submitted_weight_kg or 0)
+
+    if weight <= 0:
+        return jsonify({"ok": False, "error": "Submitted weight is invalid"}), 400
+
+    desc = f"Verified Pickup ({weight:.1f}kg of {material})"
+    if opp and opp.source_role == 'business':
+        desc = f"Verified Business Pickup ({weight:.1f}kg of {material})"
+    elif opp and opp.source_role == 'resident':
+        desc = f"Verified Community Pickup ({weight:.1f}kg of {material})"
+
+    reward_amount = calculate_demo_reward_amount(material, weight)
+
+    activity = Activity(
+        user_id=recycler.id,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        desc=desc,
+        amount=reward_amount,
+        status='pending',
+        verified_status='pending',
+        pipeline_stage='created',
+    )
+    db.session.add(activity)
+    db.session.flush()
+
+    create_verification_signal(
+        activity_id=activity.id,
+        signal_type='collector_submission',
+        source_role='operator',
+        source_user_id=recycler.id,
+        value='submitted',
+        is_positive=True,
+        metadata={
+            "weight_kg": weight,
+            "source_opportunity_id": opp.id if opp else None,
+            "source_role": opp.source_role if opp else None,
+        }
+    )
+
+    create_verification_signal(
+        activity_id=activity.id,
+        signal_type='center_verification',
+        source_role='center',
+        source_user_id=current_user.id,
+        value='verified',
+        is_positive=True,
+        metadata={
+            "assignment_id": assignment.id,
+            "verified_by": current_user.email,
+        }
+    )
+
+    add_schedule_match_signal(activity)
+
+    assignment.verified_by_center_id = current_user.id
+    assignment.verified_at = datetime.now(timezone.utc)
+    assignment.verification_status = 'verified'
+    assignment.verification_notes = f"Verified by {current_user.email}; pipeline reward {reward_amount:.2f} ECO"
+    assignment.status = 'completed'
+    assignment.linked_activity_id = activity.id
+
+    if opp:
+        opp.status = 'completed'
+
+    db.session.commit()
+
+    from agents.task_enqueue import enqueue_pipeline
+    enqueue_pipeline(activity.id)
+
+    return jsonify({
+        "ok": True,
+        "assignment_id": assignment.id,
+        "activity_id": activity.id,
+        "reward_amount": reward_amount,
+        "status": "verified_and_enqueued",
     })
 
 @app.route('/center')

@@ -284,6 +284,16 @@ class OpportunityAssignment(db.Model):
         default=lambda: datetime.now(timezone.utc)
     )
 
+    submitted_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    submitted_material_type = db.Column(db.String(80), nullable=True)
+    submitted_weight_kg = db.Column(db.Float, nullable=True)
+    submission_notes = db.Column(db.String(500), nullable=True)
+    verified_by_center_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    verified_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    verification_status = db.Column(db.String(30), nullable=True)
+    # pending | verified | rejected
+    verification_notes = db.Column(db.String(500), nullable=True)
+
     linked_activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"), nullable=True)
 
     opportunity = db.relationship(
@@ -295,6 +305,11 @@ class OpportunityAssignment(db.Model):
         "User",
         backref=db.backref("opportunity_assignments", lazy=True),
         foreign_keys=[recycler_user_id]
+    )
+
+    verified_by_center = db.relationship(
+        "User",
+        foreign_keys=[verified_by_center_id]
     )
 
     linked_activity = db.relationship(

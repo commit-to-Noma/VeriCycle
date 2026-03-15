@@ -512,6 +512,34 @@ function txLink(txId, label = "View on Hedera") {
 	return `<a href="https://hashscan.io/testnet/transaction/${txId}" target="_blank" rel="noopener">${label}</a>`;
 }
 
+function isTreasuryRefillRequired(rewardLastError) {
+	const text = String(rewardLastError || "").toLowerCase();
+	return text.includes("insufficient_token_balance")
+		|| text.includes("treasury has zero eco balance")
+		|| (text.includes("treasury") && text.includes("balance"));
+}
+
+function rewardOutcomeLabel(activity) {
+	const rewardStatus = (activity?.reward_status || "").toString().toLowerCase();
+	if (rewardStatus === "paid") return null;
+	if (rewardStatus === "finalized_no_transfer") {
+		return isTreasuryRefillRequired(activity?.reward_last_error)
+			? "Treasury refill required"
+			: "Reward finalized (no transfer)";
+	}
+	const stage = (activity?.pipeline_stage || activity?.stage || "").toString().toLowerCase();
+	if (stage === "rewarded" || stage === "attested") return "Reward pending";
+	return null;
+}
+
+function rewardOutcomeHtml(activity) {
+	const htsTx = activity?.hts_tx_id || activity?.reward_tx_id;
+	if (((activity?.reward_status || "").toString().toLowerCase() === "paid") && htsTx) {
+		return txLink(htsTx);
+	}
+	return escapeHtml(rewardOutcomeLabel(activity) || "—");
+}
+
 function stepDone(a, tasks, step) {
 	const logbookStatus = (a.logbook_status || "").toString().toLowerCase();
 	const rewardStatus = (a.reward_status || "").toString().toLowerCase();
@@ -618,6 +646,7 @@ function renderGoldenRunTile(title, activity) {
 	const proofState = proofVerifyCache.get(activity.id) === "verified" ? "Verified" : "Pending";
 	const finalStatus = activity.display_status || normalizeStatusLabel(activity.status || activity.verified_status || "pending");
 	const description = activity.desc || "Not specified";
+	const htsResult = rewardOutcomeHtml(activity);
 
 	return `
 		<div class="golden-run-tile">
@@ -626,7 +655,7 @@ function renderGoldenRunTile(title, activity) {
 			<p>Description: ${escapeHtml(description)}</p>
 			<p>Final status: ${escapeHtml(finalStatus)}</p>
 			<p>HCS: ${txLink(hcsTx)}</p>
-			<p>HTS: ${txLink(htsTx)}</p>
+			<p>HTS: ${htsResult}</p>
 			<p>Proof Verify: ${proofState}</p>
 		</div>
 	`;
@@ -800,7 +829,7 @@ function renderActivities(data) {
 			const statusBadge = done ? "✅" : "⏳";
 			let txRef = "—";
 			if (step.key === "LogbookAgent") txRef = txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id);
-			if (step.key === "RewardAgent") txRef = txLink(a.hts_tx_id || a.reward_tx_id);
+			if (step.key === "RewardAgent") txRef = rewardOutcomeHtml(a);
 			if (step.key === "ComplianceAgent") txRef = a.compliance_tx_id || "done";
 			return `<div class="pipeline-item ${done ? "done" : ""}"><strong>${statusBadge} ${step.label}</strong><br><span>${exactTime}</span><br><span>TX: ${txRef}</span></div>`;
 		}).join("");
@@ -810,7 +839,7 @@ function renderActivities(data) {
 			<div class="admin-layer">
 				<h4>Core Evidence Links</h4>
 				<p style="margin:0 0 8px 0;">HCS Anchor: ${txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id)}</p>
-				<p style="margin:0 0 8px 0;">HTS Reward: ${txLink(a.hts_tx_id || a.reward_tx_id)}</p>
+				<p style="margin:0 0 8px 0;">HTS Reward: ${rewardOutcomeHtml(a)}</p>
 				<p style="margin:0 0 8px 0;">Compliance TX: ${a.compliance_tx_id || "—"}</p>
 				<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
 					<button class="btn-secondary" onclick="openProofBundleInPanel(${a.id}, '${a.proof}')">View proof</button>
