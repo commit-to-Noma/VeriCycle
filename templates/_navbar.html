@@ -16,8 +16,11 @@
                 {% else %}
                     <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Recycler Hub</a>
                 {% endif %}
-                {% if current_effective_role in ['business', 'resident'] %}
-                    <a href="{{ url_for('request_pickup') }}" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">{% if current_effective_role == 'business' %}Business Hub{% else %}Request Pickup{% endif %}</a>
+                {% if current_effective_role == 'business' %}
+                    <a href="{{ url_for('business_dashboard') }}" class="nav-button {% if request.path.startswith('/business') %}active{% endif %}">Business Hub</a>
+                {% endif %}
+                {% if current_effective_role == 'resident' %}
+                    <a href="{{ url_for('request_pickup') }}" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">Request Pickup</a>
                 {% endif %}
                 {% if current_effective_role == 'resident' %}
                     <a href="{{ url_for('household_dashboard') }}" class="nav-button {% if request.path.startswith('/household') %}active{% endif %}">Community Hub</a>
@@ -26,7 +29,7 @@
                 <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
             {% else %}
                 <a href="{{ url_for('login') }}?next=/collector" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Recycler Hub</a>
-                <a href="{{ url_for('login') }}?next=/request-pickup" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">Business Hub</a>
+                <a href="{{ url_for('login') }}?next=/business" class="nav-button {% if request.path.startswith('/business') %}active{% endif %}">Business Hub</a>
                 <a href="{{ url_for('login') }}?next={{ url_for('household_dashboard') }}" class="nav-button {% if request.path.startswith('/household') %}active{% endif %}">Community Hub</a>
                 <a href="{{ url_for('login') }}?next=/center" class="nav-button {% if request.path.startswith('/center') %}active{% endif %}">Verification Center</a>
                 <a href="{{ url_for('login') }}?next=/proof-hub" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
@@ -60,8 +63,11 @@
             {% else %}
                 <a href="{{ url_for('collector_dashboard') }}">Recycler Hub</a>
             {% endif %}
-            {% if current_effective_role in ['business', 'resident'] %}
-                <a href="{{ url_for('request_pickup') }}">{% if current_effective_role == 'business' %}Business Hub{% else %}Request Pickup{% endif %}</a>
+            {% if current_effective_role == 'business' %}
+                <a href="{{ url_for('business_dashboard') }}">Business Hub</a>
+            {% endif %}
+            {% if current_effective_role == 'resident' %}
+                <a href="{{ url_for('request_pickup') }}">Request Pickup</a>
             {% endif %}
             {% if current_effective_role == 'resident' %}
                 <a href="{{ url_for('household_dashboard') }}">Community Hub</a>
@@ -73,7 +79,7 @@
             <a href="{{ url_for('logout') }}">Log Out</a>
         {% else %}
             <a href="{{ url_for('login') }}?next=/collector">Recycler Hub</a>
-            <a href="{{ url_for('login') }}?next=/request-pickup">Business Hub</a>
+            <a href="{{ url_for('login') }}?next=/business">Business Hub</a>
             <a href="{{ url_for('login') }}?next={{ url_for('household_dashboard') }}">Community Hub</a>
             <a href="{{ url_for('login') }}?next=/center">Verification Center</a>
             <a href="{{ url_for('login') }}?next=/proof-hub">Proof Hub</a>

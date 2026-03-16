@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Hub - VeriCycle</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dark-theme">
+    {% include '_navbar.html' %}
+
+    <main class="container app-dashboard" style="overflow:visible;">
+        <div class="dashboard-header">
+            <h2>Business Hub</h2>
+            <p>Create recycling pickup requests, track recent submissions, and view verified recycling records.</p>
+        </div>
+
+        <div class="card">
+            <h3>Quick Action</h3>
+            <p>Create a new pickup opportunity for recyclable materials from your business location.</p>
+            <a href="{{ url_for('request_pickup') }}" class="btn-primary-large">Create Pickup Request</a>
+        </div>
+
+        <div class="card">
+            <h3>Recent Pickup Requests</h3>
+            {% if requests %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Material</th>
+                            <th>Estimated Kg</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in requests %}
+                        <tr>
+                            <td>{{ row.created_at.strftime('%Y-%m-%d %H:%M') if row.created_at else '—' }}</td>
+                            <td>{{ row.material_type }}</td>
+                            <td>{{ row.estimated_kg }}</td>
+                            <td>{{ row.location }}</td>
+                            <td>{{ row.status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No pickup requests yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h3>Verified Recycling Records</h3>
+            {% set verified_rows = requests | selectattr("activity_id") | list %}
+            {% if verified_rows %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Request</th>
+                            <th>Verification</th>
+                            <th>Proof</th>
+                            <th>Hedera</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in verified_rows %}
+                        <tr>
+                            <td>#{{ row.id }} · {{ row.material_type }}</td>
+                            <td>{{ row.verification_status or row.assignment_status or row.status }}</td>
+                            <td>
+                                {% if row.proof_url %}
+                                    <a href="{{ row.proof_url }}">Open Proof</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.hcs_tx_id or row.hedera_tx_id %}
+                                    <a href="https://hashscan.io/testnet/transaction/{{ row.hcs_tx_id or row.hedera_tx_id }}" target="_blank" rel="noopener">View on Hedera</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No verified recycling records yet.</p>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

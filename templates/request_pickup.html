@@ -11,7 +11,13 @@
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard" style="overflow:visible;">
-        <a href="{{ url_for('home') }}" class="back-link">← Back to Home</a>
+        {% if current_effective_role == 'business' %}
+            <a href="{{ url_for('business_dashboard') }}" class="back-link">← Back to Business Hub</a>
+        {% elif current_effective_role == 'resident' %}
+            <a href="{{ url_for('household_dashboard') }}" class="back-link">← Back to Community Hub</a>
+        {% else %}
+            <a href="{{ url_for('home') }}" class="back-link">← Back to Home</a>
+        {% endif %}
         <div class="dashboard-header">
             <h2>Create a Recycling Pickup Request</h2>
             <p>Create a pickup opportunity for recyclable materials from a business, building, or community location.</p>
@@ -85,7 +91,7 @@
                     </div>
                     
                     <button class="btn-primary-large btn-form" id="confirm-pickup-btn">
-                        Confirm Pickup Request
+                        {% if current_effective_role == 'resident' %}Create Community Pickup Request{% else %}Confirm Pickup Request{% endif %}
                     </button>
                     <p class="pickup-note">
                         A nearby recycler or verified collection route will be able to fulfill this request.
@@ -107,7 +113,13 @@
                 Request location: <span id="success-neighborhood">Sandton</span>
             </h3>
 
-            <a href="{{ url_for('home') }}" class="btn-primary-large">Return Home</a>
+            {% if current_effective_role == 'business' %}
+                <a href="{{ url_for('business_dashboard') }}" class="btn-primary-large">Return to Business Hub</a>
+            {% elif current_effective_role == 'resident' %}
+                <a href="{{ url_for('household_dashboard') }}" class="btn-primary-large">Return to Community Hub</a>
+            {% else %}
+                <a href="{{ url_for('home') }}" class="btn-primary-large">Return Home</a>
+            {% endif %}
         </div>
     </main>
 

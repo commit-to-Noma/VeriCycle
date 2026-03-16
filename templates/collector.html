@@ -5,7 +5,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
         <div class="dashboard-header">
             <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
-            <p><strong>Recycler Hub</strong> · Record recycling activity, track rewards, discover pickup opportunities, and view proof of income.</p>
+            <p><strong>Recycler Hub</strong> · Find recycling opportunities, submit verified deposits, earn EcoCoin, and build proof of income.</p>
         </div>
 
         <section class="observer-shell">
@@ -48,137 +48,125 @@
             </div>
 
             <div class="observer-main-grid">
-                <div class="card observer-ledger" id="activity-section">
-                <h3>Verified Recycling Activity</h3>
-                <p class="mockup-subtitle">Your verified recycling deposits and reward history</p>
-
-                                <table id="activity-table" class="event-table">
-                                    <tr>
-                                        <th>Date/Time</th>
-                                        <th>Description</th>
-                                        <th>Amount</th>
-                                        <th>Settlement</th>
-                                        <th>Proof Bundle</th>
-                                        <th>Hedera TX</th>
-                                    </tr>
-                                    <tbody id="activity-tbody">
-                                        {% for act in activities %}
-                                            {% set display_status = act.status or act.verified_status %}
-                                            {% set status_raw = (display_status or '')|string %}
-                                            {% set status_lower = status_raw|lower %}
-                                            {% set status_label = 'Hedera delayed (retry)' if ('pending' in status_lower and 'hedera' in status_lower) else display_status %}
-                                            {% set hidden = status_lower in ['failed', 'rejected'] %}
-                                            {% set proof_final = act.logbook_status in ['anchored', 'offchain_final', 'demo_skipped'] %}
-                                            <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}">
-                                                <td>{{ act.timestamp }}</td>
-                                                <td>{{ act.desc }}</td>
-                                                <td>{{ act.amount }}</td>
-                                                <td>
-                                                    {% if hidden %}
-                                                        <span class="status-muted">{{ status_label }} <span class="status-note">(hidden)</span></span>
-                                                    {% elif proof_final and act.logbook_status == 'anchored' %}
-                                                        <span class="status-badge status-badge-paid">Anchored</span>
-                                                    {% elif proof_final and act.logbook_status == 'offchain_final' %}
-                                                        <span class="status-badge status-badge-fallback">Fallback (Off-chain final)</span>
-                                                    {% elif proof_final and act.logbook_status == 'demo_skipped' %}
-                                                        <span class="status-badge status-badge-fallback">Fallback (Demo skipped)</span>
-                                                    {% else %}
-                                                        {{ status_label }}
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if act.proof_bundle_url %}
-                                                        <a href="{{ act.proof_bundle_url }}">Download Proof</a>
-                                                    {% elif act.id %}
-                                                        <a href="/api/proof-bundle/{{ act.id }}">Download Proof</a>
-                                                    {% else %}
-                                                        —
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if act.hedera_tx_id %}
-                                                        <div>Anchor: <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
-                                                    {% elif act.logbook_status == "demo_skipped" %}
-                                                        Demo mode: Hedera skipped
-                                                    {% elif act.logbook_status == "offchain_final" %}
-                                                        On-chain anchor: Pending/Unavailable
-                                                        <form method="post" action="/admin/retry-logbook/{{ act.id }}" class="inline-retry-form">
-                                                            <button type="submit" class="btn-secondary btn-compact">Retry Hedera Log</button>
-                                                        </form>
-                                                    {% elif demo_mode and ((not act.logbook_status) or act.logbook_status == "pending") %}
-                                                        Demo mode: processing...
-                                                    {% elif act.logbook_status == "failed" or act.pipeline_stage == "log_failed" %}
-                                                        On-chain anchor: Failed
-                                                        <form method="post" action="/admin/retry-logbook/{{ act.id }}" class="inline-retry-form">
-                                                            <button type="submit" class="btn-secondary btn-compact">Retry Hedera Log</button>
-                                                        </form>
-                                                    {% elif not act.hedera_tx_id %}
-                                                        On-chain anchor: Pending/Unavailable
-                                                    {% else %}
-                                                        —
-                                                    {% endif %}
-                                                    {% if act.reward_tx_id %}
-                                                        <div class="tx-subline">Reward: <a href="https://hashscan.io/testnet/transaction/{{ act.reward_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
-                                                    {% elif act.reward_status == "finalized_no_transfer" %}
-                                                        <div class="tx-subline">
-                                                            Reward:
-                                                            {% set reward_error = (act.reward_last_error or '')|lower %}
-                                                            {% if 'insufficient_token_balance' in reward_error or 'treasury has zero eco balance' in reward_error or 'treasury' in reward_error and 'balance' in reward_error %}
-                                                                Treasury refill required
-                                                            {% else %}
-                                                                Reward finalized (no transfer)
-                                                            {% endif %}
-                                                        </div>
-                                                    {% elif act.pipeline_stage in ["rewarded", "attested"] %}
-                                                        <div class="tx-subline">Reward: Pending</div>
-                                                    {% endif %}
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                <div class="card observer-actions-card" id="pickup-opportunities-card">
+                    <h3>Open Pickup Opportunities</h3>
+                    <p class="mockup-subtitle">Find available recycling requests from businesses and communities.</p>
+                    <div id="pickup-opportunities-list">
+                        <p>Loading opportunities...</p>
+                    </div>
                 </div>
 
-                <aside class="observer-side-column">
-                    <div class="kpi-card live-health-card" id="live-health-card">
-                        <h3>Live System Health</h3>
-                        <p class="mockup-subtitle">Automation agents are processing in background.</p>
-                        <div class="live-health-row">
-                            <span id="system-health-dot" class="health-dot"></span>
-                            <strong id="system-health-text">Checking...</strong>
-                        </div>
-                        <small id="system-health-detail" class="muted-detail">Waiting for agent status...</small>
+                <div class="card observer-actions-card" id="accepted-pickups-card">
+                    <h3>My Accepted Pickups</h3>
+                    <p class="mockup-subtitle">Track accepted jobs and submit collected materials for center verification.</p>
+                    <div id="accepted-pickups-list">
+                        <p>Loading accepted jobs...</p>
                     </div>
+                </div>
 
-                    <div class="card observer-actions-card" id="pickup-opportunities-card">
-                        <h3>Pickup Opportunities</h3>
-                        <p class="mockup-subtitle">Available recycling requests from businesses and communities.</p>
-                        <div id="pickup-opportunities-list">
-                            <p>Loading opportunities...</p>
-                        </div>
-                    </div>
+                <div class="card observer-ledger" id="activity-section">
+                    <h3>Verified Recycling Activity</h3>
+                    <p class="mockup-subtitle">Your verified deposits, settlement status, proof bundles, and Hedera links.</p>
 
-                    <div class="card observer-actions-card" id="accepted-pickups-card">
-                        <h3>My Accepted Pickups</h3>
-                        <p class="mockup-subtitle">Submit collected materials for center verification.</p>
-                        <div id="accepted-pickups-list">
-                            <p>Loading accepted jobs...</p>
-                        </div>
-                    </div>
+                    <table id="activity-table" class="event-table">
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Settlement</th>
+                            <th>Proof Bundle</th>
+                            <th>Hedera TX</th>
+                        </tr>
+                        <tbody id="activity-tbody">
+                            {% for act in activities %}
+                                {% set display_status = act.status or act.verified_status %}
+                                {% set status_raw = (display_status or '')|string %}
+                                {% set status_lower = status_raw|lower %}
+                                {% set status_label = 'Hedera delayed (retry)' if ('pending' in status_lower and 'hedera' in status_lower) else display_status %}
+                                {% set hidden = status_lower in ['failed', 'rejected'] %}
+                                {% set proof_final = act.logbook_status in ['anchored', 'offchain_final', 'demo_skipped'] %}
+                                <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}">
+                                    <td>{{ act.timestamp }}</td>
+                                    <td>{{ act.desc }}</td>
+                                    <td>{{ act.amount }}</td>
+                                    <td>
+                                        {% if hidden %}
+                                            <span class="status-muted">{{ status_label }} <span class="status-note">(hidden)</span></span>
+                                        {% elif proof_final and act.logbook_status == 'anchored' %}
+                                            <span class="status-badge status-badge-paid">Anchored</span>
+                                        {% elif proof_final and act.logbook_status == 'offchain_final' %}
+                                            <span class="status-badge status-badge-fallback">Fallback (Off-chain final)</span>
+                                        {% elif proof_final and act.logbook_status == 'demo_skipped' %}
+                                            <span class="status-badge status-badge-fallback">Fallback (Demo skipped)</span>
+                                        {% else %}
+                                            {{ status_label }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if act.proof_bundle_url %}
+                                            <a href="{{ act.proof_bundle_url }}">Download Proof</a>
+                                        {% elif act.id %}
+                                            <a href="/api/proof-bundle/{{ act.id }}">Download Proof</a>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if act.hedera_tx_id %}
+                                            <div>Anchor: <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
+                                        {% elif act.logbook_status == "demo_skipped" %}
+                                            Demo mode: Hedera skipped
+                                        {% elif act.logbook_status == "offchain_final" %}
+                                            On-chain anchor: Pending/Unavailable
+                                            <form method="post" action="/admin/retry-logbook/{{ act.id }}" class="inline-retry-form">
+                                                <button type="submit" class="btn-secondary btn-compact">Retry Hedera Log</button>
+                                            </form>
+                                        {% elif demo_mode and ((not act.logbook_status) or act.logbook_status == "pending") %}
+                                            Demo mode: processing...
+                                        {% elif act.logbook_status == "failed" or act.pipeline_stage == "log_failed" %}
+                                            On-chain anchor: Failed
+                                            <form method="post" action="/admin/retry-logbook/{{ act.id }}" class="inline-retry-form">
+                                                <button type="submit" class="btn-secondary btn-compact">Retry Hedera Log</button>
+                                            </form>
+                                        {% elif not act.hedera_tx_id %}
+                                            On-chain anchor: Pending/Unavailable
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                        {% if act.reward_tx_id %}
+                                            <div class="tx-subline">Reward: <a href="https://hashscan.io/testnet/transaction/{{ act.reward_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
+                                        {% elif act.reward_status == "finalized_no_transfer" %}
+                                            <div class="tx-subline">
+                                                Reward:
+                                                {% set reward_error = (act.reward_last_error or '')|lower %}
+                                                {% if 'insufficient_token_balance' in reward_error or 'treasury has zero eco balance' in reward_error or 'treasury' in reward_error and 'balance' in reward_error %}
+                                                    Treasury refill required
+                                                {% else %}
+                                                    Reward finalized (no transfer)
+                                                {% endif %}
+                                            </div>
+                                        {% elif act.pipeline_stage in ["rewarded", "attested"] %}
+                                            <div class="tx-subline">Reward: Pending</div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-                    <div class="card observer-actions-card">
-                        <h3>Quick Actions</h3>
-                        <p class="mockup-subtitle">Record a recycling deposit or explore pickup opportunities in the network.</p>
-                        <div class="observer-action-stack">
-                            <a href="{{ url_for('swap') }}" class="btn-primary">Open Wallet & Exchange</a>
-                            <button class="btn-primary" id="trigger-deposit-btn">
-                                Trigger Recycling Event
-                            </button>
-                            <a href="#pickup-opportunities-card" class="btn-secondary">View Pickup Opportunities</a>
-                            <p class="mockup-subtitle">Recycler → Verifier → Logbook → Reward → Compliance</p>
-                        </div>
+                <div class="card observer-actions-card">
+                    <h3>Quick Actions</h3>
+                    <p class="mockup-subtitle">Submit verified deposits, view pickup opportunities, and monitor your activity pipeline.</p>
+                    <div class="observer-action-stack">
+                        <button class="btn-primary" id="trigger-deposit-btn">
+                            Trigger Recycling Event
+                        </button>
+                        <a href="#pickup-opportunities-card" class="btn-secondary">View Open Pickup Opportunities</a>
+                        <a href="{{ url_for('swap') }}" class="btn-secondary">Open Wallet & Exchange</a>
+                        <p class="mockup-subtitle">Recycler → Verifier → Logbook → Reward → Compliance</p>
                     </div>
-                </aside>
+                </div>
             </div>
         </section>
 
@@ -206,17 +194,6 @@
         </div> </div>
 
     
-
-    <a href="#pickup-opportunities-card" class="pickup-card-link">
-        <div class="card pickup-card">
-            <div class="pickup-icon">🚚</div>
-            <div class="pickup-text">
-                <h3>Pickup Opportunities</h3>
-                <p>View open recycling collection opportunities in your area.</p>
-            </div>
-            <div class="pickup-arrow">›</div>
-        </div>
-    </a>
 
     </main>
 

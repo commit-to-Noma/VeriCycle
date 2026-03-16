@@ -228,7 +228,7 @@ def role_home_endpoint_for(user) -> str:
     if role == "center":
         return "center_dashboard"
     if role == "business":
-        return "request_pickup"
+        return "business_dashboard"
     if role == "resident":
         return "household_dashboard"
     if role == "admin":
@@ -1019,7 +1019,7 @@ def login():
         if role == 'center':
             return redirect(url_for('center_dashboard'))
         if role == 'business':
-            return redirect(url_for('request_pickup'))
+            return redirect(url_for('business_dashboard'))
         if role == 'resident':
             return redirect(url_for('household_dashboard'))
         if role == 'admin':
@@ -1184,6 +1184,52 @@ def request_pickup():
         flash('Business or resident access is required for pickup requests.', 'error')
         return redirect(url_for(role_home_endpoint_for(current_user)))
     return render_template('request_pickup.html', active_page='dashboard')
+
+
+@app.route('/business')
+@login_required
+def business_dashboard():
+    role = effective_role(current_user)
+    if role != 'business':
+        return redirect(url_for('home'))
+
+    requests = (
+        PickupOpportunity.query
+        .filter_by(source_user_id=current_user.id, source_role='business')
+        .order_by(PickupOpportunity.created_at.desc())
+        .all()
+    )
+
+    rows = []
+    for req in requests:
+        latest_assignment = (
+            OpportunityAssignment.query
+            .filter_by(opportunity_id=req.id)
+            .order_by(OpportunityAssignment.accepted_at.desc())
+            .first()
+        )
+
+        linked_activity = None
+        if latest_assignment and latest_assignment.linked_activity_id:
+            linked_activity = db.session.get(Activity, latest_assignment.linked_activity_id)
+
+        rows.append({
+            "id": req.id,
+            "material_type": req.material_type,
+            "estimated_kg": req.estimated_kg,
+            "location": req.location,
+            "requested_window": req.requested_window,
+            "status": req.status,
+            "created_at": req.created_at,
+            "assignment_status": latest_assignment.status if latest_assignment else None,
+            "verification_status": latest_assignment.verification_status if latest_assignment else None,
+            "activity_id": linked_activity.id if linked_activity else None,
+            "proof_url": f"/api/proof-bundle/{linked_activity.id}" if linked_activity else None,
+            "hedera_tx_id": linked_activity.hedera_tx_id if linked_activity else None,
+            "hcs_tx_id": linked_activity.hcs_tx_id if linked_activity else None,
+        })
+
+    return render_template('business.html', active_page='business', requests=rows)
 
 
 @app.post('/api/opportunities/create')
