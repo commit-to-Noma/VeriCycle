@@ -1,41 +1,53 @@
 # VeriCycle
 
-VeriCycle is verification infrastructure for recycling and waste activity. It uses autonomous agents to evaluate evidence signals, escalate low-confidence events for review, and anchor verified records to Hedera, creating trusted environmental records for communities, collectors, property managers, and sustainability programs.
+VeriCycle connects recyclers, businesses, communities, and centers and turns recycling activity into verified recycling records, proof of income, EcoCoin incentives, and Hedera-backed proof.
 
-## Why Hedera
+It is a Flask application with a role-based UI, an agent-driven verification pipeline, proof bundle generation, and Hedera-linked evidence for verified recycling events.
 
-Hedera is the trust layer. It provides immutable audit records, public verification, and programmable incentives.
+## What the app does
 
-## Why agents
+VeriCycle closes the loop between who creates recycling demand and who verifies the outcome.
 
-Agents are the automation layer. They evaluate signals, assign confidence, escalate uncertain cases, and execute downstream actions only when events are trustworthy.
+- Recyclers use the Recycler Hub to trigger direct deposits, accept pickup opportunities, submit collected material, earn EcoCoin, and build proof-of-income history.
+- Businesses use the Business Hub to create pickup requests, track recent requests, and review verified recycling records with proof and Hedera links.
+- Communities use the Community Hub to publish neighborhood pickup demand and improve reliability signals.
+- Centers use the Verification Center to confirm direct deposits and recycler-submitted pickups, which then enter the proof, reward, and compliance pipeline.
+- Admin and proof tooling show verification status, flagged events, proof bundles, and auditability.
 
-## Problem solved
+## Core outcomes
 
-Waste and recycling activity is often poorly documented, hard to verify, and easy to falsify. VeriCycle turns real-world recycling and waste events into auditable digital records.
+VeriCycle turns recycling activity into:
 
-## Phase 5 locked demo stories
+- verified recycling records
+- proof of income
+- EcoCoin incentives
+- Hedera-backed proof
 
-These are the only three stories used in judging.
+## Main working flows
 
-1. Perfect verified flow
-- Story: Event has enough signals, auto-verifies, anchors to Hedera, reward and compliance run.
-- Final state: Status Verified, confidence >= 0.7, review None, HCS present, HTS present if available, compliance present.
-- Label: Judge Demo Verified Event.
+### Recycler deposit flow
 
-2. Approved review flow
-- Story: Low-signal event escalates, manager approves, autonomous pipeline resumes.
-- Final state: Status Verified, confidence 0.2, review Approved, HCS present, reward/compliance continue.
-- Label: Judge Demo Approved Review Event.
+1. Recycler opens Recycler Hub.
+2. Recycler creates a direct recycling event or shows a drop-off QR code.
+3. Verification Center confirms weight and material.
+4. VeriCycle runs the agent pipeline.
+5. Proof bundle and Hedera references become available.
+6. Reward status is shown clearly, including fallback states when treasury refill is required.
 
-3. Rejected review flow
-- Story: Low-signal event escalates, manager rejects, pipeline stops.
-- Final state: Status Rejected, confidence 0.2, review Rejected, no HCS, no reward, no compliance progression.
-- Label: Judge Demo Rejected Review Event.
+### Business pickup opportunity flow
 
-## Judge-safe sequence
+1. Business opens Business Hub and creates a pickup request.
+2. Recycler sees the request in Open Pickup Opportunities.
+3. Recycler accepts the job and submits collected material.
+4. Verification Center verifies the submitted pickup.
+5. VeriCycle creates a verified recycling record with proof and Hedera-linked evidence.
+6. Business Hub shows the verified record, proof link, and reward outcome.
 
-Use the exact screen-by-screen script in docs/phase5_judge_demo_script.md.
+## Current scope
+
+- Recycler and center flows are fully operational.
+- Business and community participation are implemented as ecosystem coordination layers.
+- Admin and proof tooling demonstrate verification and auditability.
 
 ## Setup and run
 
@@ -46,7 +58,7 @@ pip install -r requirements.txt
 npm install
 ```
 
-2. Reset local database and seed accounts.
+2. Reset the local database and seed accounts.
 
 ```bash
 python scripts/reset_db.py
@@ -58,13 +70,37 @@ python scripts/reset_db.py
 python app.py
 ```
 
-4. Start task worker in a second terminal.
+4. Start the worker in a second terminal.
 
 ```bash
 python -m agents.task_worker
 ```
 
-## Lock Phase 5 demo events
+## Locked demo order
+
+Use this order live:
+
+1. Home page
+2. Recycler Hub
+3. Open pickup opportunities
+4. Accepted pickup
+5. Verification Center
+6. Verified event in Admin Monitor or Proof panel
+7. Business Hub
+8. Proof Hub or Proof Verifier
+
+The minimum live story is:
+
+1. business creates request
+2. recycler accepts
+3. recycler submits
+4. center verifies
+5. Hedera pipeline runs
+6. proof exists
+
+Use the exact screen-by-screen script in docs/phase5_judge_demo_script.md.
+
+## Deterministic demo prep
 
 Run this before recording or live judging:
 
@@ -72,10 +108,13 @@ Run this before recording or live judging:
 python scripts/prepare_phase5_demo_events.py
 ```
 
-This script guarantees the three labeled judge events exist and prepares them for the live sequence:
-- verified auto-flow finalized
-- approved review flow waiting in needs_review (for live Approve click)
-- rejected review flow finalized
+This prepares the deterministic judge review stories used in Admin Monitor:
+
+- Judge Demo Verified Event
+- Judge Demo Approved Review Event
+- Judge Demo Rejected Review Event
+
+These review stories remain available for auditability and oversight, but the primary live ecosystem demo should follow the locked order above.
 
 ## Accounts
 
@@ -84,45 +123,26 @@ This script guarantees the three labeled judge events exist and prepares them fo
 - demo@vericycle.com / H3dera!2025
 - mpact@vericycle.com / Centerh3dera!
 
-## What to test in Phase 5
+## Phase 6 checks
 
-1. Perfect verified flow
-- Auto-verifies
-- HCS link exists
-- Reward and compliance complete
+Run these focused checks:
 
-2. Approved review flow
-- Starts at needs_review
-- Approve works
-- Pipeline resumes
+1. Business Hub works.
+2. Reward fallback wording is human-readable.
+3. Recycler flow still works.
+4. Center flow still works.
+5. Proof flow still works.
+6. Locked demo sequence is repeatable from fresh state.
 
-3. Rejected review flow
-- Starts at needs_review
-- Reject works
-- Pipeline stops
-
-4. Proof panel
-- Approved event proof shows confidence 0.2
-- Verified event proof shows confidence 0.7
-- Proof hash visible in both
-
-## Phase 2 role access smoke check
-
-Run this before starting Phase 3 role/capability work:
+Useful scripts already in the repo:
 
 ```bash
-python scripts/test_phase2_roles_smoke.py
+python scripts/test_pages_smoke.py
+python scripts/test_phase3_opportunities_smoke.py
+python scripts/test_review_transitions.py
+python scripts/run_single_account_demo_check.py
 ```
-
-Expected output:
-- PHASE2_ROLE_SMOKE: PASS
-
-This validates role routing/guards for recycler, business, resident, center, and admin across:
-- /collector
-- /request-pickup
-- /household
-- /center
 
 ## Submission narrative
 
-Use docs/submission_narrative_phase5.md for copy-paste final submission language.
+Use docs/submission_narrative_phase5.md for final submission copy.

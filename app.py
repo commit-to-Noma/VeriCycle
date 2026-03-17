@@ -47,9 +47,26 @@ from urllib.parse import urlencode
 # -----------------------------------------------------------------
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'a-really-secret-key-that-you-should-change'
+
+_secret = os.getenv('SECRET_KEY') or os.getenv('FLASK_SECRET_KEY')
+if not _secret:
+    import warnings
+    _secret = 'dev-only-insecure-key-change-before-deploy'
+    warnings.warn(
+        "SECRET_KEY is not set in environment. Using insecure default — set SECRET_KEY in .env before deploying.",
+        stacklevel=1
+    )
+app.config['SECRET_KEY'] = _secret
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'vericycle.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Session / cookie security
+_is_prod = os.getenv('FLASK_ENV') == 'production' or os.getenv('RENDER') == 'true'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = _is_prod  # HTTPS-only cookies in production
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7  # 7-day sessions
+
 DEMO_MODE = os.getenv("DEMO_MODE", "0") == "1"
 print(f"[BOOT] DEMO_MODE={'1' if DEMO_MODE else '0'}", flush=True)
 
@@ -82,7 +99,11 @@ def start_worker_background():
     t.start()
     print("[BACKEND] Task worker thread started (daemon=True)", flush=True)
 
-# worker will be started when running the app directly (see bottom run block)
+# Start the background worker for both direct-run and Gunicorn deployments.
+# WERKZEUG_RUN_MAIN guard prevents a double-start when the Werkzeug reloader
+# forks a child process (only relevant to `python app.py` with reload enabled).
+if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+    start_worker_background()
 
 login_manager.login_view = 'home'
 login_manager.login_message = None
@@ -193,6 +214,20 @@ def can_verify_deposit_center(user):
     return is_center_user(user) or is_admin_user(user)
 
 
+def can_access_activity_proof(user, activity: Activity | None) -> bool:
+    if not user or not getattr(user, "is_authenticated", False) or not activity:
+        return False
+    if activity.user_id == user.id or is_admin_user(user) or is_center_user(user):
+        return True
+
+    assignment = OpportunityAssignment.query.filter_by(linked_activity_id=activity.id).first()
+    if not assignment or not assignment.opportunity:
+        return False
+
+    opportunity = assignment.opportunity
+    return opportunity.source_user_id == user.id and opportunity.source_role in {"business", "resident"}
+
+
 DEMO_REWARD_RATE_BY_MATERIAL = {
     "cans": 13.0,
     "paper": 7.8,
@@ -223,6 +258,69 @@ def calculate_demo_reward_amount(material_type: str | None, weight_kg: float | i
     return round(min(200.0, max(1.0 if safe_weight > 0 else 0.0, total_amount)), 2)
 
 
+def is_treasury_refill_required(reward_last_error: str | None) -> bool:
+    text = (reward_last_error or "").strip().lower()
+    return (
+        "insufficient_token_balance" in text
+        or "treasury has zero eco balance" in text
+        or ("treasury" in text and "balance" in text)
+    )
+
+
+def reward_status_label(
+    reward_status: str | None,
+    reward_last_error: str | None = None,
+    pipeline_stage: str | None = None,
+) -> str | None:
+    normalized_reward = (reward_status or "").strip().lower()
+    normalized_stage = (pipeline_stage or "").strip().lower()
+
+    if normalized_reward == "paid":
+        return "Reward transferred"
+    if normalized_reward == "finalized_no_transfer":
+        if is_treasury_refill_required(reward_last_error):
+            return "Reward recorded, treasury refill required"
+        return "Reward finalized (no transfer)"
+    if normalized_stage in {"rewarded", "attested"}:
+        return "Reward pending"
+    return None
+
+
+def humanize_status_token(value: str | None) -> str:
+    token = (value or "").strip()
+    if not token:
+        return "-"
+    return re.sub(r"[_-]+", " ", token).title()
+
+
+def pickup_request_status_label(
+    request_status: str | None,
+    assignment_status: str | None = None,
+    verification_status: str | None = None,
+    linked_activity: Activity | None = None,
+) -> str:
+    if linked_activity and normalize_status_label_for_api(linked_activity) == "Verified":
+        return "Verified recycling record"
+
+    verification = (verification_status or "").strip().lower()
+    assignment = (assignment_status or "").strip().lower()
+    request_state = (request_status or "").strip().lower()
+
+    if verification == "verified":
+        return "Verified recycling record"
+    if assignment == "completed":
+        return "Completed"
+    if assignment == "submitted":
+        return "Submitted for verification"
+    if assignment == "accepted" or request_state == "accepted":
+        return "Accepted by recycler"
+    if request_state == "completed":
+        return "Completed"
+    if request_state == "open":
+        return "Open for pickup"
+    return humanize_status_token(request_status)
+
+
 def role_home_endpoint_for(user) -> str:
     role = effective_role(user)
     if role == "center":
@@ -233,7 +331,9 @@ def role_home_endpoint_for(user) -> str:
         return "household_dashboard"
     if role == "admin":
         return "admin_monitor"
-    return "collector_dashboard"
+    if role == "recycler":
+        return "collector_dashboard"
+    return "home"  # safe fallback — prevents redirect loops for invalid/empty roles
 
 
 @app.context_processor
@@ -243,6 +343,9 @@ def inject_role_helpers():
         role = effective_role(current_user)
     return {
         "current_effective_role": role,
+        "role_home_endpoint": role_home_endpoint_for(current_user) if current_user.is_authenticated else None,
+        "reward_status_label": reward_status_label,
+        "hashscan_link": hashscan_link,
     }
 
 
@@ -1201,6 +1304,14 @@ def business_dashboard():
     )
 
     rows = []
+    summary = {
+        "total_requests": len(requests),
+        "active_requests": 0,
+        "verified_records": 0,
+        "proof_ready": 0,
+        "latest_verified_at": None,
+    }
+
     for req in requests:
         latest_assignment = (
             OpportunityAssignment.query
@@ -1213,6 +1324,29 @@ def business_dashboard():
         if latest_assignment and latest_assignment.linked_activity_id:
             linked_activity = db.session.get(Activity, latest_assignment.linked_activity_id)
 
+        request_status_label = pickup_request_status_label(
+            req.status,
+            latest_assignment.status if latest_assignment else None,
+            latest_assignment.verification_status if latest_assignment else None,
+            linked_activity,
+        )
+        reward_label = reward_status_label(
+            linked_activity.reward_status if linked_activity else None,
+            linked_activity.reward_last_error if linked_activity else None,
+            linked_activity.pipeline_stage if linked_activity else None,
+        )
+
+        if req.status in {"open", "accepted"}:
+            summary["active_requests"] += 1
+        if linked_activity:
+            summary["verified_records"] += 1
+            if linked_activity.proof_hash or linked_activity.hcs_tx_id or linked_activity.hedera_tx_id:
+                summary["proof_ready"] += 1
+            if linked_activity.timestamp and (
+                summary["latest_verified_at"] is None or linked_activity.timestamp > summary["latest_verified_at"]
+            ):
+                summary["latest_verified_at"] = linked_activity.timestamp
+
         rows.append({
             "id": req.id,
             "material_type": req.material_type,
@@ -1220,16 +1354,35 @@ def business_dashboard():
             "location": req.location,
             "requested_window": req.requested_window,
             "status": req.status,
+            "status_label": request_status_label,
             "created_at": req.created_at,
             "assignment_status": latest_assignment.status if latest_assignment else None,
             "verification_status": latest_assignment.verification_status if latest_assignment else None,
+            "assigned_recycler_email": (
+                latest_assignment.recycler_user.email
+                if latest_assignment and getattr(latest_assignment, "recycler_user", None)
+                else None
+            ),
+            "submitted_at": latest_assignment.submitted_at if latest_assignment else None,
+            "verified_at": latest_assignment.verified_at if latest_assignment else None,
             "activity_id": linked_activity.id if linked_activity else None,
             "proof_url": f"/api/proof-bundle/{linked_activity.id}" if linked_activity else None,
             "hedera_tx_id": linked_activity.hedera_tx_id if linked_activity else None,
             "hcs_tx_id": linked_activity.hcs_tx_id if linked_activity else None,
+            "reward_status": linked_activity.reward_status if linked_activity else None,
+            "reward_status_label": reward_label,
+            "reward_tx_id": linked_activity.reward_tx_id if linked_activity else None,
+            "hts_tx_id": linked_activity.hts_tx_id if linked_activity else None,
         })
 
-    return render_template('business.html', active_page='business', requests=rows)
+    verified_rows = [row for row in rows if row["activity_id"]]
+    return render_template(
+        'business.html',
+        active_page='business',
+        requests=rows,
+        verified_rows=verified_rows,
+        summary=summary,
+    )
 
 
 @app.post('/api/opportunities/create')
@@ -1998,6 +2151,7 @@ def get_dashboard_data():
                 'logbook_last_error': a.logbook_last_error,
                 'logbook_finalized_at': a.logbook_finalized_at.isoformat() if a.logbook_finalized_at else None,
                 'reward_status': a.reward_status,
+                'reward_status_label': reward_status_label(a.reward_status, a.reward_last_error, a.pipeline_stage),
                 'reward_tx_id': a.reward_tx_id,
                 'reward_last_error': a.reward_last_error,
                 'trust_weight': a.trust_weight,
@@ -2275,7 +2429,7 @@ def download_proof_bundle(activity_id):
     activity = db.session.get(Activity, activity_id)
     if not activity:
         abort(404)
-    if (activity.user_id != current_user.id) and (not is_admin_user()) and (not can_review_events()):
+    if not can_access_activity_proof(current_user, activity):
         abort(403)
 
     payload_data = _build_proof_payload(activity=activity)
@@ -2931,6 +3085,11 @@ def api_admin_activities():
             'hedera_tx_id': activity.hedera_tx_id,
             'hcs_tx_id': activity.hcs_tx_id,
             'reward_status': activity.reward_status,
+            'reward_status_label': reward_status_label(
+                activity.reward_status,
+                activity.reward_last_error,
+                activity.pipeline_stage,
+            ),
             'reward_tx_id': activity.reward_tx_id,
             'hts_tx_id': activity.hts_tx_id,
             'compliance_tx_id': activity.compliance_tx_id,
@@ -3520,6 +3679,5 @@ def admin_agents():
 # - Start the Flask development server when executed directly.
 # -----------------------------------------------------------------
 if __name__ == '__main__':
-    # Start background worker only when running the app directly
-    start_worker_background()
-    app.run(debug=True, use_reloader=False)
+    _debug = os.getenv('FLASK_DEBUG', 'true').lower() in ('1', 'true', 'yes')
+    app.run(debug=_debug, use_reloader=False)

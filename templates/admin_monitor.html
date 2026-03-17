@@ -520,11 +520,13 @@ function isTreasuryRefillRequired(rewardLastError) {
 }
 
 function rewardOutcomeLabel(activity) {
+	const serverLabel = (activity?.reward_status_label || "").toString().trim();
+	if (serverLabel) return serverLabel;
 	const rewardStatus = (activity?.reward_status || "").toString().toLowerCase();
 	if (rewardStatus === "paid") return null;
 	if (rewardStatus === "finalized_no_transfer") {
 		return isTreasuryRefillRequired(activity?.reward_last_error)
-			? "Treasury refill required"
+			? "Reward recorded, treasury refill required"
 			: "Reward finalized (no transfer)";
 	}
 	const stage = (activity?.pipeline_stage || activity?.stage || "").toString().toLowerCase();
@@ -877,7 +879,7 @@ function renderActivities(data) {
 					<p>verification_confidence: ${formatConfidenceScore(a.confidence_score)} · lifecycle_confidence: ${formatConfidenceScore(a.lifecycle_confidence_score)}</p>
 					${(logbookStatus === "offchain_final" || logbookStatus === "failed" || (!demoMode && (!logbookStatus || logbookStatus === "pending"))) ? `<p><button class="btn-secondary" onclick="retry(${a.id})">Retry Hedera Log</button></p>` : ""}
 					${(showDebug && a.logbook_last_error) ? `<p style="color:#f9c27a;">Debug: ${a.logbook_last_error}</p>` : ""}
-					${(showDebug && rewardStatus === "finalized_no_transfer" && a.reward_last_error) ? `<p style="color:#f9c27a;">Debug: ${a.reward_last_error}</p>` : ""}
+					${(showDebug && rewardStatus === "finalized_no_transfer") ? `<p style="color:#f9c27a;">System detail: ${rewardOutcomeLabel(a)}</p>` : ""}
 					<h4>Agent Pipeline Log</h4>
 					${tasks.map(t => `<p>${escapeHtml(t.agent)} : ${escapeHtml(normalizeStatusLabel(t.status))}${showDebug && t.error ? ` (${escapeHtml(t.error)})` : ""}</p>`).join("") || "<p>No pipeline logs yet.</p>"}
 					<h4>Agent Decision Feed</h4>

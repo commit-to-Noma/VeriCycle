@@ -1,114 +1,177 @@
-# VeriCycle Phase 5 Judge Demo Script (3 Minutes)
+# VeriCycle Locked Judge Demo Script
 
-This script is the lock for the live demo.
-Do not improvise event choices.
+This is the locked live sequence.
+Do not improvise the order.
 
-## Preflight (before recording)
+## Preflight
 
-1. Start app and worker.
-2. Run:
+1. Start the app and worker.
+2. Reset state if needed.
+3. Run:
 
 ```bash
 python scripts/prepare_phase5_demo_events.py
 ```
 
-3. Confirm these labels exist in Admin Monitor:
-- Judge Demo Verified Event
-- Judge Demo Approved Review Event
-- Judge Demo Rejected Review Event
+4. Confirm the app opens cleanly and the main hubs load.
+5. Keep seeded credentials ready for recycler, business, center, and admin.
 
-## Step-by-step timeline
+## Locked demo order
 
-## 0:00-0:20 Step 1 - Open Admin Monitor
+1. Home page
+2. Recycler Hub
+3. Open pickup opportunities
+4. Accepted pickup
+5. Verification Center
+6. Verified event in Admin Monitor or Proof panel
+7. Business Hub
+8. Proof Hub or Proof Verifier
 
-Click path:
-1. Log in as admin or center reviewer.
-2. Open /admin/monitor.
+## What must be demonstrated live
 
-Show:
-- Event stream
-- Flagged Events panel
-- Agent Society Overview
+At minimum, show this full path:
 
-Say:
-VeriCycle is waste and recycling verification infrastructure. Agents validate evidence, low-confidence cases are escalated, and verified records are anchored to Hedera.
+1. business creates request
+2. recycler accepts
+3. recycler submits
+4. center verifies
+5. Hedera pipeline runs
+6. proof exists
 
-## 0:20-0:45 Step 2 - Show perfect verified event
+## Step-by-step script
 
-Click path:
-1. Find Judge Demo Verified Event.
-2. Open its card and click View proof.
-
-Show:
-- Confidence 0.7
-- Review empty/None
-- HCS transaction link
-- Reward and compliance completion states
-
-Say:
-This event had sufficient evidence, so the agents verified it automatically and completed the full pipeline.
-
-## 0:45-1:15 Step 3 - Show low-signal flagged event
-
-Click path:
-1. In Flagged Events, find Judge Demo Approved Review Event while still pending.
-2. Click View proof.
+## 0:00-0:20 Step 1 - Home page
 
 Show:
-- Confidence 0.2
-- Resident confirmation signal only
-- Pending review
+
+- VeriCycle connects recyclers, businesses, communities, and centers
+- the ecosystem framing
+- the role-based hubs
 
 Say:
-This event does not have enough evidence to be trusted automatically, so the system escalates it instead of writing a false record.
 
-## 1:15-1:45 Step 4 - Approve flagged event
+VeriCycle coordinates recycling demand and turns completed activity into verified records, proof of income, EcoCoin incentives, and Hedera-backed proof.
 
-Click path:
-1. Click Approve on Judge Demo Approved Review Event.
-2. Wait for refresh.
+## 0:20-0:45 Step 2 - Recycler Hub
 
 Show:
-- Event leaves flagged queue
-- Event becomes Verified
-- Pipeline resumes to logbook/reward/compliance
-- HCS appears
+
+- Open Pickup Opportunities
+- Accepted Pickup Jobs
+- Verified Recycling Records
 
 Say:
-A manager only intervenes when confidence is too low. Once approved, the autonomous pipeline continues.
 
-## 1:45-2:15 Step 5 - Show rejected event
+The Recycler Hub is where collectors find work, submit completed pickups, and build a verified activity history.
+
+## 0:45-1:05 Step 3 - Open pickup opportunity
 
 Click path:
-1. Open Judge Demo Rejected Review Event.
-2. Click View proof.
+
+1. Log in as business if needed.
+2. Open Business Hub.
+3. Create a pickup request.
+4. Return to Recycler Hub.
+5. Show the request in Open Pickup Opportunities.
+
+Say:
+
+Businesses can create real recycling demand, and recyclers can immediately see and accept that work.
+
+## 1:05-1:25 Step 4 - Accepted pickup
+
+Click path:
+
+1. Accept the pickup in Recycler Hub.
+2. Open Accepted Pickup Jobs.
+3. Submit the collected material.
 
 Show:
-- Rejected status
-- Confidence 0.2
-- No HCS link
-- No reward transfer
+
+- accepted status
+- submitted material and weight
+- the job now waiting for verification
 
 Say:
-If a manager rejects the event, the system preserves the decision as an auditable dispute and stops downstream actions.
 
-## 2:15-2:50 Step 6 - Open proof panel on both paths
+This moves the opportunity from demand coordination into a verifiable recycling event.
+
+## 1:25-1:50 Step 5 - Verification Center
 
 Click path:
-1. Open View proof on Judge Demo Approved Review Event.
-2. Open View proof on Judge Demo Verified Event.
 
-Show in both bundles:
-- Evidence signals
-- Confidence
-- Review status
-- Proof hash
-- Agent decisions
+1. Open Verification Center.
+2. Show the Submitted Pickup Verification Queue.
+3. Verify the submitted pickup.
 
-Say:
-Every event produces a proof bundle showing what evidence was used, what the agents decided, and whether the record was anchored to Hedera.
+Show:
 
-## 2:50-3:00 Closing line
+- submitted pickup lane
+- verification action
+- event entering proof, reward, and compliance pipeline
 
 Say:
-VeriCycle gives communities and programs a trustworthy record layer for recycling and waste activity, combining autonomous agent verification with human oversight and Hedera-backed auditability.
+
+The center is the trusted checkpoint that converts the submitted pickup into a verified event.
+
+## 1:50-2:15 Step 6 - Admin Monitor or Proof panel
+
+Click path:
+
+1. Open Admin Monitor or the proof panel for the new event.
+2. Show the verified status.
+3. Show proof bundle and Hedera references.
+
+Show:
+
+- verified record
+- proof hash
+- evidence summary
+- HCS and HTS references when available
+- clear reward wording if treasury fallback occurs
+
+Say:
+
+VeriCycle does not just log that something happened. It preserves why the event was trusted and how it moved through the pipeline.
+
+## 2:15-2:35 Step 7 - Business Hub
+
+Click path:
+
+1. Return to Business Hub.
+2. Show recent pickup requests.
+3. Show the verified recycling record for the request.
+
+Show:
+
+- request status progression
+- proof link
+- Hedera link
+- reward outcome wording
+
+Say:
+
+The business can now see the request as a verified recycling record rather than just an unconfirmed pickup claim.
+
+## 2:35-2:55 Step 8 - Proof Hub or Proof Verifier
+
+Click path:
+
+1. Open Proof Hub or Proof Verifier.
+2. Open the proof bundle for the verified event.
+
+Show:
+
+- proof bundle
+- integrity fields
+- transaction references
+
+Say:
+
+This is the audit layer that makes the recycling record independently inspectable.
+
+## 2:55-3:00 Closing line
+
+Say:
+
+VeriCycle turns recycling coordination into verified economic activity, with operational recycler and center flows, business and community coordination layers, and Hedera-backed proof for trust and auditability.

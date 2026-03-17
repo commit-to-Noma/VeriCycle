@@ -8,14 +8,6 @@
 
         <div class="card">
             
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash-message {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
             <form action="{{ url_for('profile') }}" method="POST" class="verify-form">
                 
                 <div class="form-group">

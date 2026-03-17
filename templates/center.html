@@ -18,7 +18,8 @@
             <p>Welcome, {{ current_user.email.split('@')[0] }}! Confirm recycler deposits, validate materials, and finalize verified recycling events.</p>
         </div>
 
-        <div class="card">
+        <div class="card flow-card flow-card-direct">
+            <span class="section-kicker">Direct Deposit Lane</span>
             <h3>Direct Recycler Deposit Verification</h3>
             <p>Use this flow to scan a recycler QR code, confirm delivered materials, and finalize direct verified deposits.</p>
             
@@ -66,7 +67,8 @@
             </form>
         </div>
 
-        <div class="card">
+        <div class="card flow-card flow-card-pickup">
+            <span class="section-kicker">Submitted Pickup Lane</span>
             <h3>Submitted Pickup Verification Queue</h3>
             <p>Review recycler-submitted pickup jobs from Business Hub and Community Hub, then verify them into the pipeline.</p>
             <div id="submitted-assignments-list">
@@ -230,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const rewardText = Number(data.reward_amount || 0).toFixed(2);
-            alert(`Pickup verified and sent into the Hedera pipeline. Reward: ${rewardText} ECO.`);
+            alert(`Pickup verified and sent through proof, reward, and compliance pipeline. Reward: ${rewardText} ECO.`);
             loadSubmittedAssignments();
         } catch (err) {
             console.error(err);

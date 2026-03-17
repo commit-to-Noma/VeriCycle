@@ -144,3 +144,7 @@ def run_worker_loop(poll_interval=1.0):
             except Exception:
                 pass
             time.sleep(poll_interval)
+
+
+if __name__ == "__main__":
+    run_worker_loop()

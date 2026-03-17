@@ -65,6 +65,12 @@
                 <div class="cta-buttons">
                     {% if current_effective_role == 'center' %}
                         <a href="{{ url_for('center_dashboard') }}" class="btn-primary-large">Go to Verification Center</a>
+                    {% elif current_effective_role == 'admin' %}
+                        <a href="{{ url_for('admin_monitor') }}" class="btn-primary-large">Go to Admin Monitor</a>
+                    {% elif current_effective_role == 'business' %}
+                        <a href="{{ url_for('business_dashboard') }}" class="btn-primary-large">Go to Business Hub</a>
+                    {% elif current_effective_role == 'resident' %}
+                        <a href="{{ url_for('household_dashboard') }}" class="btn-primary-large">Go to Community Hub</a>
                     {% else %}
                         <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to Recycler Hub</a>
                     {% endif %}

@@ -11,6 +11,15 @@
     <a class="skip-link" href="#main-content">Skip to main content</a>
     {% include '_navbar.html' %}
     <main id="main-content" class="container app-dashboard">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-bar">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </main>
 </body>

@@ -8,8 +8,8 @@
             <p><strong>Recycler Hub</strong> · Find recycling opportunities, submit verified deposits, earn EcoCoin, and build proof of income.</p>
         </div>
 
-        <section class="observer-shell">
-            <div class="observer-hero-row">
+        <section class="recycler-shell">
+            <div class="recycler-hero-row">
                 <div class="kpi-card metric-card">
                     <h3>
                         Current EcoCoin Balance
@@ -47,26 +47,26 @@
                 </div>
             </div>
 
-            <div class="observer-main-grid">
-                <div class="card observer-actions-card" id="pickup-opportunities-card">
+            <div class="recycler-main-grid">
+                <div class="card recycler-actions-card" id="pickup-opportunities-card">
                     <h3>Open Pickup Opportunities</h3>
-                    <p class="mockup-subtitle">Find available recycling requests from businesses and communities.</p>
+                    <p class="mockup-subtitle">Find available recycling requests from businesses and communities and accept the next live pickup job.</p>
                     <div id="pickup-opportunities-list">
                         <p>Loading opportunities...</p>
                     </div>
                 </div>
 
-                <div class="card observer-actions-card" id="accepted-pickups-card">
-                    <h3>My Accepted Pickups</h3>
-                    <p class="mockup-subtitle">Track accepted jobs and submit collected materials for center verification.</p>
+                <div class="card recycler-actions-card" id="accepted-pickups-card">
+                    <h3>Accepted Pickup Jobs</h3>
+                    <p class="mockup-subtitle">Track accepted jobs and submit collected materials for Verification Center review.</p>
                     <div id="accepted-pickups-list">
                         <p>Loading accepted jobs...</p>
                     </div>
                 </div>
 
-                <div class="card observer-ledger" id="activity-section">
-                    <h3>Verified Recycling Activity</h3>
-                    <p class="mockup-subtitle">Your verified deposits, settlement status, proof bundles, and Hedera links.</p>
+                <div class="card recycler-ledger" id="activity-section">
+                    <h3>Verified Recycling Records</h3>
+                    <p class="mockup-subtitle">Your verified deposits, reward outcomes, proof bundles, and Hedera links.</p>
 
                     <table id="activity-table" class="event-table">
                         <tr>
@@ -136,17 +136,9 @@
                                         {% if act.reward_tx_id %}
                                             <div class="tx-subline">Reward: <a href="https://hashscan.io/testnet/transaction/{{ act.reward_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
                                         {% elif act.reward_status == "finalized_no_transfer" %}
-                                            <div class="tx-subline">
-                                                Reward:
-                                                {% set reward_error = (act.reward_last_error or '')|lower %}
-                                                {% if 'insufficient_token_balance' in reward_error or 'treasury has zero eco balance' in reward_error or 'treasury' in reward_error and 'balance' in reward_error %}
-                                                    Treasury refill required
-                                                {% else %}
-                                                    Reward finalized (no transfer)
-                                                {% endif %}
-                                            </div>
+                                            <div class="tx-subline">Reward: {{ reward_status_label(act.reward_status, act.reward_last_error, act.pipeline_stage) }}</div>
                                         {% elif act.pipeline_stage in ["rewarded", "attested"] %}
-                                            <div class="tx-subline">Reward: Pending</div>
+                                            <div class="tx-subline">Reward: {{ reward_status_label(act.reward_status, act.reward_last_error, act.pipeline_stage) or 'Reward pending' }}</div>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -155,16 +147,16 @@
                     </table>
                 </div>
 
-                <div class="card observer-actions-card">
+                <div class="card recycler-actions-card">
                     <h3>Quick Actions</h3>
-                    <p class="mockup-subtitle">Submit verified deposits, view pickup opportunities, and monitor your activity pipeline.</p>
-                    <div class="observer-action-stack">
+                    <p class="mockup-subtitle">Submit verified deposits, review live pickup demand, and monitor proof-of-income activity.</p>
+                    <div class="recycler-action-stack">
                         <button class="btn-primary" id="trigger-deposit-btn">
                             Trigger Recycling Event
                         </button>
                         <a href="#pickup-opportunities-card" class="btn-secondary">View Open Pickup Opportunities</a>
                         <a href="{{ url_for('swap') }}" class="btn-secondary">Open Wallet & Exchange</a>
-                        <p class="mockup-subtitle">Recycler → Verifier → Logbook → Reward → Compliance</p>
+                        <p class="mockup-subtitle">Recycler Hub → Verification Center → Hedera proof → EcoCoin reward → Compliance</p>
                     </div>
                 </div>
             </div>
@@ -194,8 +186,6 @@
         </div> </div>
 
     
-
-    </main>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -321,12 +311,14 @@
         }
 
         function rewardOutcomeLabel(activity) {
+            const serverLabel = String(activity?.reward_status_label || '').trim();
+            if (serverLabel) return serverLabel;
             const rewardStatus = String(activity?.reward_status || '').toLowerCase();
             const rewardError = activity?.reward_last_error || '';
             if (rewardStatus === 'paid') return null;
             if (rewardStatus === 'finalized_no_transfer') {
                 return isTreasuryRefillRequired(rewardError)
-                    ? 'Treasury refill required'
+                    ? 'Reward recorded, treasury refill required'
                     : 'Reward finalized (no transfer)';
             }
             const stage = String(activity?.pipeline_stage || '').toLowerCase();
@@ -342,7 +334,7 @@
 
             const label = rewardOutcomeLabel(activity);
             if (label) {
-                const tone = label === 'Treasury refill required' ? 'warn' : (label === 'Reward pending' ? 'pending' : 'muted');
+                const tone = label === 'Reward recorded, treasury refill required' ? 'warn' : (label === 'Reward pending' ? 'pending' : 'muted');
                 return `HTS: ${statusBadge(label, tone)}`;
             }
 
