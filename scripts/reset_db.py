@@ -39,13 +39,14 @@ def main():
         db.create_all()
         print("CREATED fresh schema")
 
-        _seed_user("admin@vericycle.com", "Admin123!", "admin", "VeriCycle Admin")
-        _seed_user("test@gmail.com", "Test123!", "collector", "Test Collector")
-        _seed_user("demo@vericycle.com", "H3dera!2025", "collector", "Demo Collector")
-        _seed_user("mpact@vericycle.com", "Centerh3dera!", "center", "M-Pact Center")
+        _seed_user("admin@vericycle.com",    "Admin123!",    "admin",     "VeriCycle Admin")
+        _seed_user("recycler@vericycle.com", "Recycler123!", "collector", "Demo Recycler")
+        _seed_user("business@vericycle.com", "Business123!", "business",  "Demo Business")
+        _seed_user("resident@vericycle.com", "Resident123!", "resident",  "Demo Resident")
+        _seed_user("center@vericycle.com",   "Center123!",   "center",    "Demo Center")
 
         db.session.commit()
-        print("SEEDED admin + test user + agents")
+        print("SEEDED 5 final demo accounts: admin, recycler, business, resident, center")
 
 
 if __name__ == "__main__":

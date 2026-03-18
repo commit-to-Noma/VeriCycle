@@ -1,10 +1,44 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-header">
-	<h2>VeriCycle Admin Monitor</h2>
-	<p>Operational oversight for review decisions, queue health, and deterministic demo evidence.</p>
+<div class="dashboard-header admin-dashboard-header">
+	<div class="admin-header-title">
+		<h2>VeriCycle Admin Monitor</h2>
+		<p>Operational oversight for review decisions, queue health, and deterministic demo evidence.</p>
+	</div>
 </div>
+
+<!-- Elite Ops Summary Row -->
+<section class="admin-ops-summary-row">
+	<div class="admin-ops-card" id="ops-system-health-card">
+		<div class="ops-card-icon">🟢</div>
+		<div class="ops-card-body">
+			<span class="ops-card-label">System Health</span>
+			<span class="ops-card-value" id="admin-health-status">Checking…</span>
+		</div>
+	</div>
+	<div class="admin-ops-card" id="ops-active-events-card">
+		<div class="ops-card-icon">⚡</div>
+		<div class="ops-card-body">
+			<span class="ops-card-label">Active Events</span>
+			<span class="ops-card-value" id="admin-active-events">—</span>
+		</div>
+	</div>
+	<div class="admin-ops-card" id="ops-hcs-card">
+		<div class="ops-card-icon">⛓️</div>
+		<div class="ops-card-body">
+			<span class="ops-card-label">HCS Anchored</span>
+			<span class="ops-card-value" id="admin-hcs-count">—</span>
+		</div>
+	</div>
+	<div class="admin-ops-card" id="ops-hts-card">
+		<div class="ops-card-icon">🪙</div>
+		<div class="ops-card-body">
+			<span class="ops-card-label">HTS Rewarded</span>
+			<span class="ops-card-value" id="admin-hts-count">—</span>
+		</div>
+	</div>
+</section>
 
 <details class="card admin-diagnostics-fold">
 	<summary>System Diagnostics</summary>
@@ -1035,6 +1069,19 @@ function runAutoVerify(data) {
 	});
 }
 
+function updateOpsSummary(activities) {
+	const active = activities.filter(a => !['attested','rejected','failed'].includes((a.pipeline_stage||'').toLowerCase())).length;
+	const hcs = activities.filter(a => a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id || (a.logbook_status||'').toLowerCase() === 'anchored').length;
+	const hts = activities.filter(a => a.hts_tx_id || a.reward_tx_id || (a.reward_status||'').toLowerCase() === 'paid').length;
+	const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+	el('admin-active-events', active);
+	el('admin-hcs-count', hcs);
+	el('admin-hts-count', hts);
+	el('admin-health-status', 'Operational');
+	const hCard = document.getElementById('ops-system-health-card');
+	if (hCard) hCard.querySelector('.ops-card-icon').textContent = '🟢';
+}
+
 function loadActivities() {
 	fetch("/api/admin/activities")
 		.then(r => r.json())
@@ -1042,6 +1089,7 @@ function loadActivities() {
 			adminActivities = Array.isArray(data) ? data : [];
 			visibleActivityCount = ACTIVITY_PAGE_SIZE;
 			renderActivities(adminActivities);
+			updateOpsSummary(adminActivities);
 			runAutoVerify();
 			loadFlaggedEvents();
 			loadQueueSummary();
@@ -1057,6 +1105,8 @@ function loadActivities() {
 			}
 			const status = document.getElementById("autoVerifyStatus");
 			if (status) status.innerText = "Auto-verify error";
+			const hCard = document.getElementById('ops-system-health-card');
+			if (hCard) { hCard.querySelector('.ops-card-icon').textContent = '🔴'; const hs = document.getElementById('admin-health-status'); if(hs) hs.textContent = 'Degraded'; }
 			loadFlaggedEvents();
 		});
 }

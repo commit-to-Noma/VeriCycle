@@ -322,6 +322,7 @@ def pickup_request_status_label(
 
 
 def role_home_endpoint_for(user) -> str:
+    """Post-login redirect: directs user to their primary dashboard."""
     role = effective_role(user)
     if role == "center":
         return "center_dashboard"
@@ -334,6 +335,26 @@ def role_home_endpoint_for(user) -> str:
     if role == "recycler":
         return "collector_dashboard"
     return "home"  # safe fallback — prevents redirect loops for invalid/empty roles
+
+
+def access_denied_redirect_for(user) -> str:
+    """Access control redirect: directs user when they try to access restricted pages.
+    Business users get `/request-pickup` as their working area,
+    resident users get `/household` as their working area,
+    while others go to their primary dashboard.
+    """
+    role = effective_role(user)
+    if role == "business":
+        return "request_pickup"  # Business working area
+    if role == "resident":
+        return "household_dashboard"  # Resident working area
+    if role == "center":
+        return "center_dashboard"
+    if role == "admin":
+        return "admin_monitor"
+    if role == "recycler":
+        return "collector_dashboard"
+    return "home"
 
 
 @app.context_processor
@@ -1264,7 +1285,7 @@ def profile():
 def collector_dashboard():
     if not can_accept_opportunity_recycler(current_user):
         flash('Recycler access is required for Recycler Hub.', 'error')
-        return redirect(url_for(role_home_endpoint_for(current_user)))
+        return redirect(url_for(access_denied_redirect_for(current_user)))
 
     # Require profile completion for recycler users (including legacy collector rows).
     if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
@@ -1285,7 +1306,7 @@ def collector_dashboard():
 def request_pickup():
     if not (can_create_opportunity_business(current_user) or can_create_opportunity_resident(current_user)):
         flash('Business or resident access is required for pickup requests.', 'error')
-        return redirect(url_for(role_home_endpoint_for(current_user)))
+        return redirect(url_for(access_denied_redirect_for(current_user)))
     return render_template('request_pickup.html', active_page='dashboard')
 
 
@@ -1727,7 +1748,7 @@ def api_center_verify_assignment(assignment_id):
 def center_dashboard():
     if not can_verify_deposit_center(current_user):
         flash('Center access is required for Verification Center.', 'error')
-        return redirect(url_for(role_home_endpoint_for(current_user)))
+        return redirect(url_for(access_denied_redirect_for(current_user)))
 
     return render_template('center.html', active_page='dashboard')
 
@@ -1749,7 +1770,7 @@ def recalc_reliability(location_id: int) -> float:
 def household_dashboard():
     if not can_create_opportunity_resident(current_user):
         flash('Resident access is required for Community Hub.', 'error')
-        return redirect(url_for(role_home_endpoint_for(current_user)))
+        return redirect(url_for(access_denied_redirect_for(current_user)))
 
     # Attach user to default location if no profile exists
     profile = HouseholdProfile.query.filter_by(user_id=current_user.id).first()
@@ -1793,7 +1814,7 @@ def household_dashboard():
 def household_pickup_action():
     if not can_create_opportunity_resident(current_user):
         flash('Resident access is required for Community Hub.', 'error')
-        return redirect(url_for(role_home_endpoint_for(current_user)))
+        return redirect(url_for(access_denied_redirect_for(current_user)))
 
     action = request.form.get("action")
     stream = request.form.get("stream")
@@ -1835,7 +1856,7 @@ def household_pickup_action():
 def set_household_location():
     if not can_create_opportunity_resident(current_user):
         flash('Resident access is required for Community Hub.', 'error')
-        return redirect(url_for(role_home_endpoint_for(current_user)))
+        return redirect(url_for(access_denied_redirect_for(current_user)))
 
     location_id = request.form.get("location_id", type=int)
     if not location_id:
@@ -2177,7 +2198,7 @@ def get_dashboard_data():
         total_kg = 0
     
     # Demo user gets seed data plus their activities
-    if current_user.email.lower().strip() == 'test@gmail.com':
+    if current_user.email.lower().strip() == 'recycler@vericycle.com':
         seed1_ts = "2025-11-12T10:00:00Z"
         seed1_desc = "Verified Drop-off (8.5kg of Paper)"
         seed1_amount = 425.00
@@ -2959,9 +2980,9 @@ def api_admin_generate_evidence_pack():
     profile_name = body.get("profile", "judge_testnet_v1")
     apply_demo_profile(profile_name)
 
-    collector = User.query.filter_by(email="test@gmail.com").first()
+    collector = User.query.filter_by(email="recycler@vericycle.com").first()
     if not collector:
-        return jsonify({"ok": False, "error": "test@gmail.com not found"}), 400
+        return jsonify({"ok": False, "error": "recycler@vericycle.com not found"}), 400
 
     activity_ids = [_create_demo_activity_for_user(collector, i) for i in range(3)]
     ok, final_rows = _wait_for_attested(activity_ids)

@@ -12,12 +12,68 @@
     <a class="skip-link" href="#main-content">Skip to main content</a>
     {% include '_navbar.html' %}
 
-    <main id="main-content" class="hero">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container">
+                <div class="flash-bar">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main id="main-content" class="hero hero-proof">
         <div class="container">
-            <h2>VeriCycle</h2>
-            <h1>Verified Recycling for Recyclers, Businesses, and Communities.</h1>
-            <p class="subtitle">VeriCycle connects informal recyclers, businesses, recycling centers, and communities through a trusted recycling coordination network powered by Hedera.</p>
-            <a href="#our-mission" class="btn-secondary">Learn About Our Mission</a>
+            <!-- Verified Proof Pulse motif -->
+            <div class="hero-proof-pulse" aria-hidden="true">
+                <span class="pulse-ring pulse-ring-1"></span>
+                <span class="pulse-ring pulse-ring-2"></span>
+                <span class="pulse-ring pulse-ring-3"></span>
+                <span class="pulse-icon">♻️</span>
+            </div>
+
+            <p class="hero-eyebrow">Powered by Hedera</p>
+            <h1>Turn recycling into trusted proof.</h1>
+            <p class="subtitle">VeriCycle verifies recycling activity for recyclers, businesses, communities, and centers — and anchors every event on-chain.</p>
+
+            <div class="hero-cta-row">
+                {% if not current_user.is_authenticated %}
+                    <a href="#" class="btn-primary-large js-open-auth" data-form="login">Open Live Demo</a>
+                    <a href="#how-it-works" class="btn-secondary">See How Proof Works</a>
+                {% else %}
+                    {% if current_effective_role == 'center' %}
+                        <a href="{{ url_for('center_dashboard') }}" class="btn-primary-large">Go to Verification Center</a>
+                    {% elif current_effective_role == 'admin' %}
+                        <a href="{{ url_for('admin_monitor') }}" class="btn-primary-large">Go to Admin Monitor</a>
+                    {% elif current_effective_role == 'business' %}
+                        <a href="{{ url_for('business_dashboard') }}" class="btn-primary-large">Go to Business Hub</a>
+                    {% elif current_effective_role == 'resident' %}
+                        <a href="{{ url_for('household_dashboard') }}" class="btn-primary-large">Go to Community Hub</a>
+                    {% else %}
+                        <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to Recycler Hub</a>
+                    {% endif %}
+                    <a href="#how-it-works" class="btn-secondary">See How Proof Works</a>
+                {% endif %}
+            </div>
+
+            <!-- Trust strip -->
+            <div class="trust-strip">
+                <div class="trust-chip">
+                    <span class="trust-chip-icon">⛓️</span>
+                    <span class="trust-chip-label">HCS Anchored Records</span>
+                </div>
+                <div class="trust-chip">
+                    <span class="trust-chip-icon">🪙</span>
+                    <span class="trust-chip-label">HTS Rewards Recorded</span>
+                </div>
+                <div class="trust-chip">
+                    <span class="trust-chip-icon">📄</span>
+                    <span class="trust-chip-label">Proof-of-Income Ready</span>
+                </div>
+            </div>
+
             <div class="floating-fixed-icons" aria-hidden="true">
                 <div id="icon-final-trash" class="fixed-icon icon-bin" aria-hidden="true">
                     <svg class="fixed-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -33,6 +89,29 @@
             </div>
         </div>
     </main>
+
+    <!-- Proof stats row -->
+    <section class="proof-stats-section">
+        <div class="container-wide">
+            <div class="proof-stats-row">
+                <div class="proof-stat-card">
+                    <span class="proof-stat-icon">✅</span>
+                    <span class="proof-stat-value" id="stat-verified-events">500+</span>
+                    <span class="proof-stat-label">Verified Events</span>
+                </div>
+                <div class="proof-stat-card">
+                    <span class="proof-stat-icon">📦</span>
+                    <span class="proof-stat-value">200+</span>
+                    <span class="proof-stat-label">Proof Bundles</span>
+                </div>
+                <div class="proof-stat-card">
+                    <span class="proof-stat-icon">⛓️</span>
+                    <span class="proof-stat-value">150+</span>
+                    <span class="proof-stat-label">Hedera Anchors</span>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <section class="cta-section">
         <div class="container-wide">
@@ -61,25 +140,11 @@
                     <a href="#" class="btn-primary-large js-open-auth" data-form="signup">Create Your Account</a>
                     <p>Already have an account? <a href="#" class="link-secondary js-open-auth" data-form="login">Log In here</a></p>
                 </div>
-            {% else %}
-                <div class="cta-buttons">
-                    {% if current_effective_role == 'center' %}
-                        <a href="{{ url_for('center_dashboard') }}" class="btn-primary-large">Go to Verification Center</a>
-                    {% elif current_effective_role == 'admin' %}
-                        <a href="{{ url_for('admin_monitor') }}" class="btn-primary-large">Go to Admin Monitor</a>
-                    {% elif current_effective_role == 'business' %}
-                        <a href="{{ url_for('business_dashboard') }}" class="btn-primary-large">Go to Business Hub</a>
-                    {% elif current_effective_role == 'resident' %}
-                        <a href="{{ url_for('household_dashboard') }}" class="btn-primary-large">Go to Community Hub</a>
-                    {% else %}
-                        <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to Recycler Hub</a>
-                    {% endif %}
-                </div>
             {% endif %}
         </div>
     </section>
 
-    <section class="how-it-works-section">
+    <section class="how-it-works-section" id="how-it-works">
         <div class="container-wide">
             <h2>How VeriCycle Works</h2>
             <p class="activity-subtitle">Our simple 4-step process connects the full recycling network.</p>
@@ -189,15 +254,6 @@
     <div class="modal-overlay" id="auth-modal">
         <div class="card modal-content">
             <button class="modal-close js-close-auth">&times;</button>
-            <div id="flash-container">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="flash-message {{ category }}">{{ message }}</div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-            </div>
             <div id="signup-form">
                 <h2>Create Your Account</h2>
                 <form action="{{ url_for('signup') }}" method="POST" class="verify-form">
@@ -259,10 +315,9 @@
         const allToggleLinks = document.querySelectorAll('.js-toggle-auth');
         const loginForm = document.getElementById('login-form');
         const signupForm = document.getElementById('signup-form');
-        const flashContainer = document.getElementById('flash-container');
 
         const openModal = function(e) { e.preventDefault(); const targetForm = this.dataset.form; if (targetForm === 'login') { loginForm.style.display = 'block'; signupForm.style.display = 'none'; } else { loginForm.style.display = 'none'; signupForm.style.display = 'block'; } modal.style.display = 'flex'; };
-        const closeModal = function(e) { e.preventDefault(); modal.style.display = 'none'; flashContainer.innerHTML = ''; };
+        const closeModal = function(e) { e.preventDefault(); modal.style.display = 'none'; };
         const toggleForms = function(e) { e.preventDefault(); if (loginForm.style.display === 'none') { loginForm.style.display = 'block'; signupForm.style.display = 'none'; } else { loginForm.style.display = 'none'; signupForm.style.display = 'block'; } };
 
         allOpenButtons.forEach(btn => btn.addEventListener('click', openModal));
@@ -298,7 +353,7 @@
             });
         }
 
-        const errorMessages = flashContainer ? flashContainer.querySelectorAll('.flash-message.error') : [];
+        const errorMessages = document.querySelectorAll('.flash-bar .flash-message.error');
         if (errorMessages && errorMessages.length > 0) {
             modal.style.display = 'flex';
             const errorMsg = errorMessages[0].textContent || '';

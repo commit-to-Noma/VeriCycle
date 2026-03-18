@@ -5639,6 +5639,434 @@ body{
     min-width: 860px;
 }
 
+/* ============================================================
+   VERICYCLE WINNER POLISH LAYER
+   Final overrides for hero, proof moments, hub hierarchy,
+   admin ops summary, and trust/status chip consistency.
+   All rules here take precedence over earlier definitions.
+   ============================================================ */
+
+/* ── Hero ──────────────────────────────────────────────────── */
+.hero-proof {
+    position: relative;
+    overflow: hidden;
+    padding: 5rem 1rem 3.5rem;
+    text-align: center;
+    background: radial-gradient(ellipse at 50% 0%, rgba(76,175,80,0.12) 0%, transparent 70%), #121212;
+}
+
+.hero-proof h1 {
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #f0f4f0;
+    margin: 0.5rem 0 1rem;
+    line-height: 1.15;
+}
+
+.hero-eyebrow {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #4CAF50;
+    margin: 0 0 0.4rem;
+}
+
+.hero-proof .subtitle {
+    max-width: 580px;
+    margin: 0 auto 2rem;
+    color: #b0b8b0;
+    font-size: 1.05rem;
+    line-height: 1.65;
+}
+
+.hero-cta-row {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2.25rem;
+}
+
+/* ── Verified Proof Pulse Motif ─────────────────────────────── */
+.hero-proof-pulse {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.25rem;
+}
+
+.pulse-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(76,175,80,0.5);
+    animation: pulseExpand 2.4s ease-out infinite;
+}
+.pulse-ring-1 { width: 72px; height: 72px; animation-delay: 0s; }
+.pulse-ring-2 { width: 72px; height: 72px; animation-delay: 0.8s; }
+.pulse-ring-3 { width: 72px; height: 72px; animation-delay: 1.6s; }
+
+@keyframes pulseExpand {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+.pulse-icon {
+    font-size: 2rem;
+    z-index: 1;
+    position: relative;
+}
+
+/* ── Trust Strip ─────────────────────────────────────────────── */
+.trust-strip {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+}
+
+.trust-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: rgba(76,175,80,0.1);
+    border: 1px solid rgba(76,175,80,0.25);
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #c8e6c9;
+    white-space: nowrap;
+}
+
+.trust-chip-icon { font-size: 0.95rem; }
+
+/* ── Proof Stats Section ─────────────────────────────────────── */
+.proof-stats-section {
+    padding: 2rem 1rem 0;
+}
+
+.proof-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.proof-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 1.25rem 1rem;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+
+.proof-stat-card:hover { border-color: rgba(76,175,80,0.4); }
+
+.proof-stat-icon { font-size: 1.5rem; }
+
+.proof-stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #4CAF50;
+    line-height: 1;
+}
+
+.proof-stat-label {
+    font-size: 0.78rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ── Recycler Hub: Health Row ────────────────────────────────── */
+.recycler-health-row {
+    margin-bottom: 0.75rem;
+}
+
+.health-status-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+}
+
+/* ── Proof Flow Steps Panel ──────────────────────────────────── */
+.recycler-proof-flow-card {
+    grid-column: 1 / -1;
+}
+
+.proof-flow-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.proof-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    position: relative;
+}
+
+.proof-step-done {
+    border-color: rgba(76,175,80,0.4);
+    background: rgba(76,175,80,0.06);
+}
+
+.proof-step-active {
+    border-color: rgba(59,130,246,0.5);
+    background: rgba(59,130,246,0.07);
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+
+.proof-step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    font-weight: 700;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+    color: #aaa;
+}
+
+.proof-step-done .proof-step-num {
+    background: rgba(76,175,80,0.3);
+    color: #a5d6a7;
+}
+
+.proof-step-active .proof-step-num {
+    background: rgba(59,130,246,0.3);
+    color: #93c5fd;
+}
+
+.proof-step-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.82rem;
+}
+
+.proof-step-body strong { color: #ddd; font-size: 0.85rem; }
+.proof-step-body span  { color: #888; line-height: 1.4; }
+
+/* ── Success Modal: Proof Issued ─────────────────────────────── */
+.proof-issued-badge {
+    display: inline-block;
+    background: rgba(76,175,80,0.15);
+    border: 1px solid rgba(76,175,80,0.4);
+    border-radius: 999px;
+    padding: 0.25rem 0.85rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #a5d6a7;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.75rem;
+}
+
+.proof-issued-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #f0f4f0;
+    margin: 0 0 0.5rem;
+}
+
+.proof-next-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+    color: #93c5fd;
+    margin-bottom: 1.25rem;
+}
+
+.proof-next-icon { font-size: 1rem; flex-shrink: 0; }
+
+/* ── Admin Monitor: Ops Summary Row ─────────────────────────── */
+.admin-dashboard-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.admin-header-title h2 { margin: 0 0 0.25rem; }
+.admin-header-title p  { margin: 0; color: #888; }
+
+.admin-ops-summary-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.85rem;
+    margin: 1.25rem 0;
+}
+
+.admin-ops-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.admin-ops-card:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(76,175,80,0.35);
+}
+
+.ops-card-icon { font-size: 1.6rem; flex-shrink: 0; }
+
+.ops-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.ops-card-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #666;
+    font-weight: 600;
+}
+
+.ops-card-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #e0e0e0;
+    line-height: 1;
+}
+
+/* ── Health Dot Variants ─────────────────────────────────────── */
+.health-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.health-dot-ok   { background: #4CAF50; box-shadow: 0 0 5px rgba(76,175,80,0.7); }
+.health-dot-warn { background: #f59e0b; box-shadow: 0 0 5px rgba(245,158,11,0.7); }
+
+/* ── Responsive adjustments ──────────────────────────────────── */
+@media (max-width: 640px) {
+    .proof-stats-row       { grid-template-columns: 1fr 1fr; }
+    .proof-flow-steps      { grid-template-columns: 1fr; }
+    .hero-cta-row          { flex-direction: column; align-items: center; }
+    .admin-ops-summary-row { grid-template-columns: 1fr 1fr; }
+}
+
+/* Final layout guardrails: the page owns vertical scrolling, not nested dashboard wrappers. */
+html {
+    min-height: 100%;
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+body {
+    min-height: 100vh;
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
+main.container,
+main.container.app-dashboard,
+main.container-wide,
+main.container-wide.app-dashboard,
+.dashboard-grid,
+.recycler-shell,
+.observer-shell,
+.recycler-main-grid,
+.hub-stat-grid,
+.hub-split-grid,
+.admin-review-grid,
+.system-diagnostics-grid {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+@media (max-width: 768px) {
+    main.container,
+    main.container.app-dashboard,
+    main.container-wide,
+    main.container-wide.app-dashboard {
+        width: calc(100% - 20px);
+        padding-top: 16px;
+        padding-bottom: 24px;
+    }
+
+    .recycler-hero-row,
+    .recycler-main-grid,
+    .hub-stat-grid,
+    .hub-split-grid,
+    .admin-review-grid,
+    .admin-ops-summary-row,
+    .system-diagnostics-grid,
+    .proof-stats-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    .event-table,
+    #activity-table,
+    #agent-status-panel table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-content,
+    .success-modal-content {
+        width: min(92vw, 560px);
+        max-height: calc(100vh - 32px);
+        overflow-y: auto;
+    }
+
+    .hub-cta-row,
+    .hero-cta-row,
+    .admin-actions-row,
+    .cta-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-primary,
+    .btn-primary-large,
+    .btn-secondary,
+    .btn-danger {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+
 @media (max-width: 1024px) {
     .nav-shell {
         width: min(1400px, 96%);

@@ -8,6 +8,15 @@
             <p><strong>Recycler Hub</strong> · Find recycling opportunities, submit verified deposits, earn EcoCoin, and build proof of income.</p>
         </div>
 
+        <!-- Agent Status: System Health Summary -->
+        <div class="recycler-health-row">
+            <div class="health-status-mini card">
+                <span class="health-dot health-dot-ok" id="system-health-dot"></span>
+                <span id="system-health-text" style="font-weight:600;">Checking…</span>
+                <span id="system-health-detail" style="color:#888; font-size:0.8rem; margin-left:0.5rem;"></span>
+            </div>
+        </div>
+
         <section class="recycler-shell">
             <div class="recycler-hero-row">
                 <div class="kpi-card metric-card">
@@ -48,6 +57,43 @@
             </div>
 
             <div class="recycler-main-grid">
+
+                <!-- Current Proof Flow Panel -->
+                <div class="card recycler-proof-flow-card">
+                    <h3>Current Proof Flow</h3>
+                    <p class="mockup-subtitle">Your recycling event moves through 4 stages before producing verifiable proof.</p>
+                    <div class="proof-flow-steps">
+                        <div class="proof-step proof-step-done">
+                            <span class="proof-step-num">1</span>
+                            <div class="proof-step-body">
+                                <strong>Accept &amp; Submit</strong>
+                                <span>Job accepted and materials submitted to center</span>
+                            </div>
+                        </div>
+                        <div class="proof-step proof-step-active">
+                            <span class="proof-step-num">2</span>
+                            <div class="proof-step-body">
+                                <strong>Center Verification</strong>
+                                <span>Recycling center confirms materials and weight</span>
+                            </div>
+                        </div>
+                        <div class="proof-step">
+                            <span class="proof-step-num">3</span>
+                            <div class="proof-step-body">
+                                <strong>Hedera Anchoring</strong>
+                                <span>Verified event anchored to Hedera Consensus Service</span>
+                            </div>
+                        </div>
+                        <div class="proof-step">
+                            <span class="proof-step-num">4</span>
+                            <div class="proof-step-body">
+                                <strong>Proof Available</strong>
+                                <span>EcoCoin reward issued · Proof bundle downloadable</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card recycler-actions-card" id="pickup-opportunities-card">
                     <h3>Open Pickup Opportunities</h3>
                     <p class="mockup-subtitle">Find available recycling requests from businesses and communities and accept the next live pickup job.</p>
@@ -775,7 +821,7 @@
                 };
 
                 // Show the modal immediately; actual scroll + animations run when user clicks "Awesome!"
-                document.querySelector('#success-modal .success-subtitle').textContent = `A new drop-off of ${weightAmount.toFixed(1)}kg has been verified.`;
+                document.querySelector('#success-modal .success-subtitle').textContent = `Your recycling event has entered the verification pipeline. (${weightAmount.toFixed(1)}kg submitted)`;
                 const confettiCanvas = document.getElementById('confetti-canvas');
                 const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
                 document.getElementById('success-modal').style.display = 'flex';
@@ -1094,9 +1140,10 @@
     <div class="modal-overlay" id="success-modal">
         <div class="card modal-content success-modal-content">
             <canvas id="confetti-canvas"></canvas>
-            <h2>Success!</h2>
-            <p class="success-subtitle">A new drop-off has been verified.</p>
-            
+            <div class="proof-issued-badge">⛓️ Proof Issued</div>
+            <h2 class="proof-issued-title">Recycling Proof Issued</h2>
+            <p class="success-subtitle">Your recycling event has entered the verification pipeline.</p>
+
             <div class="reward-summary" style="padding: 0; border: none; background: none; margin-bottom: 1.5rem;">
                 <p>Base Reward (10.0kg Cans): <span>500.00 ECO</span></p>
                 <p>Neighborhood Bonus (2.5%): <span>+ 12.50 ECO</span></p>
@@ -1105,7 +1152,12 @@
                 <p class="total" style="font-size: 1.5rem;">Total Payout: <span id="modal-eco-value">+518 ECO</span></p>
             </div>
 
-            <button class="btn-primary-large btn-form" id="modal-close-btn">Awesome!</button>
+            <div class="proof-next-step">
+                <span class="proof-next-icon">⏳</span>
+                <span>Next: Awaiting center verification → Hedera anchor → Proof bundle</span>
+            </div>
+
+            <button class="btn-primary-large btn-form" id="modal-close-btn">Got It</button>
         </div>
     </div>
 {% endblock %}
