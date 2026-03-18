@@ -5,7 +5,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
         <div class="dashboard-header">
             <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
-            <p><strong>Recycler Hub</strong> · Find recycling opportunities, submit verified deposits, earn EcoCoin, and build proof of income.</p>
+            <p><strong>Recycler Hub</strong> · Find recycling opportunities, submit recycling events, earn EcoCoin, and build proof of income.</p>
         </div>
 
         <!-- Agent Status: System Health Summary -->
@@ -61,34 +61,41 @@
                 <!-- Current Proof Flow Panel -->
                 <div class="card recycler-proof-flow-card">
                     <h3>Current Proof Flow</h3>
-                    <p class="mockup-subtitle">Your recycling event moves through 4 stages before producing verifiable proof.</p>
+                    <p class="mockup-subtitle">Your recycling event follows one trust ladder: Submitted, Verified, Anchored, Rewarded, and Proof Ready.</p>
                     <div class="proof-flow-steps">
                         <div class="proof-step proof-step-done">
                             <span class="proof-step-num">1</span>
                             <div class="proof-step-body">
-                                <strong>Accept &amp; Submit</strong>
-                                <span>Job accepted and materials submitted to center</span>
+                                <strong>Submitted</strong>
+                                <span>Job accepted and material submission captured.</span>
                             </div>
                         </div>
                         <div class="proof-step proof-step-active">
                             <span class="proof-step-num">2</span>
                             <div class="proof-step-body">
-                                <strong>Center Verification</strong>
-                                <span>Recycling center confirms materials and weight</span>
+                                <strong>Verified</strong>
+                                <span>Center verification confirms material and weight.</span>
                             </div>
                         </div>
                         <div class="proof-step">
                             <span class="proof-step-num">3</span>
                             <div class="proof-step-body">
-                                <strong>Hedera Anchoring</strong>
-                                <span>Verified event anchored to Hedera Consensus Service</span>
+                                <strong>Anchored</strong>
+                                <span>Trusted event evidence is linked on Hedera.</span>
                             </div>
                         </div>
                         <div class="proof-step">
                             <span class="proof-step-num">4</span>
                             <div class="proof-step-body">
-                                <strong>Proof Available</strong>
-                                <span>EcoCoin reward issued · Proof bundle downloadable</span>
+                                <strong>Rewarded</strong>
+                                <span>Reward outcome is recorded with settlement evidence.</span>
+                            </div>
+                        </div>
+                        <div class="proof-step">
+                            <span class="proof-step-num">5</span>
+                            <div class="proof-step-body">
+                                <strong>Proof Ready</strong>
+                                <span>Proof bundle is ready to inspect and download.</span>
                             </div>
                         </div>
                     </div>
@@ -111,8 +118,8 @@
                 </div>
 
                 <div class="card recycler-ledger" id="activity-section">
-                    <h3>Verified Recycling Records</h3>
-                    <p class="mockup-subtitle">Your verified deposits, reward outcomes, proof bundles, and Hedera links.</p>
+                    <h3>Verified Events</h3>
+                    <p class="mockup-subtitle">Your Verified, Anchored, Rewarded, and Proof Ready records with Hedera links.</p>
 
                     <table id="activity-table" class="event-table">
                         <tr>
@@ -195,7 +202,7 @@
 
                 <div class="card recycler-actions-card">
                     <h3>Quick Actions</h3>
-                    <p class="mockup-subtitle">Submit verified deposits, review live pickup demand, and monitor proof-of-income activity.</p>
+                    <p class="mockup-subtitle">Trigger recycling events, review live pickup demand, and monitor proof-of-income records.</p>
                     <div class="recycler-action-stack">
                         <button class="btn-primary" id="trigger-deposit-btn">
                             Trigger Recycling Event
@@ -401,8 +408,8 @@
             return `
                 <div class="proof-summary-grid">
                     <div class="proof-summary-chip"><strong>${total}</strong><span>Total Rows</span></div>
-                    <div class="proof-summary-chip"><strong>${anchored}</strong><span>HCS Anchored</span></div>
-                    <div class="proof-summary-chip"><strong>${paid}</strong><span>HTS Paid</span></div>
+                    <div class="proof-summary-chip"><strong>${anchored}</strong><span>Anchored Records</span></div>
+                    <div class="proof-summary-chip"><strong>${paid}</strong><span>Reward Outcomes</span></div>
                     <div class="proof-summary-chip"><strong>${fallback}</strong><span>No-transfer finalizations</span></div>
                 </div>
                 <p style="margin:10px 0 0 0;">Latest HCS: ${latestAnchored ? toHashScanTxLink(latestAnchored.hcs_tx_id || latestAnchored.logbook_tx_id || latestAnchored.hedera_tx_id) : '—'}</p>
@@ -570,6 +577,10 @@
                     const estimated = Number(row.estimated_kg || 0);
                     const location = escapeHtml(row.location || 'Unknown location');
                     const status = escapeHtml(row.status || 'unknown');
+                    const statusLower = String(row.status || '').toLowerCase();
+                    const normalizedStatus = statusLower === 'completed'
+                        ? 'Verified'
+                        : (statusLower === 'submitted' || statusLower === 'accepted' ? 'Submitted' : status);
                     const defaultMaterial = escapeHtml(row.material_type || '');
                     const requestedWindow = escapeHtml(row.requested_window || 'Standard window');
                     const estimatedReward = Number(row.estimated_reward_eco || 0);
@@ -582,7 +593,7 @@
                             <span>${material} · est. ${estimated.toFixed(1)} kg</span><br>
                             <span>${location}</span><br>
                             <span>${requestedWindow}</span><br>
-                            <span>Status: ${status}</span><br>
+                            <span>Status: ${escapeHtml(normalizedStatus)}</span><br>
                             ${estimatedReward > 0 ? `<span>Pipeline reward: ${estimatedReward.toFixed(2)} ECO</span><br>` : ''}
 
                             ${canSubmit ? `
@@ -596,8 +607,8 @@
                                 </div>
                             ` : ''}
 
-                            ${submitted ? '<div style="margin-top:0.5rem;">Waiting for center verification.</div>' : ''}
-                            ${completed ? '<div style="margin-top:0.5rem;">Completed and verified.</div>' : ''}
+                            ${submitted ? '<div style="margin-top:0.5rem;">Submitted and waiting for Verified status.</div>' : ''}
+                            ${completed ? '<div style="margin-top:0.5rem;">Verified and advancing toward Anchored, Rewarded, and Proof Ready.</div>' : ''}
                             ${verificationNotes}
                             ${linkedActivity}
                         </div>
@@ -821,7 +832,7 @@
                 };
 
                 // Show the modal immediately; actual scroll + animations run when user clicks "Awesome!"
-                document.querySelector('#success-modal .success-subtitle').textContent = `Your recycling event has entered the verification pipeline. (${weightAmount.toFixed(1)}kg submitted)`;
+                document.querySelector('#success-modal .success-subtitle').textContent = `Your recycling event is Submitted and moving to Verified, Anchored, Rewarded, and Proof Ready. (${weightAmount.toFixed(1)}kg submitted)`;
                 const confettiCanvas = document.getElementById('confetti-canvas');
                 const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
                 document.getElementById('success-modal').style.display = 'flex';
@@ -1012,7 +1023,7 @@
                     </tr>
                 `;
                 if (proofSummaryEl) {
-                    proofSummaryEl.innerHTML = '<div class="event-empty-state">No proof snapshots yet. Your verified activity will appear here.</div>';
+                    proofSummaryEl.innerHTML = '<div class="event-empty-state">No proof snapshots yet. Your Verified Events will appear here.</div>';
                 }
                 return;
             }
@@ -1137,27 +1148,89 @@
     });
     </script>
 
-    <div class="modal-overlay" id="success-modal">
-        <div class="card modal-content success-modal-content">
+    <div class="modal-overlay proof-modal-overlay" id="success-modal">
+        <div class="card modal-content success-modal-content proof-success-modal">
             <canvas id="confetti-canvas"></canvas>
-            <div class="proof-issued-badge">⛓️ Proof Issued</div>
-            <h2 class="proof-issued-title">Recycling Proof Issued</h2>
-            <p class="success-subtitle">Your recycling event has entered the verification pipeline.</p>
 
-            <div class="reward-summary" style="padding: 0; border: none; background: none; margin-bottom: 1.5rem;">
-                <p>Base Reward (10.0kg Cans): <span>500.00 ECO</span></p>
-                <p>Neighborhood Bonus (2.5%): <span>+ 12.50 ECO</span></p>
-                <p>Bronze Tier Bonus (1.0%): <span>+ 5.00 ECO</span></p>
-                <hr>
-                <p class="total" style="font-size: 1.5rem;">Total Payout: <span id="modal-eco-value">+518 ECO</span></p>
+            <div class="proof-modal-topline">
+                <div class="proof-issued-badge">⛓️ Proof Issued</div>
+                <div class="proof-modal-status-row">
+                    <span class="proof-state-chip proof-state-chip-blue">Recycler submitted</span>
+                    <span class="proof-state-chip proof-state-chip-amber">Center verification next</span>
+                </div>
             </div>
 
-            <div class="proof-next-step">
-                <span class="proof-next-icon">⏳</span>
-                <span>Next: Awaiting center verification → Hedera anchor → Proof bundle</span>
+            <h2 class="proof-issued-title">Verified Recycling Event Created</h2>
+            <p class="success-subtitle proof-issued-subtitle">
+                Your recycling event has entered the trusted verification pipeline. Once the center confirms the deposit, VeriCycle finalizes proof, prepares Hedera anchoring, and records reward outcome.
+            </p>
+
+            <div class="proof-modal-grid">
+                <section class="proof-modal-panel proof-modal-reward-panel">
+                    <span class="section-kicker">Reward Preview</span>
+                    <h3>EcoCoin payout prepared</h3>
+
+                    <div class="reward-summary proof-reward-summary">
+                        <p><span>Base Reward (10.0kg Cans)</span><strong>500.00 ECO</strong></p>
+                        <p><span>Neighborhood Bonus (2.5%)</span><strong>+ 12.50 ECO</strong></p>
+                        <p><span>Bronze Tier Bonus (1.0%)</span><strong>+ 5.00 ECO</strong></p>
+                        <hr>
+                        <p class="total"><span>Total Payout</span><strong id="modal-eco-value">+518 ECO</strong></p>
+                    </div>
+
+                    <div class="proof-trust-mini">
+                        <div class="proof-trust-mini-item">
+                            <span class="proof-mini-label">Proof integrity</span>
+                            <strong>Pending finalization</strong>
+                        </div>
+                        <div class="proof-trust-mini-item">
+                            <span class="proof-mini-label">Settlement path</span>
+                            <strong>Reward-aware pipeline</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="proof-modal-panel proof-modal-timeline-panel">
+                    <span class="section-kicker">Next Steps</span>
+                    <h3>What happens now</h3>
+
+                    <div class="proof-modal-timeline">
+                        <div class="proof-modal-step proof-modal-step-done">
+                            <div class="proof-modal-step-dot">1</div>
+                            <div class="proof-modal-step-body">
+                                <strong>Recycler submission captured</strong>
+                                <span>Your event is recorded in the VeriCycle pipeline.</span>
+                            </div>
+                        </div>
+
+                        <div class="proof-modal-step proof-modal-step-active">
+                            <div class="proof-modal-step-dot">2</div>
+                            <div class="proof-modal-step-body">
+                                <strong>Center verification</strong>
+                                <span>The recycling center confirms material type and weight.</span>
+                            </div>
+                        </div>
+
+                        <div class="proof-modal-step">
+                            <div class="proof-modal-step-dot">3</div>
+                            <div class="proof-modal-step-body">
+                                <strong>Hedera proof + reward outcome</strong>
+                                <span>Proof bundle and transaction evidence become available after finalization.</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
-            <button class="btn-primary-large btn-form" id="modal-close-btn">Got It</button>
+            <div class="proof-next-step proof-next-step-strong">
+                <span class="proof-next-icon">✅</span>
+                <span>This event is now positioned to become verifiable proof of recycling and proof of income.</span>
+            </div>
+
+            <div class="proof-modal-actions">
+                <button class="btn-primary-large btn-form" id="modal-close-btn">Continue</button>
+                <a href="{{ url_for('proof_hub') }}" class="btn-secondary">Open Proof Hub</a>
+            </div>
         </div>
     </div>
 {% endblock %}

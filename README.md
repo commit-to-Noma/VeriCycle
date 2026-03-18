@@ -337,9 +337,10 @@ python -m agents.task_worker
 | Email | Password | Role |
 |-------|----------|------|
 | `admin@vericycle.com` | `Admin123!` | Administrator |
-| `test@gmail.com` | `Test123!` | Tester |
-| `demo@vericycle.com` | `H3dera!2025` | Recycler |
-| `mpact@vericycle.com` | `Centerh3dera!` | Recycling Center |
+| `recycler@vericycle.com` | `Recycler123!` | Recycler |
+| `business@vericycle.com` | `Business123!` | Business |
+| `resident@vericycle.com` | `Resident123!` | Resident |
+| `center@vericycle.com` | `Center123!` | Recycling Center |
 
 ### Useful Commands
 

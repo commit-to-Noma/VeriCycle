@@ -9,12 +9,12 @@
             <a href="{{ url_for('home') }}" class="nav-button {% if request.path == url_for('home') %}active{% endif %}">Home</a>
 
             {% if current_user.is_authenticated %}
-                {% if current_effective_role == 'center' %}
+                {% if current_effective_role == 'recycler' %}
+                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Recycler Hub</a>
+                {% elif current_effective_role == 'center' %}
                     <a href="{{ url_for('center_dashboard') }}" class="nav-button {% if request.path.startswith('/center') %}active{% endif %}">Verification Center</a>
                 {% elif current_effective_role == 'admin' %}
                     <a href="{{ url_for('admin_monitor') }}" class="nav-button {% if request.path.startswith('/admin/monitor') %}active{% endif %}">Admin Monitor</a>
-                {% else %}
-                    <a href="{{ url_for('collector_dashboard') }}" class="nav-button {% if request.path.startswith('/collector') %}active{% endif %}">Recycler Hub</a>
                 {% endif %}
                 {% if current_effective_role == 'business' %}
                     <a href="{{ url_for('business_dashboard') }}" class="nav-button {% if request.path.startswith('/business') %}active{% endif %}">Business Hub</a>
@@ -56,12 +56,12 @@
         <a href="{{ url_for('home') }}">Home</a>
 
         {% if current_user.is_authenticated %}
-            {% if current_effective_role == 'center' %}
+            {% if current_effective_role == 'recycler' %}
+                <a href="{{ url_for('collector_dashboard') }}">Recycler Hub</a>
+            {% elif current_effective_role == 'center' %}
                 <a href="{{ url_for('center_dashboard') }}">Verification Center</a>
             {% elif current_effective_role == 'admin' %}
                 <a href="{{ url_for('admin_monitor') }}">Admin Monitor</a>
-            {% else %}
-                <a href="{{ url_for('collector_dashboard') }}">Recycler Hub</a>
             {% endif %}
             {% if current_effective_role == 'business' %}
                 <a href="{{ url_for('business_dashboard') }}">Business Hub</a>

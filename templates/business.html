@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="trust-strip business-trust-strip">
+    <span class="trust-chip"><span class="trust-chip-icon">✓</span>Business-owned records tied to source requests</span>
+    <span class="trust-chip"><span class="trust-chip-icon">⎈</span>Verification center handoff is role-gated</span>
+    <span class="trust-chip"><span class="trust-chip-icon">◎</span>Proof and Hedera anchors visible when ready</span>
+</div>
+
 <div class="dashboard-header">
     <h2>Business Hub</h2>
     <p>Launch pickup requests, track recycler progress, and keep verified recycling records with proof and Hedera-backed audit links.</p>
@@ -8,24 +14,24 @@
 
 <section class="hub-stat-grid">
     <article class="card hub-stat-card">
-        <span class="section-kicker">Requests</span>
+        <span class="section-kicker">Business Impact Records</span>
         <strong>{{ summary.total_requests }}</strong>
-        <p>Total pickup requests created.</p>
+        <p>Total business-originated opportunities captured.</p>
     </article>
     <article class="card hub-stat-card">
-        <span class="section-kicker">Active</span>
+        <span class="section-kicker">Submitted</span>
         <strong>{{ summary.active_requests }}</strong>
-        <p>Open or accepted requests still moving through the flow.</p>
+        <p>Requests currently in Submitted and in-progress states.</p>
     </article>
     <article class="card hub-stat-card">
-        <span class="section-kicker">Verified Records</span>
+        <span class="section-kicker">Verified Events</span>
         <strong>{{ summary.verified_records }}</strong>
-        <p>Requests that became verified recycling records.</p>
+        <p>Submitted requests confirmed by the verification flow.</p>
     </article>
     <article class="card hub-stat-card">
         <span class="section-kicker">Proof Ready</span>
         <strong>{{ summary.proof_ready }}</strong>
-        <p>Records with proof bundles or Hedera anchors available.</p>
+        <p>Events with anchored records, rewards, or proof bundles.</p>
     </article>
 </section>
 
@@ -41,17 +47,23 @@
     </article>
 
     <article class="card">
-        <span class="section-kicker">Latest Verified Moment</span>
-        <h3>Business activity snapshot</h3>
+        <span class="section-kicker">Trust State Snapshot</span>
+        <h3>Submitted -> Verified -> Anchored -> Rewarded -> Proof Ready</h3>
         <p>
             {% if summary.latest_verified_at %}
-                Most recent verified record: {{ summary.latest_verified_at }}
+                Most recent Verified event: {{ summary.latest_verified_at }}
             {% else %}
-                No verified business pickup yet. Create a request to start the live demo flow.
+                No Verified business pickup yet. Create a request to begin the trust ladder.
             {% endif %}
         </p>
-        <p class="mockup-subtitle">Strongest live path: business request → recycler accepts → recycler submits → center verifies → proof and Hedera links appear.</p>
+        <p class="mockup-subtitle">Strongest live path: Create Pickup Request -> Submitted -> Verified -> Anchored -> Rewarded -> Proof Ready.</p>
     </article>
+</section>
+
+<section class="card hub-pipeline-brief">
+    <span class="section-kicker">Proof Pipeline Clarity</span>
+    <h3>What judges should see in this dashboard</h3>
+    <p>Each row below represents a business-sourced pickup moving through one status language system: Submitted, Verified, Anchored, Rewarded, and Proof Ready.</p>
 </section>
 
 <section class="card">
@@ -83,7 +95,27 @@
                     </td>
                     <td>{{ row.requested_window or 'Flexible' }}</td>
                     <td>{{ row.assigned_recycler_email or 'Waiting for acceptance' }}</td>
-                    <td><span class="status-badge status-pending">{{ row.status_label }}</span></td>
+                    <td>
+                        {% set status_text = row.status_label or 'Pending review' %}
+                        {% set status_lower = status_text|lower %}
+                        {% set normalized_status = 'Submitted' %}
+                        {% if 'rejected' in status_lower or 'failed' in status_lower %}
+                            {% set normalized_status = 'Rejected' %}
+                        {% elif 'fallback' in status_lower %}
+                            {% set normalized_status = 'Anchored (Fallback)' %}
+                        {% elif 'proof' in status_lower and ('ready' in status_lower or 'available' in status_lower) %}
+                            {% set normalized_status = 'Proof Ready' %}
+                        {% elif 'reward' in status_lower and ('paid' in status_lower or 'issued' in status_lower or 'completed' in status_lower) %}
+                            {% set normalized_status = 'Rewarded' %}
+                        {% elif 'anchor' in status_lower or 'hcs' in status_lower or 'logbook' in status_lower %}
+                            {% set normalized_status = 'Anchored' %}
+                        {% elif 'verified' in status_lower or 'completed' in status_lower %}
+                            {% set normalized_status = 'Verified' %}
+                        {% endif %}
+                        <span class="status-badge {% if normalized_status == 'Verified' or normalized_status == 'Anchored' or normalized_status == 'Rewarded' or normalized_status == 'Proof Ready' %}status-badge-paid{% elif normalized_status == 'Rejected' %}status-badge-failed{% elif 'Fallback' in normalized_status %}status-badge-fallback{% else %}status-badge-pending{% endif %}">
+                            {{ normalized_status }}
+                        </span>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -96,8 +128,8 @@
 <section class="card">
     <div class="hub-section-head">
         <div>
-            <span class="section-kicker">Verified Recycling Records</span>
-            <h3>Proof, reward outcome, and Hedera evidence</h3>
+            <span class="section-kicker">Verified Events</span>
+            <h3>Anchored records, reward outcomes, and proof bundles</h3>
         </div>
     </div>
 
@@ -120,10 +152,26 @@
                         <div class="hub-record-meta">Recycler: {{ row.assigned_recycler_email or 'Assigned recycler not captured' }}</div>
                     </td>
                     <td>{{ row.verified_at.strftime('%Y-%m-%d %H:%M') if row.verified_at else (row.status_label or 'Verified recycling record') }}</td>
-                    <td>{{ row.reward_status_label or 'Reward pending' }}</td>
+                    <td>
+                        {% set reward_text = row.reward_status_label or 'Reward pending' %}
+                        {% set reward_lower = reward_text|lower %}
+                        {% set normalized_reward = 'Submitted' %}
+                        {% if 'failed' in reward_lower or 'rejected' in reward_lower %}
+                            {% set normalized_reward = 'Rejected' %}
+                        {% elif 'fallback' in reward_lower %}
+                            {% set normalized_reward = 'Anchored (Fallback)' %}
+                        {% elif 'proof' in reward_lower and ('ready' in reward_lower or 'available' in reward_lower) %}
+                            {% set normalized_reward = 'Proof Ready' %}
+                        {% elif 'paid' in reward_lower or 'completed' in reward_lower or 'issued' in reward_lower %}
+                            {% set normalized_reward = 'Rewarded' %}
+                        {% endif %}
+                        <span class="status-badge {% if normalized_reward == 'Rewarded' or normalized_reward == 'Proof Ready' %}status-badge-paid{% elif normalized_reward == 'Rejected' %}status-badge-failed{% elif 'Fallback' in normalized_reward %}status-badge-fallback{% else %}status-badge-pending{% endif %}">
+                            {{ normalized_reward }}
+                        </span>
+                    </td>
                     <td>
                         {% if row.proof_url %}
-                            <a href="{{ row.proof_url }}">Open Proof</a>
+                            <a href="{{ row.proof_url }}">Download Proof</a>
                         {% else %}
                             —
                         {% endif %}
@@ -145,7 +193,7 @@
             </tbody>
         </table>
     {% else %}
-        <p class="hub-empty">Verified records will appear here after a recycler submits collected material and the Verification Center finalizes the event.</p>
+        <p class="hub-empty">Verified Events will appear here after recycler submission, center verification, and proof pipeline completion.</p>
     {% endif %}
 </section>
 {% endblock %}

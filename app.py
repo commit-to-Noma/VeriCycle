@@ -967,8 +967,12 @@ def mirror_fetch_latest_topic_messages(topic_id: str, limit: int = 10):
 
 @app.route("/signup", methods=['POST'])
 def signup():
-    email = request.form.get('email')
-    password = request.form.get('password')
+    email = (request.form.get('email') or '').strip().lower()
+    password = request.form.get('password') or ''
+    if not email or not password:
+        flash('Email and password are required for signup.', 'error')
+        return redirect(url_for('home', _anchor='auth-modal'))
+
     requested_role = normalize_role_value(request.form.get('role') or 'recycler')
     if requested_role not in {'recycler', 'business', 'resident', 'center', 'admin'}:
         flash('Invalid role selected for signup.', 'error')
@@ -1108,8 +1112,8 @@ def login():
     if request.method == 'GET':
         return render_template('login.html', active_page='login')
 
-    email = request.form.get('email')
-    password = request.form.get('password')
+    email = (request.form.get('email') or '').strip().lower()
+    password = request.form.get('password') or ''
     requested_role = normalize_role_value(request.form.get('role') or '')
 
     if requested_role and requested_role not in {'recycler', 'business', 'resident', 'center', 'admin'}:
@@ -1152,8 +1156,29 @@ def login():
             return redirect(url_for('collector_dashboard'))
             
     else:
-        flash('Login Unsuccessful. Please check email and password.', 'error')
-        return redirect(url_for('home'))
+        # Provide an actionable reason in local/demo mode while avoiding noisy ambiguity.
+        if user:
+            demo_password_hints = {
+                'recycler@vericycle.com': 'Recycler123!',
+                'business@vericycle.com': 'Business123!',
+                'resident@vericycle.com': 'Resident123!',
+                'center@vericycle.com': 'Center123!',
+                'admin@vericycle.com': 'Admin123!',
+            }
+
+            if not _is_prod and email in demo_password_hints:
+                flash(
+                    f"Password incorrect for {email}. Demo password is {demo_password_hints[email]}",
+                    'error'
+                )
+            else:
+                flash('Password incorrect for this email. Please try again.', 'error')
+            print(f"[LOGIN] Invalid password for email={email}")
+        else:
+            flash('No account found for that email. Please sign up first.', 'error')
+            print(f"[LOGIN] No account found for email={email}")
+
+        return redirect(url_for('home', _anchor='auth-modal'))
 
 @app.route("/logout")
 @login_required 
@@ -1284,7 +1309,7 @@ def profile():
 @login_required 
 def collector_dashboard():
     if not can_accept_opportunity_recycler(current_user):
-        flash('Recycler access is required for Recycler Hub.', 'error')
+        # Silent role redirect avoids stale cross-page flash leakage during judging flows.
         return redirect(url_for(access_denied_redirect_for(current_user)))
 
     # Require profile completion for recycler users (including legacy collector rows).
