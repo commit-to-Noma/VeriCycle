@@ -1330,7 +1330,6 @@ def collector_dashboard():
 @login_required 
 def request_pickup():
     if not (can_create_opportunity_business(current_user) or can_create_opportunity_resident(current_user)):
-        flash('Business or resident access is required for pickup requests.', 'error')
         return redirect(url_for(access_denied_redirect_for(current_user)))
     return render_template('request_pickup.html', active_page='dashboard')
 
@@ -1772,7 +1771,6 @@ def api_center_verify_assignment(assignment_id):
 @login_required 
 def center_dashboard():
     if not can_verify_deposit_center(current_user):
-        flash('Center access is required for Verification Center.', 'error')
         return redirect(url_for(access_denied_redirect_for(current_user)))
 
     return render_template('center.html', active_page='dashboard')
@@ -1794,7 +1792,6 @@ def recalc_reliability(location_id: int) -> float:
 @login_required
 def household_dashboard():
     if not can_create_opportunity_resident(current_user):
-        flash('Resident access is required for Community Hub.', 'error')
         return redirect(url_for(access_denied_redirect_for(current_user)))
 
     # Attach user to default location if no profile exists
@@ -1808,7 +1805,7 @@ def household_dashboard():
         db.session.add(profile)
         db.session.commit()
 
-    location = Location.query.get(profile.location_id)
+    location = db.session.get(Location, profile.location_id)
     schedules = WasteSchedule.query.filter_by(location_id=location.id).order_by(WasteSchedule.pickup_day.asc()).all()
     locations = Location.query.order_by(Location.name.asc()).all()
     recent_events = PickupEvent.query.filter_by(location_id=location.id).order_by(PickupEvent.id.desc()).limit(10).all()
@@ -1838,7 +1835,6 @@ def household_dashboard():
 @login_required
 def household_pickup_action():
     if not can_create_opportunity_resident(current_user):
-        flash('Resident access is required for Community Hub.', 'error')
         return redirect(url_for(access_denied_redirect_for(current_user)))
 
     action = request.form.get("action")
@@ -1880,7 +1876,6 @@ def household_pickup_action():
 @login_required
 def set_household_location():
     if not can_create_opportunity_resident(current_user):
-        flash('Resident access is required for Community Hub.', 'error')
         return redirect(url_for(access_denied_redirect_for(current_user)))
 
     location_id = request.form.get("location_id", type=int)
@@ -3695,9 +3690,10 @@ def admin_agents():
         
         result = []
         for act in activities:
+            activity_user = db.session.get(User, act.user_id) if act.user_id else None
             result.append({
                 'id': act.id,
-                'user_email': User.query.get(act.user_id).email if act.user_id else 'N/A',
+                'user_email': activity_user.email if activity_user else 'N/A',
                 'timestamp': act.timestamp,
                 'desc': act.desc,
                 'amount': act.amount,

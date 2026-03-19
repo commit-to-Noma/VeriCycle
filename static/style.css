@@ -7344,14 +7344,14 @@ html {
     min-height: 100%;
     height: auto !important;
     overflow-x: hidden !important;
-    overflow-y: hidden !important;
+    overflow-y: auto !important;
 }
 
 body {
     min-height: 100vh !important;
     height: auto !important;
     overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow-y: visible !important;
 }
 
 body.drawer-open,

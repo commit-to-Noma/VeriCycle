@@ -206,7 +206,7 @@ class RewardAgent:
                 return "finalized_no_transfer"
 
             # Get the user
-            user = User.query.get(activity.user_id)
+            user = db.session.get(User, activity.user_id)
             if not user:
                 error_msg = "Reward failed: user not found"
                 print(f"[REWARD AGENT ERROR] {error_msg}", flush=True)

@@ -332,6 +332,11 @@ App available at `http://127.0.0.1:5000`
 python -m agents.task_worker
 ```
 
+**6. Run Smoke Tests**
+```bash
+pytest -q
+```
+
 ### Demo Accounts
 
 | Email | Password | Role |

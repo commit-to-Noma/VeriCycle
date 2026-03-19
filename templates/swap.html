@@ -7,10 +7,12 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        /* Lock scrolling ONLY on this page to keep the "App" feel */
+        /* Keep global single-scroll behavior consistent with the rest of the app. */
         html, body {
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100%;
+            height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -24,7 +26,7 @@
                 <h2>Wallet & Exchange</h2>
                 <p>Manage your earnings and cash out to your bank.</p>
             </div>
-            <a href="{{ url_for('collector_dashboard') }}" class="back-link">← Back to Dashboard</a>
+            <a href="{{ url_for(role_home_endpoint or 'home') }}" class="back-link">← Back to Dashboard</a>
         </div>
 
         <div class="fintech-grid">
@@ -219,7 +221,7 @@
 
         txClose.addEventListener('click', () => {
             txModal.style.display = 'none';
-            if (redirectAfter) window.location.href = "{{ url_for('collector_dashboard') }}";
+            if (redirectAfter) window.location.href = "{{ url_for(role_home_endpoint or 'home') }}";
         });
 
         ecoInput.addEventListener('input', function() {

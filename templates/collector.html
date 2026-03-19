@@ -836,6 +836,7 @@
                 const confettiCanvas = document.getElementById('confetti-canvas');
                 const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
                 document.getElementById('success-modal').style.display = 'flex';
+                document.body.classList.add('modal-open');
                 modalConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
                 
                 document.getElementById('trigger-deposit-btn').disabled = false;
@@ -1113,6 +1114,7 @@
                 successModalEl.style.pointerEvents = 'none';
                 successModalEl.style.visibility = 'hidden';
             }
+            document.body.classList.remove('modal-open');
 
             // Find possible scroll containers (document + main dashboard)
             const docEl = document.documentElement;

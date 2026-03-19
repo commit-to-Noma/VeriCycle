@@ -141,7 +141,7 @@ def submit_to_hcs_for_activity(activity: Activity) -> str:
     Returns:
         Transaction ID string
     """
-    user = User.query.get(activity.user_id)
+    user = db.session.get(User, activity.user_id)
     base_env = os.environ.copy()
     primary_error = None
     from app import get_user_private_key
