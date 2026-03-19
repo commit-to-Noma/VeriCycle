@@ -2,9 +2,9 @@
 
 **Financial and Verification Infrastructure for the Informal Recycling Economy**
 
-VeriCycle is a Hedera-powered Web3 system that turns recycling activity into verifiable economic value.
+VeriCycle turns recycling into verifiable income.
 
-It replaces risky cash-based reward flows with EcoCoin, creates immutable Proof of Income for informal recyclers, and gives businesses, communities, and municipalities auditable sustainability records.
+It replaces risky cash-based reward flows with EcoCoin, creates immutable Proof of Income for informal recyclers, and gives businesses and municipalities auditable sustainability records.
 
 [![Built with Hedera](https://img.shields.io/badge/Built%20with-Hedera-000)](https://hedera.com) [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org) [![Flask](https://img.shields.io/badge/Flask-Web%20App-informational)](https://flask.palletsprojects.com)
 
@@ -31,13 +31,11 @@ It replaces risky cash-based reward flows with EcoCoin, creates immutable Proof 
 
 **VeriCycle upgrades survival work into a trusted, portable, and economically visible asset.**
 
-VeriCycle enables recyclers, businesses, communities, and recycling centers to coordinate recycling events and produce:
+VeriCycle enables:
 
 - **Proof of Income** for informal recyclers
-- **verified sustainability records** for businesses
-- **auditable recycling evidence** for communities and municipalities
-
-VeriCycle transforms recycling from an informal, cash-based system into a **trusted, trackable, and economically visible network**.
+- **Verified sustainability records** for businesses
+- **Auditable recycling evidence** for communities and municipalities
 
 ---
 
@@ -45,9 +43,7 @@ VeriCycle transforms recycling from an informal, cash-based system into a **trus
 
 Recycling already happens at scale, but it lacks trust, visibility, and verification.
 
-For informal recyclers, the issue is not willingness to work. It is that their labor remains economically invisible. Without Proof of Income or a portable work history, they stay excluded from formal finance, safer payment rails, and recognition.
-
-For informal recyclers, the problem is not effort. It is invisibility. Their work creates real environmental and economic value, but without proof of income or trusted records, that value cannot travel into formal systems.
+For informal recyclers, the problem is not effort. It is invisibility. Their work creates real environmental and economic value, but without Proof of Income or trusted records, that value cannot enter formal systems.
 
 ### Global Context
 - **15+ million people** globally rely on informal waste picking for survival (World Bank)
@@ -105,6 +101,8 @@ Recyclers can:
 
 This ensures the system reflects real-world behavior, not just structured workflows.
 
+VeriCycle does not digitize recycling. It makes it economically visible.
+
 ---
 
 ## Why Blockchain? Why Not Web2 Alone?
@@ -136,9 +134,7 @@ VeriCycle leverages:
 
 ### Why Hedera is the Perfect Fit
 
-Hedera is not used as decoration. It is the trust layer that lets multiple independent parties rely on the same recycling record without needing to trust each other directly.
-
-Hedera is essential because VeriCycle involves multiple independent stakeholders who need one shared source of truth: recyclers, centers, businesses, and municipalities.
+Hedera is the shared trust layer that allows independent stakeholders - recyclers, centers, businesses, and municipalities - to rely on the same verified record without trusting each other directly.
 
 ✅ **Low transaction costs** — supports high-frequency real-world events  
 ✅ **Fast finality** — near real-time verification  
@@ -170,7 +166,7 @@ VeriCycle drives:
 
 ## Who Benefits
 
-### 🔄 Recyclers
+### 🔄 Recyclers (Primary Impact)
 - **Earn EcoCoin** → Predictable income signal
 - **Build Proof of Income** → Financial inclusion potential  
 - **Reduce exploitation** → Verified, immutable records
@@ -273,6 +269,8 @@ A **fully working system**, not a concept or prototype.
 ---
 
 ## Tech Stack
+
+**Built for real-world deployment, not experimentation.**
 
 ### Backend
 - **Flask** — web application framework
