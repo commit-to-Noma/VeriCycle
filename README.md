@@ -1,8 +1,10 @@
 # VeriCycle
 
-**Verification Infrastructure for the Circular Economy**
+**Financial and Verification Infrastructure for the Informal Recycling Economy**
 
-VeriCycle is a Web3 verification system that turns real-world recycling activity into verifiable economic value using Hedera.
+VeriCycle is a Hedera-powered Web3 system that turns recycling activity into verifiable economic value.
+
+It replaces risky cash-based reward flows with EcoCoin, creates immutable Proof of Income for informal recyclers, and gives businesses, communities, and municipalities auditable sustainability records.
 
 [![Built with Hedera](https://img.shields.io/badge/Built%20with-Hedera-000)](https://hedera.com) [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org) [![Flask](https://img.shields.io/badge/Flask-Web%20App-informational)](https://flask.palletsprojects.com)
 
@@ -21,14 +23,17 @@ VeriCycle is a Web3 verification system that turns real-world recycling activity
 - [Quick Start](#setup)
 - [Roadmap](#roadmap)
 - [Vision](#vision)
+- [Architecture](#architecture)
 
 ---
 
 ## Overview
 
+**VeriCycle upgrades survival work into a trusted, portable, and economically visible asset.**
+
 VeriCycle enables recyclers, businesses, communities, and recycling centers to coordinate recycling events and produce:
 
-- **proof-of-income** for informal recyclers
+- **Proof of Income** for informal recyclers
 - **verified sustainability records** for businesses
 - **auditable recycling evidence** for communities and municipalities
 
@@ -39,6 +44,10 @@ VeriCycle transforms recycling from an informal, cash-based system into a **trus
 ## The Problem
 
 Recycling already happens at scale, but it lacks trust, visibility, and verification.
+
+For informal recyclers, the issue is not willingness to work. It is that their labor remains economically invisible. Without Proof of Income or a portable work history, they stay excluded from formal finance, safer payment rails, and recognition.
+
+For informal recyclers, the problem is not effort. It is invisibility. Their work creates real environmental and economic value, but without proof of income or trusted records, that value cannot travel into formal systems.
 
 ### Global Context
 - **15+ million people** globally rely on informal waste picking for survival (World Bank)
@@ -80,9 +89,13 @@ VeriCycle creates a verification network for recycling that connects:
 
 ✅ **A verified record** — immutable, timestamped event log  
 ✅ **A Hedera-anchored transaction** — on-chain proof  
-✅ **A proof-of-income entry** — supports financial inclusion  
+✅ **A Proof of Income entry** — supports financial inclusion  
 ✅ **A sustainability proof** — enables ESG reporting  
 ✅ **A reward-triggering event** — earns EcoCoin  
+
+### Solution Summary
+
+VeriCycle converts recycling labor into a portable economic record: verifiable work history, immutable Proof of Income, and auditable sustainability evidence that can be trusted across institutions.
 
 ### Flexibility by Design
 
@@ -123,6 +136,10 @@ VeriCycle leverages:
 
 ### Why Hedera is the Perfect Fit
 
+Hedera is not used as decoration. It is the trust layer that lets multiple independent parties rely on the same recycling record without needing to trust each other directly.
+
+Hedera is essential because VeriCycle involves multiple independent stakeholders who need one shared source of truth: recyclers, centers, businesses, and municipalities.
+
 ✅ **Low transaction costs** — supports high-frequency real-world events  
 ✅ **Fast finality** — near real-time verification  
 ✅ **Energy efficiency** — aligned with sustainability mission  
@@ -155,7 +172,7 @@ VeriCycle drives:
 
 ### 🔄 Recyclers
 - **Earn EcoCoin** → Predictable income signal
-- **Build proof-of-income** → Financial inclusion potential  
+- **Build Proof of Income** → Financial inclusion potential  
 - **Reduce exploitation** → Verified, immutable records
 
 ### 🏢 Businesses
@@ -416,9 +433,22 @@ VeriCycle makes recycling:
 
 - **Visible** — tracked from collection to verification
 - **Trusted** — backed by Hedera consensus  
-- **Economically meaningful** — generates proof-of-income and ESG value
+- **Economically meaningful** — generates Proof of Income and ESG value
 
 Every recycling event deserves to be recorded, verified, and valued.
+
+## Architecture
+
+VeriCycle runs a hybrid architecture:
+
+| Layer | Responsibility |
+|-------|----------------|
+| Application Layer | Flask app, role-based workflows, proof generation |
+| Coordination Layer | Agent pipeline: Collector -> Verifier -> Logbook -> Reward -> Compliance |
+| Trust Layer | Hedera HCS for immutable event logs, HTS for EcoCoin reward rails |
+| Evidence Layer | Proof bundles, business sustainability records, recycler Proof of Income history |
+
+This separation keeps user experience simple while preserving cross-party trust and auditability.
 
 ---
 
