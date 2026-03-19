@@ -1032,7 +1032,7 @@ def signup():
     if request.method == 'GET':
         return render_template('signup.html', active_page='signup')
 
-    email = (request.form.get('email') or '').strip().lower()
+    email = (request.form.get('email') or request.form.get('username') or '').strip().lower()
     password = request.form.get('password') or ''
     if not email or not password:
         flash('Email and password are required for signup.', 'error')
@@ -1177,7 +1177,7 @@ def login():
     if request.method == 'GET':
         return render_template('login.html', active_page='login')
 
-    email = (request.form.get('email') or '').strip().lower()
+    email = (request.form.get('email') or request.form.get('username') or '').strip().lower()
     password = request.form.get('password') or ''
     requested_role = normalize_role_value(request.form.get('role') or '')
 
@@ -1401,8 +1401,8 @@ def collector_dashboard():
 @app.route('/wallet')
 @login_required
 def wallet():
-    if effective_role(current_user) != 'recycler':
-        return redirect(url_for('home'))
+    if not can_accept_opportunity_recycler(current_user):
+        return redirect(url_for(access_denied_redirect_for(current_user)))
 
     wallet_snapshot = build_rewards_wallet_snapshot(current_user)
     return render_template(

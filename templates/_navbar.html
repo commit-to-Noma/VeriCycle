@@ -45,6 +45,7 @@
         <a href="{{ url_for('home') }}">Home</a>
         {% if current_effective_role == 'recycler' %}
             <a href="{{ url_for('collector_dashboard') }}">Recycler Hub</a>
+            <a href="{{ url_for('wallet') }}">Rewards Wallet</a>
         {% elif current_effective_role == 'business' %}
             <a href="{{ url_for('business_dashboard') }}">Business Hub</a>
         {% elif current_effective_role == 'resident' %}

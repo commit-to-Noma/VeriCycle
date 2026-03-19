@@ -5,7 +5,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
         <div class="dashboard-header">
             <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
-            <p><strong>Recycler Hub</strong> · Find recycling opportunities, submit recycling events, earn EcoCoin, and build proof of income.</p>
+            <p><strong>Recycler Hub</strong> · Find recycling opportunities, submit recycling events, grow your Rewards Wallet, and build proof of income.</p>
         </div>
 
         <!-- Agent Status: System Health Summary -->
@@ -19,10 +19,10 @@
 
         <section class="recycler-shell">
             <div class="recycler-hero-row">
-                <div class="kpi-card metric-card">
+                <div class="kpi-card">
                     <h4>Current Balance</h4>
                     <p class="kpi-value" id="kpi-ecocoin">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</p>
-                    <a href="{{ url_for('wallet') }}">View Wallet</a>
+                    <a href="/wallet" class="btn-modern-pill">View Wallet</a>
                 </div>
 
                 <div class="kpi-card metric-card">
@@ -43,7 +43,7 @@
                 <div class="chart-card metric-card">
                     <h3>
                         Neighborhood Goal
-                        <span class="tooltip" data-tooltip="Your neighborhood (Sandton) is a high-activity area, so you earn a +2.5% bonus on all EcoCoin payouts!">ⓘ</span>
+                        <span class="tooltip" data-tooltip="Your neighborhood (Sandton) is a high-activity area, so you earn a +2.5% bonus on Rewards Wallet payouts!">ⓘ</span>
                     </h3>
                     <p class="chart-label" id="neighborhood-goal-label">-- / -- kg</p>
 
@@ -207,7 +207,7 @@
                         </button>
                         <a href="#pickup-opportunities-card" class="btn-secondary">View Open Pickup Opportunities</a>
                         <a href="{{ url_for('swap') }}" class="btn-secondary">Open Wallet & Exchange</a>
-                        <p class="mockup-subtitle">Recycler Hub → Verification Center → Hedera proof → EcoCoin reward → Compliance</p>
+                        <p class="mockup-subtitle">Recycler Hub → Verification Center → Hedera proof → Reward payout → Compliance</p>
                     </div>
                 </div>
             </div>
@@ -223,7 +223,7 @@
                     <li>Press the "Generate" button below.</li>
                     <li>Show your unique QR code to the recycling center.</li>
                     <li>The center will scan your code and weigh your materials.</li>
-                    <li>Your EcoCoin reward will be deposited instantly!</li>
+                    <li>Your reward will be deposited instantly!</li>
                 </ol>
                 <button class="btn-primary" id="generate-btn">Generate Drop-off QR Code</button>
             </div>
@@ -530,7 +530,7 @@
                     const notes = row.notes ? `<div style="margin-top: 0.35rem; color: #aaa;">${escapeHtml(row.notes)}</div>` : '';
 
                     return `
-                        <div class="card" style="margin-bottom: 0.75rem; padding: 1rem;">
+                        <div class="card job-item" style="margin-bottom: 0.75rem; padding: 1rem;">
                             <strong>${sourceLabel} Pickup</strong><br>
                             <span>${material} · ${weight} kg</span><br>
                             <span>${location}</span><br>
@@ -586,7 +586,7 @@
                     const linkedActivity = row.linked_activity_id ? `<div style="margin-top:0.35rem; color:#8fb3ff;">Pipeline activity #${Number(row.linked_activity_id)}</div>` : '';
 
                     return `
-                        <div class="card" style="margin-bottom: 0.75rem; padding: 1rem;">
+                        <div class="card job-item" style="margin-bottom: 0.75rem; padding: 1rem;">
                             <strong>${sourceLabel} Pickup</strong><br>
                             <span>${material} · est. ${estimated.toFixed(1)} kg</span><br>
                             <span>${location}</span><br>
@@ -1168,7 +1168,7 @@
             <div class="proof-modal-grid">
                 <section class="proof-modal-panel proof-modal-reward-panel">
                     <span class="section-kicker">Reward Preview</span>
-                    <h3>EcoCoin payout prepared</h3>
+                    <h3>Reward payout prepared</h3>
 
                     <div class="reward-summary proof-reward-summary">
                         <p><span>Base Reward (10.0kg Cans)</span><strong>500.00 ECO</strong></p>

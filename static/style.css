@@ -7530,6 +7530,79 @@ main.container-wide.app-dashboard,
     padding: 2rem 0 3rem 0;
 }
 
+.auth-modal-backdrop {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(11, 19, 37, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.auth-card {
+    background-color: #151f32;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.auth-card input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 14px;
+    border-radius: 8px;
+    border: none;
+    background: #1a2230;
+    color: white;
+}
+
+.auth-card button {
+    width: 100%;
+    padding: 12px;
+    background: #00c896;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.btn-modern-pill {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 6px 16px;
+    background-color: rgba(0, 255, 150, 0.15);
+    color: #00ff96;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.btn-modern-pill:hover {
+    background-color: rgba(0, 255, 150, 0.3);
+    color: #ffffff;
+}
+
+.job-item {
+    height: auto !important;
+    min-height: min-content !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column;
+    padding-bottom: 24px !important;
+}
+
+.job-item input {
+    width: 100%;
+    margin-top: 8px;
+}
+
 .auth-card-elevated {
     background: rgba(15, 23, 42, 0.82);
     border: 1px solid rgba(148, 163, 184, 0.24);

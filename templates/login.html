@@ -8,11 +8,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="dark-theme auth-page">
-    <main class="auth-page-wrapper" id="main-content">
-        <section class="auth-card">
-            <p class="auth-kicker">VeriCycle Access</p>
-            <h1>Welcome Back</h1>
-            <p class="auth-subtitle">Sign in to continue to your role dashboard and proof tools.</p>
+    <div class="auth-modal-backdrop" onclick="window.location.href='/home'">
+        <div class="auth-card" onclick="event.stopPropagation()">
+            <h2>Welcome Back</h2>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -24,35 +22,20 @@
                 {% endif %}
             {% endwith %}
 
-            <form action="{{ url_for('login') }}" method="POST" class="verify-form">
+            <form method="POST" action="{{ url_for('login') }}">
                 <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
 
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" autocomplete="email" required>
-                </div>
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
 
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" autocomplete="current-password" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="login-role">Log in as</label>
-                    <select id="login-role" name="role" required>
-                        <option value="recycler">Recycler</option>
-                        <option value="business">Business</option>
-                        <option value="resident">Resident</option>
-                        <option value="center">Center</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn-primary-large btn-form">Log In</button>
+                <button type="submit">Log In</button>
             </form>
 
-            <p class="auth-switch">Need an account? <a href="{{ url_for('signup') }}" class="link-secondary">Create one</a></p>
-        </section>
-    </main>
+            <p>
+                Don't have an account?
+                <a href="/signup">Create one</a>
+            </p>
+        </div>
+    </div>
 </body>
 </html>
