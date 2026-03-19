@@ -40,8 +40,8 @@
 
             <div class="hero-cta-row">
                 {% if not current_user.is_authenticated %}
-                    <a href="#" class="btn-primary-large js-open-auth" data-form="login">Open Live Demo</a>
-                    <a href="#how-it-works" class="btn-secondary">See How Proof Works</a>
+                    <a href="{{ url_for('login') }}" class="btn-primary-large">Open Live Demo</a>
+                    <a href="{{ url_for('signup') }}" class="btn-secondary">Create Account or See How Proof Works</a>
                 {% else %}
                     {% if current_effective_role == 'center' %}
                         <a href="{{ url_for('center_dashboard') }}" class="btn-primary-large">Go to Verification Center</a>
@@ -73,6 +73,21 @@
                 <div class="trust-chip">
                     <span class="trust-chip-icon">📄</span>
                     <span class="trust-chip-label">Proof Ready Bundles</span>
+                </div>
+            </div>
+
+            <div class="trust-strip" aria-label="Stakeholders served by VeriCycle">
+                <div class="trust-chip">
+                    <span class="trust-chip-label">Recyclers</span>
+                </div>
+                <div class="trust-chip">
+                    <span class="trust-chip-label">Businesses</span>
+                </div>
+                <div class="trust-chip">
+                    <span class="trust-chip-label">Communities</span>
+                </div>
+                <div class="trust-chip">
+                    <span class="trust-chip-label">Centers</span>
                 </div>
             </div>
 
@@ -139,8 +154,8 @@
             </div>
             {% if not current_user.is_authenticated %}
                 <div class="cta-buttons">
-                    <a href="#" class="btn-primary-large js-open-auth" data-form="signup">Create Your Account</a>
-                    <p>Already have an account? <a href="#" class="link-secondary js-open-auth" data-form="login">Log In here</a></p>
+                    <a href="{{ url_for('signup') }}" class="btn-primary-large">Create Your Account</a>
+                    <p>Already have an account? <a href="{{ url_for('login') }}" class="link-secondary">Log In here</a></p>
                 </div>
             {% endif %}
         </div>
@@ -251,118 +266,6 @@
             </div>
         </div>
     </section>
-
-    <!-- POP-UP (MODAL) -->
-    <div class="modal-overlay" id="auth-modal">
-        <div class="card modal-content">
-            <button class="modal-close js-close-auth">&times;</button>
-            <div id="signup-form">
-                <h2>Create Your Account</h2>
-                <form action="{{ url_for('signup') }}" method="POST" class="verify-form">
-                    <div class="form-group">
-                        <label>Register as:</label>
-                        <div class="role-selector">
-                            <button type="button" class="role-btn active" data-role="recycler">Recycler</button>
-                            <button type="button" class="role-btn" data-role="business">Business</button>
-                            <button type="button" class="role-btn" data-role="resident">Resident</button>
-                            <button type="button" class="role-btn" data-role="center">Center</button>
-                            <button type="button" class="role-btn" data-role="admin">Admin</button>
-                        </div>
-                        <input type="hidden" id="role-input" name="role" value="recycler">
-                    </div>
-                    <div class="form-group">
-                        <label for="signup-email">Email:</label>
-                        <input type="email" id="signup-email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signup-password">Password:</label>
-                        <input type="password" id="signup-password" name="password" required>
-                    </div>
-                    <button type="submit" class="btn-primary-large btn-form">Create Account</button>
-                </form>
-                <p>Already have an account? <a href="#" class="link-secondary js-toggle-auth">Log In</a></p>
-            </div>
-            <div id="login-form" style="display: none;">
-                <h2>Welcome Back</h2>
-                <form action="{{ url_for('login') }}" method="POST" class="verify-form">
-                    <div class="form-group">
-                        <label for="login-email">Email:</label>
-                        <input type="email" id="login-email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="login-password">Password:</label>
-                        <input type="password" id="login-password" name="password" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="login-role">Log in as:</label>
-                        <select id="login-role" name="role" required>
-                            <option value="recycler">Recycler</option>
-                            <option value="business">Business</option>
-                            <option value="resident">Resident</option>
-                            <option value="center">Center</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-primary-large btn-form">Log In</button>
-                </form>
-                <p>Don't have an account? <a href="#" class="link-secondary js-toggle-auth">Sign Up</a></p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const modal = document.getElementById('auth-modal');
-        const allOpenButtons = document.querySelectorAll('.js-open-auth');
-        const allCloseButtons = document.querySelectorAll('.js-close-auth');
-        const allToggleLinks = document.querySelectorAll('.js-toggle-auth');
-        const loginForm = document.getElementById('login-form');
-        const signupForm = document.getElementById('signup-form');
-
-        const openModal = function(e) { e.preventDefault(); const targetForm = this.dataset.form; if (targetForm === 'login') { loginForm.style.display = 'block'; signupForm.style.display = 'none'; } else { loginForm.style.display = 'none'; signupForm.style.display = 'block'; } modal.style.display = 'flex'; document.body.classList.add('modal-open'); };
-        const closeModal = function(e) { e.preventDefault(); modal.style.display = 'none'; document.body.classList.remove('modal-open'); };
-        const toggleForms = function(e) { e.preventDefault(); if (loginForm.style.display === 'none') { loginForm.style.display = 'block'; signupForm.style.display = 'none'; } else { loginForm.style.display = 'none'; signupForm.style.display = 'block'; } };
-
-        allOpenButtons.forEach(btn => btn.addEventListener('click', openModal));
-        allCloseButtons.forEach(btn => btn.addEventListener('click', closeModal));
-        allToggleLinks.forEach(link => link.addEventListener('click', toggleForms));
-
-        const roleButtons = document.querySelectorAll('.role-btn');
-        const roleInput = document.getElementById('role-input');
-        roleButtons.forEach(button => { button.addEventListener('click', function() { roleButtons.forEach(btn => btn.classList.remove('active')); this.classList.add('active'); if (roleInput) roleInput.value = this.dataset.role; }); });
-
-        // ===== PREVENT DOUBLE FORM SUBMISSION =====
-        // Disable submit button after first click to prevent duplicate Hedera account creation
-        const signupFormElement = signupForm.querySelector('form');
-        const loginFormElement = loginForm.querySelector('form');
-
-        if (signupFormElement) {
-            signupFormElement.addEventListener('submit', function(e) {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                if (submitBtn && !submitBtn.disabled) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Creating Account...';
-                }
-            });
-        }
-
-        if (loginFormElement) {
-            loginFormElement.addEventListener('submit', function(e) {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                if (submitBtn && !submitBtn.disabled) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Logging In...';
-                }
-            });
-        }
-
-        const errorMessages = document.querySelectorAll('.flash-bar .flash-message.error');
-        if (errorMessages && errorMessages.length > 0) {
-            modal.style.display = 'flex';
-            const errorMsg = errorMessages[0].textContent || '';
-            if (errorMsg.includes('Login') || errorMsg.includes('log in') || errorMsg.includes('must be logged in')) { loginForm.style.display = 'block'; signupForm.style.display = 'none'; } else { loginForm.style.display = 'none'; signupForm.style.display = 'block'; }
-        }
-        if (window.location.hash === '#signup') { modal.style.display = 'flex'; loginForm.style.display = 'none'; signupForm.style.display = 'block'; }
-    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

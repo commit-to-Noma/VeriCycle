@@ -4,16 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - VeriCycle</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <main>
-        <h2>Redirecting...</h2>
-        <p>This page now uses the home page auth modal.</p>
-        <p>If you are not redirected automatically, <a href="{{ url_for('home') }}#signup">open signup</a>.</p>
-    </main>
+<body class="dark-theme auth-page">
+    {% include '_navbar.html' %}
 
-    <script>
-        window.location.href = "{{ url_for('home') }}#signup";
-    </script>
+    <main class="auth-shell" id="main-content">
+        <section class="card auth-card auth-card-elevated">
+            <p class="auth-kicker">Create Account</p>
+            <h1>Join VeriCycle</h1>
+            <p class="auth-subtitle">Open your account to submit events, verify activity, and build proof-ready records.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-bar">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('signup') }}" method="POST" class="verify-form">
+                <div class="form-group">
+                    <label for="signup-role">Register as</label>
+                    <select id="signup-role" name="role" required>
+                        <option value="recycler">Recycler</option>
+                        <option value="business">Business</option>
+                        <option value="resident">Resident</option>
+                        <option value="center">Center</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" name="email" autocomplete="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" name="password" autocomplete="new-password" required>
+                </div>
+
+                <button type="submit" class="btn-primary-large btn-form">Create Account</button>
+            </form>
+
+            <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}" class="link-secondary">Log in</a></p>
+        </section>
+    </main>
 </body>
 </html>

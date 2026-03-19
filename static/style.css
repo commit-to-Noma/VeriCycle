@@ -7386,4 +7386,144 @@ main.container-wide.app-dashboard,
     overflow-y: auto;
 }
 
+/* === Phase 7 UI polish: public header, unified auth pages, recycler card flow === */
+.public-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1300;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(15, 23, 42, 0.7));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+}
+
+.public-header-shell {
+    width: min(1200px, 94%);
+    min-height: 72px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.public-auth-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.public-auth-actions .nav-button-signup {
+    background: rgba(16, 185, 129, 0.16);
+    border-color: rgba(16, 185, 129, 0.24);
+    color: #d1fae5;
+}
+
+.auth-page {
+    background:
+        radial-gradient(circle at 15% 0%, rgba(56, 189, 248, 0.12), transparent 38%),
+        radial-gradient(circle at 85% 10%, rgba(16, 185, 129, 0.14), transparent 42%),
+        #0b1220;
+}
+
+.auth-shell {
+    width: min(520px, 92vw);
+    margin: 0 auto;
+    padding: 2rem 0 3rem 0;
+}
+
+.auth-card-elevated {
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    box-shadow: 0 24px 60px rgba(2, 6, 23, 0.5);
+    border-radius: 20px;
+    padding: 1.5rem;
+}
+
+.auth-card-elevated h1 {
+    margin: 0;
+    font-size: clamp(1.45rem, 2.2vw, 1.85rem);
+    color: #e6edf7;
+}
+
+.auth-kicker {
+    margin: 0 0 0.45rem 0;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+}
+
+.auth-subtitle {
+    margin: 0.6rem 0 1.2rem 0;
+    color: #94a3b8;
+    line-height: 1.55;
+}
+
+.auth-switch {
+    margin: 1rem 0 0 0;
+    color: #cbd5e1;
+    text-align: center;
+}
+
+.auth-card-elevated .verify-form input,
+.auth-card-elevated .verify-form select {
+    background: rgba(30, 41, 59, 0.92);
+    border-color: rgba(148, 163, 184, 0.28);
+    color: #e6edf7;
+}
+
+.auth-card-elevated .verify-form input::placeholder {
+    color: #94a3b8;
+}
+
+.auth-card-elevated .verify-form input:focus,
+.auth-card-elevated .verify-form select:focus {
+    border-color: rgba(34, 197, 94, 0.65);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.18);
+}
+
+.recycler-main-grid {
+    row-gap: 24px;
+    grid-auto-rows: minmax(min-content, max-content);
+}
+
+.recycler-main-grid > .card {
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+}
+
+#pickup-opportunities-list,
+#accepted-pickups-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#pickup-opportunities-list .card,
+#accepted-pickups-list .card {
+    margin: 0;
+    height: auto;
+    min-height: 0;
+}
+
+@media (max-width: 760px) {
+    .public-header-shell {
+        width: min(1200px, 96%);
+        min-height: 66px;
+    }
+
+    .public-auth-actions {
+        gap: 8px;
+    }
+
+    .public-auth-actions .nav-button {
+        padding: 9px 11px;
+        font-size: 0.9rem;
+    }
+}
+
 

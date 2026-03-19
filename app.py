@@ -4,7 +4,6 @@ VeriCycle - Main Flask Application (app.py)
 ================================================================================
 This is the "brain" of the VeriCycle application. It handles:
 - All server-side logic and routing.
-- Database models (using Flask-SQLAlchemy).
 - User authentication (signup, login, logout) using Flask-Login & Bcrypt.
 - Securely calling the Hedera JavaScript "engine" (using subprocess).
 - Forcing profile completion before app access.
@@ -339,15 +338,13 @@ def role_home_endpoint_for(user) -> str:
 
 def access_denied_redirect_for(user) -> str:
     """Access control redirect: directs user when they try to access restricted pages.
-    Business users get `/request-pickup` as their working area,
-    resident users get `/household` as their working area,
-    while others go to their primary dashboard.
+    Routes users to their role dashboard for silent wrong-role redirects.
     """
     role = effective_role(user)
     if role == "business":
-        return "request_pickup"  # Business working area
+        return "business_dashboard"
     if role == "resident":
-        return "household_dashboard"  # Resident working area
+        return "household_dashboard"
     if role == "center":
         return "center_dashboard"
     if role == "admin":
@@ -965,18 +962,21 @@ def mirror_fetch_latest_topic_messages(topic_id: str, limit: int = 10):
 # - Routes handling user signup, login, logout and account creation.
 # -----------------------------------------------------------------
 
-@app.route("/signup", methods=['POST'])
+@app.route("/signup", methods=['GET', 'POST'])
 def signup():
+    if request.method == 'GET':
+        return render_template('signup.html', active_page='signup')
+
     email = (request.form.get('email') or '').strip().lower()
     password = request.form.get('password') or ''
     if not email or not password:
         flash('Email and password are required for signup.', 'error')
-        return redirect(url_for('home', _anchor='auth-modal'))
+        return redirect(url_for('signup'))
 
     requested_role = normalize_role_value(request.form.get('role') or 'recycler')
     if requested_role not in {'recycler', 'business', 'resident', 'center', 'admin'}:
         flash('Invalid role selected for signup.', 'error')
-        return redirect(url_for('home', _anchor='auth-modal'))
+        return redirect(url_for('signup'))
 
     # Phase 2 compatibility: keep recycler signups persisted as collector.
     role = 'collector' if requested_role == 'recycler' else requested_role
@@ -990,7 +990,7 @@ def signup():
     if existing_user:
         print(f"[SIGNUP] Email {email} already exists, rejecting signup")
         flash('That email is already taken. Please log in.', 'error')
-        return redirect(url_for('home', _anchor='auth-modal'))
+        return redirect(url_for('signup'))
     
     print(f"[SIGNUP] Email {email} is new. Proceeding with account creation for role={role}")
 
@@ -1178,7 +1178,7 @@ def login():
             flash('No account found for that email. Please sign up first.', 'error')
             print(f"[LOGIN] No account found for email={email}")
 
-        return redirect(url_for('home', _anchor='auth-modal'))
+        return redirect(url_for('login'))
 
 @app.route("/logout")
 @login_required 
@@ -1339,7 +1339,7 @@ def request_pickup():
 def business_dashboard():
     role = effective_role(current_user)
     if role != 'business':
-        return redirect(url_for('home'))
+        return redirect(url_for(access_denied_redirect_for(current_user)))
 
     requests = (
         PickupOpportunity.query

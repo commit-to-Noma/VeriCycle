@@ -4,46 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log In - VeriCycle</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="dark-theme"> <!-- Dark theme body -->
+<body class="dark-theme auth-page">
+    {% include '_navbar.html' %}
 
-    <header class="navbar">
-        <div class="container">
-            <h1 class="logo">VeriCycle</h1>
-            <nav>
-                <a href="{{ url_for('home') }}" class="nav-button">Home</a>
-                <!-- Open modal signup instead of navigating to a separate page -->
-                <a href="#" class="nav-button js-open-auth" data-form="signup">Sign Up</a>
-            </nav>
-        </div>
-    </header>
+    <main class="auth-shell" id="main-content">
+        <section class="card auth-card auth-card-elevated">
+            <p class="auth-kicker">VeriCycle Access</p>
+            <h1>Welcome Back</h1>
+            <p class="auth-subtitle">Sign in to continue to your role dashboard and proof tools.</p>
 
-    <main class="container">
-        <div class="card auth-card">
-            <h2>Welcome Back</h2>
-
-            <!-- This is where the "Login Unsuccessful" message will appear -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash-message {{ category }}">{{ message }}</div>
-                    {% endfor %}
+                    <div class="flash-bar">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
                 {% endif %}
             {% endwith %}
 
             <form action="{{ url_for('login') }}" method="POST" class="verify-form">
                 <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+
                 <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" name="email" required>
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" autocomplete="email" required>
                 </div>
+
                 <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
                 </div>
+
                 <div class="form-group">
-                    <label for="login-role">Log in as:</label>
+                    <label for="login-role">Log in as</label>
                     <select id="login-role" name="role" required>
                         <option value="recycler">Recycler</option>
                         <option value="business">Business</option>
@@ -52,13 +49,12 @@
                         <option value="admin">Admin</option>
                     </select>
                 </div>
+
                 <button type="submit" class="btn-primary-large btn-form">Log In</button>
             </form>
-            <p>
-                Don't have an account? 
-                <a href="#" class="link-secondary js-open-auth" data-form="signup">Sign Up here</a>
-            </p>
-        </div>
+
+            <p class="auth-switch">Need an account? <a href="{{ url_for('signup') }}" class="link-secondary">Create one</a></p>
+        </section>
     </main>
 </body>
 </html>
