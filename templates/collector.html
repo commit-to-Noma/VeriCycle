@@ -20,11 +20,9 @@
         <section class="recycler-shell">
             <div class="recycler-hero-row">
                 <div class="kpi-card metric-card">
-                    <h3>
-                        Current EcoCoin Balance
-                        <span class="tooltip" data-tooltip="This shows your current account balance available to spend or withdraw.">ⓘ</span>
-                    </h3>
-                    <p class="kpi-value" id="kpi-ecocoin">--</p>
+                    <h4>Current Balance</h4>
+                    <p class="kpi-value" id="kpi-ecocoin">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</p>
+                    <a href="{{ url_for('wallet') }}">View Wallet</a>
                 </div>
 
                 <div class="kpi-card metric-card">

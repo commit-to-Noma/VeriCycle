@@ -8,10 +8,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="dark-theme auth-page">
-    {% include '_navbar.html' %}
-
-    <main class="auth-shell" id="main-content">
-        <section class="card auth-card auth-card-elevated">
+    <main class="auth-page-wrapper" id="main-content">
+        <section class="auth-card">
             <p class="auth-kicker">VeriCycle Access</p>
             <h1>Welcome Back</h1>
             <p class="auth-subtitle">Sign in to continue to your role dashboard and proof tools.</p>

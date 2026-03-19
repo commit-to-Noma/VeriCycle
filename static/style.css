@@ -2547,12 +2547,10 @@ input[type="number"] {
 /* Back-link (used on sub-pages to return to dashboard) */
 .back-link {
     display: inline-block;
-    color: #aaa;
+    margin-bottom: 20px;
+    color: #00c896;
     text-decoration: none;
-    margin-bottom: 1rem;
-    font-weight: 500;
 }
-.back-link:hover { color: #4CAF50; }
 
 /* --- Request Pickup Page (scoped) --- */
 .request-pickup-page .pickup-form-grid {
@@ -4294,6 +4292,105 @@ body.dark-theme {
     display: flex;
     flex-direction: column;
     gap: var(--space-8);
+}
+
+.ecocoin-page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin: 10px 0 40px;
+}
+
+.eco-balance-card {
+    background: #121821;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 2px;
+}
+
+.eco-amount {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 8px 0;
+}
+
+.eco-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.eco-metrics > div {
+    background: #1a2230;
+    padding: 14px;
+    border-radius: 8px;
+}
+
+.eco-history {
+    background: #111827;
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.eco-history .eco-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #263246;
+}
+
+.eco-history .eco-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.eco-row a {
+    color: #57d4a8;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.eco-exchange {
+    margin-top: 4px;
+}
+
+.exchange-option {
+    background: #1a2230;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.auth-page-wrapper {
+    background-color: #0b1325;
+    min-height: 100vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+}
+
+.auth-card {
+    background: #121821;
+    padding: 40px;
+    border-radius: 12px;
+    width: 360px;
+    border: 1px solid #243044;
+    box-sizing: border-box;
+}
+
+@media (max-width: 800px) {
+    .eco-history .eco-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
 .metric-card {
@@ -7508,6 +7605,27 @@ main.container-wide.app-dashboard,
     margin: 0;
     height: auto;
     min-height: 0;
+}
+
+.dashboard-card {
+    height: auto !important;
+    min-height: fit-content !important;
+    overflow: visible !important;
+    margin-bottom: 2.5rem !important;
+    padding-bottom: 1.5rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    gap: 24px;
+}
+
+.card {
+    height: auto !important;
+    min-height: fit-content !important;
+    overflow: visible !important;
+    margin-bottom: 2.5rem !important;
+    padding-bottom: 1.5rem;
 }
 
 @media (max-width: 760px) {

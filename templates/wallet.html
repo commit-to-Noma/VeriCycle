@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ecocoin-page">
+    <a href="/collector" class="back-link">← Back to Recycler Hub</a>
+
+    <h1>Rewards Wallet</h1>
+
+    <div class="eco-balance-card">
+        <h2>Your Balance</h2>
+        <p class="eco-amount">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</p>
+    </div>
+
+    <div class="eco-metrics">
+        <div>Verified Events: {{ wallet_verified_events }}</div>
+        <div>Proof Records: {{ wallet_proof_records }}</div>
+        <div>Total Earned: {{ "{:,.0f}".format(wallet_total_earned or 0) }} ECO</div>
+    </div>
+
+    <div class="eco-history">
+        <h3>Recent Rewards</h3>
+
+        {% for reward in wallet_recent_rewards %}
+            <div class="eco-row">
+                <span>+{{ "{:,.0f}".format(reward.amount or 0) }} ECO</span>
+                <span>{{ reward.description }}</span>
+                <a href="https://hashscan.io/testnet/transaction/{{ reward.tx_id }}" target="_blank" rel="noopener">View on Hedera</a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="eco-exchange">
+        <h3>Exchange Rewards</h3>
+
+        <div class="exchange-option">
+            <strong>Bank Transfer</strong>
+            <p>100 ECO ~ R10 (demo rate)</p>
+        </div>
+
+        <div class="exchange-option">
+            <strong>Airtime / Data</strong>
+            <p>Instant mobile rewards</p>
+        </div>
+
+        <div class="exchange-option">
+            <strong>Retail Vouchers</strong>
+            <p>Shoprite / Pick n Pay (demo)</p>
+        </div>
+
+        <small>*Demo conversion rates for hackathon</small>
+    </div>
+</div>
+{% endblock %}
