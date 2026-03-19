@@ -101,7 +101,7 @@
 	<section class="card selected-proof-card">
 		<h2>Selected Event Proof</h2>
 		<div id="selected-proof-panel" class="selected-proof-panel">
-			<p>Select any event and click View proof or Open proof bundle to inspect evidence here.</p>
+			<p>Select any event and click View Proof or Open Proof Bundle to inspect evidence here.</p>
 		</div>
 	</section>
 </section>
@@ -445,8 +445,8 @@ function loadFlaggedEvents() {
 					<div class="flagged-meta">Timestamp: ${escapeHtml(timestamp)} · Amount: ${escapeHtml(row.amount ?? '—')}</div>
 					<div class="flagged-signals">${signalsHtml || '<span class="signal-chip">No signals</span>'}</div>
 					<div class="actions flagged-actions">
-						<button class="btn-secondary" onclick="openProofBundleInPanel(${row.id}, '${row.proof_bundle_url}')">View proof</button>
-						<a href="${row.proof_bundle_url}" target="_blank" rel="noopener">Open proof bundle</a>
+						<button class="btn-secondary" onclick="openProofBundleInPanel(${row.id}, '${row.proof_bundle_url}')">View Proof</button>
+						<a href="${row.proof_bundle_url}" target="_blank" rel="noopener">Open Proof Bundle</a>
 						<button class="btn-primary" onclick="approveFlaggedEvent(${row.id})">Approve</button>
 						<button class="btn-danger" onclick="rejectFlaggedEvent(${row.id})">Reject</button>
 					</div>
@@ -878,7 +878,7 @@ function renderActivities(data) {
 				<p style="margin:0 0 8px 0;">HTS Reward: ${rewardOutcomeHtml(a)}</p>
 				<p style="margin:0 0 8px 0;">Compliance TX: ${a.compliance_tx_id || "—"}</p>
 				<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-					<button class="btn-secondary" onclick="openProofBundleInPanel(${a.id}, '${a.proof}')">View proof</button>
+					<button class="btn-secondary" onclick="openProofBundleInPanel(${a.id}, '${a.proof}')">View Proof</button>
 					<button class="btn-primary" onclick="verifyProof(${a.id})">Verify Proof Hash</button>
 					<button class="btn-secondary" onclick="regenerateProof(${a.id})">Regenerate Proof Bundle</button>
 					<span id="proof_${a.id}" style="align-self:center;"></span>

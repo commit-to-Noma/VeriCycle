@@ -517,7 +517,7 @@
                 const rows = Array.isArray(data.rows) ? data.rows : [];
 
                 if (!rows.length) {
-                    container.innerHTML = '<p>No open pickup opportunities yet.</p>';
+                    container.innerHTML = '<p>No open opportunities right now. Demo mode will preload a new pickup shortly. Refresh in a moment.</p>';
                     return;
                 }
 
@@ -562,7 +562,7 @@
                 const rows = Array.isArray(data.rows) ? data.rows : [];
 
                 if (!rows.length) {
-                    container.innerHTML = '<p>No accepted pickups yet.</p>';
+                    container.innerHTML = '<p>No accepted pickups yet. Accept one open job above to continue the demo flow.</p>';
                     return;
                 }
 
@@ -591,7 +591,7 @@
                             <span>${material} · est. ${estimated.toFixed(1)} kg</span><br>
                             <span>${location}</span><br>
                             <span>${requestedWindow}</span><br>
-                            <span>Status: ${escapeHtml(normalizedStatus)}</span><br>
+                            <span>Trust Status: ${escapeHtml(normalizedStatus)}</span><br>
                             ${estimatedReward > 0 ? `<span>Pipeline reward: ${estimatedReward.toFixed(2)} ECO</span><br>` : ''}
 
                             ${canSubmit ? `
@@ -600,7 +600,7 @@
                                     <input type="number" step="0.1" id="kg_${Number(row.assignment_id)}" placeholder="Actual weight (kg)" value="${estimated.toFixed(1)}" style="margin-bottom:0.5rem; width:100%;">
                                     <textarea id="notes_${Number(row.assignment_id)}" placeholder="Notes (optional)" style="width:100%;"></textarea>
                                     <button class="btn-secondary btn-compact" onclick="submitAssignment(${Number(row.assignment_id)})" style="margin-top:0.5rem;">
-                                        Submit to Center
+                                        Submit for Verification
                                     </button>
                                 </div>
                             ` : ''}
@@ -669,7 +669,7 @@
                     return;
                 }
 
-                alert('Pickup submitted to center for verification.');
+                alert('Submitted for Verification. Queue updated for Verification Center review.');
                 loadAcceptedAssignments();
             } catch (err) {
                 console.error(err);
@@ -830,7 +830,7 @@
                 };
 
                 // Show the modal immediately; actual scroll + animations run when user clicks "Awesome!"
-                document.querySelector('#success-modal .success-subtitle').textContent = `Your recycling event is Submitted and moving to Verified, Anchored, Rewarded, and Proof Ready. (${weightAmount.toFixed(1)}kg submitted)`;
+                document.querySelector('#success-modal .success-subtitle').textContent = `Submitted successfully. Verified is pending center confirmation. Hedera anchoring and rewards continue automatically. (${weightAmount.toFixed(1)}kg submitted)`;
                 const confettiCanvas = document.getElementById('confetti-canvas');
                 const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
                 document.getElementById('success-modal').style.display = 'flex';
@@ -1153,16 +1153,16 @@
             <canvas id="confetti-canvas"></canvas>
 
             <div class="proof-modal-topline">
-                <div class="proof-issued-badge">⛓️ Proof Issued</div>
+                <div class="proof-issued-badge">⛓️ Trust Flow Started</div>
                 <div class="proof-modal-status-row">
-                    <span class="proof-state-chip proof-state-chip-blue">Recycler submitted</span>
-                    <span class="proof-state-chip proof-state-chip-amber">Center verification next</span>
+                    <span class="proof-state-chip proof-state-chip-blue">Submitted ✅</span>
+                    <span class="proof-state-chip proof-state-chip-amber">Verified (pending)</span>
                 </div>
             </div>
 
-            <h2 class="proof-issued-title">Verified Recycling Event Created</h2>
+            <h2 class="proof-issued-title">Submission Captured</h2>
             <p class="success-subtitle proof-issued-subtitle">
-                Your recycling event has entered the trusted verification pipeline. Once the center confirms the deposit, VeriCycle finalizes proof, prepares Hedera anchoring, and records reward outcome.
+                Your recycling event is now in the trust pipeline. The next steps are visible and auditable.
             </p>
 
             <div class="proof-modal-grid">
@@ -1191,31 +1191,47 @@
                 </section>
 
                 <section class="proof-modal-panel proof-modal-timeline-panel">
-                    <span class="section-kicker">Next Steps</span>
-                    <h3>What happens now</h3>
+                    <span class="section-kicker">Trust Status</span>
+                    <h3>Visible pipeline states</h3>
 
                     <div class="proof-modal-timeline">
                         <div class="proof-modal-step proof-modal-step-done">
                             <div class="proof-modal-step-dot">1</div>
                             <div class="proof-modal-step-body">
-                                <strong>Recycler submission captured</strong>
-                                <span>Your event is recorded in the VeriCycle pipeline.</span>
+                                <strong>Submitted ✅</strong>
+                                <span>Recorded and queued for center verification.</span>
                             </div>
                         </div>
 
                         <div class="proof-modal-step proof-modal-step-active">
                             <div class="proof-modal-step-dot">2</div>
                             <div class="proof-modal-step-body">
-                                <strong>Center verification</strong>
-                                <span>The recycling center confirms material type and weight.</span>
+                                <strong>Verified (pending)</strong>
+                                <span>Verification Center confirms material type and weight.</span>
                             </div>
                         </div>
 
                         <div class="proof-modal-step">
                             <div class="proof-modal-step-dot">3</div>
                             <div class="proof-modal-step-body">
-                                <strong>Hedera proof + reward outcome</strong>
-                                <span>Proof bundle and transaction evidence become available after finalization.</span>
+                                <strong>Anchored (Hedera)</strong>
+                                <span>HashScan-linked transaction is attached to the record.</span>
+                            </div>
+                        </div>
+
+                        <div class="proof-modal-step">
+                            <div class="proof-modal-step-dot">4</div>
+                            <div class="proof-modal-step-body">
+                                <strong>Rewarded</strong>
+                                <span>Wallet reward history is updated with settlement evidence.</span>
+                            </div>
+                        </div>
+
+                        <div class="proof-modal-step">
+                            <div class="proof-modal-step-dot">5</div>
+                            <div class="proof-modal-step-body">
+                                <strong>Proof Ready</strong>
+                                <span>Downloadable proof bundle is available for audits.</span>
                             </div>
                         </div>
                     </div>

@@ -38,7 +38,7 @@
                     <strong>{{ evidence.latest_hcs_tx or '—' }}</strong>
                     <span class="proof-chip-meta">Consensus-linked verification record</span>
                     {% if evidence.latest_hcs_link %}
-                        <a href="{{ evidence.latest_hcs_link }}" target="_blank" rel="noopener">Open HCS Record</a>
+                        <a href="{{ evidence.latest_hcs_link }}" target="_blank" rel="noopener">View on Hedera</a>
                     {% endif %}
                 </div>
 
@@ -47,7 +47,7 @@
                     <strong>{{ evidence.latest_hts_tx or '—' }}</strong>
                     <span class="proof-chip-meta">Reward settlement evidence</span>
                     {% if evidence.latest_hts_link %}
-                        <a href="{{ evidence.latest_hts_link }}" target="_blank" rel="noopener">Open HTS Record</a>
+                        <a href="{{ evidence.latest_hts_link }}" target="_blank" rel="noopener">View on Hedera</a>
                     {% endif %}
                 </div>
 

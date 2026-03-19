@@ -5,6 +5,7 @@
     <a href="/collector" class="back-link">← Back to Recycler Hub</a>
 
     <h1>Rewards Wallet</h1>
+    <p class="mockup-subtitle">This is verified income history, not points. Every reward is traceable.</p>
 
     <div class="eco-balance-card">
         <h2>Your Balance</h2>
@@ -18,15 +19,23 @@
     </div>
 
     <div class="eco-history">
-        <h3>Recent Rewards</h3>
+        <h3>Hedera-linked Rewards</h3>
 
-        {% for reward in wallet_recent_rewards %}
+        {% if wallet_recent_rewards %}
+            {% for reward in wallet_recent_rewards %}
+                <div class="eco-row">
+                    <span>+{{ "{:,.0f}".format(reward.amount or 0) }} ECO</span>
+                    <span>{{ reward.description }}</span>
+                    <a href="https://hashscan.io/testnet/transaction/{{ reward.tx_id }}" target="_blank" rel="noopener">View on Hedera</a>
+                </div>
+            {% endfor %}
+        {% else %}
             <div class="eco-row">
-                <span>+{{ "{:,.0f}".format(reward.amount or 0) }} ECO</span>
-                <span>{{ reward.description }}</span>
-                <a href="https://hashscan.io/testnet/transaction/{{ reward.tx_id }}" target="_blank" rel="noopener">View on Hedera</a>
+                <span>Demo mode</span>
+                <span>Rewards are being finalized</span>
+                <span>Hedera link pending</span>
             </div>
-        {% endfor %}
+        {% endif %}
     </div>
 
     <div class="eco-exchange">

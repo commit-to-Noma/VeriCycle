@@ -35,11 +35,12 @@
             </div>
 
             <p class="hero-eyebrow">Powered by Hedera</p>
-            <h1>VeriCycle turns recycling activity into trusted, verifiable proof.</h1>
-            <p class="subtitle">From Submitted to Verified, Anchored, Rewarded, and Proof Ready, every event follows a transparent trust ladder.</p>
+            <h1>Turn Recycling into Verified Income</h1>
+            <p class="subtitle">VeriCycle creates proof of income for waste pickers using Hedera.</p>
 
             <div class="hero-cta-row">
                 {% if not current_user.is_authenticated %}
+                    <a href="/login" class="btn-primary">Start Live Demo</a>
                     <a href="{{ url_for('login') }}" class="btn-primary-large">Open Live Demo</a>
                     <a href="{{ url_for('signup') }}" class="btn-secondary">Create Account or See How Proof Works</a>
                 {% else %}

@@ -60,6 +60,16 @@ textarea:focus-visible {
     margin: 0 auto;
 }
 
+.demo-banner {
+    background: #00c896;
+    color: #000;
+    text-align: center;
+    padding: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
 /* New container for sections that need more space */
 .container-wide {
     width: 95%;
@@ -7569,6 +7579,53 @@ main.container-wide.app-dashboard,
     border: none;
     border-radius: 8px;
     font-weight: bold;
+}
+
+.auth-demo-hint {
+    margin: 0.4rem 0 1rem;
+    color: #b7c4d9;
+    font-size: 0.95rem;
+}
+
+.demo-credentials {
+    margin-bottom: 1rem;
+    padding: 0.9rem;
+    border: 1px solid rgba(76, 175, 80, 0.35);
+    border-radius: 10px;
+    background: rgba(15, 36, 99, 0.25);
+}
+
+.demo-credentials h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: #d7e4ff;
+}
+
+.demo-credential-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+}
+
+.demo-credential-card {
+    width: 100%;
+    text-align: left;
+    border-radius: 8px;
+    border: 1px solid rgba(143, 179, 255, 0.35);
+    background: rgba(255, 255, 255, 0.03);
+    color: #eef3ff;
+    padding: 0.65rem 0.7rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.demo-credential-card small {
+    color: #b7c4d9;
+}
+
+.demo-credential-card:hover {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.14);
 }
 
 .btn-modern-pill {

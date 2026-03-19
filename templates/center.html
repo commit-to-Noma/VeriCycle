@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const rows = Array.isArray(data.rows) ? data.rows : [];
 
             if (!rows.length) {
-                container.innerHTML = '<p>No submitted pickups awaiting verification.</p>';
+                container.innerHTML = '<p>No submitted pickups yet. Demo mode will preload a submitted record automatically.</p>';
                 return;
             }
 
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="center-queue-item-meta">${location}</div>
                         <div class="center-queue-item-meta">${escapeHtml(submittedAt)}</div>
                         <button class="btn-primary" onclick="verifySubmittedAssignment(${Number(row.assignment_id)})" style="margin-top: 0.65rem;">
-                            Verify Pickup
+                            Verify Submitted Record
                         </button>
                     </div>
                 `;
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const rewardText = Number(data.reward_amount || 0).toFixed(2);
-            alert(`Pickup moved to Verified and advanced toward Anchored, Rewarded, and Proof Ready states. Reward: ${rewardText} ECO.`);
+            showBanner(`Verified Lane Active. Record moved to Verified with ${rewardText} ECO pipeline reward.`);
             loadSubmittedAssignments();
         } catch (err) {
             console.error(err);
