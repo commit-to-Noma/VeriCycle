@@ -28,6 +28,7 @@
             <div class="home-radar-logo-shell">
                 <img src="{{ url_for('static', filename='logo.png') }}" class="home-radar-logo" alt="">
             </div>
+            <div class="home-radar-blips" id="homeRadarBlips" aria-hidden="true"></div>
             <span class="home-radar-ring home-radar-ring-1"></span>
             <span class="home-radar-ring home-radar-ring-2"></span>
             <span class="home-radar-ring home-radar-ring-3"></span>
@@ -315,6 +316,54 @@
                 }
             } catch (error) {
                 console.error('Impact counter error:', error);
+            }
+
+            try {
+                const radarLayer = document.getElementById('homeRadarBlips');
+                const radarScope = document.querySelector('.home-radar');
+                const radarEmojis = ['🗑️', '♻️', '🍃', '🍂', '🧃', '📃', '💰', '🥤'];
+
+                if (radarLayer && radarScope) {
+                    const randomEmoji = () => radarEmojis[Math.floor(Math.random() * radarEmojis.length)];
+
+                    function spawnRadarBlips() {
+                        const count = 1 + Math.floor(Math.random() * 3);
+                        const minScreen = Math.min(window.innerWidth, window.innerHeight);
+                        const ringBands = [
+                            Math.max(145, minScreen * 0.16),
+                            Math.max(210, minScreen * 0.24),
+                            Math.max(285, minScreen * 0.32)
+                        ];
+
+                        for (let i = 0; i < count; i += 1) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const band = ringBands[Math.floor(Math.random() * ringBands.length)];
+                            const jitter = (Math.random() * 28) - 14;
+                            const radius = band + jitter;
+                            const x = Math.cos(angle) * radius;
+                            const y = Math.sin(angle) * radius * 0.78;
+
+                            const blip = document.createElement('span');
+                            blip.className = 'radar-emoji-blip';
+                            blip.textContent = randomEmoji();
+                            blip.style.setProperty('--x', `${x}px`);
+                            blip.style.setProperty('--y', `${y}px`);
+                            blip.style.setProperty('--delay', `${Math.random() * 0.25}s`);
+                            radarLayer.appendChild(blip);
+
+                            window.setTimeout(() => {
+                                blip.remove();
+                            }, 4200);
+                        }
+
+                        const nextSpawnDelay = 1800 + Math.floor(Math.random() * 1800);
+                        window.setTimeout(spawnRadarBlips, nextSpawnDelay);
+                    }
+
+                    window.setTimeout(spawnRadarBlips, 1000);
+                }
+            } catch (error) {
+                console.error('Radar blip animation error:', error);
             }
 
             try {
