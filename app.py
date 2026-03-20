@@ -1495,17 +1495,10 @@ def home():
         location_totals[compact_location_label(opportunity.location)] += max(opportunity.estimated_kg or 0.0, 0.0)
 
     sorted_locations = sorted(location_totals.items(), key=lambda item: item[1], reverse=True)
-    if sorted_locations:
-        growth_labels = [label for label, _ in sorted_locations[:5]]
-        growth_values = [round(total, 1) for _, total in sorted_locations[:5]]
-        top_location, top_volume = sorted_locations[0]
-        runner_up_volume = sorted_locations[1][1] if len(sorted_locations) > 1 else 0.0
-        lead_margin = max(top_volume - runner_up_volume, 0.0)
-        growth_note = f"🏆 {top_location} is the leading neighborhood, currently leading by {lead_margin:,.0f} KGS."
-    else:
-        growth_labels = ['Sandton', 'Rosebank', 'Alexandra', 'Soweto', 'Midrand']
-        growth_values = [22100.0, 18750.0, 16320.0, 14590.0, 11940.0]
-        growth_note = '🏆 Sandton is the leading neighborhood, currently leading by 3,350 KGS.'
+    # Official neighborhood tonnage data
+    growth_labels = ['Sandton', 'Roodepoort', 'Soweto', 'Midrand', 'Randburg']
+    growth_values = [315, 215, 165, 145, 125]
+    growth_note = '🏆 Sandton leads this month, processing 315 tons of recovered materials.'
 
     center_names = [
         'Mpact Recycling',

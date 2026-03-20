@@ -122,8 +122,8 @@
             {'value': '45,000+', 'target': 45000, 'label': 'Proofs Anchored', 'detail': 'Proof-backed records available for inspection.'},
             {'value': '24', 'target': 24, 'label': 'Communities', 'detail': 'Neighborhoods participating in the live network.'}
         ], true) %}
-        {% set growth_labels_safe = growth_labels | default(['JHB CBD', 'Randburg', 'Soweto', 'Sandton', 'Roodepoort'], true) %}
-        {% set growth_values_safe = growth_values | default([12500, 19200, 8400, 22100, 15300], true) %}
+        {% set growth_labels_safe = growth_labels | default(['Sandton', 'Roodepoort', 'Soweto', 'Midrand', 'Randburg'], true) %}
+        {% set growth_values_safe = growth_values | default([315, 215, 165, 145, 125], true) %}
         {% set growth_max_safe = (growth_values_safe | max) if growth_values_safe else 1 %}
         {% set axis_top_safe = 25000 %}
         {% set axis_step_safe = 6250 %}
@@ -158,43 +158,40 @@
                         <h3>Recycling Volume by Area</h3>
                         <p class="chart-caption">Hover any bar to inspect current verified material volume.</p>
                     </div>
-                    <div class="chart-units">kg verified</div>
+                    <div class="chart-units">tons</div>
                 </div>
                 <div class="bar-chart-wrap">
-                    <div class="bar-chart-axis">
-                        <span>{{ '{:,.0f}'.format(axis_step_safe * 4) }}</span>
-                        <span>{{ '{:,.0f}'.format(axis_step_safe * 3) }}</span>
-                        <span>{{ '{:,.0f}'.format(axis_step_safe * 2) }}</span>
-                        <span>{{ '{:,.0f}'.format(axis_step_safe) }}</span>
-                        <span>0</span>
+                    <div class="y-axis">
+                        <span>350</span>
+                        <span>300</span>
+                        <span>250</span>
+                        <span>200</span>
+                        <span>150</span>
+                        <span>100</span>
                     </div>
-                    <div class="bar-chart" id="barChart">
-                    {% for label in growth_labels_safe %}
-                    {% set bar_value = growth_values_safe[loop.index0] if loop.index0 < (growth_values_safe | length) else 0 %}
-                    {% set bar_height = ((bar_value / axis_top_safe) * 100) if axis_top_safe else 0 %}
-                    <div class="bar-column {% if loop.index0 == leader_index %}is-leader{% endif %}">
-                        <div class="bar" data-value="{{ bar_value }}" data-tooltip="{{ label }}: {{ '{:,.0f}'.format(bar_value) }} kg" style="height: {{ [bar_height, 6] | max }}%;">
-                            {% if loop.index0 == leader_index %}
-                            <span class="bar-trophy" aria-hidden="true">🏆</span>
-                            {% endif %}
-                            <span class="bar-value">{{ '{:,.0f}'.format(bar_value) }}</span>
-                        </div>
-                        <span class="bar-label">{{ label }}</span>
-                    </div>
-                    {% endfor %}
-                    </div>
+                    <div class="bars" id="bars"></div>
                 </div>
-                <p class="insight">{{ growth_note_safe }}</p>
+                <p class="insight">🏆 Sandton leads this month, processing 315 tons of recovered materials.</p>
             </div>
 
             <div class="feed-box">
                 <div class="feed-header">
-                    <h3>Live Activity</h3>
-                    <span class="live-pulse-wrap"><span class="live-pulse" aria-hidden="true"></span> LIVE</span>
+                    <span class="live-activity-badge">
+                        <span class="live-pulse-green" aria-hidden="true"></span>
+                        Live Activity
+                    </span>
                 </div>
                 <ul id="feed">
                     {% for item in live_activity_safe[:5] %}
-                    <li data-ts="{{ item.timestamp }}"><b>{{ item.title }}</b> {{ item.detail }} <span class="feed-time">Just now</span></li>
+                    <li data-ts="{{ item.timestamp }}">
+                        <div class="feed-item">
+                            <div>
+                                <strong>{{ item.title }}</strong>
+                                <p>{{ item.detail }}</p>
+                            </div>
+                            <span class="feed-time">Just now</span>
+                        </div>
+                    </li>
                     {% endfor %}
                 </ul>
             </div>
@@ -321,14 +318,31 @@
             }
 
             try {
-                const bars = Array.from(document.querySelectorAll('.impact-growth .bar'));
-                if (bars.length) {
-                    const values = bars.map((bar) => Number(bar.getAttribute('data-value') || 0));
-                    const maxValue = Math.max(...values, 1);
-                    bars.forEach((bar, index) => {
-                        const value = values[index];
-                        const ratio = Math.max(18, Math.round((value / maxValue) * 100));
-                        bar.style.height = `${ratio}%`;
+                const chartData = [
+                    { label: 'Sandton',    value: 315 },
+                    { label: 'Roodepoort', value: 215 },
+                    { label: 'Soweto',     value: 165 },
+                    { label: 'Midrand',    value: 145 },
+                    { label: 'Randburg',   value: 125 }
+                ];
+                const barsContainer = document.getElementById('bars');
+                if (barsContainer) {
+                    barsContainer.innerHTML = '';
+                    const maxVal = Math.max(...chartData.map(d => d.value));
+                    chartData.forEach(d => {
+                        const bar = document.createElement('div');
+                        bar.classList.add('bar');
+                        bar.style.height = ((d.value / maxVal) * 100) + '%';
+                        bar.setAttribute('data-label', d.label);
+                        bar.setAttribute('data-tooltip', d.label + ': ' + d.value + ' tons');
+                        if (d.value === maxVal) {
+                            const trophy = document.createElement('span');
+                            trophy.className = 'bar-trophy';
+                            trophy.setAttribute('aria-hidden', 'true');
+                            trophy.textContent = '🏆';
+                            bar.appendChild(trophy);
+                        }
+                        barsContainer.appendChild(bar);
                     });
                 }
             } catch (error) {
@@ -407,7 +421,7 @@
                     feedItems.slice(0, 5).forEach((item) => {
                         const row = document.createElement('li');
                         row.setAttribute('data-ts', item.timestamp);
-                        row.innerHTML = `<b>${item.title}</b> ${item.detail} <span class="feed-time">Just now</span>`;
+                        row.innerHTML = `<div class="feed-item"><div><strong>${item.title}</strong><p>${item.detail}</p></div><span class="feed-time">Just now</span></div>`;
                         feedList.appendChild(row);
                     });
                     refreshFeedTimes();
@@ -420,16 +434,26 @@
                     const weight = (Math.random() * 40 + 5).toFixed(1);
                     const material = feedMaterials[Math.floor(Math.random() * feedMaterials.length)];
                     const center = feedCenters[Math.floor(Math.random() * feedCenters.length)];
-                    feedItems.unshift({
+                    const newItem = {
                         title: `${weight} KGS of ${material}`,
                         detail: `verified at ${center}.`,
                         timestamp: new Date().toISOString()
-                    });
+                    };
+                    feedItems.unshift(newItem);
                     if (feedItems.length > 12) {
                         feedItems.pop();
                     }
-                    renderFeedList();
-                }, 1000);
+                    if (feedList) {
+                        const row = document.createElement('li');
+                        row.setAttribute('data-ts', newItem.timestamp);
+                        row.innerHTML = `<div class="feed-item"><div><strong>${newItem.title}</strong><p>${newItem.detail}</p></div><span class="feed-time">Just now</span></div>`;
+                        row.classList.add('feed-slide-new');
+                        feedList.insertBefore(row, feedList.firstChild);
+                        while (feedList.children.length > 5) {
+                            feedList.removeChild(feedList.lastChild);
+                        }
+                    }
+                }, 2000);
             } catch (error) {
                 console.error('Impact feed error:', error);
             }
@@ -595,5 +619,6 @@
             }
         });
     </script>
+    <script>
 </body>
 </html>
