@@ -43,7 +43,7 @@
                 <h2>Turn Recycling into Verified Income</h2>
                 <p class="subtitle">A trusted coordination layer where collection activity becomes verified impact, real rewards, and durable proof.</p>
                 <div class="hero-cta-row">
-                    <a href="#join-network" class="btn-primary-large hero-mission-button">Explore the VeriCycle Ecosystem</a>
+                    <a href="#join-network" class="btn-primary-large hero-mission-button">Explore the VeriCycle Ecosystem ↓</a>
                 </div>
             </div>
         </div>
@@ -57,25 +57,25 @@
                 <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="recycler">
                     <span class="stakeholder-kicker">Daily work, officially recognized</span>
                     <h3>Recyclers</h3>
-                    <p>Build a trusted, consistent earnings history from the work you already do, creating records that can help open doors with banks, lenders, and future opportunities.</p>
+                    <p>Turn daily recycling into a trusted income history you can actually use to unlock better opportunities over time.</p>
                     <span class="stakeholder-cta">Open recycler sign-up</span>
                 </button>
                 <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="business">
                     <span class="stakeholder-kicker">Prove your purpose</span>
                     <h3>Businesses</h3>
-                    <p>Get simple, verified sustainability records that show real recycling impact through your local network instead of vague reporting and spreadsheets.</p>
+                    <p>Generate verifiable, simple sustainability records that prove your real impact on the local environment.</p>
                     <span class="stakeholder-cta">Open business sign-up</span>
                 </button>
                 <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="resident">
                     <span class="stakeholder-kicker">Take back your neighborhood</span>
                     <h3>Communities</h3>
-                    <p>Report recycling needs, request cleanups, and support the trusted local people keeping your streets cleaner with a system everyone can follow.</p>
+                    <p>Request pickups, report recycling needs, and directly support the local people keeping your neighborhood clean.</p>
                     <span class="stakeholder-cta">Open community sign-up</span>
                 </button>
                 <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="center">
                     <span class="stakeholder-kicker">A modern foundation of trust</span>
                     <h3>Recycling Centers</h3>
-                    <p>Weigh materials, scan verified identities, and accept deliveries with certainty, knowing every transaction is recorded clearly and permanently.</p>
+                    <p>Weigh materials, confirm deliveries quickly, and trust that every transaction is recorded clearly and permanently.</p>
                     <span class="stakeholder-cta">Open center sign-up</span>
                 </button>
             </div>
@@ -125,6 +125,9 @@
         {% set growth_labels_safe = growth_labels | default(['JHB CBD', 'Randburg', 'Soweto', 'Sandton', 'Roodepoort'], true) %}
         {% set growth_values_safe = growth_values | default([12500, 19200, 8400, 22100, 15300], true) %}
         {% set growth_max_safe = (growth_values_safe | max) if growth_values_safe else 1 %}
+        {% set axis_top_safe = ((growth_max_safe * 1.1) | round(0, 'ceil')) | int %}
+        {% set axis_top_safe = axis_top_safe if axis_top_safe > 0 else 1 %}
+        {% set axis_step_safe = ((axis_top_safe / 4) | round(0, 'ceil')) | int %}
         {% set leader_index = growth_values_safe.index(growth_max_safe) if growth_values_safe else 0 %}
         {% set leader_label = growth_labels_safe[leader_index] if growth_labels_safe and leader_index < (growth_labels_safe | length) else 'Sandton' %}
         {% set leader_value = growth_values_safe[leader_index] if growth_values_safe and leader_index < (growth_values_safe | length) else 22100 %}
@@ -160,16 +163,16 @@
                 </div>
                 <div class="bar-chart-wrap">
                     <div class="bar-chart-axis">
-                        <span>24k</span>
-                        <span>18k</span>
-                        <span>12k</span>
-                        <span>6k</span>
+                        <span>{{ '{:,.0f}'.format(axis_step_safe * 4) }}</span>
+                        <span>{{ '{:,.0f}'.format(axis_step_safe * 3) }}</span>
+                        <span>{{ '{:,.0f}'.format(axis_step_safe * 2) }}</span>
+                        <span>{{ '{:,.0f}'.format(axis_step_safe) }}</span>
                         <span>0</span>
                     </div>
                     <div class="bar-chart" id="barChart">
                     {% for label in growth_labels_safe %}
                     {% set bar_value = growth_values_safe[loop.index0] if loop.index0 < (growth_values_safe | length) else 0 %}
-                    {% set bar_height = ((bar_value / growth_max_safe) * 100) if growth_max_safe else 0 %}
+                    {% set bar_height = ((bar_value / axis_top_safe) * 100) if axis_top_safe else 0 %}
                     <div class="bar-column {% if loop.index0 == leader_index %}is-leader{% endif %}">
                         {% if loop.index0 == leader_index %}
                         <div class="bar-callout">🏆 {{ leader_label }} leads with {{ '{:,.0f}'.format(leader_value) }} kg this month.</div>
@@ -210,17 +213,17 @@
                 <div class="advantage-card mission-card-light mission-problem-card">
                     <span class="mission-icon-badge" aria-hidden="true">✋</span>
                     <h3>The Problem</h3>
-                    <p>Across South Africa, the informal recycling workforce keeps cities cleaner every day, but most of that labor still leaves behind no reliable transaction history. When work stays invisible, people stay locked out of opportunity.</p>
+                    <p>Across South Africa, informal recyclers move huge volumes of material every day, but most of that work still leaves no trusted income record. Invisible labor keeps people trapped in survival mode.</p>
                 </div>
                 <div class="advantage-card mission-card-light mission-solution-card">
                     <span class="mission-icon-badge" aria-hidden="true">◈</span>
                     <h3>The Solution</h3>
-                    <p>VeriCycle records each pickup, drop-off, and verification step as trusted digital proof, turning everyday recycling into recognized work, measurable impact, and a financial story people can build on.</p>
+                    <p>VeriCycle tracks each pickup, drop-off, and verification, then anchors the record on Hedera so every action becomes proof of work, proof of impact, and proof of income.</p>
                 </div>
                 <div class="advantage-card mission-card-light mission-impact-card">
                     <span class="mission-icon-badge" aria-hidden="true">✦</span>
                     <h3>Real-World Impact</h3>
-                    <p>That shift changes outcomes on the ground: recyclers build earning history, businesses prove progress, communities track visible cleanup momentum, and local trust grows through every verified handoff.</p>
+                    <p>That shift turns invisible labor into visible value, helping recyclers move from day-to-day survival toward recognized opportunity and long-term inclusion.</p>
                 </div>
             </div>
         </div>
@@ -422,15 +425,15 @@
                     const material = feedMaterials[Math.floor(Math.random() * feedMaterials.length)];
                     const center = feedCenters[Math.floor(Math.random() * feedCenters.length)];
                     feedItems.unshift({
-                        title: `${center} verified ${material}`,
-                        detail: `${weight} kg of ${material} was verified at ${center} and pushed into the live proof queue.`,
+                        title: `${weight} KGS of ${material}`,
+                        detail: `verified at ${center}.`,
                         timestamp: new Date().toISOString()
                     });
                     if (feedItems.length > 8) {
                         feedItems.pop();
                     }
                     renderFeedList();
-                }, 6500);
+                }, 1000);
             } catch (error) {
                 console.error('Impact feed error:', error);
             }
@@ -478,7 +481,7 @@
                             signupRoleSelectWrap.hidden = true;
                             signupRoleSelect.required = false;
                             signupRoleConfirmation.hidden = false;
-                            signupRoleConfirmation.textContent = `Signing up as ${roleLabels[lockedSignupRole] || lockedSignupRole} (Verified).`;
+                            signupRoleConfirmation.textContent = `Signing up as ${roleLabels[lockedSignupRole] || lockedSignupRole}.`;
                         } else {
                             signupRoleHidden.value = signupRoleSelect.value || '';
                             signupRoleSelectWrap.hidden = false;

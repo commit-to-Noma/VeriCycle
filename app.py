@@ -1499,11 +1499,13 @@ def home():
         growth_labels = [label for label, _ in sorted_locations[:5]]
         growth_values = [round(total, 1) for _, total in sorted_locations[:5]]
         top_location, top_volume = sorted_locations[0]
-        growth_note = f"📍 {top_location} leads all neighborhoods this month, processing {top_volume:,.1f} kg of recovered materials."
+        runner_up_volume = sorted_locations[1][1] if len(sorted_locations) > 1 else 0.0
+        lead_margin = max(top_volume - runner_up_volume, 0.0)
+        growth_note = f"🏆 {top_location} is the leading neighborhood, currently leading by {lead_margin:,.0f} KGS."
     else:
         growth_labels = ['Sandton', 'Rosebank', 'Alexandra', 'Soweto', 'Midrand']
         growth_values = [22100.0, 18750.0, 16320.0, 14590.0, 11940.0]
-        growth_note = '📍 Sandton leads all neighborhoods this month, processing 22,100 kg of recovered materials.'
+        growth_note = '🏆 Sandton is the leading neighborhood, currently leading by 3,350 KGS.'
 
     center_names = [
         'Mpact Recycling',
@@ -1540,30 +1542,31 @@ def home():
         material_label = friendly_material_label(activity.desc)
         center_label = center_names[index % len(center_names)]
         seeded_seconds_ago = [0, 4, 12, 24][index % 4]
+        weight_value = max(activity.amount or 0.0, 0.0)
         live_activity.append({
-            'title': f"{center_label} verified {material_label}",
-            'detail': f"{max(activity.amount or 0.0, 0.0):.1f} kg was confirmed and moved into a proof-ready recycler record.",
+            'title': f"{weight_value:.1f} KGS of {material_label}",
+            'detail': f"verified at {center_label}.",
             'timestamp': (now_utc - timedelta(seconds=seeded_seconds_ago)).isoformat(),
         })
 
     for index, opportunity in enumerate(pickup_opportunities[:4]):
-        location_label = compact_location_label(opportunity.location)
         material_label = friendly_material_label(opportunity.material_type)
         center_label = center_names[index % len(center_names)]
         seeded_seconds_ago = [33, 48, 63, 79][index % 4]
+        weight_value = max(opportunity.estimated_kg or 0.0, 0.0)
         live_activity.append({
-            'title': f"{material_label} routed through {center_label}",
-            'detail': f"A {material_label} pickup from {location_label} entered the live coordination queue.",
+            'title': f"{weight_value:.1f} KGS of {material_label}",
+            'detail': f"verified at {center_label}.",
             'timestamp': (now_utc - timedelta(seconds=seeded_seconds_ago)).isoformat(),
         })
 
     if len(live_activity) < 5:
         fallback_feed = [
-            ('Mpact Recycling verified Glass', '15.0 kg from Sandton was validated and anchored into recycler proof records.', 0),
-            ('SA Metal Group accepted E-Waste', '12.0 kg from Rosebank entered verified processing and reward flow.', 4),
-            ('Pikitup Garden Site confirmed Plastics', '19.5 kg from Alexandra was checked into the live network.', 12),
-            ('Reclaim Hub Johannesburg received Cardboard', 'A Soweto pickup handoff was verified and queued for reward settlement.', 25),
-            ('Mpact Recycling logged Mixed Recyclables', 'Midrand submissions increased neighborhood recovery volume this hour.', 41),
+            ('15.0 KGS of Glass', 'verified at Mpact Recycling.', 0),
+            ('12.0 KGS of E-Waste', 'verified at SA Metal Group.', 4),
+            ('19.5 KGS of Plastics', 'verified at Pikitup Garden Site.', 12),
+            ('16.2 KGS of Cardboard', 'verified at Reclaim Hub Johannesburg.', 25),
+            ('14.8 KGS of Mixed Recyclables', 'verified at Mpact Recycling.', 41),
         ]
         for title, detail, seconds_ago in fallback_feed:
             live_activity.append({

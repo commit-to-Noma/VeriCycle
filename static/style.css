@@ -9652,10 +9652,19 @@ body.home-light .sr-only {
     border: 0;
 }
 
+/* Home-only nav lock: keeps header attached to viewport and removes top gap. */
+body.home-light {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
 body.home-light .public-header,
 body.home-light .navbar {
-    position: sticky;
-    top: 0;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0;
+    right: 0;
+    width: 100%;
     z-index: 80;
     padding: 0 !important;
     background: rgba(255, 255, 255, 0.72) !important;
@@ -9712,7 +9721,7 @@ body.home-light .hero-eyebrow {
 }
 
 body.home-light .hero-proof h1 {
-    margin: 0 0 1rem !important;
+    margin: 0 0 1.45rem !important;
     font-size: clamp(4rem, 10vw, 6rem);
     line-height: 0.95;
 }
@@ -9744,8 +9753,40 @@ body.home-light .cta-section,
 body.home-light .how-it-works-section,
 body.home-light .impact-growth,
 body.home-light .mission-section {
+    min-height: 0 !important;
+    max-height: none !important;
+    height: auto !important;
     padding-top: 72px;
     padding-bottom: 72px;
+}
+
+body.home-light #join-network,
+body.home-light #how-it-works,
+body.home-light #impact,
+body.home-light #mission {
+    scroll-margin-top: 110px;
+}
+
+body.home-light .cta-section h2,
+body.home-light .how-it-works-section h2,
+body.home-light .impact-growth .platform-growth-header h2,
+body.home-light .mission-section h2 {
+    margin: 0 0 0.85rem;
+    color: #1a6f36 !important;
+    font-size: clamp(2.05rem, 4.2vw, 2.8rem);
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+}
+
+body.home-light .cta-subtitle,
+body.home-light .activity-subtitle,
+body.home-light .platform-growth-header .activity-subtitle {
+    margin: 0;
+    color: #334155 !important;
+    font-size: 1.03rem;
+    line-height: 1.62;
+    font-weight: 500;
 }
 
 body.home-light .cta-section {
@@ -9811,7 +9852,7 @@ body.home-light .step-card {
 body.home-light .step-number {
     width: 68px !important;
     height: 68px !important;
-    font-size: 1.8rem !important;
+    font-size: 2rem !important;
     font-weight: 900 !important;
 }
 
@@ -10012,15 +10053,15 @@ body.home-light .impact-growth .live-pulse {
     width: 10px;
     height: 10px;
     border-radius: 999px;
-    background: #31b45c;
-    box-shadow: 0 0 0 0 rgba(49, 180, 92, 0.5);
+    background: #e34d4d;
+    box-shadow: 0 0 0 0 rgba(227, 77, 77, 0.45);
     animation: home-live-pulse 1.8s infinite;
 }
 
 @keyframes home-live-pulse {
-    0% { opacity: 0.55; box-shadow: 0 0 0 0 rgba(49, 180, 92, 0.38); }
-    70% { opacity: 1; box-shadow: 0 0 0 10px rgba(49, 180, 92, 0); }
-    100% { opacity: 0.55; box-shadow: 0 0 0 0 rgba(49, 180, 92, 0); }
+    0% { opacity: 0.55; box-shadow: 0 0 0 0 rgba(227, 77, 77, 0.35); }
+    70% { opacity: 1; box-shadow: 0 0 0 10px rgba(227, 77, 77, 0); }
+    100% { opacity: 0.55; box-shadow: 0 0 0 0 rgba(227, 77, 77, 0); }
 }
 
 body.home-light .impact-growth #feed li {
