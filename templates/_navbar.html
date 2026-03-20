@@ -66,11 +66,11 @@
     <div class="public-header-shell">
         <a href="{{ url_for('home') }}" class="logo-link">
             <img src="{{ url_for('static', filename='logo.png') }}" alt="VeriCycle Logo" class="logo">
-            <span>VeriCycle</span>
+            <span class="brand-name">VeriCycle</span>
         </a>
         <div class="public-auth-actions">
-            <a href="{{ url_for('login') }}" class="nav-button">Log In</a>
-            <a href="{{ url_for('signup') }}" class="nav-button nav-button-signup">Create Account</a>
+            <a href="{{ url_for('login') }}" class="nav-link-minimal js-open-auth-modal" data-auth-trigger data-auth-mode="login">Log In</a>
+            <a href="{{ url_for('signup') }}" class="nav-button nav-button-signup js-open-auth-modal" data-auth-trigger data-auth-mode="signup">Create Account</a>
         </div>
     </div>
 </header>

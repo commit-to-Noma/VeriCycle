@@ -1114,17 +1114,33 @@ def mirror_fetch_latest_topic_messages(topic_id: str, limit: int = 10):
 @app.route("/signup", methods=['GET', 'POST'])
 def signup():
     if request.method == 'GET':
-        return render_template('signup.html', active_page='signup')
+        selected_role = normalize_role_value(request.args.get('role') or '')
+        if selected_role not in {'recycler', 'business', 'resident', 'center', 'admin'}:
+            selected_role = ''
+        return render_template('signup.html', active_page='signup', signup_role=selected_role)
+
+    from_home_modal = (request.form.get('auth_source') or '').strip() == 'home-modal'
+
+    def home_auth_redirect(mode: str, role_value: str = ''):
+        params = {'auth': mode}
+        normalized_role = normalize_role_value(role_value)
+        if normalized_role in {'recycler', 'business', 'resident', 'center', 'admin'}:
+            params['role'] = normalized_role
+        return redirect(url_for('home', **params))
 
     email = (request.form.get('email') or request.form.get('username') or '').strip().lower()
     password = request.form.get('password') or ''
     if not email or not password:
         flash('Email and password are required for signup.', 'error')
-        return redirect(url_for('signup'))
+        if from_home_modal:
+            return home_auth_redirect('signup', request.form.get('role') or '')
+        return redirect(url_for('signup', role=request.form.get('role') or 'recycler'))
 
-    requested_role = normalize_role_value(request.form.get('role') or 'recycler')
+    requested_role = normalize_role_value(request.form.get('role') or '')
     if requested_role not in {'recycler', 'business', 'resident', 'center', 'admin'}:
         flash('Invalid role selected for signup.', 'error')
+        if from_home_modal:
+            return home_auth_redirect('signup')
         return redirect(url_for('signup'))
 
     # Phase 2 compatibility: keep recycler signups persisted as collector.
@@ -1139,7 +1155,9 @@ def signup():
     if existing_user:
         print(f"[SIGNUP] Email {email} already exists, rejecting signup")
         flash('That email is already taken. Please log in.', 'error')
-        return redirect(url_for('signup'))
+        if from_home_modal:
+            return home_auth_redirect('signup', requested_role)
+        return redirect(url_for('signup', role=requested_role))
     
     print(f"[SIGNUP] Email {email} is new. Proceeding with account creation for role={role}")
 
@@ -1248,11 +1266,15 @@ def signup():
         print(f"--- HEDERA SCRIPT CRASHED (CalledProcessError) ---")
         print("STDOUT:", e.stdout); print("STDERR:", e.stderr)
         flash('A problem occurred while creating your account. Please try again.', 'error')
+        if from_home_modal:
+            return home_auth_redirect('signup', requested_role)
         return redirect(url_for('home'))
     except Exception as e:
         print(f"--- HEDERA/PYTHON SIGNUP FAILED (General Exception) ---")
         print(e)
         flash('A problem occurred while creating your account. Please try again.','error')
+        if from_home_modal:
+            return home_auth_redirect('signup', requested_role)
         return redirect(url_for('home'))
 
 
@@ -1261,6 +1283,15 @@ def login():
     if request.method == 'GET':
         return render_template('login.html', active_page='login')
 
+    from_home_modal = (request.form.get('auth_source') or '').strip() == 'home-modal'
+
+    def home_auth_redirect(mode: str, role_value: str = ''):
+        params = {'auth': mode}
+        normalized_role = normalize_role_value(role_value)
+        if normalized_role in {'recycler', 'business', 'resident', 'center', 'admin'}:
+            params['role'] = normalized_role
+        return redirect(url_for('home', **params))
+
     email_or_username = (request.form.get('email') or request.form.get('username') or '').strip().lower()
     email = resolve_demo_login_alias(email_or_username)
     password = request.form.get('password') or ''
@@ -1268,6 +1299,8 @@ def login():
 
     if requested_role and requested_role not in {'recycler', 'business', 'resident', 'center', 'admin'}:
         flash('Invalid role selected for login.', 'error')
+        if from_home_modal:
+            return home_auth_redirect('login')
         return redirect(url_for('login'))
 
     user = User.query.filter_by(email=email).first()
@@ -1278,6 +1311,8 @@ def login():
         account_role = effective_role(user)
         if requested_role and requested_role != account_role:
             flash(f"Role mismatch. This account is registered as '{account_role}'.", 'error')
+            if from_home_modal:
+                return home_auth_redirect('login', requested_role)
             return redirect(url_for('login'))
 
         login_user(user, remember=True)
@@ -1330,6 +1365,8 @@ def login():
             flash('No account found for that email. Please sign up first.', 'error')
             print(f"[LOGIN] No account found for email={email}")
 
+        if from_home_modal:
+            return home_auth_redirect('login', requested_role)
         return redirect(url_for('login'))
 
 @app.route("/logout")
@@ -1349,7 +1386,208 @@ def splash():
 
 @app.route('/home')
 def home():
-    return render_template('home.html', active_page='home')
+    activities = Activity.query.order_by(Activity.id.desc()).all()
+    pickup_opportunities = PickupOpportunity.query.order_by(PickupOpportunity.created_at.desc()).all()
+
+    def parse_event_datetime(value):
+        if isinstance(value, datetime):
+            parsed = value
+        else:
+            raw = str(value or '').strip()
+            if not raw:
+                return datetime.now(timezone.utc)
+            normalized = raw.replace('Z', '+00:00')
+            try:
+                parsed = datetime.fromisoformat(normalized)
+            except ValueError:
+                parsed = None
+                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+                    try:
+                        parsed = datetime.strptime(raw, fmt)
+                        break
+                    except ValueError:
+                        continue
+                if parsed is None:
+                    return datetime.now(timezone.utc)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed
+
+    def is_verified_activity(activity):
+        status_values = {
+            (activity.verified_status or '').strip().lower(),
+            (activity.status or '').strip().lower(),
+            (activity.pipeline_stage or '').strip().lower(),
+        }
+        return bool(status_values & {'verified', 'logged', 'rewarded', 'attested'})
+
+    def has_anchored_proof(activity):
+        if activity.proof_hash or activity.hcs_tx_id or activity.hedera_tx_id or activity.logbook_tx_id:
+            return True
+        return (activity.logbook_status or '').strip().lower() in {'anchored', 'offchain_final', 'demo_skipped'}
+
+    def compact_location_label(raw_label):
+        label = re.sub(r'\s+', ' ', str(raw_label or '').strip())
+        if not label:
+            return 'Unknown area'
+        if len(label) <= 20:
+            return label
+        primary = label.split(',')[0].strip()
+        if len(primary) <= 20:
+            return primary
+        words = primary.split()
+        return ' '.join(words[:3]) if words else primary[:20]
+
+    verified_activities = [activity for activity in activities if is_verified_activity(activity)]
+    materials_collected = round(sum(max(activity.amount or 0.0, 0.0) for activity in verified_activities), 1)
+    ecocoin_distributed = round(
+        sum(calculate_demo_reward_amount(activity.desc, activity.amount) for activity in verified_activities),
+        1,
+    )
+    anchored_proofs = sum(1 for activity in activities if has_anchored_proof(activity))
+
+    participating_communities = {
+        compact_location_label(opportunity.location)
+        for opportunity in pickup_opportunities
+        if (opportunity.location or '').strip()
+    }
+
+    verified_events_count = len(verified_activities)
+    materials_collected_total = int(round(materials_collected))
+    ecocoin_total = int(round(ecocoin_distributed))
+    communities_total = max(len(participating_communities), 1)
+
+    home_metrics = [
+        {
+            'value': f"{verified_events_count:,}",
+            'target': verified_events_count,
+            'label': 'Verified Events',
+            'detail': 'Live verified recycler and pickup records already flowing through the network.',
+        },
+        {
+            'value': f"{materials_collected_total:,}",
+            'target': materials_collected_total,
+            'label': 'kg Materials Collected',
+            'detail': 'Measured material volume from verified events in the current demo database.',
+        },
+        {
+            'value': f"{ecocoin_total:,}",
+            'target': ecocoin_total,
+            'label': 'EcoCoin Distributed',
+            'detail': 'Estimated recycler-side reward impact using the platform demo reward logic.',
+        },
+        {
+            'value': f"{anchored_proofs:,}",
+            'target': anchored_proofs,
+            'label': 'Proofs Anchored',
+            'detail': 'Proof-backed records with hashes or anchored logbook state available for inspection.',
+        },
+        {
+            'value': f"{communities_total:,}",
+            'target': communities_total,
+            'label': 'Communities',
+            'detail': 'Distinct neighborhoods currently visible in requests and verified workflows.',
+        },
+    ]
+
+    location_totals = defaultdict(float)
+    for opportunity in pickup_opportunities:
+        location_totals[compact_location_label(opportunity.location)] += max(opportunity.estimated_kg or 0.0, 0.0)
+
+    sorted_locations = sorted(location_totals.items(), key=lambda item: item[1], reverse=True)
+    if sorted_locations:
+        growth_labels = [label for label, _ in sorted_locations[:5]]
+        growth_values = [round(total, 1) for _, total in sorted_locations[:5]]
+        top_location, top_volume = sorted_locations[0]
+        growth_note = f"📍 {top_location} leads all neighborhoods this month, processing {top_volume:,.1f} kg of recovered materials."
+    else:
+        growth_labels = ['Sandton', 'Rosebank', 'Alexandra', 'Soweto', 'Midrand']
+        growth_values = [22100.0, 18750.0, 16320.0, 14590.0, 11940.0]
+        growth_note = '📍 Sandton leads all neighborhoods this month, processing 22,100 kg of recovered materials.'
+
+    center_names = [
+        'Mpact Recycling',
+        'SA Metal Group',
+        'Pikitup Garden Site',
+        'Reclaim Hub Johannesburg',
+    ]
+
+    def friendly_material_label(raw_value):
+        label = re.sub(r'[_\-]+', ' ', str(raw_value or '').strip())
+        label = re.sub(r'\s+', ' ', label)
+        if not label:
+            return 'Mixed Recyclables'
+        normalized = label.lower()
+        material_aliases = {
+            'pet': 'PET Plastic',
+            'plastic': 'Plastic',
+            'glass': 'Glass',
+            'paper': 'Paper',
+            'cardboard': 'Cardboard',
+            'metal': 'Metal',
+            'aluminium': 'Aluminium',
+            'aluminum': 'Aluminium',
+            'ewaste': 'E-Waste',
+            'e waste': 'E-Waste',
+            'electronics': 'E-Waste',
+        }
+        return material_aliases.get(normalized, label.title())
+
+    live_activity = []
+    now_utc = datetime.now(timezone.utc)
+
+    for index, activity in enumerate(verified_activities[:4]):
+        material_label = friendly_material_label(activity.desc)
+        center_label = center_names[index % len(center_names)]
+        seeded_seconds_ago = [0, 4, 12, 24][index % 4]
+        live_activity.append({
+            'title': f"{center_label} verified {material_label}",
+            'detail': f"{max(activity.amount or 0.0, 0.0):.1f} kg was confirmed and moved into a proof-ready recycler record.",
+            'timestamp': (now_utc - timedelta(seconds=seeded_seconds_ago)).isoformat(),
+        })
+
+    for index, opportunity in enumerate(pickup_opportunities[:4]):
+        location_label = compact_location_label(opportunity.location)
+        material_label = friendly_material_label(opportunity.material_type)
+        center_label = center_names[index % len(center_names)]
+        seeded_seconds_ago = [33, 48, 63, 79][index % 4]
+        live_activity.append({
+            'title': f"{material_label} routed through {center_label}",
+            'detail': f"A {material_label} pickup from {location_label} entered the live coordination queue.",
+            'timestamp': (now_utc - timedelta(seconds=seeded_seconds_ago)).isoformat(),
+        })
+
+    if len(live_activity) < 5:
+        fallback_feed = [
+            ('Mpact Recycling verified Glass', '15.0 kg from Sandton was validated and anchored into recycler proof records.', 0),
+            ('SA Metal Group accepted E-Waste', '12.0 kg from Rosebank entered verified processing and reward flow.', 4),
+            ('Pikitup Garden Site confirmed Plastics', '19.5 kg from Alexandra was checked into the live network.', 12),
+            ('Reclaim Hub Johannesburg received Cardboard', 'A Soweto pickup handoff was verified and queued for reward settlement.', 25),
+            ('Mpact Recycling logged Mixed Recyclables', 'Midrand submissions increased neighborhood recovery volume this hour.', 41),
+        ]
+        for title, detail, seconds_ago in fallback_feed:
+            live_activity.append({
+                'title': title,
+                'detail': detail,
+                'timestamp': (now_utc - timedelta(seconds=seconds_ago)).isoformat(),
+            })
+            if len(live_activity) >= 8:
+                break
+
+    live_activity.sort(key=lambda item: item['timestamp'], reverse=True)
+
+    return render_template(
+        'home.html',
+        active_page='home',
+        home_metrics=home_metrics,
+        growth_labels=growth_labels,
+        growth_values=growth_values,
+        growth_note=growth_note,
+        live_activity=live_activity[:8],
+        growth_labels_json=json.dumps(growth_labels),
+        growth_values_json=json.dumps(growth_values),
+        live_activity_json=json.dumps(live_activity[:8]),
+    )
 
 
 @app.get('/public-data')

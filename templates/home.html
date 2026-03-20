@@ -6,15 +6,14 @@
     <title>VeriCycle - Verified Value</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="dark-theme">
+<body class="home-light">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     {% include '_navbar.html' %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="container">
+            <div class="container home-flash-wrap">
                 <div class="flash-bar">
                     {% for category, message in messages %}
                         <div class="flash-message {{ category }}">{{ message }}</div>
@@ -24,366 +23,578 @@
         {% endif %}
     {% endwith %}
 
-    <main id="main-content" class="hero hero-proof">
-        <div class="container">
-            <!-- Verified Proof Pulse motif -->
-            <div class="hero-proof-pulse" aria-hidden="true">
-                <span class="pulse-ring pulse-ring-1"></span>
-                <span class="pulse-ring pulse-ring-2"></span>
-                <span class="pulse-ring pulse-ring-3"></span>
-                <span class="pulse-icon">♻️</span>
+    <main id="main-content" class="hero hero-proof home-hero">
+        <div class="home-radar" aria-hidden="true">
+            <div class="home-radar-logo-shell">
+                <img src="{{ url_for('static', filename='logo.png') }}" class="home-radar-logo" alt="">
             </div>
+            <span class="home-radar-ring home-radar-ring-1"></span>
+            <span class="home-radar-ring home-radar-ring-2"></span>
+            <span class="home-radar-ring home-radar-ring-3"></span>
+            <span class="home-radar-ring home-radar-ring-4"></span>
+            <span class="home-radar-ring home-radar-ring-5"></span>
+            <span class="home-radar-ring home-radar-ring-6"></span>
+        </div>
 
-            <p class="hero-eyebrow">Powered by Hedera</p>
-            <h1>Turn Recycling into Verified Income</h1>
-            <p class="subtitle">VeriCycle creates proof of income for waste pickers using Hedera.</p>
-
-            <div class="hero-cta-row">
-                {% if not current_user.is_authenticated %}
-                    <a href="/login" class="btn-primary">Start Live Demo</a>
-                    <a href="{{ url_for('login') }}" class="btn-primary-large">Open Live Demo</a>
-                    <a href="{{ url_for('signup') }}" class="btn-secondary">Create Account or See How Proof Works</a>
-                {% else %}
-                    {% if current_effective_role == 'center' %}
-                        <a href="{{ url_for('center_dashboard') }}" class="btn-primary-large">Go to Verification Center</a>
-                    {% elif current_effective_role == 'admin' %}
-                        <a href="{{ url_for('admin_monitor') }}" class="btn-primary-large">Go to Admin Monitor</a>
-                    {% elif current_effective_role == 'business' %}
-                        <a href="{{ url_for('business_dashboard') }}" class="btn-primary-large">Go to Business Hub</a>
-                    {% elif current_effective_role == 'resident' %}
-                        <a href="{{ url_for('household_dashboard') }}" class="btn-primary-large">Go to Community Hub</a>
-                    {% elif current_effective_role == 'recycler' %}
-                        <a href="{{ url_for('collector_dashboard') }}" class="btn-primary-large">Go to Recycler Hub</a>
-                    {% else %}
-                        <a href="{{ url_for(role_home_endpoint or 'home') }}" class="btn-primary-large">Open Dashboard</a>
-                    {% endif %}
-                    <a href="#how-it-works" class="btn-secondary">See How Proof Works</a>
-                {% endif %}
-            </div>
-
-            <!-- Trust strip -->
-            <div class="trust-strip">
-                <div class="trust-chip">
-                    <span class="trust-chip-icon">⛓️</span>
-                    <span class="trust-chip-label">Anchored Records</span>
-                </div>
-                <div class="trust-chip">
-                    <span class="trust-chip-icon">🪙</span>
-                    <span class="trust-chip-label">Reward Outcomes</span>
-                </div>
-                <div class="trust-chip">
-                    <span class="trust-chip-icon">📄</span>
-                    <span class="trust-chip-label">Proof Ready Bundles</span>
-                </div>
-            </div>
-
-            <div class="trust-strip" aria-label="Stakeholders served by VeriCycle">
-                <div class="trust-chip">
-                    <span class="trust-chip-label">Recyclers</span>
-                </div>
-                <div class="trust-chip">
-                    <span class="trust-chip-label">Businesses</span>
-                </div>
-                <div class="trust-chip">
-                    <span class="trust-chip-label">Communities</span>
-                </div>
-                <div class="trust-chip">
-                    <span class="trust-chip-label">Centers</span>
-                </div>
-            </div>
-
-            <div class="floating-fixed-icons" aria-hidden="true">
-                <div id="icon-final-trash" class="fixed-icon icon-bin" aria-hidden="true">
-                    <svg class="fixed-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M3 6h18v2H3V6zm2 3h14l-1 11H6L5 9zm3-6h6v2H8V3z" fill="currentColor" />
-                    </svg>
-                </div>
-                <div id="icon-final-check" class="fixed-icon icon-check" aria-hidden="true">
-                    <svg class="fixed-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <circle cx="32" cy="32" r="30" fill="currentColor" />
-                        <path d="M20 34l8 8 18-22" fill="none" stroke="#0f2463" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+        <div class="container hero-proof-content hero-content-wrapper">
+            <div class="hero-copy-shell">
+                <p class="hero-eyebrow">Powered by Hedera</p>
+                <h1>VeriCycle</h1>
+                <h2>Turn Recycling into Verified Income</h2>
+                <p class="subtitle">A trusted coordination layer where collection activity becomes verified impact, real rewards, and durable proof.</p>
+                <div class="hero-cta-row">
+                    <a href="#join-network" class="btn-primary-large hero-mission-button">Explore the VeriCycle Ecosystem</a>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Proof stats row -->
-    <section class="proof-stats-section">
+    <section class="cta-section" id="join-network">
         <div class="container-wide">
-            <div class="proof-stats-row">
-                <div class="proof-stat-card">
-                    <span class="proof-stat-icon">✅</span>
-                    <span class="proof-stat-value" id="stat-verified-events">500+</span>
-                    <span class="proof-stat-label">Verified Events</span>
-                </div>
-                <div class="proof-stat-card">
-                    <span class="proof-stat-icon">📦</span>
-                    <span class="proof-stat-value">200+</span>
-                    <span class="proof-stat-label">Anchored Records</span>
-                </div>
-                <div class="proof-stat-card">
-                    <span class="proof-stat-icon">⛓️</span>
-                    <span class="proof-stat-value">150+</span>
-                    <span class="proof-stat-label">Proof Bundles</span>
-                </div>
+            <h2>The VeriCycle Ecosystem</h2>
+            <p class="cta-subtitle">A shared trust layer for the people collecting, verifying, funding, and benefiting from local recycling work.</p>
+            <div class="advantages stakeholder-grid">
+                <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="recycler">
+                    <span class="stakeholder-kicker">Daily work, officially recognized</span>
+                    <h3>Recyclers</h3>
+                    <p>Build a trusted, consistent earnings history from the work you already do, creating records that can help open doors with banks, lenders, and future opportunities.</p>
+                    <span class="stakeholder-cta">Open recycler sign-up</span>
+                </button>
+                <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="business">
+                    <span class="stakeholder-kicker">Prove your purpose</span>
+                    <h3>Businesses</h3>
+                    <p>Get simple, verified sustainability records that show real recycling impact through your local network instead of vague reporting and spreadsheets.</p>
+                    <span class="stakeholder-cta">Open business sign-up</span>
+                </button>
+                <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="resident">
+                    <span class="stakeholder-kicker">Take back your neighborhood</span>
+                    <h3>Communities</h3>
+                    <p>Report recycling needs, request cleanups, and support the trusted local people keeping your streets cleaner with a system everyone can follow.</p>
+                    <span class="stakeholder-cta">Open community sign-up</span>
+                </button>
+                <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="center">
+                    <span class="stakeholder-kicker">A modern foundation of trust</span>
+                    <h3>Recycling Centers</h3>
+                    <p>Weigh materials, scan verified identities, and accept deliveries with certainty, knowing every transaction is recorded clearly and permanently.</p>
+                    <span class="stakeholder-cta">Open center sign-up</span>
+                </button>
             </div>
-        </div>
-    </section>
-
-    <section class="cta-section">
-        <div class="container-wide">
-            <h2>Join the VeriCycle Network</h2>
-            <p class="cta-subtitle">One system, one trust ladder: Submitted, Verified, Anchored, Rewarded, and Proof Ready.</p>
-            <div class="advantages">
-                <div class="advantage-card">
-                    <h3>♻️ Recyclers earn verified value</h3>
-                    <p>Informal recyclers can record drop-offs, earn EcoCoin rewards, and build proof-of-income history.</p>
-                </div>
-                <div class="advantage-card">
-                    <h3>🏢 Businesses create recycling opportunities</h3>
-                    <p>Restaurants, offices, and buildings can request recycling pickup and generate verified sustainability records.</p>
-                </div>
-                <div class="advantage-card">
-                    <h3>🏘️ Communities help coordinate recycling</h3>
-                    <p>Residents can report recycling opportunities, request pickup, and support cleaner neighborhoods.</p>
-                </div>
-                <div class="advantage-card">
-                    <h3>🔒 Hedera makes it trustworthy</h3>
-                    <p>Every verified recycling event can be anchored on Hedera, creating tamper-proof economic and environmental records.</p>
-                </div>
-            </div>
-            {% if not current_user.is_authenticated %}
-                <div class="cta-buttons">
-                    <a href="{{ url_for('signup') }}" class="btn-primary-large">Create Your Account</a>
-                    <p>Already have an account? <a href="{{ url_for('login') }}" class="link-secondary">Log In here</a></p>
-                </div>
-            {% endif %}
         </div>
     </section>
 
     <section class="how-it-works-section" id="how-it-works">
         <div class="container-wide">
             <h2>How VeriCycle Works</h2>
-            <p class="activity-subtitle">A four-step walkthrough of the five-state trust model for the full recycling network.</p>
+            <p class="activity-subtitle">A human-centered flow from collection to trusted proof.</p>
             <div class="how-it-works-grid">
                 <div class="step-card">
                     <span class="step-number">1</span>
-                    <span class="step-icon">📝</span>
-                    <h3>Submitted</h3>
-                    <p>A recycler pickup or deposit event is captured in VeriCycle.</p>
+                    <h3>Request / Collect</h3>
+                    <p>A business or neighborhood posts a pickup, or a recycler starts with material already collected and ready for drop-off.</p>
                 </div>
+                <div class="step-flow-arrow" aria-hidden="true">→</div>
                 <div class="step-card">
                     <span class="step-number">2</span>
-                    <span class="step-icon">♻️</span>
-                    <h3>Verified</h3>
-                    <p>Center or workflow checks confirm material details and event validity.</p>
+                    <h3>Drop Off</h3>
+                    <p>The recycler brings sorted material to a participating center, where the handoff is captured with weight and source context.</p>
                 </div>
+                <div class="step-flow-arrow" aria-hidden="true">→</div>
                 <div class="step-card">
                     <span class="step-number">3</span>
-                    <span class="step-icon">✅</span>
-                    <h3>Anchored</h3>
-                    <p>Trusted event evidence is linked to Hedera through anchored records.</p>
+                    <h3>Center Verification</h3>
+                    <p>The recycling center confirms the recycler, material type, and quantity so the event becomes a trusted network record.</p>
                 </div>
+                <div class="step-flow-arrow" aria-hidden="true">→</div>
                 <div class="step-card">
                     <span class="step-number">4</span>
-                    <span class="step-icon">💰</span>
-                    <h3>Rewarded and Proof Ready</h3>
-                    <p>Reward outcomes and proof bundles become inspectable and export-ready.</p>
+                    <h3>Earn Proof</h3>
+                    <p>Rewards flow back to the recycler while the event is preserved as proof of income, proof of diversion, and proof of participation.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="activity-feed-section">
-        <div class="container-wide">
-            
-            <div class="platform-growth-header">
-                <h2>Platform Growth</h2>
-                <p class="activity-subtitle">
-                    Real-time trust metrics across Submitted, Verified, Anchored, Rewarded, and Proof Ready states.
-                </p>
+    <section class="impact-growth" id="impact">
+        {% set metrics_safe = home_metrics | default([
+            {'value': '90,000+', 'target': 90000, 'label': 'Verified Events', 'detail': 'Trusted recycling actions recorded across the network.'},
+            {'value': '320,000+', 'target': 320000, 'label': 'kg Materials Collected', 'detail': 'Auditable recovery volume captured through verified workflows.'},
+            {'value': '150,000+', 'target': 150000, 'label': 'EcoCoin Distributed', 'detail': 'Rewards flowing back into recycler livelihoods.'},
+            {'value': '45,000+', 'target': 45000, 'label': 'Proofs Anchored', 'detail': 'Proof-backed records available for inspection.'},
+            {'value': '24', 'target': 24, 'label': 'Communities', 'detail': 'Neighborhoods participating in the live network.'}
+        ], true) %}
+        {% set growth_labels_safe = growth_labels | default(['JHB CBD', 'Randburg', 'Soweto', 'Sandton', 'Roodepoort'], true) %}
+        {% set growth_values_safe = growth_values | default([12500, 19200, 8400, 22100, 15300], true) %}
+        {% set growth_max_safe = (growth_values_safe | max) if growth_values_safe else 1 %}
+        {% set leader_index = growth_values_safe.index(growth_max_safe) if growth_values_safe else 0 %}
+        {% set leader_label = growth_labels_safe[leader_index] if growth_labels_safe and leader_index < (growth_labels_safe | length) else 'Sandton' %}
+        {% set leader_value = growth_values_safe[leader_index] if growth_values_safe and leader_index < (growth_values_safe | length) else 22100 %}
+        {% set growth_note_safe = growth_note | default('Sandton leads neighborhood recovery this month, with verified material volumes still climbing across the network.', true) %}
+        {% set live_activity_safe = live_activity | default([
+            {'title': 'Mpact Recycling verified Glass', 'detail': '15.0 kg from Sandton was validated and anchored into recycler proof records.', 'timestamp': '2026-03-20T12:00:00+00:00'},
+            {'title': 'SA Metal Group accepted E-Waste', 'detail': '12.0 kg from Rosebank entered verified processing and reward flow.', 'timestamp': '2026-03-20T11:59:40+00:00'},
+            {'title': 'Pikitup Garden Site confirmed Plastics', 'detail': '19.5 kg from Alexandra was checked into the live network.', 'timestamp': '2026-03-20T11:59:10+00:00'},
+            {'title': 'Reclaim Hub Johannesburg received Cardboard', 'detail': 'A Soweto handoff was verified and queued for reward settlement.', 'timestamp': '2026-03-20T11:58:35+00:00'}
+        ], true) %}
+        <div class="platform-growth-header">
+            <h2>Platform Impact &amp; Growth</h2>
+            <p class="activity-subtitle">Live trust metrics, material movement, and neighborhood momentum from the VeriCycle network.</p>
+        </div>
+
+        <div class="stats-row">
+            {% for metric in metrics_safe %}
+            <div class="stat-card" data-tooltip="{{ metric.detail }}">
+                <h3 class="stat count-up" data-target="{{ metric.target }}">{{ metric.value }}</h3>
+                <p>{{ metric.label }}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="growth-content">
+            <div class="chart-box">
+                <div class="chart-box-header">
+                    <div>
+                        <h3>Recycling Volume by Area</h3>
+                        <p class="chart-caption">Hover any bar to inspect current verified material volume.</p>
+                    </div>
+                    <div class="chart-units">kg verified</div>
+                </div>
+                <div class="bar-chart-wrap">
+                    <div class="bar-chart-axis">
+                        <span>24k</span>
+                        <span>18k</span>
+                        <span>12k</span>
+                        <span>6k</span>
+                        <span>0</span>
+                    </div>
+                    <div class="bar-chart" id="barChart">
+                    {% for label in growth_labels_safe %}
+                    {% set bar_value = growth_values_safe[loop.index0] if loop.index0 < (growth_values_safe | length) else 0 %}
+                    {% set bar_height = ((bar_value / growth_max_safe) * 100) if growth_max_safe else 0 %}
+                    <div class="bar-column {% if loop.index0 == leader_index %}is-leader{% endif %}">
+                        {% if loop.index0 == leader_index %}
+                        <div class="bar-callout">🏆 {{ leader_label }} leads with {{ '{:,.0f}'.format(leader_value) }} kg this month.</div>
+                        {% endif %}
+                        <div class="bar" data-value="{{ bar_value }}" data-tooltip="{{ label }}: {{ '{:,.0f}'.format(bar_value) }} kg" style="height: {{ [bar_height, 18] | max }}%;">
+                            {% if loop.index0 == leader_index %}
+                            <span class="bar-trophy" aria-hidden="true">🏆</span>
+                            {% endif %}
+                            <span class="bar-value">{{ '{:,.0f}'.format(bar_value) }}</span>
+                        </div>
+                        <span class="bar-label">{{ label }}</span>
+                    </div>
+                    {% endfor %}
+                    </div>
+                </div>
+                <p class="insight">{{ growth_note_safe }}</p>
             </div>
 
-            <div class="live-grid">
-                
-                <div class="leaderboard-column">
-                    <div class="stats-grid-small">
-                        <div class="stat-card-small">
-                            <span class="stat-value-small">500+</span>
-                            <span class="stat-label-small">Verified Events</span>
-                        </div>
-                        <div class="stat-card-small">
-                            <span class="stat-value-small">3</span>
-                            <span class="stat-label-small">Business Impact Records</span>
-                        </div>
-                        <div class="stat-card-small">
-                            <span class="stat-value-small">50k+</span>
-                            <span class="stat-label-small">Anchored Records</span>
-                        </div>
-                    </div>
-
-                    <h3 class="section-h3">Top Neighborhoods</h3>
-                    <div class="leaderboard-chart">
-                        <canvas id="neighborhoodBarChart"></canvas>
-                    </div>
-                    <p class="leaderboard-note" style="margin-top: 1rem;">🏆 Congratulations to <strong>Sandton</strong> for leading the charge!</p>
+            <div class="feed-box">
+                <div class="feed-header">
+                    <h3>Live Activity</h3>
+                    <span class="live-pulse-wrap"><span class="live-pulse" aria-hidden="true"></span> LIVE</span>
                 </div>
-
-                <div class="live-feed-column">
-                    <h3 class="section-h3">Live Verified Events</h3>
-                    <div class="activity-feed-container">
-                        <div class="activity-feed" id="activity-feed"></div>
-                    </div>
-                </div>
-
+                <ul id="feed">
+                    {% for item in live_activity_safe[:4] %}
+                    <li data-ts="{{ item.timestamp }}"><b>{{ item.title }}</b> {{ item.detail }} <span class="feed-time">Just now</span></li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
     </section>
 
-    <section class="mission-section" id="our-mission">
+    <section class="mission-section" id="mission">
         <div class="container">
-            <h2>Our Mission & Impact</h2>
-            <p class="activity-subtitle">VeriCycle turns recycling activity into trusted, verifiable proof and fair economic outcomes.</p>
-            <div class="advantages" style="grid-template-columns: 1fr; row-gap: 1.5rem;">
-                <div class="advantage-card">
-                    <h3>❓ The Problem We're Solving</h3>
-                    <p>
-                        South Africa's recycling system depends on over 90,000 informal waste pickers. These collectors face <strong>social stigmatization, severe health risks</strong> from handling waste, and <strong>economic exploitation</strong> from cash-based middlemen. They have no way to build a formal financial history, trapping them in a high-risk, low-reward cycle. At the same time, businesses and communities often lack a reliable way to coordinate and verify recycling activity.
-                    </p>
+            <h2>Mission &amp; Impact</h2>
+            <p class="activity-subtitle">VeriCycle exists to make recycling work visible, trustworthy, and economically useful for the people doing the labor.</p>
+            <div class="advantages mission-story-grid">
+                <div class="advantage-card mission-card-light mission-problem-card">
+                    <span class="mission-icon-badge" aria-hidden="true">✋</span>
+                    <h3>The Problem</h3>
+                    <p>Across South Africa, the informal recycling workforce keeps cities cleaner every day, but most of that labor still leaves behind no reliable transaction history. When work stays invisible, people stay locked out of opportunity.</p>
                 </div>
-                <div class="advantage-card">
-                    <h3>✅ The VeriCycle Solution</h3>
-                    <p>
-                        VeriCycle connects recyclers, businesses, recycling centers, and communities through one trust ladder: Submitted, Verified, Anchored, Rewarded, and Proof Ready. Recyclers gain reward outcomes and proof-of-income history, while businesses gain auditable impact records.
-                    </p>
+                <div class="advantage-card mission-card-light mission-solution-card">
+                    <span class="mission-icon-badge" aria-hidden="true">◈</span>
+                    <h3>The Solution</h3>
+                    <p>VeriCycle records each pickup, drop-off, and verification step as trusted digital proof, turning everyday recycling into recognized work, measurable impact, and a financial story people can build on.</p>
                 </div>
-                <div class="advantage-card">
-                    <h3>📈 The Real-World Impact</h3>
-                    <p>
-                        We are building a <strong>"Proof of Income"</strong> report for informal collectors, breaking the cycle of financial exclusion. With anchored records, reward outcomes, and proof bundles, judges and partners can verify impact through visible evidence instead of claims.
-                    </p>
+                <div class="advantage-card mission-card-light mission-impact-card">
+                    <span class="mission-icon-badge" aria-hidden="true">✦</span>
+                    <h3>Real-World Impact</h3>
+                    <p>That shift changes outcomes on the ground: recyclers build earning history, businesses prove progress, communities track visible cleanup momentum, and local trust grows through every verified handoff.</p>
                 </div>
             </div>
         </div>
     </section>
+
+    {% if not current_user.is_authenticated %}
+    <div class="home-auth-overlay" id="homeAuthOverlay" aria-hidden="true">
+        <div class="home-auth-card" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+            <button class="home-auth-close" id="homeAuthClose" type="button" aria-label="Close authentication modal">✕</button>
+            <div class="home-auth-brand">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="VeriCycle logo">
+            </div>
+            <div class="home-auth-copy">
+                <h3 id="authModalTitle">Log In to VeriCycle</h3>
+                <p id="authModalSubtitle">Continue your verified recycling workflow.</p>
+            </div>
+            <form method="POST" action="{{ url_for('login') }}" class="home-auth-form" id="homeAuthForm">
+                <input type="hidden" name="auth_source" value="home-modal">
+                <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+                <input type="hidden" name="role" id="homeAuthRoleHidden" value="">
+                <label class="sr-only" for="homeAuthEmail">Email address</label>
+                <input id="homeAuthEmail" type="email" name="email" placeholder="Email address" required>
+                <label class="sr-only" for="homeAuthPassword">Password</label>
+                <input id="homeAuthPassword" type="password" name="password" placeholder="Password" required>
+                <div class="home-auth-role-select" id="homeAuthRoleSelectWrap" hidden>
+                    <label class="sr-only" for="homeSignupRole">Role</label>
+                    <select id="homeSignupRole" name="signup_role_select">
+                        <option value="" selected>Please select your role</option>
+                        <option value="recycler">Recycler</option>
+                        <option value="business">Business</option>
+                        <option value="resident">Community</option>
+                        <option value="center">Recycling Center</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <p class="home-auth-role-confirmation" id="homeAuthRoleConfirmation" hidden></p>
+                <button type="submit" class="btn-primary-large" id="authModalSubmit">Log In</button>
+            </form>
+            <p class="home-auth-switch-copy">
+                <span id="authModalSwitchLabel">Need an account?</span>
+                <button type="button" class="home-auth-switch-link" id="authModeSwitch">Create one</button>
+            </p>
+        </div>
+    </div>
+    {% endif %}
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // --- 1. LIVE ACTIVITY FEED LOGIC ---
-            const feedElement = document.getElementById('activity-feed');
-            const container = document.querySelector('.activity-feed-container');
-            const fakeData = [
-                { icon: '♻️', text: '<strong>1.5kg</strong> of Cans verified at <strong>Pikitup Marlboro</strong>' },
-                { icon: '♻️', text: '<strong>2.1kg</strong> of Paper verified at <strong>Mpact Randburg</strong>' },
-                { icon: '♻️', text: '<strong>0.8kg</strong> of Glass verified at <strong>Roodepoort Recycling</strong>' },
-                { icon: '♻️', text: '<strong>3.0kg</strong> of Cardboard verified at <strong>Mpact Germiston</strong>' },
-                { icon: '♻️', text: '<strong>1.2kg</strong> of PET Bottles verified at <strong>FMSA Waltloo</strong>' },
-            ];
-
-            // Build the feed to ensure seamless looping
-            function buildFeed(repeats) {
-                feedElement.innerHTML = '';
-                for (let r = 0; r < repeats; r++) {
-                    fakeData.forEach(item => {
-                        const itemElement = document.createElement('div');
-                        itemElement.className = 'activity-item';
-                        itemElement.innerHTML = `
-                            <span class="activity-icon">${item.icon}</span>
-                            <span class="activity-text">${item.text}</span>
-                        `;
-                        feedElement.appendChild(itemElement);
-                    });
-                }
-            }
-
-            // Fill container vertically
-            let repeats = 12; // increased to ensure seamless loop (was 6)
-            buildFeed(repeats);
-            let singleHeight = feedElement.scrollHeight / repeats;
-            const maxRepeats = 10;
-            while (singleHeight < (container.clientHeight || 350) && repeats < maxRepeats) {
-                repeats++;
-                buildFeed(repeats);
-                singleHeight = feedElement.scrollHeight / repeats;
-            }
-
-            // Create dynamic keyframe for perfect loop
             try {
-                const keyframesName = 'scroll-up-loop';
-                const styleSheet = document.styleSheets[0];
-                // remove old rule if exists
-                for (let i = styleSheet.cssRules.length - 1; i >= 0; i--) {
-                    if (styleSheet.cssRules[i].name === keyframesName) { styleSheet.deleteRule(i); }
-                }
-                const rule = `@keyframes ${keyframesName} { 0% { transform: translateY(0); } 100% { transform: translateY(-${singleHeight}px); } }`;
-                styleSheet.insertRule(rule, styleSheet.cssRules.length);
+                const statNodes = Array.from(document.querySelectorAll('.impact-growth .count-up'));
+                let countersRan = false;
 
-                feedElement.style.position = 'absolute';
-                feedElement.style.width = '100%';
-                // Adjust speed based on height
-                const duration = Math.max(10, Math.round(singleHeight * 0.06));
-                feedElement.style.animation = `${keyframesName} ${duration}s linear infinite`;
+                function runCounters() {
+                    if (countersRan || !statNodes.length) {
+                        return;
+                    }
+                    countersRan = true;
 
-                feedElement.addEventListener('mouseenter', () => { feedElement.style.animationPlayState = 'paused'; });
-                feedElement.addEventListener('mouseleave', () => { feedElement.style.animationPlayState = 'running'; });
-            } catch (e) { console.warn('Animation setup failed', e); }
+                    statNodes.forEach((node) => {
+                        const target = Number(node.getAttribute('data-target') || 0);
+                        if (!Number.isFinite(target) || target <= 0) {
+                            return;
+                        }
 
+                        let current = 0;
+                        const step = Math.max(1, target / 60);
 
-            // --- 2. CHART.JS LOGIC ---
-            const canvas = document.getElementById('neighborhoodBarChart');
-            if (canvas) {
-                const ctx = canvas.getContext('2d');
-                // Create Green Gradient
-                var gradient = ctx.createLinearGradient(0, 0, 0, 350);
-                gradient.addColorStop(0, 'rgba(76, 175, 80, 0.8)');
-                gradient.addColorStop(1, 'rgba(76, 175, 80, 0.1)');
-
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Sandton', 'Randburg', 'Soweto', 'Roodepoort'],
-                        datasets: [{
-                            label: 'Total KGs Recycled',
-                            data: [12400, 9800, 7200, 5500],
-                            backgroundColor: gradient,
-                            borderColor: '#4CAF50',
-                            borderWidth: 2,
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) label += ': ';
-                                        if (context.parsed.y !== null) label += context.parsed.y.toLocaleString() + ' kg';
-                                        return label;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: { color: '#aaa', callback: function(value){ return value/1000 + 'k kg'; } },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                            },
-                            x: {
-                                ticks: { color: '#f4f4f4' },
-                                grid: { display: false }
+                        function updateCounter() {
+                            current += step;
+                            if (current < target) {
+                                node.textContent = Math.ceil(current).toLocaleString();
+                                window.requestAnimationFrame(updateCounter);
+                            } else {
+                                node.textContent = target.toLocaleString() + (target >= 1000 ? '+' : '');
                             }
                         }
+
+                        node.textContent = '0';
+                        updateCounter();
+                    });
+                }
+
+                const impactSection = document.querySelector('.impact-growth');
+                if (impactSection && 'IntersectionObserver' in window) {
+                    const counterObserver = new IntersectionObserver((entries, observer) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                runCounters();
+                                observer.disconnect();
+                            }
+                        });
+                    }, { threshold: 0.2 });
+                    counterObserver.observe(impactSection);
+                } else {
+                    runCounters();
+                }
+            } catch (error) {
+                console.error('Impact counter error:', error);
+            }
+
+            try {
+                const bars = Array.from(document.querySelectorAll('.impact-growth .bar'));
+                if (bars.length) {
+                    const values = bars.map((bar) => Number(bar.getAttribute('data-value') || 0));
+                    const maxValue = Math.max(...values, 1);
+                    bars.forEach((bar, index) => {
+                        const value = values[index];
+                        const ratio = Math.max(18, Math.round((value / maxValue) * 100));
+                        bar.style.height = `${ratio}%`;
+                    });
+                }
+            } catch (error) {
+                console.error('Impact chart error:', error);
+            }
+
+            try {
+                const feedList = document.getElementById('feed');
+                const feedSeed = {{ (live_activity_json | default('[]', true)) | safe }};
+                const feedMaterials = ['Paper/Cardboard', 'Plastics', 'Glass', 'Metals', 'Electronic Waste (E-Waste)'];
+                const feedCenters = ['Mpact Recycling', 'SA Metal Group', 'The Recyclers', 'Desco Electronic Recyclers', 'AST Recycling', 'Wykco Recycling', 'Collect-A-Can', 'SmartMatta', 'Recycle 1st', 'Oasis Recycling Depot'];
+                const fallbackFeed = [
+                    {
+                        title: 'Mpact Recycling verified Glass',
+                        detail: '15.0 kg from Sandton was validated and anchored into recycler proof records.',
+                        timestamp: '2026-03-20T12:00:00+00:00'
+                    },
+                    {
+                        title: 'SA Metal Group accepted E-Waste',
+                        detail: '12.0 kg from Rosebank entered verified processing and reward flow.',
+                        timestamp: '2026-03-20T11:59:40+00:00'
+                    },
+                    {
+                        title: 'Pikitup Garden Site confirmed Plastics',
+                        detail: '19.5 kg from Alexandra was checked into the live network.',
+                        timestamp: '2026-03-20T11:59:10+00:00'
+                    },
+                    {
+                        title: 'Reclaim Hub Johannesburg received Cardboard',
+                        detail: 'A Soweto handoff was verified and queued for reward settlement.',
+                        timestamp: '2026-03-20T11:58:35+00:00'
+                    }
+                ];
+                const feedItems = Array.isArray(feedSeed) && feedSeed.length ? feedSeed.slice(0, 8) : fallbackFeed.slice();
+
+                function formatSeconds(seconds) {
+                    if (seconds <= 2) {
+                        return 'Just now';
+                    }
+                    if (seconds < 60) {
+                        return `${seconds}s ago`;
+                    }
+                    const minutes = Math.floor(seconds / 60);
+                    if (minutes < 60) {
+                        return `${minutes}m ago`;
+                    }
+                    const hours = Math.floor(minutes / 60);
+                    return `${hours}h ago`;
+                }
+
+                function refreshFeedTimes() {
+                    if (!feedList) {
+                        return;
+                    }
+                    feedList.querySelectorAll('li').forEach((item) => {
+                        const timestamp = item.getAttribute('data-ts');
+                        const stampNode = item.querySelector('.feed-time');
+                        if (!timestamp || !stampNode) {
+                            return;
+                        }
+                        const stampMillis = new Date(timestamp).getTime();
+                        if (!Number.isFinite(stampMillis)) {
+                            stampNode.textContent = 'Just now';
+                            return;
+                        }
+                        const seconds = Math.max(0, Math.floor((Date.now() - stampMillis) / 1000));
+                        stampNode.textContent = formatSeconds(seconds);
+                    });
+                }
+
+                function renderFeedList() {
+                    if (!feedList) {
+                        return;
+                    }
+                    feedList.innerHTML = '';
+                    feedItems.slice(0, 4).forEach((item) => {
+                        const row = document.createElement('li');
+                        row.setAttribute('data-ts', item.timestamp);
+                        row.innerHTML = `<b>${item.title}</b> ${item.detail} <span class="feed-time">Just now</span>`;
+                        feedList.appendChild(row);
+                    });
+                    refreshFeedTimes();
+                }
+
+                renderFeedList();
+                window.setInterval(refreshFeedTimes, 1000);
+
+                window.setInterval(() => {
+                    const weight = (Math.random() * 40 + 5).toFixed(1);
+                    const material = feedMaterials[Math.floor(Math.random() * feedMaterials.length)];
+                    const center = feedCenters[Math.floor(Math.random() * feedCenters.length)];
+                    feedItems.unshift({
+                        title: `${center} verified ${material}`,
+                        detail: `${weight} kg of ${material} was verified at ${center} and pushed into the live proof queue.`,
+                        timestamp: new Date().toISOString()
+                    });
+                    if (feedItems.length > 8) {
+                        feedItems.pop();
+                    }
+                    renderFeedList();
+                }, 6500);
+            } catch (error) {
+                console.error('Impact feed error:', error);
+            }
+
+            try {
+                const authOverlay = document.getElementById('homeAuthOverlay');
+                const closeAuth = document.getElementById('homeAuthClose');
+                const authForm = document.getElementById('homeAuthForm');
+                const authTitle = document.getElementById('authModalTitle');
+                const authSubtitle = document.getElementById('authModalSubtitle');
+                const authSubmit = document.getElementById('authModalSubmit');
+                const authSwitch = document.getElementById('authModeSwitch');
+                const authSwitchLabel = document.getElementById('authModalSwitchLabel');
+                const signupRoleSelect = document.getElementById('homeSignupRole');
+                const signupRoleSelectWrap = document.getElementById('homeAuthRoleSelectWrap');
+                const signupRoleHidden = document.getElementById('homeAuthRoleHidden');
+                const signupRoleConfirmation = document.getElementById('homeAuthRoleConfirmation');
+                const roleLabels = {
+                    recycler: 'Recycler',
+                    business: 'Business',
+                    resident: 'Community',
+                    center: 'Recycling Center',
+                    admin: 'Admin'
+                };
+                let currentAuthMode = 'login';
+                let lockedSignupRole = '';
+
+                function setAuthMode(mode) {
+                    currentAuthMode = mode === 'signup' ? 'signup' : 'login';
+
+                    if (!authForm || !authTitle || !authSubtitle || !authSubmit || !authSwitch || !authSwitchLabel || !signupRoleHidden || !signupRoleSelectWrap || !signupRoleConfirmation) {
+                        return;
+                    }
+
+                    if (currentAuthMode === 'signup') {
+                        authForm.action = '{{ url_for("signup") }}';
+                        authTitle.textContent = 'Create Your VeriCycle Account';
+                        authSubtitle.textContent = lockedSignupRole ? 'Your role is already selected, so you can continue straight into the correct onboarding flow.' : 'Choose your role to start in the right VeriCycle workflow.';
+                        authSubmit.textContent = 'Create Account';
+                        authSwitchLabel.textContent = 'Already have an account?';
+                        authSwitch.textContent = 'Log in';
+
+                        if (lockedSignupRole) {
+                            signupRoleHidden.value = lockedSignupRole;
+                            signupRoleSelectWrap.hidden = true;
+                            signupRoleSelect.required = false;
+                            signupRoleConfirmation.hidden = false;
+                            signupRoleConfirmation.textContent = `Signing up as ${roleLabels[lockedSignupRole] || lockedSignupRole} (Verified).`;
+                        } else {
+                            signupRoleHidden.value = signupRoleSelect.value || '';
+                            signupRoleSelectWrap.hidden = false;
+                            signupRoleSelect.required = true;
+                            signupRoleConfirmation.hidden = true;
+                        }
+                    } else {
+                        authForm.action = '{{ url_for("login") }}';
+                        authTitle.textContent = 'Log In to VeriCycle';
+                        authSubtitle.textContent = 'Continue your verified recycling workflow.';
+                        authSubmit.textContent = 'Log In';
+                        authSwitchLabel.textContent = 'Need an account?';
+                        authSwitch.textContent = 'Create one';
+                        signupRoleHidden.value = '';
+                        signupRoleSelectWrap.hidden = true;
+                        signupRoleSelect.required = false;
+                        signupRoleConfirmation.hidden = true;
+                    }
+                }
+
+                function openAuthModal(mode, roleValue) {
+                    if (!authOverlay) {
+                        return;
+                    }
+                    lockedSignupRole = mode === 'signup' && roleValue ? roleValue : '';
+                    if (signupRoleSelect) {
+                        signupRoleSelect.value = roleValue || '';
+                    }
+                    setAuthMode(mode || 'login');
+                    authOverlay.classList.add('is-open');
+                    authOverlay.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('auth-modal-open');
+                }
+
+                function closeAuthModal() {
+                    if (!authOverlay) {
+                        return;
+                    }
+                    authOverlay.classList.remove('is-open');
+                    authOverlay.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('auth-modal-open');
+                }
+
+                if (authSwitch) {
+                    authSwitch.addEventListener('click', () => {
+                        lockedSignupRole = '';
+                        if (signupRoleSelect) {
+                            signupRoleSelect.value = '';
+                        }
+                        setAuthMode(currentAuthMode === 'login' ? 'signup' : 'login');
+                    });
+                }
+
+                if (signupRoleSelect) {
+                    signupRoleSelect.addEventListener('change', () => {
+                        if (currentAuthMode === 'signup' && !lockedSignupRole) {
+                            signupRoleHidden.value = signupRoleSelect.value || '';
+                        }
+                    });
+                }
+
+                if (authForm) {
+                    authForm.addEventListener('submit', (event) => {
+                        if (currentAuthMode === 'signup' && !lockedSignupRole) {
+                            signupRoleHidden.value = signupRoleSelect ? (signupRoleSelect.value || '') : '';
+                            if (!signupRoleHidden.value) {
+                                event.preventDefault();
+                                if (signupRoleSelect) {
+                                    signupRoleSelect.focus();
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (closeAuth) {
+                    closeAuth.addEventListener('click', closeAuthModal);
+                }
+
+                if (authOverlay) {
+                    authOverlay.addEventListener('click', (event) => {
+                        if (event.target === authOverlay) {
+                            closeAuthModal();
+                        }
+                    });
+                }
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && authOverlay && authOverlay.classList.contains('is-open')) {
+                        closeAuthModal();
                     }
                 });
+
+                document.querySelectorAll('.js-open-auth-modal, [data-auth-trigger]').forEach((trigger) => {
+                    trigger.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        if (!authOverlay) {
+                            return;
+                        }
+                        const mode = trigger.getAttribute('data-auth-mode') || 'login';
+                        const roleValue = trigger.getAttribute('data-auth-role') || '';
+                        openAuthModal(mode, roleValue);
+                    });
+                });
+
+                const params = new URLSearchParams(window.location.search);
+                const initialAuthMode = params.get('auth');
+                if (authOverlay && (initialAuthMode === 'login' || initialAuthMode === 'signup')) {
+                    openAuthModal(initialAuthMode, params.get('role') || '');
+                } else {
+                    setAuthMode('login');
+                }
+            } catch (error) {
+                console.error('Home auth modal error:', error);
             }
         });
     </script>
-
 </body>
 </html>

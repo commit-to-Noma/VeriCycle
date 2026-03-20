@@ -7,10 +7,11 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="dark-theme auth-page">
+<body class="light-theme auth-page">
     <div class="auth-modal-backdrop" onclick="window.location.href='/home'">
         <div class="auth-card" onclick="event.stopPropagation()">
             <h2>Create Account</h2>
+            <p class="auth-demo-hint">Choose your role now so VeriCycle can start you in the right flow.</p>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -23,7 +24,22 @@
             {% endwith %}
 
             <form method="POST" action="{{ url_for('signup') }}">
-                <input type="text" name="username" placeholder="Username" required>
+                <div class="role-switch-row" aria-label="Selected role preview">
+                    <span class="trust-chip {% if signup_role == 'recycler' %}is-active{% endif %}">Recycler</span>
+                    <span class="trust-chip {% if signup_role == 'business' %}is-active{% endif %}">Business</span>
+                    <span class="trust-chip {% if signup_role == 'resident' %}is-active{% endif %}">Community</span>
+                    <span class="trust-chip {% if signup_role == 'center' %}is-active{% endif %}">Center</span>
+                </div>
+
+                <input type="email" name="email" placeholder="Email address" required>
+                <select name="role" required>
+                    <option value="" {% if not signup_role %}selected{% endif %} disabled>Please select your role</option>
+                    <option value="recycler" {% if signup_role == 'recycler' %}selected{% endif %}>Recycler</option>
+                    <option value="business" {% if signup_role == 'business' %}selected{% endif %}>Business</option>
+                    <option value="resident" {% if signup_role == 'resident' %}selected{% endif %}>Community</option>
+                    <option value="center" {% if signup_role == 'center' %}selected{% endif %}>Recycling Center</option>
+                    <option value="admin" {% if signup_role == 'admin' %}selected{% endif %}>Admin</option>
+                </select>
                 <input type="password" name="password" placeholder="Password" required>
 
                 <button type="submit">Sign Up</button>
