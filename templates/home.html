@@ -55,25 +55,25 @@
             <p class="cta-subtitle">A shared trust layer for the people collecting, verifying, funding, and benefiting from local recycling work.</p>
             <div class="advantages stakeholder-grid">
                 <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="recycler">
-                    <span class="stakeholder-kicker">Daily work, officially recognized</span>
+                    <span class="stakeholder-emoji stakeholder-emoji-tl" aria-hidden="true">♻️</span>
                     <h3>Recyclers</h3>
-                    <p>Turn daily recycling into a trusted income history you can actually use to unlock better opportunities over time.</p>
+                    <p>Turn daily recycling into trusted proof of income, so your work is visible, respected, and easier to build on over time.</p>
                     <span class="stakeholder-cta">Open recycler sign-up</span>
                 </button>
                 <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="business">
-                    <span class="stakeholder-kicker">Prove your purpose</span>
+                    <span class="stakeholder-emoji stakeholder-emoji-tr" aria-hidden="true">🏢</span>
                     <h3>Businesses</h3>
                     <p>Generate verifiable, simple sustainability records that prove your real impact on the local environment.</p>
                     <span class="stakeholder-cta">Open business sign-up</span>
                 </button>
                 <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="resident">
-                    <span class="stakeholder-kicker">Take back your neighborhood</span>
+                    <span class="stakeholder-emoji stakeholder-emoji-bl" aria-hidden="true">🏘️</span>
                     <h3>Communities</h3>
-                    <p>Request pickups, report recycling needs, and directly support the local people keeping your neighborhood clean.</p>
+                    <p>Request pickups, report recycling needs, and support the trusted local recyclers keeping your neighborhood clean.</p>
                     <span class="stakeholder-cta">Open community sign-up</span>
                 </button>
                 <button type="button" class="stakeholder-card" data-auth-trigger data-auth-mode="signup" data-auth-role="center">
-                    <span class="stakeholder-kicker">A modern foundation of trust</span>
+                    <span class="stakeholder-emoji stakeholder-emoji-br" aria-hidden="true">🏭</span>
                     <h3>Recycling Centers</h3>
                     <p>Weigh materials, confirm deliveries quickly, and trust that every transaction is recorded clearly and permanently.</p>
                     <span class="stakeholder-cta">Open center sign-up</span>
@@ -125,13 +125,12 @@
         {% set growth_labels_safe = growth_labels | default(['JHB CBD', 'Randburg', 'Soweto', 'Sandton', 'Roodepoort'], true) %}
         {% set growth_values_safe = growth_values | default([12500, 19200, 8400, 22100, 15300], true) %}
         {% set growth_max_safe = (growth_values_safe | max) if growth_values_safe else 1 %}
-        {% set axis_top_safe = ((growth_max_safe * 1.1) | round(0, 'ceil')) | int %}
-        {% set axis_top_safe = axis_top_safe if axis_top_safe > 0 else 1 %}
-        {% set axis_step_safe = ((axis_top_safe / 4) | round(0, 'ceil')) | int %}
+        {% set axis_top_safe = 25000 %}
+        {% set axis_step_safe = 6250 %}
         {% set leader_index = growth_values_safe.index(growth_max_safe) if growth_values_safe else 0 %}
         {% set leader_label = growth_labels_safe[leader_index] if growth_labels_safe and leader_index < (growth_labels_safe | length) else 'Sandton' %}
         {% set leader_value = growth_values_safe[leader_index] if growth_values_safe and leader_index < (growth_values_safe | length) else 22100 %}
-        {% set growth_note_safe = growth_note | default('Sandton leads neighborhood recovery this month, with verified material volumes still climbing across the network.', true) %}
+        {% set growth_note_safe = growth_note | default('Sandton is the highest neighborhood, leading by 3,350 KGS.', true) %}
         {% set live_activity_safe = live_activity | default([
             {'title': 'Mpact Recycling verified Glass', 'detail': '15.0 kg from Sandton was validated and anchored into recycler proof records.', 'timestamp': '2026-03-20T12:00:00+00:00'},
             {'title': 'SA Metal Group accepted E-Waste', 'detail': '12.0 kg from Rosebank entered verified processing and reward flow.', 'timestamp': '2026-03-20T11:59:40+00:00'},
@@ -174,10 +173,7 @@
                     {% set bar_value = growth_values_safe[loop.index0] if loop.index0 < (growth_values_safe | length) else 0 %}
                     {% set bar_height = ((bar_value / axis_top_safe) * 100) if axis_top_safe else 0 %}
                     <div class="bar-column {% if loop.index0 == leader_index %}is-leader{% endif %}">
-                        {% if loop.index0 == leader_index %}
-                        <div class="bar-callout">🏆 {{ leader_label }} leads with {{ '{:,.0f}'.format(leader_value) }} kg this month.</div>
-                        {% endif %}
-                        <div class="bar" data-value="{{ bar_value }}" data-tooltip="{{ label }}: {{ '{:,.0f}'.format(bar_value) }} kg" style="height: {{ [bar_height, 18] | max }}%;">
+                        <div class="bar" data-value="{{ bar_value }}" data-tooltip="{{ label }}: {{ '{:,.0f}'.format(bar_value) }} kg" style="height: {{ [bar_height, 6] | max }}%;">
                             {% if loop.index0 == leader_index %}
                             <span class="bar-trophy" aria-hidden="true">🏆</span>
                             {% endif %}
@@ -197,7 +193,7 @@
                     <span class="live-pulse-wrap"><span class="live-pulse" aria-hidden="true"></span> LIVE</span>
                 </div>
                 <ul id="feed">
-                    {% for item in live_activity_safe[:4] %}
+                    {% for item in live_activity_safe[:5] %}
                     <li data-ts="{{ item.timestamp }}"><b>{{ item.title }}</b> {{ item.detail }} <span class="feed-time">Just now</span></li>
                     {% endfor %}
                 </ul>
@@ -408,7 +404,7 @@
                         return;
                     }
                     feedList.innerHTML = '';
-                    feedItems.slice(0, 4).forEach((item) => {
+                    feedItems.slice(0, 5).forEach((item) => {
                         const row = document.createElement('li');
                         row.setAttribute('data-ts', item.timestamp);
                         row.innerHTML = `<b>${item.title}</b> ${item.detail} <span class="feed-time">Just now</span>`;
@@ -429,7 +425,7 @@
                         detail: `verified at ${center}.`,
                         timestamp: new Date().toISOString()
                     });
-                    if (feedItems.length > 8) {
+                    if (feedItems.length > 12) {
                         feedItems.pop();
                     }
                     renderFeedList();
