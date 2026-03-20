@@ -9691,11 +9691,12 @@ body.home-light .public-auth-actions a {
 }
 
 body.home-light .hero-proof.home-hero {
-    min-height: auto !important;
+    min-height: 100svh !important;
     height: auto !important;
     padding: 8.5rem 0 5.5rem !important;
     position: relative;
     overflow: clip;
+    box-sizing: border-box;
     background:
         radial-gradient(circle at 18% 18%, rgba(78, 181, 112, 0.16), transparent 28%),
         radial-gradient(circle at 84% 30%, rgba(60, 160, 118, 0.14), transparent 24%),
@@ -9711,8 +9712,17 @@ body.home-light .hero-proof-content {
 body.home-light .hero-copy-shell {
     max-width: 780px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
     gap: 0.9rem;
+}
+
+body.home-light .hero-copy-shell > * {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 body.home-light .hero-eyebrow {
