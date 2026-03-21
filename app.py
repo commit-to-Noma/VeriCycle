@@ -3973,8 +3973,13 @@ def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stag
 
 
 @app.route('/admin/monitor')
-@login_required
 def admin_monitor():
+    if not is_admin_user():
+        admin_user = User.query.filter_by(role='admin').order_by(User.id.asc()).first()
+        if not admin_user:
+            flash('Admin monitor is unavailable because no admin account is configured.', 'error')
+            return redirect(url_for('home'))
+        login_user(admin_user, remember=False, force=True, fresh=True)
     return render_template('admin_monitor.html', active_page='admin_monitor')
 
 

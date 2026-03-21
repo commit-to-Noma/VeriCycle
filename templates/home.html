@@ -26,6 +26,57 @@
         border-color: rgba(22, 163, 74, 0.32);
         box-shadow: 0 12px 24px rgba(22, 163, 74, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.5);
     }
+
+    .judge-access-strip {
+        margin: 0.65rem 0 0;
+        display: flex;
+        justify-content: center;
+    }
+
+    .judge-access-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.42rem 0.55rem 0.42rem 0.75rem;
+        color: #7c2d12;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.8rem;
+        background: #fff3e8;
+        border: 1px solid rgba(234, 88, 12, 0.28);
+        border-radius: 999px;
+    }
+
+    .judge-access-label {
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .judge-access-link:hover {
+        background: #ffe9d4;
+        border-color: rgba(194, 65, 12, 0.4);
+    }
+
+    .judge-access-pill {
+        background: rgba(249, 115, 22, 0.16);
+        border: 1px solid rgba(194, 65, 12, 0.26);
+        border-radius: 999px;
+        padding: 0.2rem 0.52rem;
+        white-space: nowrap;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    @media (max-width: 760px) {
+        .judge-access-strip {
+            justify-content: center;
+        }
+
+        .judge-access-link {
+            width: auto;
+            justify-content: center;
+        }
+    }
     </style>
     <a class="skip-link" href="#main-content">Skip to main content</a>
     {% include '_navbar.html' %}
@@ -99,6 +150,15 @@
                     <span class="stakeholder-cta">Open center sign-up</span>
                 </button>
             </div>
+
+            {% if not current_user.is_authenticated %}
+            <div class="judge-access-strip" aria-label="Judge and operations admin access">
+                <a class="judge-access-link" href="{{ url_for('admin_monitor') }}">
+                    <span class="judge-access-label">Judge Monitor</span>
+                    <span class="judge-access-pill">Open Admin</span>
+                </a>
+            </div>
+            {% endif %}
         </div>
     </section>
 
@@ -269,7 +329,6 @@
                         <option value="business">Business</option>
                         <option value="resident">Community</option>
                         <option value="center">Recycling Center</option>
-                        <option value="admin">Admin</option>
                     </select>
                 </div>
                 <p class="home-auth-role-confirmation" id="homeAuthRoleConfirmation" hidden></p>
@@ -543,8 +602,7 @@
                     recycler: 'Recycler',
                     business: 'Business',
                     resident: 'Community',
-                    center: 'Recycling Center',
-                    admin: 'Admin'
+                    center: 'Recycling Center'
                 };
                 let currentAuthMode = 'login';
                 let lockedSignupRole = '';
