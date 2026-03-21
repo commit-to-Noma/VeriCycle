@@ -48,6 +48,8 @@
             <a href="{{ url_for('wallet') }}">Rewards Wallet</a>
         {% elif current_effective_role == 'business' %}
             <a href="{{ url_for('business_dashboard') }}">Business Hub</a>
+            <p class="drawer-section">Business Actions</p>
+            <a href="/business/create-pickup" class="drawer-link">+ Create Pickup Request</a>
         {% elif current_effective_role == 'resident' %}
             <a href="{{ url_for('household_dashboard') }}">Community Hub</a>
             <a href="{{ url_for('request_pickup') }}">Request Pickup</a>

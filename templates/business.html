@@ -129,6 +129,24 @@ body {
 }
 .hub-pipeline-brief h3 { color: #0b5d4a !important; margin: 0.2rem 0 !important; }
 
+.progress-steps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-top: 0.8rem;
+}
+
+.progress-steps span {
+    text-align: center;
+    background: #f0fdf4;
+    border: 1px solid rgba(22, 163, 74, 0.25);
+    color: #166534;
+    border-radius: 999px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
 /* Table section */
 .hub-section-head {
     display: flex;
@@ -274,10 +292,12 @@ body {
 
 <section class="card hub-pipeline-brief">
     <span class="section-kicker">Proof Pipeline Clarity</span>
-    <h3>What judges should see in this dashboard</h3>
-    <p>Each row below represents a business-sourced pickup moving through one status language system: Submitted, Verified, Anchored, Rewarded, and Proof Ready.</p>
-    <div style="margin-top:1rem; padding:1rem; background:rgba(22,163,74,0.06); border-left:3px solid #16a34a; border-radius:6px;">
-        <p style="margin:0; color:#0b5d4a; font-size:0.9rem; font-weight:600;">🔗 <strong>System Story:</strong> This dashboard demonstrates end-to-end traceability through multi-stakeholder verification, creating tamper-proof records anchored to Hedera. Each pickup is auditable from creation through final reward.</p>
+    <h3>Trust Pipeline</h3>
+    <div class="progress-steps">
+        <span>Submitted</span>
+        <span>Verified</span>
+        <span>Anchored</span>
+        <span>Rewarded</span>
     </div>
 </section>
 

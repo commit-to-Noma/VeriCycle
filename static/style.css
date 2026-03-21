@@ -84,6 +84,18 @@ textarea:focus-visible {
     letter-spacing: 0.02em;
 }
 
+select {
+    appearance: none;
+    background: #f8f9fa;
+    border: 1px solid #cbd5e0;
+}
+
+select:focus {
+    outline: none;
+    border-color: #16a34a;
+    box-shadow: 0 0 0 2px rgba(34,197,94,0.2);
+}
+
 /* New container for sections that need more space */
 .container-wide {
     width: 95%;
@@ -968,12 +980,9 @@ html, body {
     display: none;
     position: fixed;
     z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.6);
+    background: rgba(0,0,0,0.5);
     align-items: center;
     justify-content: center;
 }
@@ -1655,8 +1664,9 @@ html, body {
 .tooltip {
     display: inline-block;
     position: relative;
-    background-color: #555;
-    color: #fff;
+    background-color: #ecfdf5;
+    color: #166534;
+    border: 1px solid #86efac;
     border-radius: 50%;
     width: 18px;
     height: 18px;
@@ -1855,11 +1865,12 @@ html, body {
     bottom: 125%;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #1e1e1e;
-    color: #f4f4f4;
+    background-color: #ffffff;
+    color: #1e293b;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
-    border: 1px solid #555;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
     font-size: 0.9rem;
     font-weight: 400;
     width: 200px;
@@ -5557,6 +5568,23 @@ main.container-wide.app-dashboard{
 
 .nav-drawer-links a:hover{
     background: rgba(22, 163, 74, 0.10);
+}
+
+.drawer-section {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+}
+
+.nav-drawer-links .drawer-link {
+    display: block;
+    padding: 0.5rem 0;
+    color: #1e293b;
+    border-radius: 0;
 }
 
 /* === FINAL BUTTON SYSTEM === */
@@ -11102,7 +11130,143 @@ select:focus {
     border: 1px solid #16a34a;
     box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
 }
-    transform: scale(0.98);
+
+/* === LIGHT MODE ENFORCEMENT (GLOBAL) === */
+body.light-theme {
+    background: #f8fafc !important;
+    color: #1e293b !important;
+}
+
+body.light-theme .card,
+body.light-theme .tech-card,
+body.light-theme .kpi-card,
+body.light-theme .chart-card,
+body.light-theme .tool-card,
+body.light-theme .modal-content,
+body.light-theme .instructions {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-theme .dashboard-header h2,
+body.light-theme .dashboard-header h3,
+body.light-theme .dashboard-header p,
+body.light-theme .card h1,
+body.light-theme .card h2,
+body.light-theme .card h3,
+body.light-theme .card h4,
+body.light-theme .card p,
+body.light-theme .form-note,
+body.light-theme .instructions li,
+body.light-theme .instructions h4 {
+    color: #334155 !important;
+}
+
+body.light-theme .kpi-card h3,
+body.light-theme .chart-card h3,
+body.light-theme .kpi-value,
+body.light-theme .chart-label,
+body.light-theme .success-value,
+body.light-theme .success-label {
+    color: #0f172a !important;
+}
+
+body.light-theme .form-group label,
+body.light-theme .verify-form label {
+    color: #1e293b !important;
+}
+
+body.light-theme .form-group input,
+body.light-theme .verify-form input,
+body.light-theme .verify-form select,
+body.light-theme select,
+body.light-theme textarea {
+    background: #f8fafc !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e0 !important;
+}
+
+body.light-theme .nav-button {
+    color: #166534 !important;
+}
+
+body.light-theme .nav-button:hover {
+    background: #f0fdf4 !important;
+}
+
+body.light-theme .nav-button.active {
+    color: #166534 !important;
+    border-color: #16a34a !important;
+    background: #ecfdf5 !important;
+}
+
+body.light-theme .modal-overlay {
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* === AUTHORITATIVE STICKY GLASS NAVBAR (ALL PAGES) === */
+:root {
+    --nav-h: 72px;
+}
+
+body.light-theme {
+    padding-top: var(--nav-h) !important;
+}
+
+body.light-theme .navbar,
+body.light-theme .public-header {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0;
+    right: 0;
+    z-index: 1400 !important;
+    min-height: var(--nav-h);
+    background: rgba(255, 255, 255, 0.78) !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.26) !important;
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06) !important;
+}
+
+body.light-theme .nav-shell,
+body.light-theme .public-header-shell {
+    height: var(--nav-h);
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1rem !important;
+    box-sizing: border-box;
+}
+
+body.light-theme .logo-link,
+body.light-theme .logo-link span,
+body.light-theme .brand-name {
+    color: #1e293b !important;
+}
+
+body.light-theme .nav-primary .nav-button,
+body.light-theme .nav-button {
+    color: #166534 !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+}
+
+body.light-theme .nav-button:hover {
+    background: rgba(22, 163, 74, 0.10) !important;
+    border-color: rgba(22, 163, 74, 0.2) !important;
+}
+
+body.light-theme .nav-button.active {
+    background: rgba(22, 163, 74, 0.14) !important;
+    border-color: rgba(22, 163, 74, 0.32) !important;
+    color: #166534 !important;
+}
+
+body.light-theme .nav-burger {
+    color: #166534 !important;
+    border: 1px solid rgba(22, 163, 74, 0.32) !important;
+    background: rgba(255, 255, 255, 0.68) !important;
 }
 
 /* Cohesive heading system across dashboard pages */

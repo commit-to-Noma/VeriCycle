@@ -1760,6 +1760,14 @@ def request_pickup():
     return render_template('request_pickup.html', active_page='dashboard')
 
 
+@app.route('/business/create-pickup')
+@login_required
+def business_create_pickup():
+    if not can_create_opportunity_business(current_user):
+        return redirect(url_for(access_denied_redirect_for(current_user)))
+    return redirect(url_for('request_pickup'))
+
+
 @app.route('/business')
 @login_required
 def business_dashboard():

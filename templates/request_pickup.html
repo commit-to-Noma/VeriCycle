@@ -33,6 +33,13 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 1.5rem;
+        align-items: stretch;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        align-items: stretch;
     }
     .form-group { margin-bottom: 0.85rem; }
     .form-group label { display: block; color: #374151; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.3rem; }
@@ -70,25 +77,59 @@
         margin-bottom: 0.35rem;
     }
     .pickup-note { color: #94a3b8; font-size: 0.78rem; text-align: center; margin-top: 0.5rem; }
+    .summary-highlight {
+        background: #f0fdf4;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(22,163,74,0.2);
+    }
+    .summary-highlight p {
+        margin: 0.15rem 0;
+        color: #166534 !important;
+        font-size: 0.88rem;
+    }
     /* Success card */
     #success-card h2 { color: #16a34a !important; }
     #success-card h3 { color: #0b5d4a !important; }
     #success-card p  { color: #64748b !important; }
+    .success-meta {
+        margin-top: 0.75rem;
+        margin-bottom: 1.25rem;
+        color: #166534 !important;
+        font-size: 0.92rem;
+        font-weight: 600;
+    }
+    .matching-state {
+        margin-top: 0.75rem;
+        margin-bottom: 0.35rem;
+        color: #16a34a !important;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-align: center;
+    }
     /* Slots modal */
     .modal-overlay {
         position: fixed; inset: 0;
-        background: rgba(15,23,42,0.45); backdrop-filter: blur(4px);
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
         z-index: 1200; display: none;
         align-items: center; justify-content: center; padding: 1rem;
     }
     .modal-overlay .card { background: rgba(255,255,255,0.96) !important; max-width: 500px; width: 100%; }
     .modal-overlay h2 { color: #0b5d4a !important; }
     .modal-overlay p  { color: #64748b !important; }
-    .slot-option {
-        display: flex; align-items: flex-start; gap: 0.75rem;
-        border: 1px solid rgba(22,163,74,0.2); border-radius: 10px;
-        padding: 0.8rem; margin-bottom: 0.55rem;
-        background: rgba(240,253,244,0.5); cursor: pointer;
+    .time-option {
+        display: flex;
+        gap: 0.75rem;
+        padding: 0.8rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: white;
+        cursor: pointer;
+        margin-bottom: 0.55rem;
+    }
+    .time-option input {
+        accent-color: #16a34a;
     }
     .slot-day   { display: block; font-weight: 700; color: #0b5d4a; }
     .slot-time  { color: #64748b; font-size: 0.84rem; }
@@ -107,6 +148,7 @@
     </style>
 </head>
 <body class="light-theme request-pickup-page">
+    <div class="demo-banner">Demo Mode • Preloaded Data • Hedera Testnet</div>
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard" style="overflow:visible;">
@@ -123,7 +165,7 @@
         </div>
 
         <div class="card" id="pickup-card">
-            <div class="pickup-form-grid">
+            <div class="pickup-form-grid form-grid">
 
                 <div class="pickup-form">
                     <h3>Pickup Opportunity Details</h3>
@@ -165,6 +207,12 @@
                     <div class="pickup-cost-header">
                         <span class="pickup-cost-icon">📌</span>
                         <span class="pickup-cost-title">Recycling Opportunity Created</span>
+                    </div>
+
+                    <div class="summary-highlight">
+                        <p id="summary-neighborhood">📍 Randburg</p>
+                        <p><strong id="summary-material-strong">Mixed Materials</strong></p>
+                        <p id="summary-weight-short">Under 10 kg</p>
                     </div>
 
                     <p class="pickup-cost-desc">
@@ -212,6 +260,10 @@
                 Request location: <span id="success-neighborhood">Sandton</span>
             </h3>
 
+            <p class="success-meta">
+                Routed to nearby recyclers • Awaiting verification • Will be anchored on Hedera
+            </p>
+
             {% if current_effective_role == 'business' %}
                 <a href="{{ url_for('business_dashboard') }}" class="btn-primary-large">Return to Business Hub</a>
             {% elif current_effective_role == 'resident' %}
@@ -232,25 +284,25 @@
             </p>
 
             <div class="slots-list">
-                <label class="slot-option">
+                <label class="time-option">
                     <input type="radio" name="slot" checked>
                     <div class="slot-details">
                         <span class="slot-day" id="slot-day-1">Tomorrow</span>
-                        <span class="slot-time">Preferred window: 10:00 - 12:00</span>
+                        <span class="slot-time">10:00 – 12:00</span>
                     </div>
                 </label>
-                <label class="slot-option">
+                <label class="time-option">
                     <input type="radio" name="slot">
                     <div class="slot-details">
                         <span class="slot-day" id="slot-day-2">Tomorrow</span>
-                        <span class="slot-time">Preferred window: 14:00 - 16:00</span>
+                        <span class="slot-time">14:00 – 16:00</span>
                     </div>
                 </label>
-                <label class="slot-option">
+                <label class="time-option">
                     <input type="radio" name="slot">
                     <div class="slot-details">
                         <span class="slot-day" id="slot-day-3">Day After</span>
-                        <span class="slot-time">Preferred window: 09:00 - 11:00</span>
+                        <span class="slot-time">09:00 – 11:00</span>
                     </div>
                 </label>
             </div>
@@ -258,6 +310,7 @@
             <button class="btn-primary-large btn-form" id="confirm-slot-btn">
                 Confirm Request Window
             </button>
+            <p id="matching-state" class="matching-state" style="display:none;">Matching recyclers nearby...</p>
         </div>
     </div>
 
@@ -276,6 +329,11 @@
             const weightSelect = document.getElementById('pickup-weight');
             const summaryMaterial = document.getElementById('summary-material');
             const summaryWeight = document.getElementById('summary-weight');
+            const summaryNeighborhood = document.getElementById('summary-neighborhood');
+            const summaryMaterialStrong = document.getElementById('summary-material-strong');
+            const summaryWeightShort = document.getElementById('summary-weight-short');
+            const neighborhoodSelect = document.getElementById('neighborhood');
+            const matchingState = document.getElementById('matching-state');
 
             // --- NEW: DYNAMIC DATE LOGIC ---
             try {
@@ -307,18 +365,29 @@
                 if (summaryWeight && weightSelect) {
                     summaryWeight.textContent = weightSelect.options[weightSelect.selectedIndex].text;
                 }
+                if (summaryNeighborhood && neighborhoodSelect) {
+                    const hood = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text;
+                    summaryNeighborhood.textContent = `📍 ${hood.replace(/ \(.+\)/, '')}`;
+                }
+                if (summaryMaterialStrong && materialSelect) {
+                    const mat = materialSelect.options[materialSelect.selectedIndex].text;
+                    summaryMaterialStrong.textContent = mat.includes('Mixed') ? 'Mixed Materials' : mat;
+                }
+                if (summaryWeightShort && weightSelect) {
+                    summaryWeightShort.textContent = weightSelect.options[weightSelect.selectedIndex].text;
+                }
             }
 
             syncRequestSummary();
             if (materialSelect) materialSelect.addEventListener('change', syncRequestSummary);
             if (weightSelect) weightSelect.addEventListener('change', syncRequestSummary);
+            if (neighborhoodSelect) neighborhoodSelect.addEventListener('change', syncRequestSummary);
 
             // --- 2. Open the modal ---
             pickupButton.addEventListener('click', function(e) {
                 e.preventDefault(); // Stop the form from doing anything
 
                 // Read the selected neighborhood from the form (or fall back to profile/default)
-                const neighborhoodSelect = document.getElementById('neighborhood');
                 const selectedText = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text || '{{ current_user.neighborhood or "Sandton" }}';
 
                 // Update the modal heading so it reflects the user's neighborhood
@@ -345,7 +414,6 @@
 
             // --- 4. NEW: The Confirmation Logic ---
             confirmSlotButton.addEventListener('click', async function() {
-                const neighborhoodSelect = document.getElementById('neighborhood');
                 const materialSelect = document.getElementById('pickup-materials');
                 const weightSelect = document.getElementById('pickup-weight');
 
@@ -360,13 +428,16 @@
                 const selectedSlot = document.querySelector('input[name="slot"]:checked');
                 let requested_window = 'Standard window';
                 if (selectedSlot) {
-                    const slotLabel = selectedSlot.closest('.slot-option');
+                    const slotLabel = selectedSlot.closest('.time-option');
                     requested_window = slotLabel ? slotLabel.innerText.replace(/\s+/g, ' ').trim() : 'Standard window';
                 }
 
                 confirmSlotButton.disabled = true;
+                confirmSlotButton.textContent = 'Matching recyclers nearby...';
+                if (matchingState) matchingState.style.display = 'block';
 
                 try {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
                     const res = await fetch('/api/opportunities/create', {
                         method: 'POST',
                         headers: {
@@ -396,6 +467,8 @@
                     alert('Could not create pickup opportunity');
                 } finally {
                     confirmSlotButton.disabled = false;
+                    confirmSlotButton.textContent = 'Confirm Request Window';
+                    if (matchingState) matchingState.style.display = 'none';
                 }
             });
         });
