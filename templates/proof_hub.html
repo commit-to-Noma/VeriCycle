@@ -10,13 +10,10 @@
         margin-bottom: 1rem;
     }
     .audit-hero h1 {
-        margin: 0;
-        color: #0f172a;
-        font-size: clamp(1.8rem, 3.6vw, 2.7rem);
+        line-height: 1.18;
     }
     .audit-hero p {
-        margin: 0.35rem 0 0 0;
-        color: #64748b;
+        margin-top: 0.35rem;
     }
     .verify-card {
         max-width: 880px;
@@ -55,7 +52,7 @@
     }
     .ledger-table th,
     .ledger-table td {
-        padding: 0.72rem;
+        padding: 0.92rem 0.72rem;
         border-bottom: 1px solid #e5e7eb;
         text-align: left;
     }
@@ -70,44 +67,98 @@
     .ledger-table tbody tr {
         background: #ffffff;
     }
+    .audit-date,
+    .audit-event-id {
+        font-size: 0.84rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    .mat-weight {
+        color: #1e293b;
+        font-weight: 700;
+    }
     .anchor-link {
         color: #16a34a !important;
         text-decoration: none;
         font-weight: 700;
         white-space: nowrap;
     }
+    .anchor-link:hover {
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+    .evidence-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+    }
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.18rem 0.6rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .status-pill.verified {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .status-pill.pending {
+        background: #f1f5f9;
+        color: #475569;
+    }
     .evidence-btn {
         border: 1px solid #cbd5e1;
         border-radius: 8px;
-        background: #e2e8f0;
-        color: #334155 !important;
+        background: transparent;
+        color: #1e293b !important;
         text-decoration: none;
         padding: 0.35rem 0.55rem;
         font-size: 0.8rem;
-        font-weight: 700;
+        font-weight: 600;
         display: inline-block;
+    }
+    .evidence-btn:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
     }
     .auditor-tools {
         margin-top: 1rem;
         padding: 1rem;
     }
     .tools-grid {
-        display: flex;
-        justify-content: center;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 1rem;
         margin-top: 0.75rem;
-        flex-wrap: wrap;
     }
-    .tools-grid .tool-card {
-        min-width: 220px;
-        max-width: 340px;
-        flex: 1;
+    @media (max-width: 860px) {
+        .tools-grid {
+            grid-template-columns: 1fr;
+        }
     }
     .tool-card {
         border: 1px solid #dbe4ea;
         border-radius: 10px;
         background: #ffffff;
         padding: 0.8rem;
+    }
+    .auditor-tools .btn-secondary {
+        background: #e2e8f0 !important;
+        color: #1e293b !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    .auditor-tools .btn-secondary:hover {
+        background: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #64748b;
     }
     .verify-message {
         margin-top: 0.5rem;
@@ -120,12 +171,13 @@
 
 <div class="audit-shell">
     <header class="audit-hero">
-        <h1>VeriCycle Proof & Audit Hub</h1>
-        <p>Immutable, Hedera-anchored evidence for ESG reporting and compliance.</p>
+        <h1 class="page-title">VeriCycle Proof & Audit Hub</h1>
+        <p class="page-subtitle">Immutable, Hedera-anchored evidence for ESG reporting and compliance.</p>
+        <span class="status-pill verified" style="margin-top:0.55rem;">Verified on Hedera</span>
     </header>
 
     <section class="tech-card verify-card">
-        <h3 style="margin:0; color:#0b5d4a;">Verify a Hash</h3>
+        <h3 class="section-heading" style="margin:0;">Verify a Hash</h3>
         <div class="verify-input-wrap">
             <input id="hash-verify-input" class="verify-input" type="text" placeholder="Enter Hedera Transaction Hash to verify event authenticity.">
             <button id="hash-verify-btn" class="btn-primary" style="border:none; border-radius:10px; padding:0.72rem 0.95rem; color:#fff; font-weight:700;">Verify</button>
@@ -134,7 +186,7 @@
     </section>
 
     <section class="tech-card ledger-card">
-        <h3 style="margin:0 0 0.65rem 0; color:#0b5d4a;">Proof Ledger</h3>
+        <h3 class="section-heading" style="margin:0 0 0.65rem 0;">Proof Ledger</h3>
         <div class="ledger-table-wrap">
             <table class="ledger-table" id="proof-ledger-table">
                 <thead>
@@ -151,41 +203,51 @@
                     {% set tx = row.hedera_tx_id or row.hcs_tx_id or row.logbook_tx_id or '' %}
                     <tr data-anchor="{{ tx|lower }}">
                         <td class="audit-date" data-ts="{{ row.timestamp }}">{{ row.timestamp }}</td>
-                        <td>#{{ row.id }}</td>
+                        <td class="audit-event-id">#{{ row.id }}</td>
                         <td class="mat-weight" data-desc="{{ row.desc|e }}">{{ row.desc }}</td>
                         <td>
                             {% if tx %}
-                                <a class="anchor-link" href="https://hashscan.io/testnet/transaction/{{ tx }}" target="_blank" rel="noopener">{{ tx[:6] }}...{{ tx[-4:] }}</a>
+                                <a class="anchor-link" href="https://hashscan.io/testnet/transaction/{{ tx }}" target="_blank" rel="noopener">{{ tx[:6] }}...{{ tx[-4:] }} &#8599;</a>
                             {% else %}
                                 —
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="evidence-cell">
                             {% if row.id %}
-                                <a class="evidence-btn" href="/api/proof-bundle/{{ row.id }}">Download JSON</a>
+                                {% if tx %}
+                                    <span class="status-pill verified">Verified</span>
+                                {% else %}
+                                    <span class="status-pill pending">Pending</span>
+                                {% endif %}
+                                <a class="evidence-btn" href="/api/proof-bundle/{{ row.id }}">Export JSON</a>
                             {% else %}
                                 <span style="color:#94a3b8;">N/A</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
+                    {% if not rows %}
+                    <tr>
+                        <td colspan="5" class="empty-state">No records yet. Verified recycling events will appear here.</td>
+                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
     </section>
 
     <section class="tech-card auditor-tools">
-        <h3 style="margin:0; color:#0b5d4a;">Auditor Tools</h3>
+        <h3 class="section-heading" style="margin:0;">Auditor Tools</h3>
         <div class="tools-grid">
             <div class="tool-card" style="display: flex; flex-direction: column;">
                 <h4 style="margin:0 0 0.4rem 0; color:#0f172a;">Generate Evidence Pack</h4>
                 <p style="margin:0 0 0.55rem 0; color:#64748b; font-size:0.86rem; flex:1;">Export supporting JSON and proof artifacts for an external audit file.</p>
-                <button class="btn-secondary" id="export-pdf-btn" onclick="window.print()" style="border:none; cursor:pointer; padding:0.45rem 0.7rem; border-radius:8px; font-size:inherit; margin-top:auto;">Export PDF</button>
+                <button class="btn-secondary" id="export-pdf-btn" onclick="window.print()" style="cursor:pointer; padding:0.45rem 0.7rem; border-radius:8px; font-size:inherit; margin-top:auto;">Export PDF</button>
             </div>
             <div class="tool-card" style="display: flex; flex-direction: column;">
                 <h4 style="margin:0 0 0.4rem 0; color:#0f172a;">Simulate Discrepancy</h4>
                 <p style="margin:0 0 0.55rem 0; color:#64748b; font-size:0.86rem; flex:1;">Validate remediation flow when an anchor appears missing or mismatched.</p>
-                <a class="btn-secondary" href="{{ url_for('proof_integrity') }}" style="display:inline-block; text-decoration:none; padding:0.45rem 0.7rem; border-radius:8px; text-align:center; margin-top:auto;">Open Proof Verifier</a>
+                <div class="center-btn"><a class="btn-secondary" href="{{ url_for('proof_integrity') }}" style="display:inline-block; text-decoration:none; padding:0.45rem 0.7rem; border-radius:8px;">Open Proof Verifier</a></div>
             </div>
         </div>
     </section>
@@ -214,7 +276,10 @@ document.addEventListener('DOMContentLoaded', function () {
             cell.textContent = desc || 'Mixed recyclables';
             return;
         }
-        cell.textContent = `${match[2] ? match[2].trim() : 'Mixed'} • ${match[1]}kg`;
+        const material = (match[2] ? match[2].trim() : 'Mixed').replace(/^of\s+/i, '');
+        const kg = Number.parseFloat(match[1]);
+        const kgLabel = Number.isFinite(kg) ? kg.toFixed(1) : match[1];
+        cell.textContent = `${kgLabel}kg of ${material}`;
     });
 
     button.addEventListener('click', function () {

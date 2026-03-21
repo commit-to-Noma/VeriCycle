@@ -12,6 +12,13 @@
         align-items: flex-start;
         gap: 1rem;
     }
+    .collector-header .page-title {
+        margin-bottom: 0.35rem;
+    }
+    .collector-header .page-subtitle strong {
+        color: #0f172a;
+        font-weight: 700;
+    }
     .status-chip {
         display: inline-flex;
         align-items: center;
@@ -46,6 +53,16 @@
         align-items: center;
         text-align: center;
         gap: 0.45rem;
+    }
+    .kpi-wallet-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        margin-top: 0.1rem;
+        padding: 0.48rem 1.1rem;
+        font-size: 0.82rem;
+        text-decoration: none;
     }
     .kpi-head {
         margin: 0;
@@ -156,26 +173,56 @@
     .table-wrap {
         overflow-x: auto;
         border: 1px solid #e2e8f0;
-        border-radius: 10px;
+        border-radius: 12px;
     }
     .table-wrap table {
         width: 100%;
-        min-width: 900px;
         border-collapse: collapse;
+        table-layout: fixed;
     }
+    .table-wrap col.col-date     { width: 19%; }
+    .table-wrap col.col-material { width: 21%; }
+    .table-wrap col.col-weight   { width: 12%; }
+    .table-wrap col.col-amount   { width: 12%; }
+    .table-wrap col.col-status   { width: 16%; }
+    .table-wrap col.col-anchor   { width: 20%; }
     .table-wrap th,
     .table-wrap td {
-        padding: 0.7rem;
+        padding: 0.75rem 0.95rem;
         border-bottom: 1px solid #e5e7eb;
         text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.875rem;
+        color: #334155;
     }
+    .table-wrap tbody tr:last-child td { border-bottom: none; }
+    .table-wrap tbody tr:hover td { background: #f8fafc; }
     .table-wrap th {
         background: #f1f5f9;
-        color: #334155;
+        color: #64748b;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.76rem;
+        letter-spacing: 0.06em;
+        font-size: 0.72rem;
         font-weight: 700;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .table-wrap td.activity-date {
+        color: #94a3b8;
+    }
+    .table-wrap td.activity-material {
+        color: #334155;
+    }
+    .table-wrap td.activity-weight,
+    .table-wrap td.col-amount-val {
+        font-variant-numeric: tabular-nums;
+        color: #334155;
+        text-align: right;
+    }
+    .table-wrap th:nth-child(3),
+    .table-wrap th:nth-child(4) {
+        text-align: right;
     }
     .status-pill {
         display: inline-flex;
@@ -187,7 +234,7 @@
     .status-verified { background: #dbeafe; color: #1d4ed8; }
     .status-anchored { background: #dcfce7; color: #15803d; }
     .status-pending { background: #fef9c3; color: #a16207; }
-    .hedera-link { color: #16a34a !important; font-weight: 700; text-decoration: none; }
+    .hedera-link { color: #16a34a !important; font-weight: 500; text-decoration: none; font-size: 0.875rem; }
 
     .bottom-grid {
         display: grid;
@@ -227,16 +274,17 @@
     }
     .primary-cta {
         width: 100%;
-        border: none;
-        border-radius: 12px;
-        padding: 1rem 1.1rem;
-        font-size: 1.05rem;
+        border-radius: 10px;
+        padding: 0.85rem 1.1rem;
+        font-size: 0.95rem;
         font-weight: 700;
         color: #fff;
+        border: none;
         background: #16a34a;
         cursor: pointer;
-        box-shadow: 0 12px 24px rgba(22, 163, 74, 0.24);
+        transition: background 0.15s, transform 0.1s;
     }
+    .primary-cta:hover { background: #15803d; transform: translateY(-1px); }
 
     .toast-wrap {
         position: fixed;
@@ -275,8 +323,8 @@
 <div class="collector-shell">
     <div class="collector-header">
         <div>
-            <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
-            <p><strong>Recycler Hub</strong> · Find jobs, record drop-offs, and track verified recycling impact.</p>
+            <h2 class="page-title">Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
+            <p class="page-subtitle"><strong>Recycler Hub</strong> · Find jobs, record drop-offs, and track verified recycling impact.</p>
         </div>
         <div class="status-chip" id="system-status-chip" title="5 Agents Online">
             <span class="status-dot" id="system-health-dot"></span>
@@ -288,7 +336,7 @@
         <div class="tech-card kpi-card">
             <p class="kpi-head">Current Balance</p>
             <p class="kpi-number" id="kpi-ecocoin">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</p>
-            <a href="/wallet" class="btn-secondary" style="text-decoration:none; border-radius:999px; padding:0.44rem 0.8rem;">View Wallet</a>
+            <a href="/wallet" class="btn-primary kpi-wallet-btn">View Wallet</a>
         </div>
 
         <div class="tech-card kpi-card">
@@ -344,22 +392,32 @@
         <h3 class="section-title">Verified Recycling Activity</h3>
         <div class="table-wrap">
             <table id="activity-table">
+                <colgroup>
+                    <col class="col-date">
+                    <col class="col-material">
+                    <col class="col-weight">
+                    <col class="col-amount">
+                    <col class="col-status">
+                    <col class="col-anchor">
+                </colgroup>
+                <thead>
                 <tr>
                     <th>Date</th>
-                    <th>Weight (kg)</th>
                     <th>Material</th>
+                    <th>Weight (kg)</th>
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Hedera Anchor</th>
                 </tr>
+                </thead>
                 <tbody id="activity-tbody">
                     {% for act in activities %}
                         {% set status_raw = (act.status or act.verified_status or 'pending')|lower %}
                         <tr>
                             <td class="activity-date" data-ts="{{ act.timestamp }}">{{ act.timestamp }}</td>
-                            <td class="activity-weight" data-desc="{{ act.desc|e }}">—</td>
                             <td class="activity-material" data-desc="{{ act.desc|e }}">—</td>
-                            <td>{{ act.amount }}</td>
+                            <td class="activity-weight" data-desc="{{ act.desc|e }}">—</td>
+                            <td class="col-amount-val">{{ act.amount }}</td>
                             <td>
                                 {% if 'anchored' in status_raw %}
                                     <span class="status-pill status-anchored">Anchored</span>
@@ -406,10 +464,6 @@
                 <summary>How is my EcoCoin calculated?</summary>
                 <p>1 EcoCoin is rewarded for every 1 kg of verified material you drop off.</p>
             </details>
-            <details class="faq-item">
-                <summary>What happens if a center disagrees with my weight?</summary>
-                <p>The center's calibrated scale provides the final verified weight anchored to Hedera.</p>
-            </details>
         </section>
 
         <section class="tech-card action-center-card">
@@ -419,7 +473,7 @@
                 <div class="qr-code-container" id="qr-code-container" style="text-align:center; min-height:185px; display:flex; align-items:center; justify-content:center; background:rgba(0, 200, 100, 0.05); border-radius:8px;">
                     <div class="qr-placeholder" style="color:#64748b; font-size:0.9rem;">Click Generate to create your code</div>
                 </div>
-                <button class="btn-primary" id="generate-btn" style="display:block; width:100%; margin-top:0.75rem; border:none; padding:0.65rem; border-radius:8px; color:#fff; font-weight:700;">Generate QR Code</button>
+                <button class="btn-primary" id="generate-btn" style="display:block; width:100%; margin-top:0.75rem;">Generate QR Code</button>
             </div>
         </section>
     </div>
@@ -454,17 +508,25 @@ document.addEventListener('DOMContentLoaded', function() {
             cell.textContent = formatTs(cell.getAttribute('data-ts') || cell.textContent || '');
         });
 
-        document.querySelectorAll('.activity-weight, .activity-material').forEach((cell) => {
-            const desc = cell.getAttribute('data-desc') || '';
+        document.querySelectorAll('#activity-tbody tr').forEach((row) => {
+            const materialCell = row.querySelector('.activity-material');
+            const weightCell = row.querySelector('.activity-weight');
+            const amountCell = row.querySelector('.col-amount-val');
+            if (!materialCell || !weightCell || !amountCell) return;
+
+            const desc = materialCell.getAttribute('data-desc') || '';
             const match = desc.match(/(\d+(?:\.\d+)?)\s*kg\s*of\s*([^\)]+)/i) || desc.match(/(\d+(?:\.\d+)?)\s*kg\s*\(?([^\)]+)?\)?/i);
-            const isWeight = cell.classList.contains('activity-weight');
             if (!match) {
-                cell.textContent = isWeight ? '—' : 'Mixed';
+                materialCell.textContent = 'Mixed';
+                weightCell.textContent = '—';
+                amountCell.textContent = '—';
                 return;
             }
+
             const weight = match[1] || '—';
             const material = (match[2] || 'Mixed').trim();
-            cell.textContent = isWeight ? weight : material;
+            materialCell.textContent = material;
+            weightCell.textContent = weight;
         });
     }
 
@@ -539,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const weight = Number(row.estimated_kg || 0).toFixed(1);
                 const material = (row.material_type || 'Mixed').toString();
                 const when = (row.requested_window || 'Today').toString();
-                const action = `<button class="btn-primary accept-btn" data-id="${Number(row.id)}" style="border:none; color:#fff; border-radius:8px; padding:0.5rem 0.75rem; font-weight:700;">Accept</button>`;
+                const action = `<button class="btn-primary accept-btn" data-id="${Number(row.id)}">Accept</button>`;
                 return cardHtml(source, weight, material, when, action);
             }).join('');
         } catch (e) {
@@ -566,13 +628,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const statusLabel = row.status === 'accepted' ? 'Pending' : 'Submitted';
                 const id = Number(row.assignment_id);
                 const action = row.status === 'accepted'
-                    ? `<button class="btn-primary toggle-drop" data-id="${id}" style="border:none; color:#fff; border-radius:8px; padding:0.5rem 0.75rem; font-weight:700;">Record Drop-off</button>`
+                    ? `<button class="btn-primary toggle-drop" data-id="${id}">Record Drop-off</button>`
                     : '<span class="item-meta">Awaiting center verification</span>';
                 const details = row.status === 'accepted'
                     ? `
                         <div id="drop_${id}" class="drop-details">
                             <input class="field" id="drop_weight_${id}" type="number" step="0.1" value="${weight}" placeholder="Actual weight (kg)">
-                            <button class="btn-primary submit-drop" data-id="${id}" data-material="${material}" style="border:none; color:#fff; border-radius:8px; padding:0.55rem 0.8rem; font-weight:700;">Submit</button>
+                            <button class="btn-primary submit-drop" data-id="${id}" data-material="${material}">Submit</button>
                         </div>
                     `
                     : '';
