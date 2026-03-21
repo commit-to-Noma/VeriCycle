@@ -4089,6 +4089,31 @@ html, body {
     border: 1px solid #2a3340;
     border-radius: 8px;
     padding: 10px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.golden-run-tile[role="link"] {
+    cursor: pointer;
+}
+
+.golden-run-tile[role="link"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25);
+}
+
+.golden-run-tile.success {
+    border-color: rgba(34, 197, 94, 0.55);
+    background: linear-gradient(180deg, rgba(22, 163, 74, 0.2), rgba(15, 23, 42, 0.9));
+}
+
+.golden-run-tile.approved {
+    border-color: rgba(56, 189, 248, 0.55);
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.18), rgba(15, 23, 42, 0.9));
+}
+
+.golden-run-tile.rejected {
+    border-color: rgba(248, 113, 113, 0.6);
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.2), rgba(15, 23, 42, 0.9));
 }
 
 .golden-run-tile h4 {
@@ -4099,6 +4124,21 @@ html, body {
 .golden-run-tile p {
     margin: 6px 0;
     font-size: 12px;
+}
+
+.admin-intro {
+    margin: 0.35rem 0 0.45rem;
+    color: #cbd5e1;
+    font-weight: 600;
+}
+
+.section-label {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #93c5fd;
+    opacity: 0.92;
 }
 
 .proof-evidence-grid {

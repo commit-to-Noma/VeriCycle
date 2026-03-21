@@ -46,7 +46,7 @@ EXPECTED = {
         "/collector": (302, "/admin/monitor"),
         "/request-pickup": (302, "/admin/monitor"),
         "/household": (302, "/admin/monitor"),
-        "/center": (200, ""),
+        "/center": (302, "/admin/monitor"),
     },
 }
 
