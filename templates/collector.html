@@ -133,6 +133,19 @@
 
     .section-card { padding: 1rem; margin-top: 0.9rem; }
     .section-title { margin: 0 0 0.55rem 0; color: #0b5d4a; }
+    .token-flow-card {
+        background: #eefbf2;
+        border: 1px solid #cfead8;
+        border-left: 4px solid #16a34a;
+    }
+    .token-flow-line {
+        margin: 0.28rem 0;
+        color: #334155;
+        font-size: 0.84rem;
+    }
+    .token-flow-line strong {
+        color: #0b5d4a;
+    }
     .list-item {
         border: 1px solid #e2e8f0;
         border-radius: 10px;
@@ -386,6 +399,15 @@
         </div>
     </div>
 
+    <div class="tech-card section-card token-flow-card">
+        <h3 class="section-title">Token and Proof Flow</h3>
+        <p class="token-flow-line"><strong>1. Accepted:</strong> Recycler secures the pickup assignment.</p>
+        <p class="token-flow-line"><strong>2. In Transit:</strong> Source PIN is confirmed for chain-of-custody.</p>
+        <p class="token-flow-line"><strong>3. Submitted:</strong> Drop-off is sent to center verification queue.</p>
+        <p class="token-flow-line"><strong>4. Verified:</strong> Center validates weight/material and creates activity.</p>
+        <p class="token-flow-line"><strong>5. Anchored + Rewarded:</strong> Hedera logbook (HCS) and reward transfer (HTS) finalize proof.</p>
+    </div>
+
     <div class="tech-card section-card">
         <h3 class="section-title">Open Pickup Opportunities</h3>
         <div id="pickup-opportunities-list"><p>Loading opportunities...</p></div>
@@ -611,11 +633,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const weight = Number(row.estimated_kg || 0).toFixed(1);
                 const material = (row.material_type || 'Mixed').toString();
                 const when = (row.requested_window || 'Today').toString();
+                const distance = Number(row.distance_km || 0).toFixed(1);
+                const estimatedReward = Number(row.estimated_reward_eco || 0).toFixed(1);
                 const extraMeta = row.priority === 'center'
                     ? '<p class="item-meta" style="color:#b91c1c; font-weight:700;">HIGH IMPACT: Heavy load requires center-priority routing</p>'
-                    : '';
+                    : '<p class="item-meta">Standard routing available for pickup</p>';
                 const action = `<button class="btn-primary accept-btn" data-id="${Number(row.id)}">Accept</button>`;
-                return cardHtml(source, weight, material, when, action, extraMeta);
+                const economics = `<p class="item-meta">Distance: ${distance} km · Est. reward: ${estimatedReward} ECO</p>`;
+                return cardHtml(source, weight, material, when, action, `${economics}${extraMeta}`);
             }).join('');
         } catch (e) {
             oppContainer.innerHTML = '<p>Unable to load pickup opportunities.</p>';
@@ -638,16 +663,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const source = (row.source_name || row.business_name || row.location || 'Local Partner').toString();
                 const weight = Number(row.estimated_kg || 0).toFixed(1);
                 const material = (row.material_type || 'Mixed').toString();
-                const statusLabel = row.status === 'accepted' ? 'Pending' : 'Submitted';
+                const distance = Number(row.distance_km || 0).toFixed(1);
+                const estimatedReward = Number(row.estimated_reward_eco || 0).toFixed(1);
+                const statusLabel = row.status === 'accepted'
+                    ? 'Accepted'
+                    : (row.status === 'in_transit' ? 'In Transit' : 'Submitted');
                 const id = Number(row.assignment_id);
-                const action = row.status === 'accepted'
+                const action = (row.status === 'accepted' || row.status === 'in_transit')
                     ? `<button class="btn-primary toggle-drop" data-id="${id}">Record Drop-off</button>`
                     : '<span class="item-meta">Awaiting center verification</span>';
-                const details = row.status === 'accepted'
+                const details = (row.status === 'accepted' || row.status === 'in_transit')
                     ? `
                         <div id="drop_${id}" class="drop-details">
+                            ${row.status === 'accepted' && row.pickup_pin_required ? `
+                                <input class="field" id="pickup_pin_${id}" type="text" maxlength="4" placeholder="Enter source PIN to start chain-of-custody">
+                                <button class="btn-primary confirm-pin" data-id="${id}">Confirm Source PIN</button>
+                            ` : ''}
                             <input class="field" id="drop_weight_${id}" type="number" step="0.1" value="${weight}" placeholder="Actual weight (kg)">
-                            <button class="btn-primary submit-drop" data-id="${id}" data-material="${material}">Submit</button>
+                            <button class="btn-primary submit-drop" data-id="${id}" data-material="${material}" ${row.status === 'accepted' ? 'disabled title="Confirm source PIN first"' : ''}>Submit to Center</button>
                         </div>
                     `
                     : '';
@@ -657,6 +690,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div>
                                 <p class="item-primary">${source} | ${weight}kg | ${statusLabel}</p>
                                 <p class="item-meta">${material}</p>
+                                <p class="item-meta">Distance: ${distance} km · Est. reward: ${estimatedReward} ECO</p>
                             </div>
                             ${action}
                         </div>
@@ -707,6 +741,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    async function confirmPickupPin(id, pickupPin) {
+        try {
+            const res = await fetch(`/api/assignments/${id}/confirm-pin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ pickup_pin: pickupPin }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                showToast(data.error || 'Could not confirm pickup PIN', 'error');
+                return;
+            }
+            showToast('PIN confirmed. Pickup is now in transit.');
+            loadAcceptedAssignments();
+        } catch (e) {
+            showToast('Could not confirm pickup PIN', 'error');
+        }
+    }
+
     oppContainer.addEventListener('click', (event) => {
         const btn = event.target.closest('.accept-btn');
         if (!btn) return;
@@ -721,11 +777,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         const submit = event.target.closest('.submit-drop');
-        if (!submit) return;
-        const id = Number(submit.dataset.id);
-        const material = submit.dataset.material || 'Mixed';
-        const weight = Number(document.getElementById(`drop_weight_${id}`)?.value || 0);
-        submitDropoff(id, material, weight);
+        if (submit) {
+            const id = Number(submit.dataset.id);
+            const material = submit.dataset.material || 'Mixed';
+            const weight = Number(document.getElementById(`drop_weight_${id}`)?.value || 0);
+            submitDropoff(id, material, weight);
+            return;
+        }
+        const confirmPinBtn = event.target.closest('.confirm-pin');
+        if (!confirmPinBtn) return;
+        const id = Number(confirmPinBtn.dataset.id);
+        const pin = (document.getElementById(`pickup_pin_${id}`)?.value || '').trim();
+        confirmPickupPin(id, pin);
     });
 
     generateButton.addEventListener('click', () => {

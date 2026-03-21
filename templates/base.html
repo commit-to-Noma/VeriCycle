@@ -8,20 +8,22 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="light-theme" style="background-color: #f4f9f5;">
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-    <div class="demo-banner">Demo Mode • Preloaded Data • Hedera Testnet</div>
-    {% include '_navbar.html' %}
-    <main id="main-content" class="container app-dashboard">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-bar">
-                    {% for category, message in messages %}
-                        <div class="flash-message {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
-    </main>
+    <div class="page-wrapper">
+        <a class="skip-link" href="#main-content">Skip to main content</a>
+        {% include '_navbar.html' %}
+        <div class="demo-banner">Demo Mode • Preloaded Data • Hedera Testnet</div>
+        <main id="main-content" class="page-container app-dashboard">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-bar">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
 </body>
 </html>

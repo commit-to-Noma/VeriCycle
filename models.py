@@ -247,6 +247,7 @@ class PickupOpportunity(db.Model):
     material_type = db.Column(db.String(80), nullable=False)
     estimated_kg = db.Column(db.Float, nullable=False)
     priority = db.Column(db.String(20), nullable=False, default="standard")
+    pickup_pin = db.Column(db.String(8), nullable=True)
     location = db.Column(db.String(200), nullable=False)
     requested_window = db.Column(db.String(100), nullable=True)
 

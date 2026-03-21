@@ -43,6 +43,15 @@
     }
     .form-group { margin-bottom: 0.85rem; }
     .form-group label { display: block; color: #374151; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.3rem; }
+    .location-display {
+        margin: 0.35rem 0 0.8rem;
+        padding: 0.6rem 0.72rem;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 0.9rem;
+    }
     .form-group select, .form-group input {
         width: 100%; box-sizing: border-box;
         border: 1px solid #cbd5e1; border-radius: 8px;
@@ -134,6 +143,39 @@
         font-size: 0.84rem;
         line-height: 1.5;
     }
+    .heat-line {
+        display: block;
+        font-weight: 600;
+    }
+    .heat-line.hot { color: #b91c1c; }
+    .heat-line.warm { color: #b45309; }
+    .heat-line.cool { color: #166534; }
+    .heat-line.profile { color: #1d4ed8; margin-top: 0.3rem; }
+    .system-note {
+        margin-top: 0.55rem;
+        font-size: 0.82rem;
+        color: #475569 !important;
+        text-align: center;
+    }
+    .pipeline-track {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.45rem;
+        margin-top: 0.8rem;
+    }
+    .pipeline-step {
+        text-align: center;
+        font-size: 0.74rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 0.26rem 0.5rem;
+        background: #e2e8f0;
+        color: #475569;
+    }
+    .pipeline-step.active {
+        background: #dcfce7;
+        color: #166534;
+    }
     /* Success card */
     #success-card h2 { color: #16a34a !important; }
     #success-card h3 { color: #0b5d4a !important; }
@@ -214,19 +256,12 @@
 
                 <div class="pickup-form">
                     <h3>Pickup Opportunity Details</h3>
+                    <p class="system-note">Businesses request pickups • Recyclers earn ECO • Centers verify and anchor proof</p>
 
-                        <div class="form-group">
-                            <label for="neighborhood">Select Your Neighborhood:</label>
-                            <select id="neighborhood">
-                                <option value="randburg" {% if current_user.address and 'Randburg' in current_user.address %}selected{% endif %}>Randburg</option>
-                                <option value="soweto" {% if current_user.address and 'Soweto' in current_user.address %}selected{% endif %}>Soweto</option>
-                                <option value="roodepoort" {% if current_user.address and 'Roodepoort' in current_user.address %}selected{% endif %}>Roodepoort</option>
-                                <option value="sandton" {% if current_user.address and 'Sandton' in current_user.address %}selected{% endif %}>Sandton</option>
-                                <option value="midrand" {% if current_user.address and 'Midrand' in current_user.address %}selected{% endif %}>Midrand</option>
-                                <option value="other">Other</option>
-                            </select>
-                            <span class="form-note">Auto-selected from your profile address.</span>
-                        </div>
+                    <div class="form-group">
+                        <label>Pickup Location</label>
+                        <p class="location-display" id="pickup-location">📍 Pickup Location: {{ current_user.address or 'Address not set in profile' }}</p>
+                    </div>
 
                     <div class="form-group">
                         <label for="material">Material Type:</label>
@@ -273,13 +308,21 @@
                     </div>
                     <div class="pickup-total-line" style="margin-top: 0.75rem; border-top: 1px solid #333; padding-top: 0.75rem;">
                         <span>Request Status:</span>
-                        <span>Ready to Publish</span>
+                        <span id="requestStatusLabel">Ready to Publish</span>
                     </div>
 
                     <div class="heatmap-card">
-                        🔥 High demand: Randburg<br>
-                        ⚠ Medium: Sandton<br>
-                        ✓ Low: Roodepoort
+                        <span class="heat-line hot">High stress: Randburg logistics backlog</span>
+                        <span class="heat-line warm">Medium stress: Sandton handoff pressure</span>
+                        <span class="heat-line cool">Low stress: Roodepoort stable flow</span>
+                        <span class="heat-line profile" id="heatmap-profile-zone">Profile zone focus: --</span>
+                    </div>
+
+                    <div class="pipeline-track" id="pipelineTrack">
+                        <span class="pipeline-step active" data-stage="submitted">Submitted</span>
+                        <span class="pipeline-step" data-stage="in_transit">In Transit</span>
+                        <span class="pipeline-step" data-stage="verified">Verified</span>
+                        <span class="pipeline-step" data-stage="anchored">Anchored</span>
                     </div>
                     
                     <button class="btn-primary-large btn-form" id="confirm-pickup-btn">
@@ -304,6 +347,10 @@
             <h3 style="color: #f4f4f4; font-size: 1.5rem; margin: 0.5rem 0 2.5rem 0;">
                 Request location: <span id="success-neighborhood">Sandton</span>
             </h3>
+
+            <p class="success-meta" style="margin-top:-1.6rem;">
+                Source PIN for chain-of-custody handoff: <strong id="success-pickup-pin">----</strong>
+            </p>
 
             <p class="success-meta">
                 Routed to nearby recyclers • Awaiting verification • Will be anchored on Hedera
@@ -375,9 +422,10 @@
             const summaryNeighborhood = document.getElementById('summary-neighborhood');
             const previewMaterial = document.getElementById('previewMaterial');
             const previewWeight = document.getElementById('previewWeight');
-            const neighborhoodSelect = document.getElementById('neighborhood');
+            const pickupLocation = document.getElementById('pickup-location');
             const matchingState = document.getElementById('matching-state');
             const priorityBadge = document.getElementById('priorityBadge');
+            const requestStatusLabel = document.getElementById('requestStatusLabel');
 
             // --- NEW: DYNAMIC DATE LOGIC ---
             try {
@@ -413,9 +461,13 @@
                 if (previewWeight && weightSelect) {
                     previewWeight.innerText = weightSelect.value;
                 }
-                if (summaryNeighborhood && neighborhoodSelect) {
-                    const hood = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text;
-                    summaryNeighborhood.textContent = `📍 ${hood.replace(/ \(.+\)/, '')}`;
+                if (summaryNeighborhood && pickupLocation) {
+                    const locationLabel = pickupLocation.textContent.replace('📍 Pickup Location: ', '').trim();
+                    summaryNeighborhood.textContent = `📍 ${locationLabel}`;
+                    const heatmapProfileZone = document.getElementById('heatmap-profile-zone');
+                    if (heatmapProfileZone) {
+                        heatmapProfileZone.textContent = `Profile zone focus: ${locationLabel}`;
+                    }
                 }
 
                 if (priorityBadge && weightSelect) {
@@ -423,24 +475,34 @@
                     if (value.includes('50 kg+')) {
                         priorityBadge.innerText = 'Center Priority • Vehicle Required';
                         priorityBadge.className = 'badge heavy';
+                        if (requestStatusLabel) requestStatusLabel.innerText = 'Center Priority';
                     } else {
                         priorityBadge.innerText = 'Standard Pickup';
                         priorityBadge.className = 'badge normal';
+                        if (requestStatusLabel) requestStatusLabel.innerText = 'Ready to Publish';
                     }
                 }
+            }
+
+            function updatePipeline(status) {
+                document.querySelectorAll('#pipelineTrack .pipeline-step').forEach((step) => {
+                    step.classList.remove('active');
+                });
+                const target = document.querySelector(`#pipelineTrack .pipeline-step[data-stage="${status}"]`);
+                if (target) target.classList.add('active');
             }
 
             syncRequestSummary();
             materialCheckboxes.forEach((cb) => cb.addEventListener('change', syncRequestSummary));
             if (weightSelect) weightSelect.addEventListener('change', syncRequestSummary);
-            if (neighborhoodSelect) neighborhoodSelect.addEventListener('change', syncRequestSummary);
+            updatePipeline('submitted');
 
             // --- 2. Open the modal ---
             pickupButton.addEventListener('click', function(e) {
                 e.preventDefault(); // Stop the form from doing anything
 
                 // Read the selected neighborhood from the form (or fall back to profile/default)
-                const selectedText = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text || '{{ current_user.neighborhood or "Sandton" }}';
+                const selectedText = (pickupLocation ? pickupLocation.textContent.replace('📍 Pickup Location: ', '').trim() : '{{ current_user.address or "Unspecified Location" }}');
 
                 // Update the modal heading so it reflects the user's neighborhood
                 const slotsNeighborhood = document.getElementById('slots-neighborhood');
@@ -471,7 +533,7 @@
                     .filter((c) => c.checked)
                     .map((c) => c.value);
 
-                const location = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text;
+                const location = '{{ current_user.address or "" }}';
                 const material_type = selectedMaterials.length ? selectedMaterials.join(', ') : 'Mixed Recyclables';
 
                 let estimated_kg = 10;
@@ -491,6 +553,7 @@
                 confirmSlotButton.disabled = true;
                 confirmSlotButton.textContent = 'Matching recyclers nearby...';
                 if (matchingState) matchingState.style.display = 'block';
+                updatePipeline('in_transit');
 
                 try {
                     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -516,12 +579,23 @@
                         return;
                     }
 
+                    const successNeighborhood = document.getElementById('success-neighborhood');
+                    if (successNeighborhood && data.location) {
+                        successNeighborhood.textContent = data.location;
+                    }
+                    const successPin = document.getElementById('success-pickup-pin');
+                    if (successPin) {
+                        successPin.textContent = data.pickup_pin || 'Not available';
+                    }
+
                     closeModal();
                     pickupCard.style.display = 'none';
                     successCard.style.display = 'block';
+                    updatePipeline('submitted');
                 } catch (err) {
                     console.error(err);
                     alert('Could not create pickup opportunity');
+                    updatePipeline('submitted');
                 } finally {
                     confirmSlotButton.disabled = false;
                     confirmSlotButton.textContent = 'Confirm Request Window';

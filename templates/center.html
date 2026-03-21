@@ -221,6 +221,19 @@ body {
 .center-guide-list li strong { color: #0b5d4a; }
 .hub-record-meta { color: #94a3b8; font-size: 0.78rem; margin-top: 0.25rem; }
 .center-mini-metrics { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.65rem; }
+.center-token-flow {
+    background: rgba(220, 252, 231, 0.55);
+    border: 1px solid rgba(22, 163, 74, 0.22);
+    border-left: 4px solid #16a34a;
+}
+.center-token-flow p {
+    margin: 0.35rem 0;
+    font-size: 0.84rem;
+    color: #334155 !important;
+}
+.center-token-flow strong {
+    color: #0b5d4a;
+}
 
 /* Status badges */
 .status-badge {
@@ -426,6 +439,16 @@ body {
                     <span class="status-badge status-badge-paid">Verified</span>
                     <span class="status-badge status-badge-fallback">Anchored / Rewarded / Proof Ready</span>
                 </div>
+            </article>
+
+            <article class="card center-guide-card center-token-flow">
+                <span class="section-kicker">Token and Proof Handoff</span>
+                <h3>Stage to transaction mapping</h3>
+                <p><strong>Submitted:</strong> Recycler payload enters center queue.</p>
+                <p><strong>Verified:</strong> Center confirms material and weight for payout math.</p>
+                <p><strong>Anchored:</strong> Logbook entry is published to Hedera Consensus Service (HCS).</p>
+                <p><strong>Rewarded:</strong> ECO payout is finalized through Hedera Token Service (HTS).</p>
+                <p><strong>Proof Ready:</strong> Proof bundle links verification, anchors, and reward outcomes.</p>
             </article>
         </aside>
     </div>

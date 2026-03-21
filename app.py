@@ -365,6 +365,27 @@ def canonical_material_label(material_type: str | None) -> str:
     return mapping.get(key, "Mixed Recyclables")
 
 
+def estimate_pickup_distance_km(location: str | None) -> float:
+    normalized = (location or "").strip().lower()
+    if "randburg" in normalized:
+        return 2.4
+    if "sandton" in normalized:
+        return 5.7
+    if "roodepoort" in normalized:
+        return 3.1
+    if "soweto" in normalized:
+        return 6.2
+    if "midrand" in normalized:
+        return 7.0
+    return 4.8
+
+
+def generate_pickup_pin(user_id: int) -> str:
+    seed = f"{user_id}:{datetime.now(timezone.utc).timestamp()}"
+    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
+    return f"{int(digest[:6], 16) % 10000:04d}"
+
+
 def calculate_demo_reward_amount(material_type: str | None, weight_kg: float | int | None) -> float:
     safe_weight = max(0.0, float(weight_kg or 0.0))
     material_key = normalize_material_key(material_type)
@@ -493,6 +514,8 @@ def pickup_request_status_label(
         return "Completed"
     if assignment == "submitted":
         return "Submitted for verification"
+    if assignment == "in_transit" or request_state == "in_transit":
+        return "In transit to center"
     if assignment == "accepted" or request_state == "accepted":
         return "Accepted by recycler"
     if request_state == "completed":
@@ -937,6 +960,7 @@ def ensure_activity_columns():
                 material_type VARCHAR(80) NOT NULL,
                 estimated_kg FLOAT NOT NULL,
                 priority VARCHAR(20) NOT NULL DEFAULT 'standard',
+                pickup_pin VARCHAR(8),
                 location VARCHAR(200) NOT NULL,
                 requested_window VARCHAR(100),
                 status VARCHAR(30) NOT NULL DEFAULT 'open',
@@ -973,6 +997,8 @@ def ensure_activity_columns():
     pickup_existing = {c.get("name") for c in pickup_cols}
     if "priority" not in pickup_existing:
         db.session.execute(text("ALTER TABLE pickup_opportunity ADD COLUMN priority VARCHAR(20) NOT NULL DEFAULT 'standard'"))
+    if "pickup_pin" not in pickup_existing:
+        db.session.execute(text("ALTER TABLE pickup_opportunity ADD COLUMN pickup_pin VARCHAR(8)"))
 
     if "submitted_at" not in assignment_existing:
         db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN submitted_at DATETIME"))
@@ -1872,6 +1898,7 @@ def business_dashboard():
             "material_type": req.material_type,
             "estimated_kg": req.estimated_kg,
             "priority": req.priority,
+            "pickup_pin": req.pickup_pin,
             "location": req.location,
             "requested_window": req.requested_window,
             "status": req.status,
@@ -1918,7 +1945,7 @@ def api_create_opportunity():
     material_type = (data.get('material_type') or '').strip()
     estimated_kg_raw = data.get('estimated_kg')
     weight_category = (data.get('weight_category') or '').strip()
-    location = (data.get('location') or '').strip()
+    profile_location = (getattr(current_user, 'address', None) or '').strip()
     requested_window = (data.get('requested_window') or '').strip()
     notes = (data.get('notes') or '').strip()
 
@@ -1933,11 +1960,12 @@ def api_create_opportunity():
     if estimated_kg <= 0:
         return jsonify({"ok": False, "error": "Estimated weight must be greater than zero"}), 400
 
-    if not location:
-        return jsonify({"ok": False, "error": "Location is required"}), 400
+    if not profile_location:
+        return jsonify({"ok": False, "error": "Set your profile address before creating pickup requests"}), 400
 
     canonical_material = canonical_material_label(material_type)
     priority = 'center' if (estimated_kg >= 50 or '50 kg+' in weight_category) else 'standard'
+    pickup_pin = generate_pickup_pin(current_user.id)
 
     opportunity = PickupOpportunity(
         source_role='business' if role == 'business' else 'resident',
@@ -1945,7 +1973,8 @@ def api_create_opportunity():
         material_type=canonical_material,
         estimated_kg=estimated_kg,
         priority=priority,
-        location=location,
+        pickup_pin=pickup_pin,
+        location=profile_location,
         requested_window=requested_window or None,
         notes=notes or None,
         status='open',
@@ -1958,6 +1987,8 @@ def api_create_opportunity():
         "opportunity_id": opportunity.id,
         "status": opportunity.status,
         "priority": opportunity.priority,
+        "pickup_pin": pickup_pin,
+        "location": profile_location,
     })
 
 
@@ -1975,6 +2006,8 @@ def api_list_open_opportunities():
 
     payload = []
     for row in rows:
+        distance_km = estimate_pickup_distance_km(row.location)
+        estimated_reward_eco = calculate_demo_reward_amount(row.material_type, row.estimated_kg)
         payload.append({
             "id": row.id,
             "source_role": row.source_role,
@@ -1982,6 +2015,8 @@ def api_list_open_opportunities():
             "estimated_kg": row.estimated_kg,
             "priority": row.priority,
             "location": row.location,
+            "distance_km": distance_km,
+            "estimated_reward_eco": estimated_reward_eco,
             "requested_window": row.requested_window,
             "notes": row.notes,
             "status": row.status,
@@ -2066,6 +2101,8 @@ def api_my_assignments():
             "estimated_kg": opp.estimated_kg if opp else None,
             "priority": opp.priority if opp else 'standard',
             "location": opp.location if opp else None,
+            "distance_km": estimate_pickup_distance_km(opp.location) if opp else None,
+            "pickup_pin_required": bool(opp and opp.pickup_pin),
             "requested_window": opp.requested_window if opp else None,
         })
 
@@ -2085,7 +2122,7 @@ def api_submit_assignment(assignment_id):
     if assignment.recycler_user_id != current_user.id:
         return jsonify({"ok": False, "error": "Not your assignment"}), 403
 
-    if assignment.status not in ('accepted',):
+    if assignment.status not in ('accepted', 'in_transit'):
         return jsonify({"ok": False, "error": "Assignment cannot be submitted from its current state"}), 409
 
     data = request.get_json(silent=True) or request.form
@@ -2110,6 +2147,9 @@ def api_submit_assignment(assignment_id):
     assignment.status = 'submitted'
     assignment.verification_status = 'pending'
 
+    if assignment.opportunity:
+        assignment.opportunity.status = 'submitted'
+
     db.session.commit()
 
     return jsonify({
@@ -2117,6 +2157,45 @@ def api_submit_assignment(assignment_id):
         "assignment_id": assignment.id,
         "status": assignment.status,
         "verification_status": assignment.verification_status,
+    })
+
+
+@app.post('/api/assignments/<int:assignment_id>/confirm-pin')
+@login_required
+def api_confirm_assignment_pin(assignment_id):
+    if not can_accept_opportunity_recycler(current_user):
+        return jsonify({"ok": False, "error": "Only recyclers can confirm pickup PIN"}), 403
+
+    assignment = db.session.get(OpportunityAssignment, assignment_id)
+    if not assignment:
+        return jsonify({"ok": False, "error": "Assignment not found"}), 404
+
+    if assignment.recycler_user_id != current_user.id:
+        return jsonify({"ok": False, "error": "Not your assignment"}), 403
+
+    if assignment.status != 'accepted':
+        return jsonify({"ok": False, "error": "PIN confirmation is only allowed for accepted pickups"}), 409
+
+    opportunity = assignment.opportunity
+    if not opportunity or not opportunity.pickup_pin:
+        return jsonify({"ok": False, "error": "Pickup PIN not available for this assignment"}), 400
+
+    data = request.get_json(silent=True) or request.form
+    entered_pin = (data.get('pickup_pin') or '').strip()
+    if not entered_pin:
+        return jsonify({"ok": False, "error": "Pickup PIN is required"}), 400
+
+    if entered_pin != (opportunity.pickup_pin or '').strip():
+        return jsonify({"ok": False, "error": "Invalid pickup PIN"}), 400
+
+    assignment.status = 'in_transit'
+    opportunity.status = 'in_transit'
+    db.session.commit()
+
+    return jsonify({
+        "ok": True,
+        "assignment_id": assignment.id,
+        "status": assignment.status,
     })
 
 

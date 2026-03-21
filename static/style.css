@@ -10986,6 +10986,11 @@ body {
 
 body {
     padding-top: var(--nav-h, 72px);
+    background: #f8fafc;
+}
+
+.page-wrapper {
+    width: 100%;
 }
 
 .page-container {
