@@ -61,10 +61,10 @@ def test_role_access_matrix_smoke():
             "persisted_role": "business",
             "profile_complete": True,
             "checks": {
-                "/collector": (302, "/request-pickup"),
+                "/collector": (302, "/business"),
                 "/request-pickup": (200, ""),
-                "/household": (302, "/request-pickup"),
-                "/center": (302, "/request-pickup"),
+                "/household": (302, "/business"),
+                "/center": (302, "/business"),
             },
         },
         "resident": {
@@ -72,7 +72,7 @@ def test_role_access_matrix_smoke():
             "profile_complete": True,
             "checks": {
                 "/collector": (302, "/household"),
-                "/request-pickup": (200, ""),
+                "/request-pickup": (302, "/household"),
                 "/household": (200, ""),
                 "/center": (302, "/household"),
             },
@@ -143,7 +143,7 @@ def test_business_pdf_and_silent_collector_redirect():
 
         collector_response = client.get("/collector", follow_redirects=False)
         assert collector_response.status_code == 302
-        assert (collector_response.headers.get("Location") or "").startswith("/request-pickup")
+        assert (collector_response.headers.get("Location") or "").startswith("/business")
 
         with client.session_transaction() as session:
             flashes = list(session.get("_flashes", []))

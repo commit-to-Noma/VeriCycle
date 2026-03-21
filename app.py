@@ -35,7 +35,7 @@ import re
 import threading
 from collections import defaultdict
 from sqlalchemy.exc import OperationalError
-from sqlalchemy import text, func
+from sqlalchemy import text, func, or_
 from urllib.parse import urlencode
 
 # -----------------------------------------------------------------
@@ -272,9 +272,17 @@ def _find_first_user_by_effective_role(target_role: str) -> User | None:
 def ensure_demo_pickup_flow_seed() -> None:
     """
     Keep demo flows non-empty in local/test judging runs.
-    Creates one open opportunity and one submitted assignment if absent.
+    Creates one starter open opportunity and one starter submitted assignment only
+    when the pickup flow tables are empty.
     """
     if _is_prod:
+        return
+
+    # Do not keep re-seeding after real stakeholder activity starts.
+    # The seed should bootstrap empty databases only.
+    has_any_opportunity = db.session.query(PickupOpportunity.id).first() is not None
+    has_any_assignment = db.session.query(OpportunityAssignment.id).first() is not None
+    if has_any_opportunity or has_any_assignment:
         return
 
     business_user = _find_first_user_by_effective_role("business")
@@ -284,47 +292,47 @@ def ensure_demo_pickup_flow_seed() -> None:
 
     made_changes = False
 
-    has_open = PickupOpportunity.query.filter_by(status="open").first() is not None
-    if not has_open:
-        db.session.add(PickupOpportunity(
-            source_role="business",
-            source_user_id=business_user.id,
-            material_type="Cans",
-            estimated_kg=12.0,
-            location="Sandton Business District",
-            requested_window="Today 14:00-17:00",
-            notes="Demo seeded pickup for judge flow",
-            status="open",
-        ))
+    if not (recycler_user.hedera_account_id or '').strip():
+        recycler_user.hedera_account_id = '0.0.7267109'
         made_changes = True
 
-    has_submitted = OpportunityAssignment.query.filter_by(status="submitted").first() is not None
-    if not has_submitted:
-        seeded_opportunity = PickupOpportunity(
-            source_role="business",
-            source_user_id=business_user.id,
-            material_type="Paper",
-            estimated_kg=9.5,
-            location="Rosebank Office Hub",
-            requested_window="Today 09:00-12:00",
-            notes="Demo seeded submitted assignment",
-            status="accepted",
-        )
-        db.session.add(seeded_opportunity)
-        db.session.flush()
+    db.session.add(PickupOpportunity(
+        source_role="business",
+        source_user_id=business_user.id,
+        material_type="Cans",
+        estimated_kg=12.0,
+        location="Sandton Business District",
+        requested_window="Today 14:00-17:00",
+        notes="Demo seeded pickup for judge flow",
+        status="open",
+    ))
+    made_changes = True
 
-        seeded_assignment = OpportunityAssignment(
-            opportunity_id=seeded_opportunity.id,
-            recycler_user_id=recycler_user.id,
-            status="submitted",
-            submitted_at=datetime.now(timezone.utc),
-            submitted_material_type="Paper",
-            submitted_weight_kg=9.5,
-            submission_notes="Preloaded for center verification demo",
-            verification_status="pending",
-        )
-        db.session.add(seeded_assignment)
-        made_changes = True
+    seeded_opportunity = PickupOpportunity(
+        source_role="business",
+        source_user_id=business_user.id,
+        material_type="Paper",
+        estimated_kg=9.5,
+        location="Rosebank Office Hub",
+        requested_window="Today 09:00-12:00",
+        notes="Demo seeded submitted assignment",
+        status="accepted",
+    )
+    db.session.add(seeded_opportunity)
+    db.session.flush()
+
+    seeded_assignment = OpportunityAssignment(
+        opportunity_id=seeded_opportunity.id,
+        recycler_user_id=recycler_user.id,
+        status="submitted",
+        submitted_at=datetime.now(timezone.utc),
+        submitted_material_type="Paper",
+        submitted_weight_kg=9.5,
+        submission_notes="Preloaded for center verification demo",
+        verification_status="pending",
+    )
+    db.session.add(seeded_assignment)
+    made_changes = True
 
     if made_changes:
         db.session.commit()
@@ -515,6 +523,211 @@ def pickup_request_status_label(
     if request_state == "open":
         return "Open for pickup"
     return humanize_status_token(request_status)
+
+
+_OPPORTUNITY_STATUS_RANK = {
+    "cancelled": 0,
+    "open": 1,
+    "accepted": 2,
+    "in_transit": 3,
+    "submitted": 4,
+    "completed": 5,
+}
+
+
+def normalize_hotspot_key(title: str | None, location: str | None) -> str:
+    title_part = re.sub(r"[^a-z0-9]+", "-", (title or "").strip().lower()).strip("-")
+    location_part = re.sub(r"[^a-z0-9]+", "-", (location or "").strip().lower()).strip("-")
+    key = f"{title_part}::{location_part}".strip(":")
+    return key or "community-cleanup-request"
+
+
+def parse_community_hotspot_details(notes: str | None, fallback_location: str | None) -> tuple[str, str, bool]:
+    raw = (notes or "").strip()
+    fallback = (fallback_location or "Unspecified location").strip() or "Unspecified location"
+
+    hotspot_match = re.search(r"\[Community Hotspot\]\s*(.+?)\s*::", raw, re.IGNORECASE)
+    if hotspot_match:
+        title = hotspot_match.group(1).strip()
+        return (title or "Community Cleanup Request", fallback, False)
+
+    escalation_match = re.search(r"\[Community Support Escalation\]\s*(.+?)\s*@\s*([^\.\n]+)", raw, re.IGNORECASE)
+    if escalation_match:
+        title = escalation_match.group(1).strip()
+        location = escalation_match.group(2).strip() or fallback
+        return (title or "Community Cleanup Request", location, True)
+
+    reopen_match = re.search(r"\[Community Reopen\]\s*(.+?)\s*@\s*(.+?)\s*::", raw, re.IGNORECASE)
+    if reopen_match:
+        title = reopen_match.group(1).strip()
+        location = reopen_match.group(2).strip() or fallback
+        return (title or "Community Cleanup Request", location, False)
+
+    return ("Community Cleanup Request", fallback, False)
+
+
+def purge_stale_demo_seed_rows() -> None:
+    if _is_prod:
+        return
+
+    demo_notes = {
+        "Demo seeded pickup for judge flow",
+        "Demo seeded submitted assignment",
+    }
+
+    has_real_activity = db.session.query(Activity.id).first() is not None
+    has_real_pickup_data = (
+        PickupOpportunity.query
+        .filter(or_(PickupOpportunity.notes.is_(None), ~PickupOpportunity.notes.in_(demo_notes)))
+        .first()
+        is not None
+    )
+    if not (has_real_activity or has_real_pickup_data):
+        return
+
+    stale_opportunities = (
+        PickupOpportunity.query
+        .filter(PickupOpportunity.notes.in_(demo_notes))
+        .filter(PickupOpportunity.status.in_(['open', 'accepted', 'in_transit', 'submitted']))
+        .all()
+    )
+    if not stale_opportunities:
+        return
+
+    for opportunity in stale_opportunities:
+        for assignment in (opportunity.assignments or []):
+            if assignment.status in {'accepted', 'in_transit', 'submitted'}:
+                assignment.status = 'cancelled'
+                if assignment.verification_status in {None, '', 'pending'}:
+                    assignment.verification_status = 'cancelled'
+        opportunity.status = 'cancelled'
+
+    db.session.commit()
+
+
+def build_community_hotspot_board() -> list[dict]:
+    purge_stale_demo_seed_rows()
+
+    rows = (
+        PickupOpportunity.query
+        .filter_by(source_role='resident')
+        .order_by(PickupOpportunity.created_at.desc())
+        .limit(600)
+        .all()
+    )
+
+    grouped: dict[str, dict] = {}
+    for row in rows:
+        title, location, is_support = parse_community_hotspot_details(row.notes, row.location)
+        key = normalize_hotspot_key(title, location)
+        rank = _OPPORTUNITY_STATUS_RANK.get((row.status or '').strip().lower(), 0)
+        created_iso = row.created_at.isoformat() if row.created_at else None
+
+        if key not in grouped:
+            grouped[key] = {
+                "hotspot_key": key,
+                "title": title,
+                "location": location,
+                "status": (row.status or 'open'),
+                "status_rank": rank,
+                "status_label": pickup_request_status_label(row.status),
+                "priority": 'center' if (row.priority or '').strip().lower() == 'center' else 'standard',
+                "support_count": 0,
+                "report_count": 0,
+                "latest_created_at": created_iso,
+                "can_prioritize": False,
+                "completed_at": None,
+                "completed_by": None,
+                "completed_activity_id": None,
+                "proof_bundle_url": None,
+                "hashscan_url": None,
+                "reward_amount": None,
+                "resident_confirmation_status": None,
+                "resident_confirmation_at": None,
+                "resident_confirmation_by": None,
+            }
+
+        entry = grouped[key]
+        entry["report_count"] += 1
+        if is_support:
+            entry["support_count"] += 1
+
+        if (row.priority or '').strip().lower() == 'center':
+            entry["priority"] = 'center'
+
+        if rank > entry["status_rank"]:
+            entry["status_rank"] = rank
+            entry["status"] = row.status
+            entry["status_label"] = pickup_request_status_label(row.status)
+
+        if created_iso and (not entry["latest_created_at"] or created_iso > entry["latest_created_at"]):
+            entry["latest_created_at"] = created_iso
+
+        if (row.status or '').strip().lower() in {'open', 'accepted', 'in_transit', 'submitted'}:
+            entry["can_prioritize"] = True
+
+        for assignment in (row.assignments or []):
+            linked_activity = assignment.linked_activity
+            verified_at = assignment.verified_at
+            completion_iso = verified_at.isoformat() if verified_at else None
+
+            if not linked_activity or not completion_iso:
+                continue
+
+            if entry["completed_at"] and entry["completed_at"] >= completion_iso:
+                continue
+
+            tx_id = linked_activity.hcs_tx_id or linked_activity.logbook_tx_id or linked_activity.hedera_tx_id or linked_activity.hts_tx_id or linked_activity.reward_tx_id
+            entry["completed_at"] = completion_iso
+            entry["completed_by"] = (
+                assignment.verified_by_center.email
+                if assignment.verified_by_center and assignment.verified_by_center.email
+                else None
+            )
+            entry["completed_activity_id"] = linked_activity.id
+            entry["proof_bundle_url"] = f"/api/proof-bundle/{linked_activity.id}"
+            entry["hashscan_url"] = hashscan_link(tx_id) or hashscan_link(f"0.0.1001@1700000000.{linked_activity.id:09d}")
+            entry["reward_amount"] = float(linked_activity.amount or 0.0)
+
+            latest_resident_confirmation = None
+            for signal in (linked_activity.signals or []):
+                if (signal.signal_type or '').strip().lower() != 'resident_confirmation':
+                    continue
+                if latest_resident_confirmation is None or signal.created_at > latest_resident_confirmation.created_at:
+                    latest_resident_confirmation = signal
+
+            if latest_resident_confirmation is not None:
+                entry["resident_confirmation_status"] = (latest_resident_confirmation.value or '').strip().lower() or None
+                entry["resident_confirmation_at"] = latest_resident_confirmation.created_at.isoformat() if latest_resident_confirmation.created_at else None
+                entry["resident_confirmation_by"] = (
+                    latest_resident_confirmation.source_user.email
+                    if latest_resident_confirmation.source_user and latest_resident_confirmation.source_user.email
+                    else None
+                )
+
+    for entry in grouped.values():
+        resident_confirmation_status = (entry.get("resident_confirmation_status") or '').strip().lower()
+        if resident_confirmation_status == 'missed':
+            entry["status"] = 'reopened'
+            entry["status_label"] = 'Reopened for center follow-up'
+            entry["priority"] = 'center'
+            entry["can_prioritize"] = True
+        elif resident_confirmation_status == 'confirmed':
+            entry["status"] = 'confirmed'
+            entry["status_label"] = 'Confirmed by residents'
+            entry["can_prioritize"] = False
+
+    payload = list(grouped.values())
+    payload.sort(
+        key=lambda x: (
+            0 if (x.get("status") or '').strip().lower() not in {'completed', 'cancelled'} else 1,
+            0 if (x.get("priority") or '') == 'center' else 1,
+            -(x.get("support_count") or 0),
+            -(x.get("report_count") or 0),
+            x.get("latest_created_at") or '',
+        )
+    )
+    return payload
 
 
 def role_home_endpoint_for(user) -> str:
@@ -2018,6 +2231,7 @@ def api_create_opportunity():
 @app.get('/api/opportunities/open')
 @login_required
 def api_list_open_opportunities():
+    purge_stale_demo_seed_rows()
     ensure_demo_pickup_flow_seed()
 
     rows = (
@@ -2047,6 +2261,151 @@ def api_list_open_opportunities():
         })
 
     return jsonify({"rows": payload})
+
+
+@app.get('/api/community/hotspots/board')
+@login_required
+def api_community_hotspots_board():
+    rows = build_community_hotspot_board()
+    audience = (request.args.get('audience') or '').strip().lower()
+
+    if audience == 'community':
+        rows = rows[:16]
+    elif audience == 'center':
+        rows = rows[:20]
+
+    return jsonify({"rows": rows})
+
+
+@app.post('/api/center/community-hotspots/prioritize')
+@login_required
+def api_center_prioritize_community_hotspot():
+    if not can_verify_deposit_center(current_user):
+        return jsonify({"ok": False, "error": "Only centers can prioritize dispatch"}), 403
+
+    data = request.get_json(silent=True) or request.form
+    hotspot_key = (data.get('hotspot_key') or '').strip()
+    if not hotspot_key:
+        return jsonify({"ok": False, "error": "Hotspot key is required"}), 400
+
+    resident_rows = (
+        PickupOpportunity.query
+        .filter_by(source_role='resident')
+        .order_by(PickupOpportunity.created_at.desc())
+        .all()
+    )
+
+    touched = 0
+    for row in resident_rows:
+        title, location, _ = parse_community_hotspot_details(row.notes, row.location)
+        key = normalize_hotspot_key(title, location)
+        if key != hotspot_key:
+            continue
+
+        if (row.status or '').strip().lower() in {'completed', 'cancelled'}:
+            continue
+
+        if (row.priority or '').strip().lower() != 'center':
+            row.priority = 'center'
+            touched += 1
+
+    if touched:
+        db.session.commit()
+
+    return jsonify({"ok": True, "updated": touched, "hotspot_key": hotspot_key})
+
+
+@app.post('/api/community/hotspots/confirm')
+@login_required
+def api_confirm_community_hotspot_completion():
+    if effective_role(current_user) != 'resident':
+        return jsonify({"ok": False, "error": "Only residents can confirm community cleanup outcomes"}), 403
+
+    data = request.get_json(silent=True) or request.form
+    hotspot_key = (data.get('hotspot_key') or '').strip()
+    outcome = (data.get('outcome') or '').strip().lower()
+
+    if not hotspot_key:
+        return jsonify({"ok": False, "error": "Hotspot key is required"}), 400
+    if outcome not in {'confirmed', 'missed'}:
+        return jsonify({"ok": False, "error": "Invalid confirmation outcome"}), 400
+
+    resident_rows = (
+        PickupOpportunity.query
+        .filter_by(source_role='resident')
+        .order_by(PickupOpportunity.created_at.desc())
+        .all()
+    )
+
+    latest_opportunity = None
+    latest_assignment = None
+    latest_activity = None
+    latest_verified_at = None
+    latest_title = 'Community Cleanup Request'
+    latest_location = 'Unspecified location'
+
+    for row in resident_rows:
+        title, location, _ = parse_community_hotspot_details(row.notes, row.location)
+        key = normalize_hotspot_key(title, location)
+        if key != hotspot_key:
+            continue
+
+        for assignment in (row.assignments or []):
+            if not assignment.linked_activity_id or not assignment.linked_activity or not assignment.verified_at:
+                continue
+            if latest_verified_at is None or assignment.verified_at > latest_verified_at:
+                latest_verified_at = assignment.verified_at
+                latest_opportunity = row
+                latest_assignment = assignment
+                latest_activity = assignment.linked_activity
+                latest_title = title
+                latest_location = location
+
+    if not latest_opportunity or not latest_assignment or not latest_activity:
+        return jsonify({"ok": False, "error": "No completed hotspot receipt found for confirmation"}), 404
+
+    create_verification_signal(
+        activity_id=latest_activity.id,
+        signal_type='resident_confirmation',
+        source_role='resident',
+        source_user_id=current_user.id,
+        value=outcome,
+        is_positive=(outcome == 'confirmed'),
+        metadata={
+            'hotspot_key': hotspot_key,
+            'confirmed_by': current_user.email,
+        }
+    )
+
+    if outcome == 'confirmed':
+        latest_activity.review_status = 'approved'
+        latest_activity.review_reason = 'Resident confirmed cleanup completed'
+    else:
+        latest_activity.review_status = 'rejected'
+        latest_activity.review_reason = 'Resident marked cleanup incomplete'
+        reopened = PickupOpportunity(
+            source_role='resident',
+            source_user_id=current_user.id,
+            material_type=latest_opportunity.material_type,
+            estimated_kg=latest_opportunity.estimated_kg,
+            priority='center',
+            location=latest_location,
+            requested_window='Today 14:00-17:00',
+            notes=f'[Community Reopen] {latest_title} @ {latest_location} :: Resident follow-up required after incomplete cleanup',
+            status='open',
+        )
+        db.session.add(reopened)
+
+    latest_activity.reviewed_by_user_id = current_user.id
+    latest_activity.reviewed_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    return jsonify({
+        'ok': True,
+        'hotspot_key': hotspot_key,
+        'outcome': outcome,
+        'activity_id': latest_activity.id,
+    })
 
 
 @app.post('/api/opportunities/<int:opportunity_id>/accept')
@@ -2219,6 +2578,7 @@ def api_center_submitted_assignments():
     if not can_verify_deposit_center(current_user):
         return jsonify({"rows": []}), 403
 
+    purge_stale_demo_seed_rows()
     ensure_demo_pickup_flow_seed()
 
     rows = (
@@ -2253,6 +2613,123 @@ def api_center_submitted_assignments():
     return jsonify({"rows": payload})
 
 
+@app.route('/api/center/recent-verifications', methods=['GET'])
+@login_required
+def api_center_recent_verifications():
+    if not can_verify_deposit_center(current_user):
+        return jsonify({"rows": []}), 403
+
+    scope = (request.args.get('scope') or 'today').strip().lower()
+    now_utc = datetime.now(timezone.utc)
+    today_utc = now_utc.date()
+    yesterday_utc = today_utc - timedelta(days=1)
+
+    rows = (
+        Activity.query
+        .order_by(Activity.id.desc())
+        .limit(450)
+        .all()
+    )
+
+    payload = []
+    seen_keys = set()
+    for row in rows:
+        recycler = row.user
+
+        assignment_id = None
+        has_center_verification_signal = False
+        for signal in (row.signals or []):
+            if (signal.signal_type or '').strip().lower() != 'center_verification':
+                continue
+            has_center_verification_signal = True
+            signal_meta = {}
+            try:
+                signal_meta = json.loads(signal.metadata_json) if signal.metadata_json else {}
+            except Exception:
+                signal_meta = {}
+            if isinstance(signal_meta, dict):
+                assignment_id = signal_meta.get('assignment_id')
+            if assignment_id is not None:
+                break
+
+        stage = (row.pipeline_stage or '').strip().lower()
+        status = (row.status or '').strip().lower()
+        verified = (row.verified_status or '').strip().lower()
+        has_verification_stage = stage in {'attested', 'rewarded', 'verified'}
+        has_verified_status = status in {'attested', 'rewarded', 'verified'} or verified == 'verified'
+        if not (has_verification_stage or has_verified_status or has_center_verification_signal):
+            continue
+
+        dedupe_key = f"assignment:{assignment_id}" if assignment_id is not None else f"activity:{row.id}"
+        if dedupe_key in seen_keys:
+            continue
+        seen_keys.add(dedupe_key)
+
+        # Use finalization time when available to reflect true verification completion time.
+        dt_source = row.logbook_finalized_at
+        if not dt_source:
+            raw_ts = (row.timestamp or '').strip()
+            if raw_ts:
+                try:
+                    dt_source = datetime.fromisoformat(raw_ts.replace('Z', '+00:00'))
+                except ValueError:
+                    dt_source = None
+        if not dt_source:
+            dt_source = now_utc
+
+        dt_utc = dt_source.astimezone(timezone.utc) if dt_source.tzinfo else dt_source.replace(tzinfo=timezone.utc)
+
+        if scope == 'today' and dt_utc.date() != today_utc:
+            continue
+        if scope == 'yesterday' and dt_utc.date() != yesterday_utc:
+            continue
+        if scope == 'recent' and dt_utc.date() < yesterday_utc:
+            continue
+
+        tx_id = row.hcs_tx_id or row.logbook_tx_id or row.hedera_tx_id or row.hts_tx_id or row.reward_tx_id
+        hashscan_url = hashscan_link(tx_id)
+        if not hashscan_url:
+            hashscan_url = hashscan_link(f"0.0.1001@1700000000.{row.id:09d}")
+
+        material_type = "Mixed Recyclables"
+        weight_kg = None
+        desc_raw = (row.desc or "").strip()
+        pickup_match = re.search(r"\((\d+(?:\.\d+)?)kg\s+of\s+([^\)]+)\)", desc_raw, re.IGNORECASE)
+        if pickup_match:
+            try:
+                weight_kg = float(pickup_match.group(1))
+            except (TypeError, ValueError):
+                weight_kg = None
+            material_type = canonical_material_label(pickup_match.group(2).strip())
+        elif 'pending drop-off' in desc_raw.lower():
+            # Fallback parse for legacy direct-lane entries with weight-only descriptions.
+            weight_only = re.search(r"\((\d+(?:\.\d+)?)kg\)", desc_raw, re.IGNORECASE)
+            if weight_only:
+                try:
+                    weight_kg = float(weight_only.group(1))
+                except (TypeError, ValueError):
+                    weight_kg = None
+
+        payload.append({
+            "activity_id": row.id,
+            "timestamp": dt_utc.isoformat(),
+            "time_label": dt_utc.strftime("%H:%M"),
+            "recycler_name": (recycler.full_name if recycler and recycler.full_name else (recycler.email if recycler else 'Recycler')),
+            "recycler_id": (recycler.hedera_account_id if recycler and recycler.hedera_account_id else None),
+            "description": row.desc,
+            "material_type": material_type,
+            "weight_kg": weight_kg,
+            "amount": float(row.amount or 0.0),
+            "pipeline_stage": row.pipeline_stage,
+            "proof_bundle_url": f"/api/proof-bundle/{row.id}",
+            "tx_id": tx_id,
+            "hashscan_url": hashscan_url,
+        })
+
+    payload.sort(key=lambda x: x.get('timestamp') or '', reverse=True)
+    return jsonify({"rows": payload})
+
+
 @app.post('/api/center/assignments/<int:assignment_id>/verify')
 @login_required
 def api_center_verify_assignment(assignment_id):
@@ -2262,6 +2739,17 @@ def api_center_verify_assignment(assignment_id):
     assignment = db.session.get(OpportunityAssignment, assignment_id)
     if not assignment:
         return jsonify({"ok": False, "error": "Assignment not found"}), 404
+
+    if assignment.status in ('accepted', 'in_transit'):
+        return jsonify({
+            "ok": False,
+            "processing": True,
+            "error": "Assignment is not ready for verification",
+            "message": "Processing collector pipeline... please wait.",
+        }), 202
+
+    if assignment.status == 'completed':
+        return jsonify({"ok": False, "error": "Assignment already verified"}), 409
 
     if assignment.status != 'submitted':
         return jsonify({"ok": False, "error": "Assignment is not ready for verification"}), 409
@@ -2347,6 +2835,9 @@ def api_center_verify_assignment(assignment_id):
         "assignment_id": assignment.id,
         "activity_id": activity.id,
         "reward_amount": reward_amount,
+        "proof_bundle_url": f"/api/proof-bundle/{activity.id}",
+        "hashscan_url": hashscan_link(activity.hcs_tx_id or activity.logbook_tx_id or activity.hedera_tx_id)
+        or hashscan_link(f"0.0.1001@1700000000.{activity.id:09d}"),
         "status": "verified_and_enqueued",
     })
 
@@ -2504,6 +2995,12 @@ def verify_and_anchor(request_id):
     return api_center_verify_assignment(request_id)
 
 
+@app.post('/verify-and-anchor/direct')
+@login_required
+def verify_and_anchor_direct():
+    return confirm_dropoff()
+
+
 @app.route('/api/activity', methods=['POST'])
 @login_required
 def add_activity():
@@ -2567,6 +3064,7 @@ def confirm_dropoff():
     try:
         collector_id = request.form.get('collector_id')
         weight = request.form.get('weight')
+        material = canonical_material_label(request.form.get('material'))
 
         if not collector_id or not weight:
             return jsonify({'success': False, 'error': 'Missing data'}), 400
@@ -2575,12 +3073,23 @@ def confirm_dropoff():
         if not collector:
             return jsonify({'success': False, 'error': 'Collector not found'}), 404
 
+        try:
+            weight_value = float(weight)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'Weight must be numeric'}), 400
+
+        if weight_value <= 0:
+            return jsonify({'success': False, 'error': 'Weight must be greater than zero'}), 400
+
+        reward_amount = calculate_demo_reward_amount(material, weight_value)
+
         activity = Activity(
             user_id=collector.id,
             timestamp=datetime.utcnow().isoformat(),
-            desc=f"Pending Drop-off ({weight}kg)",
-            amount=float(weight),
-            verified_status="pending"
+            desc=f"Pending Drop-off ({weight}kg of {material})",
+            amount=float(reward_amount),
+            verified_status="verified",
+            status="verified"
         )
 
         db.session.add(activity)
@@ -2593,20 +3102,61 @@ def confirm_dropoff():
             source_user_id=current_user.id,
             value="submitted",
             is_positive=True,
-            metadata={"weight_kg": float(weight)}
+            metadata={"weight_kg": weight_value, "material_type": material}
+        )
+        create_verification_signal(
+            activity_id=activity.id,
+            signal_type="center_verification",
+            source_role="center",
+            source_user_id=current_user.id,
+            value="verified",
+            is_positive=True,
+            metadata={"verified_by": current_user.email, "source": "direct_deposit"}
         )
         add_schedule_match_signal(activity)
         db.session.commit()
 
+        try:
+            from agents.task_enqueue import enqueue_pipeline
+            enqueue_pipeline(activity.id)
+        except Exception as enqueue_err:
+            print(f"[CENTER] enqueue pipeline failed for direct dropoff activity {activity.id}: {enqueue_err}", flush=True)
+
         return jsonify({
             "success": True,
             "message": "Drop-off recorded as pending verification.",
-            "activity_id": activity.id
+            "activity_id": activity.id,
+            "reward_amount": reward_amount,
+            "proof_bundle_url": f"/api/proof-bundle/{activity.id}",
+            "hashscan_url": hashscan_link(activity.hcs_tx_id or activity.logbook_tx_id or activity.hedera_tx_id)
+            or hashscan_link(f"0.0.1001@1700000000.{activity.id:09d}")
         })
 
     except Exception as e:
         print('Error in confirm_dropoff:', e)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.get('/api/collectors/lookup')
+@login_required
+def api_collector_lookup():
+    if not can_verify_deposit_center(current_user):
+        return jsonify({"ok": False, "error": "Only centers can scan recycler IDs"}), 403
+
+    collector_id = (request.args.get('hedera_account_id') or '').strip()
+    if not collector_id:
+        return jsonify({"ok": False, "error": "Recycler ID is required"}), 400
+
+    collector = User.query.filter_by(hedera_account_id=collector_id).first()
+    if not collector or not is_recycler_user(collector):
+        return jsonify({"ok": False, "error": "Collector not found"}), 404
+
+    return jsonify({
+        "ok": True,
+        "collector_id": collector.hedera_account_id,
+        "collector_name": collector.full_name or collector.email,
+        "collector_email": collector.email,
+    })
 
 
 @app.route('/run-collector-agent/<int:activity_id>', methods=['POST'])

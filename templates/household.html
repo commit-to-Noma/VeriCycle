@@ -128,6 +128,59 @@
   .status.yellow { color: #a16207; }
   .status.orange { color: #c2410c; }
   .status.red { color: #dc2626; }
+  .status-board {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 0.45rem;
+  }
+  .status-board-item {
+    border: 1px solid #d1fae5;
+    border-radius: 10px;
+    background: #f8fffb;
+    padding: 0.62rem 0.72rem;
+  }
+  .status-board-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .status-board-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #14532d;
+  }
+  .status-board-meta {
+    color: #475569;
+    font-size: 0.79rem;
+    margin-top: 0.2rem;
+  }
+  .status-pill {
+    border-radius: 999px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  .status-pill-open { background: #fef9c3; color: #92400e; }
+  .status-pill-inflight { background: #dbeafe; color: #1d4ed8; }
+  .status-pill-submitted { background: #dcfce7; color: #166534; }
+  .status-pill-completed { background: #e2e8f0; color: #334155; }
+  .receipt-links {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+  .receipt-link {
+    color: #166534;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.84rem;
+  }
+  .receipt-link:hover {
+    text-decoration: underline;
+  }
   @media (max-width: 840px) {
     .report-grid {
       grid-template-columns: 1fr;
@@ -176,6 +229,15 @@
       <button class="btn-primary" id="submit-hotspot-btn" type="button" style="margin-top:0.85rem;">Report a Neighborhood Issue</button>
     </section>
 
+    <section class="panel">
+      <span class="section-kicker">Community-Center Loop</span>
+      <h3 style="margin:0.2rem 0 0.45rem; color:#0b5d4a;">Priority dispatch and completion status</h3>
+      <p id="community-board-updated" style="margin:0; color:#64748b; font-size:0.82rem;">Updated just now</p>
+      <div id="community-board-list" class="status-board">
+        <p style="color:#64748b; font-size:0.85rem; margin:0;">Loading community status board...</p>
+      </div>
+    </section>
+
     <div style="margin-bottom: 16px; font-size: 0.875rem; color: #374151;">
       🏆 This Week's Top Voices: Sarah M., Thabo_99, GreenRandburg
     </div>
@@ -188,14 +250,18 @@
 
       <div id="verification-card" style="border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #eff6ff;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <h3 style="color: #1e3a8a; font-weight: bold; font-size: 1.1rem; margin: 0;">Center Reports: Cleanup Complete</h3>
+          <h3 id="verification-card-title" style="color: #1e3a8a; font-weight: bold; font-size: 1.1rem; margin: 0;">Center Reports: Cleanup Complete</h3>
           <span id="verification-status" style="font-weight: bold; color: #1d4ed8; font-size: 0.875rem;">Pending Verification</span>
         </div>
-        <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 8px;">Location: 14th Ave, Randburg (Scheduled for Thu 08:00-12:00)</p>
+        <p id="verification-location" style="color: #6b7280; font-size: 0.875rem; margin-bottom: 8px;">Location: 14th Ave, Randburg (Scheduled for Thu 08:00-12:00)</p>
         <p id="verification-note" style="color: #374151; margin-bottom: 16px;">The Verification Center reported this area as cleared. Please confirm if the waste was successfully collected.</p>
         <div style="display: flex; gap: 12px; align-items: center;">
           <button id="verification-yes-btn" style="background-color: #16a34a; color: white; padding: 6px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer;">✓ Yes, Collected</button>
           <button id="verification-missed-btn" style="background-color: white; color: #dc2626; padding: 6px 16px; border-radius: 6px; border: 1px solid #dc2626; font-weight: bold; cursor: pointer;">✕ Missed / Incomplete</button>
+        </div>
+        <div id="verification-links" class="receipt-links" style="display:none;">
+          <a id="verification-proof-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Proof Bundle</a>
+          <a id="verification-hashscan-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Hedera Record</a>
         </div>
       </div>
 
@@ -252,10 +318,337 @@
   <script>
   document.addEventListener('DOMContentLoaded', function () {
     const verificationCard = document.getElementById('verification-card');
+    const verificationCardTitle = document.getElementById('verification-card-title');
+    const verificationLocation = document.getElementById('verification-location');
     const verificationStatus = document.getElementById('verification-status');
     const verificationNote = document.getElementById('verification-note');
     const verificationYesBtn = document.getElementById('verification-yes-btn');
     const verificationMissedBtn = document.getElementById('verification-missed-btn');
+    const verificationLinks = document.getElementById('verification-links');
+    const verificationProofLink = document.getElementById('verification-proof-link');
+    const verificationHashscanLink = document.getElementById('verification-hashscan-link');
+    const communityBoardList = document.getElementById('community-board-list');
+    const communityBoardUpdated = document.getElementById('community-board-updated');
+    let lastCommunityBoardRefreshMs = Date.now();
+    let activeVerificationHotspotKey = '';
+    const dispatchBoardStorageKey = 'vericycle.communityDispatchBoard';
+    const dispatchBoardChannel = typeof BroadcastChannel !== 'undefined'
+      ? new BroadcastChannel('vericycle-community-dispatch')
+      : null;
+
+    function inferMaterialFromText(text) {
+      const raw = String(text || '').toLowerCase();
+      if (raw.includes('electronic') || raw.includes('e-waste') || raw.includes('ewaste')) return 'E-Waste';
+      if (raw.includes('glass')) return 'Glass';
+      if (raw.includes('metal') || raw.includes('can') || raw.includes('aluminum')) return 'Metals';
+      if (raw.includes('paper') || raw.includes('cardboard')) return 'Paper & Cardboard';
+      if (raw.includes('plastic')) return 'Plastics';
+      if (raw.includes('organic')) return 'Organic Waste';
+      return 'Mixed Recyclables';
+    }
+
+    function inferEstimatedKg(text) {
+      const raw = String(text || '').toLowerCase();
+      if (raw.includes('overflow') || raw.includes('spilling') || raw.includes('illegal dump')) return 55;
+      if (raw.includes('street') || raw.includes('taxi rank') || raw.includes('drain')) return 32;
+      return 18;
+    }
+
+    async function createCommunityOpportunity(payload) {
+      const res = await fetch('/api/opportunities/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Unable to route community request to pickup network.');
+      }
+      return data;
+    }
+
+    function normalizeHotspotKey(title, location) {
+      const part = (value) => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const key = `${part(title)}::${part(location)}`.replace(/^:+|:+$/g, '');
+      return key || 'community-cleanup-request';
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function statusPillHtml(status) {
+      const normalized = String(status || '').toLowerCase();
+      if (normalized === 'confirmed') return '<span class="status-pill status-pill-completed">Confirmed by Residents</span>';
+      if (normalized === 'reopened') return '<span class="status-pill status-pill-open">Follow-up Required</span>';
+      if (normalized === 'submitted') return '<span class="status-pill status-pill-submitted">Submitted to Center</span>';
+      if (normalized === 'accepted' || normalized === 'in_transit') return '<span class="status-pill status-pill-inflight">Recycler Assigned</span>';
+      if (normalized === 'completed') return '<span class="status-pill status-pill-completed">Handled</span>';
+      return '<span class="status-pill status-pill-open">Open for Pickup</span>';
+    }
+
+    function defaultCommunityDispatchRows() {
+      return [
+        {
+          hotspot_key: 'illegal-dumping-by-school-gate::park-entrance-roodepoort',
+          title: 'Illegal dumping by school gate',
+          location: 'Park Entrance, Roodepoort',
+          status: 'open',
+          priority: 'center',
+          report_count: 58,
+          support_count: 58,
+          can_prioritize: true,
+        },
+        {
+          hotspot_key: 'missed-recycling-route-this-week::sandton-drive',
+          title: 'Missed recycling route this week',
+          location: 'Sandton Drive',
+          status: 'open',
+          priority: 'standard',
+          report_count: 27,
+          support_count: 27,
+          can_prioritize: true,
+        },
+        {
+          hotspot_key: 'overflowing-bins-near-taxi-rank::corner-main-st-4th-ave-randburg',
+          title: 'Overflowing bins near taxi rank',
+          location: 'Corner Main St & 4th Ave, Randburg',
+          status: 'open',
+          priority: 'standard',
+          report_count: 12,
+          support_count: 12,
+          can_prioritize: true,
+        }
+      ];
+    }
+
+    function readDispatchOverrides() {
+      try {
+        const raw = localStorage.getItem(dispatchBoardStorageKey);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        console.error(err);
+        return [];
+      }
+    }
+
+    function writeDispatchOverrides(rows) {
+      try {
+        localStorage.setItem(dispatchBoardStorageKey, JSON.stringify(rows));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function mergedDispatchRows(apiRows) {
+      const baseRows = Array.isArray(apiRows) && apiRows.length ? apiRows : defaultCommunityDispatchRows();
+      const merged = new Map();
+
+      defaultCommunityDispatchRows().forEach((row) => {
+        merged.set(String(row.hotspot_key), { ...row });
+      });
+      baseRows.forEach((row) => {
+        merged.set(String(row.hotspot_key), { ...(merged.get(String(row.hotspot_key)) || {}), ...row });
+      });
+      readDispatchOverrides().forEach((row) => {
+        merged.set(String(row.hotspot_key), { ...(merged.get(String(row.hotspot_key)) || {}), ...row });
+      });
+
+      return Array.from(merged.values()).sort((a, b) => {
+        const aPriority = String(a.priority || '') === 'center' ? 1 : 0;
+        const bPriority = String(b.priority || '') === 'center' ? 1 : 0;
+        if (bPriority !== aPriority) return bPriority - aPriority;
+        return Number(b.support_count || 0) - Number(a.support_count || 0);
+      });
+    }
+
+    function persistDispatchState(hotspotKey, changes) {
+      const rows = mergedDispatchRows([]);
+      const updated = rows.map((row) => {
+        if (String(row.hotspot_key) !== String(hotspotKey)) return row;
+        return { ...row, ...changes };
+      });
+      writeDispatchOverrides(updated);
+      if (dispatchBoardChannel) {
+        dispatchBoardChannel.postMessage({ type: 'dispatch-board-updated', hotspotKey, changes });
+      }
+    }
+
+    async function submitResidentConfirmation(outcome) {
+      if (!activeVerificationHotspotKey) {
+        throw new Error('No hotspot receipt is active for confirmation.');
+      }
+
+      const res = await fetch('/api/community/hotspots/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          hotspot_key: activeVerificationHotspotKey,
+          outcome,
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        const nowIso = new Date().toISOString();
+        persistDispatchState(activeVerificationHotspotKey, {
+          hotspot_key: activeVerificationHotspotKey,
+          resident_confirmation_status: outcome,
+          resident_confirmation_at: nowIso,
+          resident_confirmation_by: 'resident@vericycle.com',
+          status: outcome === 'confirmed' ? 'confirmed' : 'reopened',
+          priority: outcome === 'confirmed' ? 'center' : 'center',
+          can_prioritize: outcome !== 'confirmed',
+        });
+        return { ok: true, outcome, hotspot_key: activeVerificationHotspotKey, fallback: true };
+      }
+      return data;
+    }
+
+    function updateCommunityBoardRefreshLabel() {
+      if (!communityBoardUpdated) return;
+      const secondsAgo = Math.max(0, Math.floor((Date.now() - lastCommunityBoardRefreshMs) / 1000));
+      if (secondsAgo < 2) {
+        communityBoardUpdated.textContent = 'Updated just now';
+        return;
+      }
+      if (secondsAgo < 60) {
+        communityBoardUpdated.textContent = `Updated ${secondsAgo}s ago`;
+        return;
+      }
+      communityBoardUpdated.textContent = `Updated ${Math.floor(secondsAgo / 60)}m ago`;
+    }
+
+    function applyBoardStatusToFeed(rows) {
+      const feed = document.getElementById('hotspot-feed-container');
+      if (!feed) return;
+
+      const rowMap = new Map();
+      rows.forEach((row) => {
+        rowMap.set(String(row.hotspot_key || ''), row);
+      });
+
+      feed.querySelectorAll('.hotspot-card').forEach((card) => {
+        const titleEl = card.querySelector('h3');
+        const locationEl = card.querySelector('.location');
+        const boostBtn = card.querySelector('.boost-btn');
+        const statusEl = card.querySelector('.status');
+        if (!titleEl || !locationEl || !boostBtn || !statusEl) return;
+
+        const key = normalizeHotspotKey(titleEl.textContent, locationEl.textContent);
+        const row = rowMap.get(key);
+        if (!row) return;
+
+        const normalizedStatus = String(row.status || '').toLowerCase();
+        const residentConfirmationStatus = String(row.resident_confirmation_status || '').toLowerCase();
+
+        if (residentConfirmationStatus === 'confirmed' || normalizedStatus === 'confirmed') {
+          boostBtn.disabled = true;
+          boostBtn.textContent = 'Resident Confirmed ✓';
+          boostBtn.style.background = '#94a3b8';
+          boostBtn.style.borderColor = '#64748b';
+          boostBtn.style.cursor = 'default';
+          boostBtn.style.opacity = '0.9';
+          statusEl.className = 'status';
+          statusEl.style.color = '#166534';
+          statusEl.textContent = '✅ Confirmed by residents';
+          return;
+        }
+
+        if (residentConfirmationStatus === 'missed' || normalizedStatus === 'reopened') {
+          boostBtn.disabled = false;
+          boostBtn.textContent = 'Add My Voice (follow-up)';
+          boostBtn.style.background = '#16a34a';
+          boostBtn.style.borderColor = '#15803d';
+          boostBtn.style.cursor = 'pointer';
+          boostBtn.style.opacity = '1';
+          statusEl.className = 'status red';
+          statusEl.textContent = '🔴 Reopened for center follow-up';
+          return;
+        }
+
+        if (normalizedStatus === 'completed') {
+          boostBtn.disabled = true;
+          boostBtn.textContent = 'Handled by Center ✓';
+          boostBtn.style.background = '#94a3b8';
+          boostBtn.style.borderColor = '#64748b';
+          boostBtn.style.cursor = 'default';
+          boostBtn.style.opacity = '0.9';
+          statusEl.className = 'status';
+          statusEl.style.color = '#334155';
+          statusEl.textContent = '✅ Verified and completed by center';
+          return;
+        }
+
+        if (normalizedStatus === 'submitted') {
+          statusEl.className = 'status';
+          statusEl.style.color = '#166534';
+          statusEl.textContent = '🟢 Submitted to center queue';
+          return;
+        }
+
+        if (normalizedStatus === 'accepted' || normalizedStatus === 'in_transit') {
+          statusEl.className = 'status orange';
+          statusEl.textContent = '🟠 Recycler handling in progress';
+          return;
+        }
+      });
+    }
+
+    function renderCommunityBoardRows(rows) {
+      if (!communityBoardList) return;
+      if (!rows.length) {
+        communityBoardList.innerHTML = '<p style="color:#64748b; font-size:0.85rem; margin:0;">No live community requests yet.</p>';
+        return;
+      }
+
+      communityBoardList.innerHTML = rows.slice(0, 6).map((row) => `
+        <div class="status-board-item">
+          <div class="status-board-top">
+            <div class="status-board-title">${escapeHtml(row.title || 'Community Cleanup Request')}</div>
+            ${statusPillHtml(row.status)}
+          </div>
+          <div class="status-board-meta">${escapeHtml(row.location || 'Unspecified location')}</div>
+          <div class="status-board-meta">Reports: ${Number(row.report_count || 0)} · Support: ${Number(row.support_count || 0)} · ${escapeHtml(row.priority === 'center' ? 'Center Priority' : 'Standard Priority')}</div>
+        </div>
+      `).join('');
+    }
+
+    async function loadCommunityBoard() {
+      try {
+        const res = await fetch(`/api/community/hotspots/board?audience=community&_ts=${Date.now()}`, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json().catch(() => ({}));
+        const rows = mergedDispatchRows(Array.isArray(data.rows) ? data.rows : []);
+        renderCommunityBoardRows(rows);
+        applyBoardStatusToFeed(rows);
+        renderVerificationReceipt(rows);
+        lastCommunityBoardRefreshMs = Date.now();
+        updateCommunityBoardRefreshLabel();
+      } catch (err) {
+        console.error(err);
+        const rows = mergedDispatchRows([]);
+        renderCommunityBoardRows(rows);
+        applyBoardStatusToFeed(rows);
+        renderVerificationReceipt(rows);
+        lastCommunityBoardRefreshMs = Date.now();
+        updateCommunityBoardRefreshLabel();
+      }
+    }
 
     function lockVerificationButtons() {
       if (verificationYesBtn) {
@@ -270,29 +663,104 @@
       }
     }
 
-    if (verificationYesBtn && verificationMissedBtn && verificationStatus && verificationNote && verificationCard) {
-      verificationYesBtn.addEventListener('click', function () {
+    function unlockVerificationButtons() {
+      if (verificationYesBtn) {
+        verificationYesBtn.disabled = false;
+        verificationYesBtn.style.cursor = 'pointer';
+        verificationYesBtn.style.opacity = '1';
+        verificationYesBtn.textContent = '✓ Yes, Collected';
+      }
+      if (verificationMissedBtn) {
+        verificationMissedBtn.disabled = false;
+        verificationMissedBtn.style.cursor = 'pointer';
+        verificationMissedBtn.style.opacity = '1';
+        verificationMissedBtn.textContent = '✕ Missed / Incomplete';
+      }
+    }
+
+    function formatReceiptDate(value) {
+      if (!value) return 'just now';
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return 'just now';
+      return parsed.toLocaleString();
+    }
+
+    function renderVerificationReceipt(rows) {
+      if (!verificationCard || !verificationStatus || !verificationNote || !verificationLocation) return;
+
+      const completedRow = rows.find((row) => row.completed_activity_id);
+      if (!completedRow) {
+        activeVerificationHotspotKey = '';
+        if (verificationCardTitle) verificationCardTitle.textContent = 'Center Reports: Cleanup Complete';
+        verificationStatus.textContent = 'Pending Verification';
+        verificationStatus.style.color = '#1d4ed8';
+        verificationLocation.textContent = 'Location: Waiting for next completed hotspot receipt';
+        verificationNote.textContent = 'Once the center verifies a community hotspot, the receipt, verifier, and proof links will appear here for resident confirmation.';
+        verificationCard.style.background = '#eff6ff';
+        verificationCard.style.border = '1px solid #93c5fd';
+        unlockVerificationButtons();
+        if (verificationLinks) verificationLinks.style.display = 'none';
+        return;
+      }
+
+      if (verificationCardTitle) {
+        verificationCardTitle.textContent = `Center Completion Receipt: ${completedRow.title || 'Community Cleanup Request'}`;
+      }
+      activeVerificationHotspotKey = String(completedRow.hotspot_key || '');
+      verificationLocation.textContent = `Location: ${completedRow.location || 'Unspecified location'} · Verified ${formatReceiptDate(completedRow.completed_at)}`;
+
+      const residentConfirmationStatus = String(completedRow.resident_confirmation_status || '').toLowerCase();
+      if (residentConfirmationStatus === 'confirmed') {
         verificationStatus.textContent = '✅ Verified by Residents';
         verificationStatus.style.color = '#166534';
-        verificationNote.textContent = 'Residents confirmed this hotspot was collected successfully. This report is now marked as verified.';
+        verificationNote.textContent = `Residents confirmed this cleanup on ${formatReceiptDate(completedRow.resident_confirmation_at)}. Center verifier ${completedRow.completed_by || 'center@vericycle.com'} recorded ${Number(completedRow.reward_amount || 0).toFixed(2)} ECO reward flow.`;
         verificationCard.style.background = '#ecfdf5';
         verificationCard.style.border = '1px solid #86efac';
         verificationYesBtn.textContent = 'Confirmed ✓';
         lockVerificationButtons();
-      });
-
-      verificationMissedBtn.addEventListener('click', function () {
+      } else if (residentConfirmationStatus === 'missed') {
         verificationStatus.textContent = '🔴 Reopened: Center Follow-up Required';
         verificationStatus.style.color = '#b91c1c';
-        verificationNote.textContent = 'Residents flagged this cleanup as missed or incomplete. The issue has been reopened and escalated for follow-up.';
+        verificationNote.textContent = `Residents flagged this cleanup as incomplete on ${formatReceiptDate(completedRow.resident_confirmation_at)}. A follow-up hotspot has been reopened for center dispatch.`;
         verificationCard.style.background = '#fef2f2';
         verificationCard.style.border = '1px solid #fca5a5';
         verificationMissedBtn.textContent = 'Flagged ✓';
         lockVerificationButtons();
+      } else {
+        verificationStatus.textContent = 'Awaiting Resident Confirmation';
+        verificationStatus.style.color = '#166534';
+        verificationNote.textContent = `Center verifier ${completedRow.completed_by || 'center@vericycle.com'} marked this hotspot handled and recorded ${Number(completedRow.reward_amount || 0).toFixed(2)} ECO reward flow. Please confirm whether cleanup was actually completed.`;
+        verificationCard.style.background = '#eff6ff';
+        verificationCard.style.border = '1px solid #93c5fd';
+        unlockVerificationButtons();
+      }
+
+      if (verificationLinks) verificationLinks.style.display = '';
+      if (verificationProofLink) verificationProofLink.href = completedRow.proof_bundle_url || '#';
+      if (verificationHashscanLink) verificationHashscanLink.href = completedRow.hashscan_url || '#';
+    }
+
+    if (verificationYesBtn && verificationMissedBtn && verificationStatus && verificationNote && verificationCard) {
+      verificationYesBtn.addEventListener('click', async function () {
+        try {
+          await submitResidentConfirmation('confirmed');
+          loadCommunityBoard();
+        } catch (err) {
+          alert(err.message || 'Unable to save resident confirmation.');
+        }
+      });
+
+      verificationMissedBtn.addEventListener('click', async function () {
+        try {
+          await submitResidentConfirmation('missed');
+          loadCommunityBoard();
+        } catch (err) {
+          alert(err.message || 'Unable to save resident follow-up flag.');
+        }
       });
     }
 
-    document.getElementById('submit-hotspot-btn').addEventListener('click', function(e) {
+    document.getElementById('submit-hotspot-btn').addEventListener('click', async function(e) {
       e.preventDefault();
 
       const titleValue = document.getElementById('hotspot-title').value;
@@ -304,6 +772,21 @@
         return;
       }
 
+      const inferredMaterial = inferMaterialFromText(`${titleValue} ${descriptionValue}`);
+      const inferredKg = inferEstimatedKg(`${titleValue} ${descriptionValue}`);
+
+      try {
+        await createCommunityOpportunity({
+          material_type: inferredMaterial,
+          estimated_kg: inferredKg,
+          requested_window: 'Today 14:00-17:00',
+          notes: `[Community Hotspot] ${titleValue} :: ${descriptionValue}`
+        });
+      } catch (err) {
+        alert(err.message || 'Unable to send request to recycler network.');
+        return;
+      }
+
       const newCardHTML = `
         <div class="hotspot-card">
           <h3>${titleValue}</h3>
@@ -311,7 +794,7 @@
           <p class="desc">${descriptionValue}</p>
           <div class="hotspot-footer">
             <button class="boost-btn" data-count="1">Add My Voice (1)</button>
-            <span class="status yellow">🟡 Gathering Support</span>
+            <span class="status orange">🟠 Routed to Recycler Network</span>
           </div>
         </div>
       `;
@@ -321,9 +804,10 @@
       document.getElementById('hotspot-title').value = '';
       document.getElementById('hotspot-location').value = '';
       document.getElementById('hotspot-description').value = '';
+      loadCommunityBoard();
     });
 
-    document.getElementById('hotspot-feed-container').addEventListener('click', function (event) {
+    document.getElementById('hotspot-feed-container').addEventListener('click', async function (event) {
       const button = event.target.closest('.boost-btn');
       if (!button) return;
 
@@ -339,9 +823,56 @@
 
       const card = button.closest('.hotspot-card');
       const status = card ? card.querySelector('.status') : null;
+
+      if (card && card.dataset.routedToCenter !== '1') {
+        const title = (card.querySelector('h3') || {}).textContent || 'Community Cleanup Request';
+        const desc = (card.querySelector('.desc') || {}).textContent || '';
+        const location = (card.querySelector('.location') || {}).textContent || '';
+        const inferredMaterial = inferMaterialFromText(`${title} ${desc}`);
+        const inferredKg = inferEstimatedKg(`${title} ${desc}`);
+        try {
+          await createCommunityOpportunity({
+            material_type: inferredMaterial,
+            estimated_kg: inferredKg,
+            requested_window: 'Today 14:00-17:00',
+            notes: `[Community Support Escalation] ${title} @ ${location}. ${desc}`
+          });
+          card.dataset.routedToCenter = '1';
+        } catch (err) {
+          button.disabled = false;
+          button.textContent = 'Add My Voice (retry)';
+          button.style.background = '';
+          button.style.cursor = '';
+          button.style.opacity = '';
+          alert(err.message || 'Unable to route support escalation right now.');
+          return;
+        }
+      }
+
       if (status) {
         status.className = 'status orange';
-        status.textContent = '🟠 Escalating';
+        status.textContent = '🟠 Escalated to Recycler Network';
+      }
+      loadCommunityBoard();
+    });
+
+    loadCommunityBoard();
+    setInterval(loadCommunityBoard, 10000);
+    setInterval(updateCommunityBoardRefreshLabel, 1000);
+    updateCommunityBoardRefreshLabel();
+
+    if (dispatchBoardChannel) {
+      dispatchBoardChannel.addEventListener('message', function (event) {
+        if (!event || !event.data) return;
+        if (event.data.type === 'dispatch-board-updated') {
+          loadCommunityBoard();
+        }
+      });
+    }
+
+    window.addEventListener('storage', function (event) {
+      if (event.key === dispatchBoardStorageKey) {
+        loadCommunityBoard();
       }
     });
   });

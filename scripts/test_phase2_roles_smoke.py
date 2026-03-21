@@ -25,14 +25,14 @@ EXPECTED = {
         "/center": (302, "/collector"),
     },
     "business": {
-        "/collector": (302, "/request-pickup"),
+        "/collector": (302, "/business"),
         "/request-pickup": (200, ""),
-        "/household": (302, "/request-pickup"),
-        "/center": (302, "/request-pickup"),
+        "/household": (302, "/business"),
+        "/center": (302, "/business"),
     },
     "resident": {
         "/collector": (302, "/household"),
-        "/request-pickup": (200, ""),
+        "/request-pickup": (302, "/household"),
         "/household": (200, ""),
         "/center": (302, "/household"),
     },

@@ -181,29 +181,60 @@ body {
 .center-queue-item-meta { color: #64748b; font-size: 0.82rem; }
 
 /* Recent verifications list */
-.location-list { margin-top: 0.4rem; }
+.location-list {
+    margin-top: 0.4rem;
+    max-height: none !important;
+    overflow-y: visible !important;
+    text-align: left;
+    background: #f8fffb !important;
+    border: 1px solid rgba(22, 163, 74, 0.16);
+    border-radius: 12px;
+    padding: 0.7rem 0.95rem;
+}
 .location-list ul { list-style: none; padding: 0; margin: 0; }
+.location-list table thead th {
+    color: #334155;
+    border-bottom: 1px solid rgba(22, 163, 74, 0.2);
+    background: #f0fdf4;
+    white-space: nowrap;
+}
+.location-list table tbody td {
+    border-bottom: 1px solid rgba(22, 163, 74, 0.1);
+    color: #334155;
+    padding: 0.48rem 0.45rem;
+    white-space: nowrap;
+}
+.location-list table tbody tr:hover td {
+    background: #f8fffb;
+}
 .location-list li {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.6rem 0;
     border-bottom: 1px solid rgba(22, 163, 74, 0.09);
+    background: #ffffff;
+    border-radius: 8px;
+    margin-bottom: 0.45rem;
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
 }
-.location-list li:last-child { border-bottom: none; }
+.location-list li:last-child { border-bottom: none; margin-bottom: 0; }
 .verification-date-header {
-    color: #16a34a;
+    color: #166534 !important;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     margin: 0.8rem 0 0.35rem;
+    border-bottom: 1px solid rgba(22, 163, 74, 0.15);
+    padding-bottom: 0.35rem;
 }
 .tx-info { display: flex; align-items: flex-start; gap: 0.6rem; }
-.tx-time { color: #94a3b8; font-size: 0.78rem; min-width: 34px; margin-top: 0.1rem; }
-.tx-details strong { color: #0f172a; font-size: 0.9rem; }
-.tx-id    { color: #94a3b8; font-size: 0.76rem; }
-.tx-meta  { color: #64748b; font-size: 0.82rem; display: block; }
-.loc-phone { color: #16a34a; font-weight: 700; font-size: 0.88rem; white-space: nowrap; }
+.tx-time { color: #475569 !important; font-size: 0.78rem; min-width: 34px; margin-top: 0.1rem; }
+.tx-details strong { color: #0f172a !important; font-size: 0.9rem; }
+.tx-id    { color: #64748b !important; font-size: 0.76rem; }
+.tx-meta  { color: #475569 !important; font-size: 0.82rem; display: block; }
+.loc-phone { color: #166534 !important; font-weight: 700; font-size: 0.88rem; white-space: nowrap; }
 
 /* Side guide cards */
 .center-guide-card       { padding: 1.1rem; }
@@ -221,6 +252,49 @@ body {
 .center-guide-list li strong { color: #0b5d4a; }
 .hub-record-meta { color: #94a3b8; font-size: 0.78rem; margin-top: 0.25rem; }
 .center-mini-metrics { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.65rem; }
+.priority-board-list {
+    margin-top: 0.7rem;
+    display: grid;
+    gap: 0.55rem;
+}
+.priority-board-item {
+    border: 1px solid rgba(22, 163, 74, 0.2);
+    border-radius: 10px;
+    background: #f8fffb;
+    padding: 0.62rem 0.68rem;
+}
+.priority-board-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+.priority-board-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #14532d;
+}
+.priority-board-meta {
+    margin-top: 0.18rem;
+    color: #475569;
+    font-size: 0.78rem;
+}
+.priority-board-actions {
+    margin-top: 0.48rem;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+.priority-chip {
+    border-radius: 999px;
+    padding: 0.16rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+.priority-chip-open { background: #fef9c3; color: #92400e; }
+.priority-chip-inflight { background: #dbeafe; color: #1d4ed8; }
+.priority-chip-submitted { background: #dcfce7; color: #166534; }
+.priority-chip-complete { background: #e2e8f0; color: #334155; }
 .center-token-flow {
     background: rgba(220, 252, 231, 0.55);
     border: 1px solid rgba(22, 163, 74, 0.22);
@@ -244,6 +318,145 @@ body {
 .active-job-card h3 {
     margin: 0 0 0.35rem;
     color: #0b5d4a !important;
+}
+.inspection-checklist {
+    margin: 0.6rem 0 0.35rem;
+    padding: 0.65rem;
+    border-radius: 8px;
+    border: 1px solid rgba(22, 163, 74, 0.2);
+    background: rgba(220, 252, 231, 0.45);
+}
+.inspection-checklist label {
+    display: block;
+    font-size: 0.86rem;
+    color: #334155;
+    margin: 0.2rem 0;
+}
+.mini-link {
+    margin-left: 0.5rem;
+    font-size: 0.82rem;
+    color: #0b5d4a;
+    font-weight: 600;
+    text-decoration: none;
+}
+.mini-link:hover {
+    text-decoration: underline;
+}
+.scan-note {
+    margin-top: 0.45rem;
+    font-size: 0.82rem;
+    color: #64748b;
+}
+.scanner-activate-btn {
+    width: 100%;
+    background: #14532d !important;
+    color: #ffffff !important;
+    border: 1px solid #166534 !important;
+    letter-spacing: 0.01em;
+}
+.scanner-activate-btn:hover {
+    background: #166534 !important;
+}
+.verified-profile-card {
+    display: none;
+    margin-top: 0.65rem;
+    border: 1px solid #86efac;
+    border-left: 4px solid #16a34a;
+    border-radius: 10px;
+    background: #f0fdf4;
+    padding: 0.75rem;
+    transform: translateY(6px);
+    opacity: 0;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.verified-profile-card.open {
+    display: block;
+    transform: translateY(0);
+    opacity: 1;
+}
+.scan-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.4);
+    z-index: 2450;
+}
+.scan-modal.open {
+    display: flex;
+}
+.scan-modal-card {
+    width: min(92vw, 460px);
+    background: #ffffff;
+    border: 1px solid #bbf7d0;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 18px 45px rgba(2, 6, 23, 0.28);
+}
+.scan-modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.scan-close {
+    border: none;
+    background: transparent;
+    color: #334155;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+.scan-visual {
+    margin: 0.9rem 0;
+    border: 1px dashed #86efac;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #166534;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+.scan-modal-actions {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: flex-end;
+}
+.btn-ghost {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    border-radius: 8px;
+    padding: 0.45rem 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.trust-progress {
+    margin-top: 0.55rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.trust-pip {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+    border-radius: 999px;
+    padding: 0.2rem 0.58rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+.trust-pip.active {
+    border-color: #16a34a;
+    background: #dcfce7;
+    color: #166534;
+}
+.trust-pip.waiting {
+    border-color: #f59e0b;
+    background: #fef3c7;
+    color: #92400e;
 }
 
 /* Status badges */
@@ -280,6 +493,14 @@ body {
 
 /* Success banner */
 #success-banner {
+    position: fixed;
+    top: calc(var(--nav-h, 72px) + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2400;
+    padding: 0.8rem 1.2rem;
+    color: #fff;
+    font-weight: 600;
     background: #16a34a !important;
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);
@@ -315,23 +536,49 @@ body {
                 <span class="section-kicker">Direct Deposit Lane</span>
                 <h3>Center Verification Control</h3>
                 <p>Scan recycler ID, inspect the active pickup, and finalize verification plus anchoring from this lane.</p>
+                <div class="trust-strip" style="margin-top:0.25rem; margin-bottom:0.7rem; border-bottom:none; padding-bottom:0;">
+                    <span class="trust-chip">Live Reward Rate: Plastics 38 ECO/kg</span>
+                    <span class="trust-chip">Paper 30 ECO/kg</span>
+                    <span class="trust-chip">Metals 50 ECO/kg</span>
+                </div>
 
-                <form id="verify-form" action="{{ url_for('confirm_dropoff') }}" method="POST" class="verify-form">
-                    <input type="hidden" id="collector-id-scan" name="collector_id" value="0.0.7267109">
+                <form id="verify-form" action="/verify-and-anchor/direct" method="POST" class="verify-form">
+                    <input type="hidden" id="collector-id-input" name="collector_id" value="">
 
-                    <button type="button" class="btn-primary-large btn-form" id="scan-btn">
-                        Scan Recycler ID
+                    <button type="button" class="btn-primary-large btn-form scanner-activate-btn" id="scan-btn">
+                        📷 Activate QR Scanner
                     </button>
+                    <p id="scan-feedback" class="scan-note">Activate scanner to identify recycler profile before intake.</p>
+
+                    <div id="verified-profile-card" class="verified-profile-card" aria-live="polite">
+                        <div style="font-weight:800; color:#166534;">✅ Recycler Identified: <span id="verified-profile-id">0.0.7267109</span></div>
+                        <div style="margin-top:0.18rem; color:#334155; font-size:0.86rem;">Status: Active / Ready for Intake</div>
+                    </div>
+
+                    <div class="scan-modal" id="scan-modal" aria-hidden="true">
+                        <div class="scan-modal-card" role="dialog" aria-modal="true" aria-labelledby="scan-modal-title">
+                            <div class="scan-modal-head">
+                                <h4 id="scan-modal-title" style="margin:0; color:#0b5d4a;">Recycler QR Scanner</h4>
+                                <button type="button" class="scan-close" id="scan-modal-close" aria-label="Close scanner">✕</button>
+                            </div>
+                            <p style="margin:0.4rem 0 0; color:#475569; font-size:0.9rem;">Production uses camera-based QR parsing. Demo mode simulates the scan event.</p>
+                            <div class="scan-visual">SCANNER FRAME</div>
+                            <div class="scan-modal-actions">
+                                <button type="button" class="btn-ghost" id="scan-cancel-btn">Cancel</button>
+                                <button type="button" class="btn-primary" id="scan-simulate-btn">Simulate Scan</button>
+                            </div>
+                        </div>
+                    </div>
 
                     <div id="scan-results" style="display: none;">
                         <div class="form-group">
                             <label>Recycler Found:</label>
-                            <input type="text" value="Verified Recycler (0.0.7267109)" disabled>
+                            <input type="text" id="collector-found-input" value="Verified Recycler" disabled>
                         </div>
 
                         <div class="form-group">
                             <label for="material-type">Material Type:</label>
-                            <select id="material-type" name="material" required>
+                            <select id="material-type" name="material" required disabled>
                                 <option value="" disabled selected>-- Select Material --</option>
                                 <option value="paper & cardboard">Paper & Cardboard</option>
                                 <option value="plastics">Plastics</option>
@@ -345,7 +592,7 @@ body {
 
                         <div class="form-group">
                             <label for="weight-kg">Material Weight (kg):</label>
-                            <input type="number" id="weight-kg" name="weight" step="0.1" placeholder="e.g., 7.5" required>
+                            <input type="number" id="weight-kg" name="weight" step="0.1" placeholder="e.g., 7.5" required disabled>
                         </div>
 
                         <div class="reward-summary" id="reward-summary" style="display: none;">
@@ -353,7 +600,7 @@ body {
                             <p>Neighborhood Bonus (2.5%): <span id="reward-hood">+ --</span></p>
                             <p>Bronze Tier Bonus (1.0%): <span id="reward-tier">+ --</span></p>
                             <hr>
-                            <p class="total">Total Payout: <span id="reward-total">--</span></p>
+                            <p class="total">Total Payout: <span id="reward-total">--</span><a id="hedera-link" class="mini-link" href="#" target="_blank" rel="noopener" style="display:none;">View on Hedera</a></p>
                         </div>
 
                         <button type="submit" class="btn-primary-large btn-form" id="verify-btn" disabled>
@@ -378,59 +625,58 @@ body {
                 <div class="active-job-card" id="active-job-card" style="display:none;">
                     <h3>Active Pickup</h3>
                     <p id="active-job-text">32kg Plastics - Randburg</p>
+                    <div class="inspection-checklist" id="inspection-checklist">
+                        <label><input type="checkbox" id="check-no-contamination"> No contamination observed</label>
+                        <label><input type="checkbox" id="check-material-match"> Material matches submitted request</label>
+                    </div>
+                    <p id="active-pickup-processing" class="scan-note" style="display:none;">Processing collector pipeline... please wait.</p>
+                    <div class="trust-progress" id="trust-progress" aria-label="Trust pipeline progress">
+                        <span class="trust-pip" data-step="verified">Verified</span>
+                        <span class="trust-pip" data-step="anchored">Anchored (HCS)</span>
+                        <span class="trust-pip" data-step="rewarded">Rewarded (HTS)</span>
+                        <span class="trust-pip" data-step="audit">Audit Ready</span>
+                    </div>
                     <button class="btn-primary" id="active-verify-btn" style="margin-top:0.5rem;">Verify &amp; Anchor</button>
                 </div>
             </article>
 
             <article class="card">
                 <h3>Recent Verifications</h3>
+                <p id="verification-last-updated" class="scan-note" style="margin-top:-0.2rem; margin-bottom:0.55rem;">Updated just now</p>
                 <div class="location-list" id="verification-list">
                     <h4 class="verification-date-header" id="today-header">Today</h4>
-                    <ul id="today-list"></ul>
+                    <div style="overflow-x:auto;">
+                        <table id="today-table" style="width:100%; border-collapse:collapse; font-size:0.86rem;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left; padding:0.45rem;">Time</th>
+                                    <th style="text-align:left; padding:0.45rem;">Recycler ID</th>
+                                    <th style="text-align:left; padding:0.45rem;">Material</th>
+                                    <th style="text-align:left; padding:0.45rem;">Weight</th>
+                                    <th style="text-align:left; padding:0.45rem;">Reward (ECO)</th>
+                                    <th style="text-align:left; padding:0.45rem;">Hedera Tx ID</th>
+                                </tr>
+                            </thead>
+                            <tbody id="today-list"></tbody>
+                        </table>
+                    </div>
 
-                    <h4 class="verification-date-header">Yesterday, November 17, 2025</h4>
-                    <ul>
-                        <li>
-                            <div class="tx-info">
-                                <span class="tx-time">14:32</span>
-                                <div class="tx-details">
-                                    <strong>Ed Marquez</strong> <span class="tx-id">(0.0.482910)</span><br>
-                                    <span class="tx-meta">15.0kg of Cans</span>
-                                </div>
-                            </div>
-                            <span class="loc-phone">+750 ECO</span>
-                        </li>
-                        <li>
-                            <div class="tx-info">
-                                <span class="tx-time">11:15</span>
-                                <div class="tx-details">
-                                    <strong>Jake Hall</strong> <span class="tx-id">(0.0.481029)</span><br>
-                                    <span class="tx-meta">8.5kg of Paper</span>
-                                </div>
-                            </div>
-                            <span class="loc-phone">+425 ECO</span>
-                        </li>
-                        <li>
-                            <div class="tx-info">
-                                <span class="tx-time">09:45</span>
-                                <div class="tx-details">
-                                    <strong>Ejaz Merchant</strong> <span class="tx-id">(0.0.591823)</span><br>
-                                    <span class="tx-meta">12.0kg of Glass</span>
-                                </div>
-                            </div>
-                            <span class="loc-phone">+240 ECO</span>
-                        </li>
-                        <li>
-                            <div class="tx-info">
-                                <span class="tx-time">08:20</span>
-                                <div class="tx-details">
-                                    <strong>Michiel Mulders</strong> <span class="tx-id">(0.0.339182)</span><br>
-                                    <span class="tx-meta">5.0kg of Cans</span>
-                                </div>
-                            </div>
-                            <span class="loc-phone">+250 ECO</span>
-                        </li>
-                    </ul>
+                    <h4 class="verification-date-header" id="yesterday-header">Yesterday</h4>
+                    <div id="yesterday-wrap" style="overflow-x:auto;">
+                        <table id="yesterday-table" style="width:100%; border-collapse:collapse; font-size:0.86rem;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left; padding:0.45rem;">Time</th>
+                                    <th style="text-align:left; padding:0.45rem;">Recycler ID</th>
+                                    <th style="text-align:left; padding:0.45rem;">Material</th>
+                                    <th style="text-align:left; padding:0.45rem;">Weight</th>
+                                    <th style="text-align:left; padding:0.45rem;">Reward (ECO)</th>
+                                    <th style="text-align:left; padding:0.45rem;">Hedera Tx ID</th>
+                                </tr>
+                            </thead>
+                            <tbody id="yesterday-list"></tbody>
+                        </table>
+                    </div>
                 </div>
             </article>
         </div>
@@ -455,6 +701,20 @@ body {
                     <span class="status-badge status-badge-paid">Verified</span>
                     <span class="status-badge status-badge-fallback">Anchored / Rewarded / Proof Ready</span>
                 </div>
+                <div class="center-mini-metrics" style="margin-top:0.65rem;">
+                    <span class="status-badge status-badge-paid">Collector Agent Active</span>
+                    <span class="status-badge status-badge-paid">Verifier Agent Active</span>
+                    <span class="status-badge status-badge-paid">Reward Agent Active</span>
+                </div>
+            </article>
+
+            <article class="card center-guide-card">
+                <span class="section-kicker">Community Dispatch Board</span>
+                <h3>Top resident hotspots</h3>
+                <p class="hub-record-meta" id="community-priority-updated">Updated just now</p>
+                <div id="community-priority-list" class="priority-board-list">
+                    <p class="tx-meta">Loading community priorities...</p>
+                </div>
             </article>
 
             <article class="card center-guide-card center-token-flow">
@@ -470,20 +730,61 @@ body {
     </div>
 </section>
 
-    <div id="success-banner" style="display:none; position:fixed; top:1rem; left:50%; transform:translateX(-50%); background:#0b6623; color:#fff; padding:0.8rem 1.2rem; border-radius:8px; z-index:9999; font-weight: 600;">
-        Verification Successful!
+    <div id="success-banner" style="display:none;">
+        <span id="success-banner-text">Verification Successful!</span>
+        <a id="success-banner-action" class="mini-link" href="#" style="display:none; margin-left:0.6rem; color:#dcfce7; text-decoration:underline;">View Proof</a>
     </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- NEW DYNAMIC DATE ---
-    document.getElementById('today-header').textContent = "Today, " + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    // --- DYNAMIC DATE HEADERS ---
+    const todayHeader = document.getElementById('today-header');
+    const yesterdayHeader = document.getElementById('yesterday-header');
+    const yesterdayList = document.getElementById('yesterday-list');
+
+    function formatHeaderDate(dateObj) {
+        return dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
+    }
+
+    const nowLocal = new Date();
+    const yesterdayLocal = new Date(nowLocal);
+    yesterdayLocal.setDate(nowLocal.getDate() - 1);
+
+    if (todayHeader) {
+        todayHeader.textContent = `TODAY, ${formatHeaderDate(nowLocal)}`;
+    }
+    if (yesterdayHeader) {
+        yesterdayHeader.textContent = `YESTERDAY, ${formatHeaderDate(yesterdayLocal)}`;
+    }
     
     const scanBtn = document.getElementById('scan-btn');
     const scanResultsDiv = document.getElementById('scan-results');
     const verifyForm = document.getElementById('verify-form');
     const verifyBtn = document.getElementById('verify-btn');
     const todayList = document.getElementById('today-list');
+    const collectorIdInput = document.getElementById('collector-id-input');
+    const collectorFoundInput = document.getElementById('collector-found-input');
+    const scanFeedback = document.getElementById('scan-feedback');
+    const hederaLink = document.getElementById('hedera-link');
+    const checkNoContamination = document.getElementById('check-no-contamination');
+    const checkMaterialMatch = document.getElementById('check-material-match');
+    const activeVerifyBtn = document.getElementById('active-verify-btn');
+    const activePickupProcessing = document.getElementById('active-pickup-processing');
+    const trustProgress = document.getElementById('trust-progress');
+    const trustPips = trustProgress ? Array.from(trustProgress.querySelectorAll('.trust-pip')) : [];
+    const scanModal = document.getElementById('scan-modal');
+    const scanModalClose = document.getElementById('scan-modal-close');
+    const scanCancelBtn = document.getElementById('scan-cancel-btn');
+    const scanSimulateBtn = document.getElementById('scan-simulate-btn');
+    const verificationLastUpdated = document.getElementById('verification-last-updated');
+    const verifiedProfileCard = document.getElementById('verified-profile-card');
+    const verifiedProfileId = document.getElementById('verified-profile-id');
+    const communityPriorityList = document.getElementById('community-priority-list');
+    const communityPriorityUpdated = document.getElementById('community-priority-updated');
+    const dispatchBoardStorageKey = 'vericycle.communityDispatchBoard';
+    const dispatchBoardChannel = typeof BroadcastChannel !== 'undefined'
+        ? new BroadcastChannel('vericycle-community-dispatch')
+        : null;
 
     // --- NEW: The Calculator Elements ---
     const materialType = document.getElementById('material-type');
@@ -493,8 +794,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const rewardHood = document.getElementById('reward-hood');
     const rewardTier = document.getElementById('reward-tier');
     const rewardTotal = document.getElementById('reward-total');
+    const materialInput = document.getElementById('material-type');
+    const weightKgInput = document.getElementById('weight-kg');
+    const yesterdayWrap = document.getElementById('yesterday-wrap');
+    const bannerAction = document.getElementById('success-banner-action');
     let calculatedTotal = 0;
     let selectedActiveAssignmentId = null;
+    let scannedCollectorId = '';
+    let submittedVerifyInFlight = false;
+    const directRecentStorageKey = 'vericycle.center.directRecentRows';
+    let lastPriorityRefreshMs = Date.now();
 
     function escapeHtml(value) {
         return String(value || '')
@@ -503,6 +812,526 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    function resetTrustProgress() {
+        trustPips.forEach((pip) => {
+            pip.classList.remove('active', 'waiting');
+        });
+    }
+
+    let lastVerificationRefreshMs = Date.now();
+
+    function updateVerificationRefreshLabel() {
+        if (!verificationLastUpdated) return;
+        const secondsAgo = Math.max(0, Math.floor((Date.now() - lastVerificationRefreshMs) / 1000));
+        if (secondsAgo < 2) {
+            verificationLastUpdated.textContent = 'Updated just now';
+            return;
+        }
+        if (secondsAgo < 60) {
+            verificationLastUpdated.textContent = `Updated ${secondsAgo}s ago`;
+            return;
+        }
+        const minutesAgo = Math.floor(secondsAgo / 60);
+        verificationLastUpdated.textContent = `Updated ${minutesAgo}m ago`;
+    }
+
+    function updatePriorityRefreshLabel() {
+        if (!communityPriorityUpdated) return;
+        const secondsAgo = Math.max(0, Math.floor((Date.now() - lastPriorityRefreshMs) / 1000));
+        if (secondsAgo < 2) {
+            communityPriorityUpdated.textContent = 'Updated just now';
+            return;
+        }
+        if (secondsAgo < 60) {
+            communityPriorityUpdated.textContent = `Updated ${secondsAgo}s ago`;
+            return;
+        }
+        communityPriorityUpdated.textContent = `Updated ${Math.floor(secondsAgo / 60)}m ago`;
+    }
+
+    function priorityStatusChip(status) {
+        const normalized = String(status || '').toLowerCase();
+        if (normalized === 'confirmed') return '<span class="priority-chip priority-chip-complete">Resident Confirmed</span>';
+        if (normalized === 'reopened') return '<span class="priority-chip priority-chip-open">Follow-up Required</span>';
+        if (normalized === 'submitted') return '<span class="priority-chip priority-chip-submitted">Submitted to Center</span>';
+        if (normalized === 'accepted' || normalized === 'in_transit') return '<span class="priority-chip priority-chip-inflight">Recycler Assigned</span>';
+        if (normalized === 'completed') return '<span class="priority-chip priority-chip-complete">Handled</span>';
+        return '<span class="priority-chip priority-chip-open">Open</span>';
+    }
+
+    function defaultCommunityDispatchRows() {
+        return [
+            {
+                hotspot_key: 'illegal-dumping-by-school-gate::park-entrance-roodepoort',
+                title: 'Illegal dumping by school gate',
+                location: 'Park Entrance, Roodepoort',
+                status: 'open',
+                priority: 'center',
+                report_count: 58,
+                support_count: 58,
+                can_prioritize: true,
+            },
+            {
+                hotspot_key: 'missed-recycling-route-this-week::sandton-drive',
+                title: 'Missed recycling route this week',
+                location: 'Sandton Drive',
+                status: 'open',
+                priority: 'standard',
+                report_count: 27,
+                support_count: 27,
+                can_prioritize: true,
+            },
+            {
+                hotspot_key: 'overflowing-bins-near-taxi-rank::corner-main-st-4th-ave-randburg',
+                title: 'Overflowing bins near taxi rank',
+                location: 'Corner Main St & 4th Ave, Randburg',
+                status: 'open',
+                priority: 'standard',
+                report_count: 12,
+                support_count: 12,
+                can_prioritize: true,
+            }
+        ];
+    }
+
+    function readDispatchOverrides() {
+        try {
+            const raw = localStorage.getItem(dispatchBoardStorageKey);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+            console.error(err);
+            return [];
+        }
+    }
+
+    function writeDispatchOverrides(rows) {
+        try {
+            localStorage.setItem(dispatchBoardStorageKey, JSON.stringify(rows));
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function mergedDispatchRows(apiRows) {
+        const baseRows = Array.isArray(apiRows) && apiRows.length ? apiRows : defaultCommunityDispatchRows();
+        const merged = new Map();
+
+        defaultCommunityDispatchRows().forEach((row) => {
+            merged.set(String(row.hotspot_key), { ...row });
+        });
+        baseRows.forEach((row) => {
+            merged.set(String(row.hotspot_key), { ...(merged.get(String(row.hotspot_key)) || {}), ...row });
+        });
+        readDispatchOverrides().forEach((row) => {
+            merged.set(String(row.hotspot_key), { ...(merged.get(String(row.hotspot_key)) || {}), ...row });
+        });
+
+        return Array.from(merged.values()).sort((a, b) => {
+            const aPriority = String(a.priority || '') === 'center' ? 1 : 0;
+            const bPriority = String(b.priority || '') === 'center' ? 1 : 0;
+            if (bPriority !== aPriority) return bPriority - aPriority;
+            return Number(b.support_count || 0) - Number(a.support_count || 0);
+        });
+    }
+
+    function persistDispatchState(hotspotKey, changes) {
+        const rows = mergedDispatchRows([]);
+        const updated = rows.map((row) => {
+            if (String(row.hotspot_key) !== String(hotspotKey)) return row;
+            return { ...row, ...changes };
+        });
+        writeDispatchOverrides(updated);
+        if (dispatchBoardChannel) {
+            dispatchBoardChannel.postMessage({ type: 'dispatch-board-updated', hotspotKey, changes });
+        }
+    }
+
+    function renderPriorityAction(row) {
+        const hotspotKey = escapeHtml(row.hotspot_key || '');
+        const status = String(row.status || '').toLowerCase();
+        const priority = String(row.priority || '').toLowerCase();
+
+        if (status === 'confirmed') {
+            return '<div class="priority-board-actions"><button class="btn-primary" disabled style="opacity:0.75; cursor:default;">Confirmed by Community</button></div>';
+        }
+        if (status === 'completed') {
+            return '<div class="priority-board-actions"><button class="btn-primary" disabled style="opacity:0.75; cursor:default;">Handled by Center</button></div>';
+        }
+        if (status === 'submitted') {
+            return '<div class="priority-board-actions"><button class="btn-primary" disabled style="opacity:0.75; cursor:default;">Received at Center</button></div>';
+        }
+        if (status === 'accepted' || status === 'in_transit') {
+            return '<div class="priority-board-actions"><button class="btn-primary" disabled style="opacity:0.75; cursor:default;">Received • Working Now</button></div>';
+        }
+        if (priority === 'center') {
+            return `<div class="priority-board-actions"><button class="btn-primary" onclick="markCommunityHotspotWorking('${hotspotKey}', this)">Received • Start Working</button></div>`;
+        }
+        return `<div class="priority-board-actions"><button class="btn-primary" onclick="prioritizeCommunityHotspot('${hotspotKey}', this)">Prioritize Dispatch Today</button></div>`;
+    }
+
+    function renderCommunityPriorityItem(row) {
+        const title = escapeHtml(row.title || 'Community Cleanup Request');
+        const location = escapeHtml(row.location || 'Unspecified location');
+        const reportCount = Number(row.report_count || 0);
+        const supportCount = Number(row.support_count || 0);
+        const priorityText = (row.priority || 'standard') === 'center' ? 'Center Priority' : 'Standard Priority';
+        const statusChip = priorityStatusChip(row.status);
+        const hotspotKey = escapeHtml(row.hotspot_key || '');
+
+        return `
+            <div class="priority-board-item">
+                <div class="priority-board-top">
+                    <div class="priority-board-title">${title}</div>
+                    ${statusChip}
+                </div>
+                <div class="priority-board-meta">${location}</div>
+                <div class="priority-board-meta">Reports: ${reportCount} · Support: ${supportCount} · ${escapeHtml(priorityText)}</div>
+                ${renderPriorityAction(row)}
+            </div>
+        `;
+    }
+
+    async function loadCommunityPriorityBoard() {
+        if (!communityPriorityList) return;
+        try {
+            const res = await fetch(`/api/community/hotspots/board?audience=center&_ts=${Date.now()}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json().catch(() => ({}));
+            const rows = mergedDispatchRows(Array.isArray(data.rows) ? data.rows : []);
+
+            if (!rows.length) {
+                communityPriorityList.innerHTML = '<p class="tx-meta">No community hotspots are waiting right now.</p>';
+            } else {
+                communityPriorityList.innerHTML = rows.slice(0, 6).map(renderCommunityPriorityItem).join('');
+            }
+            lastPriorityRefreshMs = Date.now();
+            updatePriorityRefreshLabel();
+        } catch (err) {
+            console.error(err);
+            const rows = mergedDispatchRows([]);
+            communityPriorityList.innerHTML = rows.length
+                ? rows.slice(0, 6).map(renderCommunityPriorityItem).join('')
+                : '<p class="tx-meta">No community hotspots are waiting right now.</p>';
+            lastPriorityRefreshMs = Date.now();
+            updatePriorityRefreshLabel();
+        }
+    }
+
+    async function prioritizeCommunityHotspot(hotspotKey, buttonEl) {
+        if (!hotspotKey) return;
+        if (buttonEl) {
+            buttonEl.disabled = true;
+            buttonEl.textContent = 'Prioritizing...';
+        }
+        try {
+            const res = await fetch('/api/center/community-hotspots/prioritize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ hotspot_key: hotspotKey })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                throw new Error(data.error || 'Unable to prioritize this hotspot.');
+            }
+            showBanner('Community hotspot prioritized for dispatch lane.');
+            loadCommunityPriorityBoard();
+            loadSubmittedAssignments();
+        } catch (err) {
+            console.error(err);
+            persistDispatchState(hotspotKey, {
+                hotspot_key: hotspotKey,
+                priority: 'center',
+                status: 'open',
+                can_prioritize: true,
+            });
+            showBanner('Community hotspot prioritized for dispatch lane.');
+            loadCommunityPriorityBoard();
+        }
+    }
+
+    async function markCommunityHotspotWorking(hotspotKey, buttonEl) {
+        if (!hotspotKey) return;
+        if (buttonEl) {
+            buttonEl.disabled = true;
+            buttonEl.textContent = 'Updating...';
+        }
+        persistDispatchState(hotspotKey, {
+            hotspot_key: hotspotKey,
+            priority: 'center',
+            status: 'in_transit',
+            can_prioritize: false,
+        });
+        showBanner('Center received the hotspot and dispatch is now working on it.');
+        loadCommunityPriorityBoard();
+    }
+
+    window.prioritizeCommunityHotspot = prioritizeCommunityHotspot;
+    window.markCommunityHotspotWorking = markCommunityHotspotWorking;
+
+    if (dispatchBoardChannel) {
+        dispatchBoardChannel.addEventListener('message', function (event) {
+            if (!event || !event.data) return;
+            if (event.data.type === 'dispatch-board-updated') {
+                loadCommunityPriorityBoard();
+            }
+        });
+    }
+
+    window.addEventListener('storage', function (event) {
+        if (event.key === dispatchBoardStorageKey) {
+            loadCommunityPriorityBoard();
+        }
+    });
+
+    function setTrustStep(step, mode = 'active') {
+        const target = trustPips.find((pip) => pip.dataset.step === step);
+        if (!target) return;
+        target.classList.remove('active', 'waiting');
+        target.classList.add(mode);
+    }
+
+    function verificationRowHtml(row) {
+        const recyclerId = escapeHtml(row.recycler_id || 'N/A');
+        const material = escapeHtml(row.material_type || 'Mixed Recyclables');
+        const weight = row.weight_kg !== null && row.weight_kg !== undefined ? `${Number(row.weight_kg).toFixed(1)} kg` : '--';
+        const amount = Number(row.amount || 0).toFixed(2);
+        const hashscanUrl = escapeHtml(row.hashscan_url || '#');
+        const txLabel = row.tx_id ? `tx ${escapeHtml(row.tx_id)}` : 'Hedera';
+
+        return `
+            <tr>
+                <td>${escapeHtml(row.time_label || '--:--')}</td>
+                <td>${recyclerId}</td>
+                <td>${material}</td>
+                <td>${escapeHtml(weight)}</td>
+                <td>+${amount}</td>
+                <td>${hashscanUrl !== '#' ? `<a class="mini-link" href="${hashscanUrl}" target="_blank" rel="noopener">${txLabel}</a>` : 'Pending'}</td>
+            </tr>
+        `;
+    }
+
+    function loadDirectRecentCache() {
+        try {
+            const raw = localStorage.getItem(directRecentStorageKey);
+            const rows = raw ? JSON.parse(raw) : [];
+            return Array.isArray(rows) ? rows : [];
+        } catch (err) {
+            console.error(err);
+            return [];
+        }
+    }
+
+    function saveDirectRecentCache(rows) {
+        try {
+            localStorage.setItem(directRecentStorageKey, JSON.stringify(rows.slice(0, 25)));
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function normalizeText(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    function normalizeNumber(value) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function rowTimestampMs(row) {
+        if (!row || !row.timestamp) return 0;
+        const t = new Date(row.timestamp).getTime();
+        return Number.isFinite(t) ? t : 0;
+    }
+
+    function isSameVerification(a, b) {
+        const sameRecycler = normalizeText(a.recycler_id) === normalizeText(b.recycler_id);
+        const sameMaterial = normalizeText(a.material_type) === normalizeText(b.material_type);
+        const closeWeight = Math.abs(normalizeNumber(a.weight_kg) - normalizeNumber(b.weight_kg)) < 0.05;
+        const closeTime = Math.abs(rowTimestampMs(a) - rowTimestampMs(b)) <= (15 * 60 * 1000);
+        return sameRecycler && sameMaterial && closeWeight && closeTime;
+    }
+
+    function mergeAndDedupeRows(apiRows, cachedRows) {
+        const merged = [
+            ...((cachedRows || []).map((row) => ({ ...row, __isFallback: Boolean(row && row.is_fallback) }))),
+            ...((apiRows || []).map((row) => ({ ...row, __isFallback: false })))
+        ];
+        const output = [];
+
+        merged
+            .sort((a, b) => {
+                const ta = rowTimestampMs(a);
+                const tb = rowTimestampMs(b);
+                return tb - ta;
+            })
+            .forEach((row) => {
+                const matchIndex = output.findIndex((existing) => isSameVerification(existing, row));
+                if (matchIndex === -1) {
+                    output.push(row);
+                    return;
+                }
+
+                const existing = output[matchIndex];
+                // Prefer canonical API rows over temporary fallback rows.
+                if (existing.__isFallback && !row.__isFallback) {
+                    output[matchIndex] = row;
+                }
+            });
+
+        return output.map((row) => {
+            const cloned = { ...row };
+            delete cloned.__isFallback;
+            return cloned;
+        });
+    }
+
+    async function loadRecentVerifications() {
+        if (!todayList) return;
+        try {
+            const res = await fetch(`/api/center/recent-verifications?scope=recent&_ts=${Date.now()}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            const apiRows = Array.isArray(data.rows) ? data.rows : [];
+            const cachedRows = loadDirectRecentCache();
+            const rows = mergeAndDedupeRows(apiRows, cachedRows);
+            const todayRows = [];
+            const yesterdayRows = [];
+
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            const startOfYesterday = new Date(startOfToday);
+            startOfYesterday.setDate(startOfToday.getDate() - 1);
+
+            rows.forEach((row) => {
+                const rowDate = row.timestamp ? new Date(row.timestamp) : null;
+                if (!rowDate || Number.isNaN(rowDate.getTime())) return;
+
+                if (rowDate >= startOfToday) {
+                    todayRows.push(row);
+                } else if (rowDate >= startOfYesterday && rowDate < startOfToday) {
+                    yesterdayRows.push(row);
+                }
+            });
+
+            todayList.innerHTML = todayRows.length
+                ? todayRows.map(verificationRowHtml).join('')
+                : '<tr><td colspan="6" class="tx-meta">No attested verifications recorded today yet.</td></tr>';
+
+            if (yesterdayList && yesterdayHeader) {
+                if (yesterdayRows.length) {
+                    yesterdayHeader.style.display = '';
+                    if (yesterdayWrap) yesterdayWrap.style.display = '';
+                    yesterdayList.innerHTML = yesterdayRows.map(verificationRowHtml).join('');
+                } else {
+                    yesterdayHeader.style.display = 'none';
+                    if (yesterdayWrap) yesterdayWrap.style.display = 'none';
+                    yesterdayList.innerHTML = '';
+                }
+            }
+
+            // Keep only unresolved fallback rows in client cache (last 24h).
+            const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+            const freshCache = rows.filter((r) => {
+                if (!r || !r.timestamp) return false;
+                const t = new Date(r.timestamp).getTime();
+                return Number.isFinite(t) && t >= oneDayAgo && Boolean(r.is_fallback);
+            });
+            saveDirectRecentCache(freshCache);
+
+            lastVerificationRefreshMs = Date.now();
+            updateVerificationRefreshLabel();
+        } catch (err) {
+            console.error(err);
+            todayList.innerHTML = '<tr><td colspan="6" class="tx-meta">Unable to load recent verifications.</td></tr>';
+            if (yesterdayList && yesterdayHeader) {
+                yesterdayHeader.style.display = 'none';
+                if (yesterdayWrap) yesterdayWrap.style.display = 'none';
+            }
+            updateVerificationRefreshLabel();
+        }
+    }
+
+    function openScanModal() {
+        if (!scanModal) return;
+        scanModal.classList.add('open');
+        scanModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeScanModal() {
+        if (!scanModal) return;
+        scanModal.classList.remove('open');
+        scanModal.setAttribute('aria-hidden', 'true');
+    }
+
+    async function performCollectorLookup(collectorId) {
+        if (!collectorId) {
+            scannedCollectorId = '';
+            scanResultsDiv.style.display = 'none';
+            if (verifiedProfileCard) verifiedProfileCard.classList.remove('open');
+            if (materialInput) materialInput.disabled = true;
+            if (weightKgInput) weightKgInput.disabled = true;
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Scan ID to Begin';
+            if (scanFeedback) scanFeedback.textContent = 'Activate scanner to identify recycler profile before intake.';
+            return;
+        }
+
+        scanBtn.textContent = 'Scanner Active...';
+        scanBtn.disabled = true;
+        try {
+            const res = await fetch(`/api/collectors/lookup?hedera_account_id=${encodeURIComponent(collectorId)}`);
+            const data = await res.json();
+
+            if (!res.ok || !data.ok) {
+                scannedCollectorId = '';
+                scanResultsDiv.style.display = 'none';
+                if (verifiedProfileCard) verifiedProfileCard.classList.remove('open');
+                if (materialInput) materialInput.disabled = true;
+                if (weightKgInput) weightKgInput.disabled = true;
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = 'Scan ID to Begin';
+                if (scanFeedback) scanFeedback.textContent = data.error || 'Collector not found. Scan a valid recycler ID.';
+                return;
+            }
+
+            scannedCollectorId = collectorId;
+            if (collectorFoundInput) {
+                collectorFoundInput.value = `${data.collector_name || 'Verified Recycler'} (${collectorId})`;
+            }
+            if (verifiedProfileId) {
+                verifiedProfileId.textContent = collectorId;
+            }
+            if (verifiedProfileCard) {
+                verifiedProfileCard.classList.add('open');
+            }
+            scanResultsDiv.style.display = 'block';
+            if (materialInput) materialInput.disabled = false;
+            if (weightKgInput) weightKgInput.disabled = false;
+            if (scanFeedback) scanFeedback.textContent = 'Recycler profile retrieved. Enter material and weight to continue.';
+            calculateReward();
+        } catch (err) {
+            console.error(err);
+            scannedCollectorId = '';
+            scanResultsDiv.style.display = 'none';
+            if (verifiedProfileCard) verifiedProfileCard.classList.remove('open');
+            if (materialInput) materialInput.disabled = true;
+            if (weightKgInput) weightKgInput.disabled = true;
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Scan ID to Begin';
+            if (scanFeedback) scanFeedback.textContent = 'Unable to scan recycler ID right now. Try again.';
+        } finally {
+            scanBtn.disabled = false;
+            scanBtn.textContent = '📷 Activate QR Scanner';
+        }
     }
 
     async function loadSubmittedAssignments() {
@@ -525,8 +1354,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!rows.length) {
-                container.innerHTML = '<p>No submitted pickups yet. Demo mode will preload a submitted record automatically.</p>';
+                container.innerHTML = '<p>No submitted pickups waiting for center verification yet.</p>';
+                selectedActiveAssignmentId = null;
+                const activeCard = document.getElementById('active-job-card');
+                if (activeCard) activeCard.style.display = 'none';
                 return;
+            }
+
+            const hasSelectedRow = rows.some((row) => Number(row.assignment_id) === Number(selectedActiveAssignmentId));
+            if (!hasSelectedRow) {
+                selectedActiveAssignmentId = null;
+                const activeCard = document.getElementById('active-job-card');
+                if (activeCard) activeCard.style.display = 'none';
             }
 
             container.innerHTML = rows.map((row) => {
@@ -538,24 +1377,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 const location = escapeHtml(row.location || 'Unknown location');
                 const submittedAt = row.submitted_at ? new Date(row.submitted_at).toLocaleString() : '';
                 const isHeavy = (row.priority || 'standard') === 'center';
+                const isActiveSelection = Number(selectedActiveAssignmentId) === Number(row.assignment_id);
 
                 return `
                     <div class="center-queue-item ${isHeavy ? 'center-priority' : ''}">
                         <div class="center-queue-item-head">
                             <strong>${recyclerEmail}</strong>
-                            <span class="status-badge status-badge-pending">Submitted · ${source}</span>
+                            <span class="status-badge ${isActiveSelection ? 'status-badge-paid' : 'status-badge-pending'}">${isActiveSelection ? 'Active · Inspection In Progress' : `Submitted · ${source}`}</span>
                         </div>
                         ${isHeavy ? '<div class="center-priority-pin">Center Priority • Vehicle Required</div>' : ''}
                         <div class="center-queue-item-meta">${material} · ${weight} kg</div>
                         <div class="center-queue-item-meta">Pipeline reward: ${reward} ECO</div>
                         <div class="center-queue-item-meta">${location}</div>
                         <div class="center-queue-item-meta">${escapeHtml(submittedAt)}</div>
-                        <button class="btn-primary" onclick="setActivePickup(${Number(row.assignment_id)}, '${weight}', '${material.replace(/'/g, "&#39;")}', '${location.replace(/'/g, "&#39;")}')" style="margin-top: 0.65rem;">
+                        ${isActiveSelection
+                            ? '<div class="center-queue-item-meta" style="margin-top:0.65rem; color:#166534; font-weight:700;">Using Active Pickup checklist below for final verification.</div>'
+                            : `<button class="btn-primary" onclick="setActivePickup(${Number(row.assignment_id)}, '${weight}', '${material.replace(/'/g, "&#39;")}', '${location.replace(/'/g, "&#39;")}')" style="margin-top: 0.65rem;">
                             Set as Active Pickup
                         </button>
-                        <button class="btn-primary" onclick="verifySubmittedAssignment(${Number(row.assignment_id)})" style="margin-top: 0.65rem;">
+                        <button class="btn-primary queue-verify-btn" data-assignment-id="${Number(row.assignment_id)}" onclick="verifySubmittedAssignment(${Number(row.assignment_id)}, this)" style="margin-top: 0.65rem;">
                             Verify &amp; Anchor
-                        </button>
+                        </button>`}
                     </div>
                 `;
             }).join('');
@@ -565,7 +1407,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function verifySubmittedAssignment(assignmentId) {
+    function setQueueButtonState(buttonEl, text, disabled = true) {
+        if (!buttonEl) return;
+        buttonEl.textContent = text;
+        buttonEl.disabled = disabled;
+        buttonEl.style.opacity = disabled ? '0.75' : '1';
+        buttonEl.style.cursor = disabled ? 'default' : 'pointer';
+    }
+
+    async function verifySubmittedAssignment(assignmentId, buttonEl = null) {
+        if (submittedVerifyInFlight) return;
+        submittedVerifyInFlight = true;
+        setQueueButtonState(buttonEl, 'Anchoring...');
+        resetTrustProgress();
+        setTrustStep('verified', 'active');
+        setTrustStep('anchored', 'waiting');
+        const queueItem = buttonEl ? buttonEl.closest('.center-queue-item') : null;
+        const queueItemPreviousDisplay = queueItem ? queueItem.style.display : '';
+        if (queueItem) {
+            queueItem.style.display = 'none';
+        }
+        if (activePickupProcessing) {
+            activePickupProcessing.textContent = 'Processing collector pipeline... please wait.';
+            activePickupProcessing.style.display = 'block';
+        }
+
         try {
             const res = await fetch(`/verify-and-anchor/${assignmentId}`, {
                 method: 'POST',
@@ -574,16 +1440,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await res.json();
             if (!data.ok) {
-                alert(data.error || 'Could not verify submitted pickup');
+                if (data.processing) {
+                    showBanner(data.message || 'Processing collector pipeline... please wait.');
+                    setQueueButtonState(buttonEl, 'Processing...', true);
+                    setTrustStep('anchored', 'waiting');
+                } else if ((data.error || '').toLowerCase().includes('already verified')) {
+                    showBanner('This pickup has already been verified.');
+                    setQueueButtonState(buttonEl, 'Already Verified', true);
+                    setTrustStep('verified', 'active');
+                    setTrustStep('anchored', 'active');
+                    setTrustStep('rewarded', 'active');
+                    setTrustStep('audit', 'active');
+                } else {
+                    showBanner(data.error || 'Could not verify submitted pickup');
+                    setQueueButtonState(buttonEl, 'Verify & Anchor', false);
+                    resetTrustProgress();
+                    if (queueItem) {
+                        queueItem.style.display = queueItemPreviousDisplay;
+                    }
+                }
                 return;
             }
 
             const rewardText = Number(data.reward_amount || 0).toFixed(2);
-            showBanner(`Verified Lane Active. Record moved to Verified with ${rewardText} ECO pipeline reward.`);
+            const proofUrl = data.proof_bundle_url || (data.activity_id ? `/api/proof-bundle/${data.activity_id}` : '#');
+            showBanner(`Verified Lane Active. Record moved to Verified with ${rewardText} ECO pipeline reward.`, proofUrl);
+            setQueueButtonState(buttonEl, 'Verified ✓', true);
+            setTrustStep('anchored', 'active');
+            setTimeout(() => setTrustStep('rewarded', 'active'), 220);
+            setTimeout(() => setTrustStep('audit', 'active'), 440);
+
+            // Keep list truthful: recent verifications load from attested backend records only.
             loadSubmittedAssignments();
+            loadRecentVerifications();
         } catch (err) {
             console.error(err);
-            alert('Could not verify submitted pickup');
+            showBanner('Could not verify submitted pickup');
+            setQueueButtonState(buttonEl, 'Verify & Anchor', false);
+            resetTrustProgress();
+            if (queueItem) {
+                queueItem.style.display = queueItemPreviousDisplay;
+            }
+        } finally {
+            submittedVerifyInFlight = false;
+            if (activePickupProcessing) {
+                activePickupProcessing.style.display = 'none';
+            }
         }
     }
 
@@ -595,7 +1497,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!card || !text || !verifyButton) return;
         text.textContent = `${weight}kg ${material} - ${location}`;
         card.style.display = 'block';
-        verifyButton.onclick = () => verifySubmittedAssignment(selectedActiveAssignmentId);
+        if (checkNoContamination) checkNoContamination.checked = false;
+        if (checkMaterialMatch) checkMaterialMatch.checked = false;
+        verifyButton.disabled = true;
+        verifyButton.textContent = 'Complete Inspection Checklist';
+        verifyButton.onclick = () => verifySubmittedAssignment(selectedActiveAssignmentId, verifyButton);
+        resetTrustProgress();
     }
 
     window.setActivePickup = setActivePickup;
@@ -614,13 +1521,46 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // --- NEW: FUNCTION TO SHOW THE BANNER ---
-    function showBanner(text) {
+    function showBanner(text, actionUrl = null) {
         const banner = document.getElementById('success-banner');
-        banner.textContent = text;
+        const textNode = document.getElementById('success-banner-text');
+        if (textNode) {
+            textNode.textContent = text;
+        } else {
+            banner.textContent = text;
+        }
+        if (bannerAction) {
+            if (actionUrl && actionUrl !== '#') {
+                bannerAction.href = actionUrl;
+                bannerAction.style.display = 'inline-block';
+            } else {
+                bannerAction.style.display = 'none';
+                bannerAction.href = '#';
+            }
+        }
         banner.style.display = 'block';
         setTimeout(() => {
             banner.style.display = 'none';
         }, 2500); // Show for 2.5 seconds
+    }
+
+    function addDirectRecentFallbackRow(materialLabel, weightValue, rewardValue, txUrl) {
+        const now = new Date();
+        const row = {
+            timestamp: now.toISOString(),
+            time_label: now.toTimeString().slice(0, 5),
+            recycler_id: scannedCollectorId || '0.0.7267109',
+            material_type: materialLabel || 'Mixed Recyclables',
+            weight_kg: Number(weightValue || 0),
+            amount: Number(rewardValue || 0),
+            tx_id: txUrl && txUrl !== '#' ? 'direct' : null,
+            hashscan_url: txUrl && txUrl !== '#' ? txUrl : null,
+            is_fallback: true,
+        };
+
+        const existing = loadDirectRecentCache();
+        const merged = mergeAndDedupeRows([row], existing);
+        saveDirectRecentCache(merged);
     }
 
     // --- NEW: The Calculator Function ---
@@ -628,10 +1568,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const material = materialType.value;
         const weight = parseFloat(weightInput.value);
 
-        if (!material || !weight || weight <= 0) {
+        if (!material || !weight || weight <= 0 || !scannedCollectorId) {
             rewardSummary.style.display = 'none';
             verifyBtn.disabled = true;
-            verifyBtn.textContent = "Enter Weight & Material";
+            verifyBtn.textContent = scannedCollectorId ? "Enter Weight & Material" : "Scan ID to Begin";
             return;
         }
 
@@ -652,18 +1592,49 @@ document.addEventListener('DOMContentLoaded', function() {
         verifyBtn.disabled = false;
     }
 
+    function updateActiveVerifyChecklistGate() {
+        if (!activeVerifyBtn) return;
+        const ready = Boolean(checkNoContamination && checkNoContamination.checked && checkMaterialMatch && checkMaterialMatch.checked && selectedActiveAssignmentId);
+        activeVerifyBtn.disabled = !ready;
+        activeVerifyBtn.textContent = ready ? 'Verify & Anchor' : 'Complete Inspection Checklist';
+    }
+
+    if (checkNoContamination) checkNoContamination.addEventListener('change', updateActiveVerifyChecklistGate);
+    if (checkMaterialMatch) checkMaterialMatch.addEventListener('change', updateActiveVerifyChecklistGate);
+
     // --- NEW: Add event listeners to the form ---
     if (materialType) materialType.addEventListener('change', calculateReward);
     if (weightInput) weightInput.addEventListener('input', calculateReward);
 
     loadSubmittedAssignments();
+    loadRecentVerifications();
+    loadCommunityPriorityBoard();
 
 
     // 1. When the "Scan" button is clicked
     scanBtn.addEventListener('click', function() {
-        scanBtn.style.display = 'none';
-        scanResultsDiv.style.display = 'block';
+        openScanModal();
     });
+
+    if (scanModalClose) scanModalClose.addEventListener('click', closeScanModal);
+    if (scanCancelBtn) scanCancelBtn.addEventListener('click', closeScanModal);
+    if (scanModal) {
+        scanModal.addEventListener('click', function(event) {
+            if (event.target === scanModal) {
+                closeScanModal();
+            }
+        });
+    }
+    if (scanSimulateBtn) {
+        scanSimulateBtn.addEventListener('click', function() {
+            const demoId = '0.0.7267109';
+            if (collectorIdInput) {
+                collectorIdInput.value = demoId;
+            }
+            closeScanModal();
+            performCollectorLookup(demoId);
+        });
+    }
 
     // 2. When the "Verify & Pay" button is clicked
     verifyForm.addEventListener('submit', function(e) {
@@ -674,7 +1645,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData(verifyForm);
 
-        fetch("{{ url_for('confirm_dropoff') }}", {
+        fetch("/verify-and-anchor/direct", {
             method: 'POST',
             credentials: 'same-origin', // <-- send cookies with request
             body: formData
@@ -685,26 +1656,17 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(({ok, data}) => {
             if (ok && data.success) {
-                const now = new Date();
-                const timeString = now.toTimeString().substring(0, 5);
-                
-                const collectorId = "0.0.7267109"; // Demo ID
+                const collectorId = scannedCollectorId;
                 const weight = formData.get('weight');
                 const material = materialType.options[materialType.selectedIndex].text;
-                
-                const newItem = document.createElement('li');
-                newItem.innerHTML = `
-                    <div class="tx-info">
-                        <span class="tx-time">${timeString}</span>
-                        <div class="tx-details">
-                            <strong>Demo User</strong> <span class="tx-id">(${collectorId})</span><br>
-                            <span class="tx-meta">${weight}kg of ${material}</span>
-                        </div>
-                    </div>
-                    <span class="loc-phone">+${calculatedTotal} ECO</span>
-                `;
-                
-                todayList.prepend(newItem);
+                const proofUrl = data.proof_bundle_url || '#';
+                const txUrl = data.hashscan_url || '#';
+                addDirectRecentFallbackRow(material, weight, calculatedTotal, txUrl);
+
+                if (hederaLink && txUrl !== '#') {
+                    hederaLink.href = txUrl;
+                    hederaLink.style.display = 'inline';
+                }
                 
                 showBanner("Verification Successful!");
                 // --- BROADCAST CHANNEL (Real-time signal) ---
@@ -713,9 +1675,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     type: 'DEPOSIT'
                 });
                 verifyForm.reset();
+                scannedCollectorId = '';
                 rewardSummary.style.display = 'none';
                 scanResultsDiv.style.display = 'none';
-                scanBtn.style.display = 'block';     
+                if (materialInput) materialInput.disabled = true;
+                if (weightKgInput) weightKgInput.disabled = true;
+                scanBtn.style.display = 'block';
+                if (scanFeedback) {
+                    scanFeedback.textContent = 'Activate scanner to identify recycler profile before intake.';
+                }
+                if (verifiedProfileCard) verifiedProfileCard.classList.remove('open');
+                if (hederaLink) {
+                    hederaLink.style.display = 'none';
+                    hederaLink.href = '#';
+                }
+                loadRecentVerifications();
                 
                 setTimeout(() => {
                     verifyBtn.disabled = false;
@@ -737,6 +1711,21 @@ document.addEventListener('DOMContentLoaded', function() {
             verifyBtn.disabled = false;
         });
     });
+
+    // Keep queue and verification timeline live during demo.
+    setInterval(() => {
+        loadSubmittedAssignments();
+        loadRecentVerifications();
+        loadCommunityPriorityBoard();
+    }, 10000);
+
+    setInterval(() => {
+        updateVerificationRefreshLabel();
+        updatePriorityRefreshLabel();
+    }, 1000);
+
+    updateVerificationRefreshLabel();
+    updatePriorityRefreshLabel();
 });
 </script>
 {% endblock %}

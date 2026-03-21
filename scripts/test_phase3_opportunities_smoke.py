@@ -28,6 +28,10 @@ def create_test_user(email: str, role: str, name: str) -> User:
     user.full_name = name
     user.phone_number = "0000000000"
     user.id_number = f"ID-{uuid4().hex[:8]}"
+    if role == "business":
+        user.address = "Phase 3 Business Address"
+    elif role == "resident":
+        user.address = "Phase 3 Resident Address"
     db.session.commit()
     return user
 
