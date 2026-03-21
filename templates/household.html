@@ -1,195 +1,217 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Community Hub - VeriCycle</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-    /* === Community Hub — Eco Light Design System === */
-    body {
-        background: #f0f7f2 !important;
-        color: #1a202c !important;
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+  body {
+    background: #f0f7f2 !important;
+    color: #1a202c !important;
+  }
+  .community-shell {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 1.5rem 0 2.5rem;
+  }
+  .community-header h2 {
+    font-size: clamp(1.7rem, 3vw, 2.4rem);
+    color: #0b5d4a;
+    margin: 0 0 0.2rem;
+  }
+  .community-header p {
+    color: #64748b;
+    margin: 0 0 1.1rem;
+  }
+  .panel {
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(22,163,74,0.16);
+    border-radius: 14px;
+    box-shadow: 0 2px 18px rgba(0,160,70,0.06);
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .section-kicker {
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #16a34a;
+    margin-bottom: 0.25rem;
+  }
+  .report-grid {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.65rem;
+  }
+  .field {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.62rem 0.75rem;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 0.9rem;
+  }
+  .field:focus {
+    outline: none;
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+  }
+  .btn-primary {
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.6rem 1rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    width: fit-content;
+  }
+  .btn-primary:hover { background: #15803d; }
+  .hotspot-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+  }
+  .hotspot-card h3 {
+    margin: 0 0 0.35rem;
+    color: #0f172a;
+    font-size: 1.2rem;
+  }
+  .location {
+    color: #64748b;
+    margin: 0 0 0.45rem;
+    font-size: 0.9rem;
+  }
+  .desc {
+    color: #334155;
+    margin: 0;
+    line-height: 1.45;
+  }
+  .hotspot-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .boost-btn {
+    background: #22c55e;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .status {
+    font-weight: 700;
+    font-size: 0.86rem;
+  }
+  .status.yellow { color: #a16207; }
+  .status.orange { color: #c2410c; }
+  .status.red { color: #dc2626; }
+  @media (max-width: 840px) {
+    .report-grid {
+      grid-template-columns: 1fr;
     }
-    main { padding: 1.5rem 0 3rem; }
-    main > h2 {
-        font-size: clamp(1.7rem, 3vw, 2.4rem);
-        color: #0b5d4a;
-        margin: 0 0 0.25rem 0;
-    }
-    main > p, .muted {
-        color: #64748b !important;
-        margin-top: 0;
-        margin-bottom: 1.2rem;
-    }
-    h3 { color: #0b5d4a !important; }
-    label { color: #374151; font-weight: 600; font-size: 0.9rem; }
-    .card {
-        background: rgba(255,255,255,0.82) !important;
-        backdrop-filter: blur(14px) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
-        border: 1px solid rgba(22,163,74,0.18) !important;
-        border-radius: 14px !important;
-        box-shadow: 0 2px 24px rgba(0,160,70,0.07) !important;
-        padding: 1.3rem !important;
-        margin-bottom: 1rem !important;
-        color: #1a202c !important;
-    }
-    .card h3 { color: #0b5d4a !important; margin-top: 0; }
-    .card p  { color: #64748b !important; }
-    select, input[type=text], input[type=number] {
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        padding: 0.45rem 0.65rem;
-        background: #f8fafc;
-        color: #0f172a;
-        font-size: 0.9rem;
-    }
-    select:focus, input:focus {
-        outline: none;
-        border-color: #16a34a;
-        box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
-    }
-    button[type=submit] {
-        background: #16a34a;
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        padding: 0.62rem 1.3rem;
-        font-weight: 700;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: background 0.15s;
-    }
-    button[type=submit]:hover { background: #15803d; }
-    .btn-primary {
-        background: #16a34a !important;
-        color: #fff !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 0.62rem 1.3rem !important;
-        font-weight: 700;
-        cursor: pointer;
-        font-size: 0.9rem;
-        display: inline-flex;
-        align-items: center;
-        text-decoration: none;
-    }
-    .btn-primary:hover { background: #15803d !important; }
-    table { width: 100%; border-collapse: collapse; }
-    th {
-        background: rgba(220,252,231,0.55);
-        color: #16a34a;
-        text-transform: uppercase;
-        font-size: 0.72rem;
-        letter-spacing: 0.07em;
-        font-weight: 700;
-        padding: 0.65rem 0.8rem;
-        text-align: left;
-        border-bottom: 1px solid rgba(22,163,74,0.2);
-    }
-    td {
-        padding: 0.72rem 0.8rem;
-        color: #374151;
-        border-bottom: 1px solid rgba(22,163,74,0.08);
-        font-size: 0.9rem;
-    }
-    tr:last-child td { border-bottom: none; }
-    tbody tr:hover { background: rgba(240,253,244,0.55); }
-    strong { color: #0b5d4a; }
-    </style>
+  }
+  </style>
 </head>
 <body class="light-theme">
-    {% include '_navbar.html' %}
+  {% include '_navbar.html' %}
 
-    <main class="container">
+  <main class="container community-shell">
+    <section class="community-header">
       <h2>Community Hub</h2>
-      <p class="muted">Coordinate neighborhood recycling demand, request community pickups, and help recyclers and centers move local activity into verified records.</p>
+      <p>Community signal aggregation helps prioritize cleanup demand before routing to verified centers.</p>
+    </section>
 
-      <div class="card">
-        <h3>Create Community Pickup Request</h3>
-        <p>Found an overflow area or a recycling hotspot? Publish a community pickup request so recyclers can respond and the Verification Center can close the loop with proof.</p>
-        <a href="{{ url_for('request_pickup') }}" class="btn-primary">Create Community Pickup Request</a>
+    <section class="panel">
+      <span class="section-kicker">Report a Neighborhood Hotspot</span>
+      <h3 style="margin:0.2rem 0 0.6rem; color:#0b5d4a;">Report a Neighborhood Issue</h3>
+      <div class="report-grid">
+        <input class="field" type="text" placeholder="Enter location (e.g. Street + Area)">
+        <input class="field" type="text" placeholder="Describe the issue briefly">
       </div>
+      <button class="btn-primary" type="button" style="margin-top:0.85rem;">Report a Neighborhood Issue</button>
+    </section>
 
-      <div class="card">
-        <h3>Neighborhood Reliability</h3>
-        <form method="POST" action="/household/set-location" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <label for="location_id"><strong>Select location:</strong></label>
-          <select name="location_id" id="location_id">
-            {% for loc in locations %}
-              <option value="{{ loc.id }}" {% if loc.id == selected_location_id %}selected{% endif %}>
-                {{ loc.name }}{% if loc.city %}, {{ loc.city }}{% endif %}
-              </option>
-            {% endfor %}
-          </select>
-          <button type="submit">Update</button>
-        </form>
+    <section class="panel">
+      <span class="section-kicker">Live Feed</span>
+      <h3 style="margin:0.2rem 0 0.9rem; color:#0b5d4a;">Active Neighborhood Hotspots</h3>
 
-        <p style="margin-top:10px;">
-          Current: <strong>{{ location.name }}</strong>{% if location.city %}, {{ location.city }}{% endif %}
+      <div class="hotspot-card">
+        <h3>Overflowing Street Bins</h3>
+        <p class="location">Corner Main St &amp; 4th Ave, Randburg</p>
+        <p class="desc">
+          Bins have not been collected for 3 days. Waste is spilling onto the street.
         </p>
-        <p>Reliability Score: <strong>{{ "%.2f"|format(reliability_score) }}</strong></p>
-        <p class="muted">Reliability updates as residents confirm or report missed pickups.</p>
+        <div class="hotspot-footer">
+          <button class="boost-btn" data-count="12">Add My Voice (12)</button>
+          <span class="status yellow">Gathering Support</span>
+        </div>
       </div>
 
-      <div class="card">
-        <h3>Neighborhood Pickup Schedule</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Stream</th>
-              <th>Pickup Day</th>
-              <th>Window</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in schedules %}
-            <tr>
-              <td>{{ row.stream }}</td>
-              <td>{{ row.day }}</td>
-              <td>{{ row.window }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <h3>Community Pickup Actions</h3>
-        <form method="POST" action="/household/pickup-action" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-          <label for="stream"><strong>Stream:</strong></label>
-          <select name="stream" id="stream">
-            {% for row in schedules %}
-              <option value="{{ row.stream }}">{{ row.stream }}</option>
-            {% endfor %}
-          </select>
-
-          <button type="submit" name="action" value="confirmed">Confirm pickup</button>
-          <button type="submit" name="action" value="missed">Mark missed</button>
-        </form>
-
-        <p class="muted">Residents can confirm or report missed pickups to improve neighborhood recycling accountability.</p>
-        <p class="muted">Each update strengthens the community coordination layer that routes verified recycling activity.</p>
-
-        <h3>Recent Pickup Events</h3>
-        <table>
-          <thead>
-            <tr><th>Date</th><th>Stream</th><th>Outcome</th></tr>
-          </thead>
-          <tbody>
-            {% for e in recent_events %}
-              <tr>
-                <td>{{ e.scheduled_date }}</td>
-                <td>{{ e.stream }}</td>
-                <td>{{ e.outcome }}</td>
-              </tr>
-            {% else %}
-              <tr><td colspan="3">No pickup events yet.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div class="hotspot-card">
+        <h3>Illegal Dumping Reported</h3>
+        <p class="location">Park Entrance, Roodepoort</p>
+        <p class="desc">
+          Large pile of plastics and old furniture dumped near playground.
+        </p>
+        <div class="hotspot-footer">
+          <button class="boost-btn" data-count="58">Add My Voice (58)</button>
+          <span class="status red">Priority: Center Notified</span>
+        </div>
       </div>
-    </main>
 
+      <div class="hotspot-card">
+        <h3>Recycling Bags Not Collected</h3>
+        <p class="location">Sandton Drive</p>
+        <p class="desc">
+          Weekly recycling skipped. Bags piling up outside homes.
+        </p>
+        <div class="hotspot-footer">
+          <button class="boost-btn" data-count="27">Add My Voice (27)</button>
+          <span class="status orange">Escalating</span>
+        </div>
+      </div>
+
+      <div class="hotspot-card">
+        <h3>Missed Collection Near Taxi Rank</h3>
+        <p class="location">Beyers Naude Dr, Randpark Ridge</p>
+        <p class="desc">
+          Overflowing mixed recyclables around public bins after a missed pickup cycle.
+        </p>
+        <div class="hotspot-footer">
+          <button class="boost-btn" data-count="19">Add My Voice (19)</button>
+          <span class="status yellow">Gathering Support</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.boost-btn').forEach((button) => {
+      button.addEventListener('click', () => {
+        const current = Number(button.dataset.count || '0') + 1;
+        button.dataset.count = String(current);
+        button.textContent = `Add My Voice (${current})`;
+      });
+    });
+  });
+  </script>
 </body>
 </html>

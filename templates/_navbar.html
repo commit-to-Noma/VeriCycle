@@ -15,14 +15,15 @@
                 <a href="{{ url_for('business_dashboard') }}" class="nav-button {% if request.path.startswith('/business') %}active{% endif %}">Business Hub</a>
             {% elif current_effective_role == 'resident' %}
                 <a href="{{ url_for('household_dashboard') }}" class="nav-button {% if request.path.startswith('/household') %}active{% endif %}">Community Hub</a>
-                <a href="{{ url_for('request_pickup') }}" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">Request Pickup</a>
+                <a href="{{ url_for('request_pickup') }}" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">My Impact</a>
             {% elif current_effective_role == 'center' %}
                 <a href="{{ url_for('center_dashboard') }}" class="nav-button {% if request.path.startswith('/center') %}active{% endif %}">Verification Center</a>
             {% elif current_effective_role == 'admin' %}
                 <a href="{{ url_for('admin_monitor') }}" class="nav-button {% if request.path.startswith('/admin/monitor') %}active{% endif %}">Admin Monitor</a>
             {% endif %}
-
-            <a href="{{ url_for('proof_hub') }}" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
+            {% if current_effective_role != 'resident' %}
+                <a href="{{ url_for('proof_hub') }}" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
+            {% endif %}
             <a href="{{ url_for('profile') }}" class="nav-button {% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
             <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
         </nav>
@@ -52,14 +53,16 @@
             <a href="{{ url_for('request_pickup') }}">Create Pickup Request</a>
         {% elif current_effective_role == 'resident' %}
             <a href="{{ url_for('household_dashboard') }}">Community Hub</a>
-            <a href="{{ url_for('request_pickup') }}">Request Pickup</a>
+            <a href="{{ url_for('request_pickup') }}">My Impact</a>
         {% elif current_effective_role == 'center' %}
             <a href="{{ url_for('center_dashboard') }}">Verification Center</a>
         {% elif current_effective_role == 'admin' %}
             <a href="{{ url_for('admin_monitor') }}">Admin Monitor</a>
         {% endif %}
-        <a href="{{ url_for('proof_hub') }}">Proof Hub</a>
-        <a href="{{ url_for('proof_integrity') }}">Proof Integrity Checker</a>
+        {% if current_effective_role != 'resident' %}
+            <a href="{{ url_for('proof_hub') }}">Proof Hub</a>
+            <a href="{{ url_for('proof_integrity') }}">Proof Integrity Checker</a>
+        {% endif %}
         <a href="{{ url_for('profile') }}">Profile</a>
         <a href="{{ url_for('logout') }}">Log Out</a>
     </nav>

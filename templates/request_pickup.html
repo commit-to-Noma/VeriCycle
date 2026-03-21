@@ -365,7 +365,11 @@
                 Routed to nearby recyclers • Awaiting verification • Will be anchored on Hedera
             </p>
 
-            <p class="form-note">Track this request in your Business Hub.</p>
+            {% if current_effective_role == 'resident' %}
+                <p class="form-note">Track this request in your Community Hub.</p>
+            {% else %}
+                <p class="form-note">Track this request in your Business Hub.</p>
+            {% endif %}
 
             {% if current_effective_role == 'business' %}
                 <a href="{{ url_for('business_dashboard') }}" class="btn-primary-large">Return to Business Hub</a>
