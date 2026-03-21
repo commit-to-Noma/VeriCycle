@@ -128,57 +128,66 @@ body {
     border-left: 4px solid rgba(22, 163, 74, 0.3) !important;
 }
 .hub-pipeline-brief h3 { color: #0b5d4a !important; margin: 0.2rem 0 !important; }
-.hub-token-flow {
-    padding: 1rem 1.3rem;
-    margin-bottom: 1.2rem;
-    border-left: 4px solid #16a34a !important;
-    background: rgba(220, 252, 231, 0.48) !important;
-}
-.hub-token-flow p {
-    margin: 0.3rem 0;
-    color: #334155 !important;
-    font-size: 0.84rem;
-}
-.hub-token-flow strong {
-    color: #0b5d4a;
+.pipeline {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.85rem;
 }
 
-.progress-steps {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.6rem;
-    margin-top: 0.8rem;
-}
-
-.progress-steps span {
+.step {
+    flex: 1;
     text-align: center;
-    background: #f0fdf4;
-    border: 1px solid rgba(22, 163, 74, 0.25);
-    color: #166534;
-    border-radius: 999px;
-    padding: 0.4rem 0.65rem;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.6rem 0.5rem;
+    background: #f8fafc;
+    color: #475569;
+}
+
+.step-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
     font-weight: 700;
+    color: #334155;
 }
 
-.pipeline-submitted {
-    background: #fef9c3 !important;
-    color: #854d0e !important;
+.pipeline-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
 }
 
-.pipeline-verified {
-    background: #dbeafe !important;
-    color: #1e3a8a !important;
+.pipeline-dot.submitted {
+    background: #d97706;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
 }
 
-.pipeline-anchored {
-    background: #ede9fe !important;
-    color: #5b21b6 !important;
+.pipeline-dot.transit,
+.pipeline-dot.verified {
+    background: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 
-.pipeline-rewarded {
-    background: #dcfce7 !important;
-    color: #166534 !important;
+.pipeline-dot.anchored {
+    background: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+}
+
+.pipeline-dot.rewarded {
+    background: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+}
+
+.step p {
+    margin: 0.35rem 0 0;
+    color: #64748b !important;
+    font-size: 0.76rem;
+    line-height: 1.25;
 }
 
 /* Table section */
@@ -241,17 +250,6 @@ body {
     line-height: 1.4;
     white-space: pre-line;
 }
-.pin-chip {
-    display: inline-flex;
-    margin-top: 0.3rem;
-    padding: 0.12rem 0.5rem;
-    border-radius: 999px;
-    border: 1px solid rgba(22, 163, 74, 0.25);
-    background: rgba(220, 252, 231, 0.8);
-    color: #166534;
-    font-size: 0.74rem;
-    font-weight: 700;
-}
 .hub-empty {
     color: #94a3b8;
     font-style: italic;
@@ -275,7 +273,10 @@ body {
 /* Overflow wrapper for tables */
 .table-scroll { overflow-x: auto; }
 
-@media (max-width: 1100px) { .hub-stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1100px) {
+    .hub-stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .pipeline { flex-direction: column; }
+}
 @media (max-width: 720px)  { .hub-split-grid { grid-template-columns: 1fr; } }
 </style>
 
@@ -342,22 +343,23 @@ body {
 <section class="card hub-pipeline-brief">
     <span class="section-kicker">Proof Pipeline Clarity</span>
     <h3>Trust Pipeline</h3>
-    <div class="progress-steps">
-        <span class="pipeline-submitted">Submitted</span>
-        <span class="pipeline-verified">Verified</span>
-        <span class="pipeline-anchored">Anchored</span>
-        <span class="pipeline-rewarded">Rewarded</span>
+    <div class="pipeline">
+        <div class="step submitted"><span class="step-title"><span class="pipeline-dot submitted"></span>Submitted</span>
+            <p>Request created and awaiting pickup</p>
+        </div>
+        <div class="step transit"><span class="step-title"><span class="pipeline-dot transit"></span>In Transit</span>
+            <p>Recycler has collected materials and is en route</p>
+        </div>
+        <div class="step verified"><span class="step-title"><span class="pipeline-dot verified"></span>Verified</span>
+            <p>Center confirms weight and materials</p>
+        </div>
+        <div class="step anchored"><span class="step-title"><span class="pipeline-dot anchored"></span>Anchored</span>
+            <p>Proof recorded on Hedera</p>
+        </div>
+        <div class="step rewarded"><span class="step-title"><span class="pipeline-dot rewarded"></span>Rewarded</span>
+            <p>ECO transferred to recycler</p>
+        </div>
     </div>
-</section>
-
-<section class="card hub-token-flow">
-    <span class="section-kicker">Token and Proof Handoff</span>
-    <h3>Stage to transaction mapping</h3>
-    <p><strong>Submitted:</strong> Pickup request is accepted and prepared by recycler lane.</p>
-    <p><strong>In Transit:</strong> Source PIN confirms chain-of-custody before center intake.</p>
-    <p><strong>Verified:</strong> Center validates weight/material and finalizes payout inputs.</p>
-    <p><strong>Anchored:</strong> Event is written to Hedera Consensus Service (HCS).</p>
-    <p><strong>Rewarded + Proof Ready:</strong> ECO transfer (HTS) and proof bundle complete the audit trail.</p>
 </section>
 
 <section class="card">
@@ -385,10 +387,10 @@ body {
                     <td>{{ row.created_at.strftime('%Y-%m-%d %H:%M') if row.created_at else '—' }}</td>
                     <td>
                         <strong>#{{ row.id }} · {{ row.material_type }}</strong>
-                        <div class="hub-record-meta">{{ row.estimated_kg }} kg · {{ row.location or 'Location pending' }}</div>
-                        {% if row.pickup_pin %}
-                            <div class="pin-chip">Source PIN: {{ row.pickup_pin }}</div>
+                        {% if row.material_breakdown %}
+                            <div class="hub-record-meta">({{ row.material_breakdown }})</div>
                         {% endif %}
+                        <div class="hub-record-meta">{{ row.estimated_kg }} kg · {{ row.location or 'Location pending' }}</div>
                     </td>
                     <td class="window-cell">{% if row.created_at %}{{ row.created_at.strftime('%a, %b %d') }}
 {{ row.requested_window or 'Flexible' }}{% else %}{{ row.requested_window or 'Flexible' }}{% endif %}</td>

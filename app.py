@@ -15,7 +15,6 @@ Tools Used:
 - Flask-Login: To manage user sessions.
 - Flask-Bcrypt: For hashing passwords.
 - subprocess: To run Node.js scripts.
-- qrcode: To generate the collector's QR code.
 ================================================================================
 """
 
@@ -25,7 +24,6 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash, jsonify, abort
 from datetime import datetime, timezone, date, timedelta
 from flask_login import login_user, login_required, logout_user, current_user
-import qrcode
 import io
 import zipfile
 import subprocess
@@ -378,12 +376,6 @@ def estimate_pickup_distance_km(location: str | None) -> float:
     if "midrand" in normalized:
         return 7.0
     return 4.8
-
-
-def generate_pickup_pin(user_id: int) -> str:
-    seed = f"{user_id}:{datetime.now(timezone.utc).timestamp()}"
-    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
-    return f"{int(digest[:6], 16) % 10000:04d}"
 
 
 def calculate_demo_reward_amount(material_type: str | None, weight_kg: float | int | None) -> float:
@@ -960,7 +952,6 @@ def ensure_activity_columns():
                 material_type VARCHAR(80) NOT NULL,
                 estimated_kg FLOAT NOT NULL,
                 priority VARCHAR(20) NOT NULL DEFAULT 'standard',
-                pickup_pin VARCHAR(8),
                 location VARCHAR(200) NOT NULL,
                 requested_window VARCHAR(100),
                 status VARCHAR(30) NOT NULL DEFAULT 'open',
@@ -997,8 +988,6 @@ def ensure_activity_columns():
     pickup_existing = {c.get("name") for c in pickup_cols}
     if "priority" not in pickup_existing:
         db.session.execute(text("ALTER TABLE pickup_opportunity ADD COLUMN priority VARCHAR(20) NOT NULL DEFAULT 'standard'"))
-    if "pickup_pin" not in pickup_existing:
-        db.session.execute(text("ALTER TABLE pickup_opportunity ADD COLUMN pickup_pin VARCHAR(8)"))
 
     if "submitted_at" not in assignment_existing:
         db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN submitted_at DATETIME"))
@@ -1882,6 +1871,10 @@ def business_dashboard():
             linked_activity.pipeline_stage if linked_activity else None,
         )
 
+        material_breakdown = None
+        if req.notes and '[materials]' in req.notes:
+            material_breakdown = req.notes.split('[materials]', 1)[1].split('\n', 1)[0].strip() or None
+
         if req.status in {"open", "accepted"}:
             summary["active_requests"] += 1
         if linked_activity:
@@ -1896,9 +1889,9 @@ def business_dashboard():
         rows.append({
             "id": req.id,
             "material_type": req.material_type,
+            "material_breakdown": material_breakdown,
             "estimated_kg": req.estimated_kg,
             "priority": req.priority,
-            "pickup_pin": req.pickup_pin,
             "location": req.location,
             "requested_window": req.requested_window,
             "status": req.status,
@@ -1943,6 +1936,8 @@ def api_create_opportunity():
     data = request.get_json(silent=True) or request.form
 
     material_type = (data.get('material_type') or '').strip()
+    selected_materials_raw = data.get('selected_materials')
+    material_breakdown_raw = (data.get('material_breakdown') or '').strip()
     estimated_kg_raw = data.get('estimated_kg')
     weight_category = (data.get('weight_category') or '').strip()
     profile_location = (getattr(current_user, 'address', None) or '').strip()
@@ -1963,9 +1958,24 @@ def api_create_opportunity():
     if not profile_location:
         return jsonify({"ok": False, "error": "Set your profile address before creating pickup requests"}), 400
 
-    canonical_material = canonical_material_label(material_type)
+    selected_material_labels = []
+    if isinstance(selected_materials_raw, list):
+        selected_material_labels = [canonical_material_label(item) for item in selected_materials_raw if str(item).strip()]
+    elif isinstance(selected_materials_raw, str) and selected_materials_raw.strip():
+        selected_material_labels = [canonical_material_label(item) for item in selected_materials_raw.split(',') if item.strip()]
+    elif material_breakdown_raw:
+        selected_material_labels = [canonical_material_label(item) for item in material_breakdown_raw.split(',') if item.strip()]
+    elif ',' in material_type:
+        selected_material_labels = [canonical_material_label(item) for item in material_type.split(',') if item.strip()]
+
+    selected_material_labels = list(dict.fromkeys(selected_material_labels))
+    material_breakdown = ', '.join(selected_material_labels) if len(selected_material_labels) > 1 else None
+    canonical_material = 'Mixed Recyclables' if material_breakdown else canonical_material_label(material_type)
     priority = 'center' if (estimated_kg >= 50 or '50 kg+' in weight_category) else 'standard'
-    pickup_pin = generate_pickup_pin(current_user.id)
+
+    notes_value = notes or None
+    if material_breakdown:
+        notes_value = f"[materials]{material_breakdown}" if not notes_value else f"[materials]{material_breakdown}\n{notes_value}"
 
     opportunity = PickupOpportunity(
         source_role='business' if role == 'business' else 'resident',
@@ -1973,10 +1983,9 @@ def api_create_opportunity():
         material_type=canonical_material,
         estimated_kg=estimated_kg,
         priority=priority,
-        pickup_pin=pickup_pin,
         location=profile_location,
         requested_window=requested_window or None,
-        notes=notes or None,
+        notes=notes_value,
         status='open',
     )
     db.session.add(opportunity)
@@ -1987,7 +1996,6 @@ def api_create_opportunity():
         "opportunity_id": opportunity.id,
         "status": opportunity.status,
         "priority": opportunity.priority,
-        "pickup_pin": pickup_pin,
         "location": profile_location,
     })
 
@@ -2102,7 +2110,6 @@ def api_my_assignments():
             "priority": opp.priority if opp else 'standard',
             "location": opp.location if opp else None,
             "distance_km": estimate_pickup_distance_km(opp.location) if opp else None,
-            "pickup_pin_required": bool(opp and opp.pickup_pin),
             "requested_window": opp.requested_window if opp else None,
         })
 
@@ -2160,11 +2167,11 @@ def api_submit_assignment(assignment_id):
     })
 
 
-@app.post('/api/assignments/<int:assignment_id>/confirm-pin')
+@app.post('/api/assignments/<int:assignment_id>/collect')
 @login_required
-def api_confirm_assignment_pin(assignment_id):
+def api_mark_assignment_collected(assignment_id):
     if not can_accept_opportunity_recycler(current_user):
-        return jsonify({"ok": False, "error": "Only recyclers can confirm pickup PIN"}), 403
+        return jsonify({"ok": False, "error": "Only recyclers can mark pickup collection"}), 403
 
     assignment = db.session.get(OpportunityAssignment, assignment_id)
     if not assignment:
@@ -2173,20 +2180,12 @@ def api_confirm_assignment_pin(assignment_id):
     if assignment.recycler_user_id != current_user.id:
         return jsonify({"ok": False, "error": "Not your assignment"}), 403
 
-    if assignment.status != 'accepted':
-        return jsonify({"ok": False, "error": "PIN confirmation is only allowed for accepted pickups"}), 409
+    if assignment.status not in ('accepted', 'in_transit'):
+        return jsonify({"ok": False, "error": "Collection update is only allowed for accepted pickups"}), 409
 
     opportunity = assignment.opportunity
-    if not opportunity or not opportunity.pickup_pin:
-        return jsonify({"ok": False, "error": "Pickup PIN not available for this assignment"}), 400
-
-    data = request.get_json(silent=True) or request.form
-    entered_pin = (data.get('pickup_pin') or '').strip()
-    if not entered_pin:
-        return jsonify({"ok": False, "error": "Pickup PIN is required"}), 400
-
-    if entered_pin != (opportunity.pickup_pin or '').strip():
-        return jsonify({"ok": False, "error": "Invalid pickup PIN"}), 400
+    if not opportunity:
+        return jsonify({"ok": False, "error": "Pickup opportunity not found"}), 400
 
     assignment.status = 'in_transit'
     opportunity.status = 'in_transit'
@@ -2480,25 +2479,14 @@ def swap():
 
 # -----------------------------------------------------------------
 # 7. APP "ENGINE" ROUTES (API & ACTIONS)
-# - API endpoints for activities, confirmations, QR generation and dashboard data.
+# - API endpoints for activities, confirmations, and dashboard data.
 # -----------------------------------------------------------------
 
-@app.route('/generate-qr')
-@login_required 
-def generate_qr():
-    # Require complete profile to generate QR
-    if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
-        return "Profile incomplete", 403 
-    
-    collector_id = current_user.hedera_account_id
-    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
-    qr.add_data(collector_id)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    img_io = io.BytesIO()
-    img.save(img_io, 'PNG')
-    img_io.seek(0)
-    return send_file(img_io, mimetype='image/png')
+
+@app.post('/verify-and-anchor/<int:request_id>')
+@login_required
+def verify_and_anchor(request_id):
+    return api_center_verify_assignment(request_id)
 
 
 @app.route('/api/activity', methods=['POST'])

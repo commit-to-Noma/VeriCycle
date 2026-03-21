@@ -402,7 +402,7 @@
     <div class="tech-card section-card token-flow-card">
         <h3 class="section-title">Token and Proof Flow</h3>
         <p class="token-flow-line"><strong>1. Accepted:</strong> Recycler secures the pickup assignment.</p>
-        <p class="token-flow-line"><strong>2. In Transit:</strong> Source PIN is confirmed for chain-of-custody.</p>
+        <p class="token-flow-line"><strong>2. In Transit:</strong> Recycler has collected materials and is en route.</p>
         <p class="token-flow-line"><strong>3. Submitted:</strong> Drop-off is sent to center verification queue.</p>
         <p class="token-flow-line"><strong>4. Verified:</strong> Center validates weight/material and creates activity.</p>
         <p class="token-flow-line"><strong>5. Anchored + Rewarded:</strong> Hedera logbook (HCS) and reward transfer (HTS) finalize proof.</p>
@@ -500,11 +500,10 @@
         <section class="tech-card action-center-card">
             <button class="primary-cta" id="trigger-deposit-btn">Trigger Recycling Event</button>
             <div class="tech-card" style="padding:0.85rem;">
-                <h3 style="margin:0 0 0.5rem 0;">Digital ID</h3>
-                <div class="qr-code-container" id="qr-code-container" style="text-align:center; min-height:185px; display:flex; align-items:center; justify-content:center; background:rgba(0, 200, 100, 0.05); border-radius:8px;">
-                    <div class="qr-placeholder" style="color:#64748b; font-size:0.9rem;">Click Generate to create your code</div>
+                <h3 style="margin:0 0 0.5rem 0;">Recycler Verification</h3>
+                <div style="color:#64748b; font-size:0.9rem; background:rgba(0, 200, 100, 0.05); border-radius:8px; padding:0.85rem;">
+                    Use your recycler account ID during center intake. Collection state changes are captured in your assignment timeline.
                 </div>
-                <button class="btn-primary" id="generate-btn" style="display:block; width:100%; margin-top:0.75rem;">Generate QR Code</button>
             </div>
         </section>
     </div>
@@ -513,8 +512,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const toastEl = document.getElementById('dashboard-toast');
-    const qrContainer = document.getElementById('qr-code-container');
-    const generateButton = document.getElementById('generate-btn');
     const oppContainer = document.getElementById('pickup-opportunities-list');
     const acceptedContainer = document.getElementById('accepted-pickups-list');
     let currentData = {};
@@ -675,12 +672,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const details = (row.status === 'accepted' || row.status === 'in_transit')
                     ? `
                         <div id="drop_${id}" class="drop-details">
-                            ${row.status === 'accepted' && row.pickup_pin_required ? `
-                                <input class="field" id="pickup_pin_${id}" type="text" maxlength="4" placeholder="Enter source PIN to start chain-of-custody">
-                                <button class="btn-primary confirm-pin" data-id="${id}">Confirm Source PIN</button>
+                            ${row.status === 'accepted' ? `
+                                <button class="btn-primary mark-collected" data-id="${id}">Mark Materials Collected</button>
                             ` : ''}
                             <input class="field" id="drop_weight_${id}" type="number" step="0.1" value="${weight}" placeholder="Actual weight (kg)">
-                            <button class="btn-primary submit-drop" data-id="${id}" data-material="${material}" ${row.status === 'accepted' ? 'disabled title="Confirm source PIN first"' : ''}>Submit to Center</button>
+                            <button class="btn-primary submit-drop" data-id="${id}" data-material="${material}" ${row.status === 'accepted' ? 'disabled title="Mark materials as collected first"' : ''}>Submit to Center</button>
                         </div>
                     `
                     : '';
@@ -741,25 +737,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function confirmPickupPin(id, pickupPin) {
+    async function markCollected(id) {
         try {
-            const res = await fetch(`/api/assignments/${id}/confirm-pin`, {
+            const res = await fetch(`/api/assignments/${id}/collect`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({ pickup_pin: pickupPin }),
+                body: JSON.stringify({ collected: true }),
             });
             const data = await res.json();
             if (!res.ok || !data.ok) {
-                showToast(data.error || 'Could not confirm pickup PIN', 'error');
+                showToast(data.error || 'Could not update collection status', 'error');
                 return;
             }
-            showToast('PIN confirmed. Pickup is now in transit.');
+            showToast('Collection confirmed. Pickup is now in transit.');
             loadAcceptedAssignments();
         } catch (e) {
-            showToast('Could not confirm pickup PIN', 'error');
+            showToast('Could not update collection status', 'error');
         }
     }
 
@@ -784,24 +780,10 @@ document.addEventListener('DOMContentLoaded', function() {
             submitDropoff(id, material, weight);
             return;
         }
-        const confirmPinBtn = event.target.closest('.confirm-pin');
-        if (!confirmPinBtn) return;
-        const id = Number(confirmPinBtn.dataset.id);
-        const pin = (document.getElementById(`pickup_pin_${id}`)?.value || '').trim();
-        confirmPickupPin(id, pin);
-    });
-
-    generateButton.addEventListener('click', () => {
-        if (!currentData.profile_complete) {
-            showToast('Complete profile before generating QR', 'error');
-            window.location.href = '/profile';
-            return;
-        }
-        qrContainer.innerHTML = '';
-        const qrImage = document.createElement('img');
-        qrImage.src = '/generate-qr?' + new Date().getTime();
-        qrImage.style.maxWidth = '100%';
-        qrContainer.appendChild(qrImage);
+        const markCollectedBtn = event.target.closest('.mark-collected');
+        if (!markCollectedBtn) return;
+        const id = Number(markCollectedBtn.dataset.id);
+        markCollected(id);
     });
 
     async function initializeDashboard() {

@@ -68,6 +68,9 @@
         border: 1px solid rgba(22,163,74,0.22);
         border-radius: 12px;
         padding: 1.1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
     }
     .pickup-cost-header {
         display: flex; align-items: center; gap: 0.5rem;
@@ -75,7 +78,7 @@
     }
     .pickup-cost-icon { font-size: 1.5rem; }
     .pickup-cost-title { font-weight: 700; color: #0b5d4a; font-size: 1rem; }
-    .pickup-cost-desc { color: #64748b; font-size: 0.86rem; margin: 0 0 0.7rem; }
+    .pickup-cost-desc { color: #64748b; font-size: 0.86rem; margin: 0; }
     .pickup-total-line {
         display: flex; justify-content: space-between;
         color: #374151; font-size: 0.87rem; margin-bottom: 0.35rem;
@@ -101,22 +104,83 @@
     .material-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 0.45rem;
+        gap: 1rem;
         margin-top: 0.35rem;
     }
-    .material-grid label {
-        display: flex;
-        align-items: center;
-        gap: 0.45rem;
+    .material-card {
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
         background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 0.42rem 0.5rem;
-        font-size: 0.82rem;
-        color: #374151;
+        color: #334155;
+        font-size: 0.88rem;
+        font-weight: 600;
+        position: relative;
+        overflow: hidden;
     }
-    .material-grid input[type="checkbox"] {
-        accent-color: #16a34a;
+    .material-card:hover {
+        border-color: #22c55e;
+    }
+    .weight-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.8rem;
+        margin-top: 0.35rem;
+    }
+    .weight-card {
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        background: #ffffff;
+        color: #334155;
+        font-weight: 600;
+        line-height: 1.2;
+        text-align: center;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .weight-card span {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    .tile-selected {
+        border: 2px solid #16a34a !important;
+        background-color: #f0fdf4;
+        font-weight: 600;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+        transform: translateY(-1px);
+    }
+    .tile-selected::after {
+        content: "";
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #16a34a;
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.16);
+        animation: tilePulse 0.55s ease;
+    }
+    .tile-burst {
+        animation: tileBurst 0.28s ease;
+    }
+    @keyframes tilePulse {
+        0% { transform: scale(0.6); opacity: 0.55; }
+        60% { transform: scale(1.25); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes tileBurst {
+        0% { transform: scale(0.98); }
+        45% { transform: scale(1.02); }
+        100% { transform: scale(1); }
     }
     .badge {
         display: inline-flex;
@@ -133,48 +197,11 @@
         background: #dcfce7;
         color: #166534;
     }
-    .heatmap-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.75rem 0.85rem;
-        margin-top: 0.75rem;
-        color: #475569;
-        font-size: 0.84rem;
-        line-height: 1.5;
-    }
-    .heat-line {
-        display: block;
-        font-weight: 600;
-    }
-    .heat-line.hot { color: #b91c1c; }
-    .heat-line.warm { color: #b45309; }
-    .heat-line.cool { color: #166534; }
-    .heat-line.profile { color: #1d4ed8; margin-top: 0.3rem; }
-    .system-note {
+    .form-subtitle {
         margin-top: 0.55rem;
         font-size: 0.82rem;
         color: #475569 !important;
-        text-align: center;
-    }
-    .pipeline-track {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 0.45rem;
-        margin-top: 0.8rem;
-    }
-    .pipeline-step {
-        text-align: center;
-        font-size: 0.74rem;
-        font-weight: 700;
-        border-radius: 999px;
-        padding: 0.26rem 0.5rem;
-        background: #e2e8f0;
-        color: #475569;
-    }
-    .pipeline-step.active {
-        background: #dcfce7;
-        color: #166534;
+        text-align: left;
     }
     /* Success card */
     #success-card h2 { color: #16a34a !important; }
@@ -231,6 +258,11 @@
         transition: background 0.15s;
     }
     .btn-primary:hover, .btn-primary-large:hover { background: #15803d !important; }
+    @media (max-width: 900px) {
+        .weight-grid {
+            grid-template-columns: 1fr;
+        }
+    }
     @media (max-width: 720px) { .pickup-form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -256,7 +288,7 @@
 
                 <div class="pickup-form">
                     <h3>Pickup Opportunity Details</h3>
-                    <p class="system-note">Businesses request pickups • Recyclers earn ECO • Centers verify and anchor proof</p>
+                    <p class="form-subtitle">Select the materials you need collected.</p>
 
                     <div class="form-group">
                         <label>Pickup Location</label>
@@ -266,23 +298,22 @@
                     <div class="form-group">
                         <label for="material">Material Type:</label>
                         <div id="material" class="material-grid">
-                            <label><input type="checkbox" value="Paper & Cardboard" checked> Paper & Cardboard</label>
-                            <label><input type="checkbox" value="Plastics" checked> Plastics</label>
-                            <label><input type="checkbox" value="Glass"> Glass</label>
-                            <label><input type="checkbox" value="Metals"> Metals</label>
-                            <label><input type="checkbox" value="E-Waste"> E-Waste</label>
-                            <label><input type="checkbox" value="Organic Waste"> Organic Waste</label>
-                            <label><input type="checkbox" value="Mixed Recyclables"> Mixed Recyclables</label>
+                            <div class="material-card tile-selected" data-value="Paper">Paper & Cardboard</div>
+                            <div class="material-card tile-selected" data-value="Plastic">Plastics</div>
+                            <div class="material-card" data-value="Glass">Glass</div>
+                            <div class="material-card" data-value="Metal">Metals</div>
+                            <div class="material-card" data-value="E-Waste">E-Waste</div>
+                            <div class="material-card" data-value="Organic">Organic</div>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="weight">Estimated Weight:</label>
-                        <select id="weight">
-                            <option>0-15 kg (1-2 bags)</option>
-                            <option>15-50 kg (2-5 bags)</option>
-                            <option>50 kg+ (Requires vehicle)</option>
-                        </select>
+                        <div id="weight" class="weight-grid">
+                            <div class="weight-card tile-selected" data-label="0-15 kg (1-2 bags)" data-kg="12">0-15 kg<br><span>(1-2 bags)</span></div>
+                            <div class="weight-card" data-label="15-50 kg (2-5 bags)" data-kg="32">15-50 kg<br><span>(2-5 bags)</span></div>
+                            <div class="weight-card" data-label="50 kg+ (Vehicle required)" data-kg="55">50 kg+<br><span>Vehicle required</span></div>
+                        </div>
                     </div>
                 </div>
 
@@ -298,10 +329,6 @@
                         <p id="previewWeight">0-15 kg (1-2 bags)</p>
                     </div>
 
-                    <p class="pickup-cost-desc">
-                        Pickup requests help connect recyclable waste to nearby recyclers and verified centers.
-                    </p>
-
                     <div class="pickup-total-final">
                         <span>Pickup Priority:</span>
                         <span id="priorityBadge" class="badge normal">Standard Pickup</span>
@@ -311,20 +338,6 @@
                         <span id="requestStatusLabel">Ready to Publish</span>
                     </div>
 
-                    <div class="heatmap-card">
-                        <span class="heat-line hot">High stress: Randburg logistics backlog</span>
-                        <span class="heat-line warm">Medium stress: Sandton handoff pressure</span>
-                        <span class="heat-line cool">Low stress: Roodepoort stable flow</span>
-                        <span class="heat-line profile" id="heatmap-profile-zone">Profile zone focus: --</span>
-                    </div>
-
-                    <div class="pipeline-track" id="pipelineTrack">
-                        <span class="pipeline-step active" data-stage="submitted">Submitted</span>
-                        <span class="pipeline-step" data-stage="in_transit">In Transit</span>
-                        <span class="pipeline-step" data-stage="verified">Verified</span>
-                        <span class="pipeline-step" data-stage="anchored">Anchored</span>
-                    </div>
-                    
                     <button class="btn-primary-large btn-form" id="confirm-pickup-btn">
                         {% if current_effective_role == 'resident' %}Create Community Pickup Request{% else %}Confirm Pickup Request{% endif %}
                     </button>
@@ -348,13 +361,11 @@
                 Request location: <span id="success-neighborhood">Sandton</span>
             </h3>
 
-            <p class="success-meta" style="margin-top:-1.6rem;">
-                Source PIN for chain-of-custody handoff: <strong id="success-pickup-pin">----</strong>
-            </p>
-
             <p class="success-meta">
                 Routed to nearby recyclers • Awaiting verification • Will be anchored on Hedera
             </p>
+
+            <p class="form-note">Track this request in your Business Hub.</p>
 
             {% if current_effective_role == 'business' %}
                 <a href="{{ url_for('business_dashboard') }}" class="btn-primary-large">Return to Business Hub</a>
@@ -417,8 +428,6 @@
             const confirmSlotButton = document.getElementById('confirm-slot-btn');
             const pickupCard = document.getElementById('pickup-card');
             const successCard = document.getElementById('success-card');
-            const materialCheckboxes = document.querySelectorAll('#material input[type="checkbox"]');
-            const weightSelect = document.getElementById('weight');
             const summaryNeighborhood = document.getElementById('summary-neighborhood');
             const previewMaterial = document.getElementById('previewMaterial');
             const previewWeight = document.getElementById('previewWeight');
@@ -426,6 +435,12 @@
             const matchingState = document.getElementById('matching-state');
             const priorityBadge = document.getElementById('priorityBadge');
             const requestStatusLabel = document.getElementById('requestStatusLabel');
+
+            const materialTiles = document.querySelectorAll('.material-card');
+            const weightTiles = document.querySelectorAll('.weight-card');
+            let selectedMaterials = Array.from(document.querySelectorAll('.material-card.tile-selected')).map((card) => card.dataset.value);
+            let selectedWeightLabel = document.querySelector('.weight-card.tile-selected')?.dataset.label || '0-15 kg (1-2 bags)';
+            let selectedWeightKg = Number(document.querySelector('.weight-card.tile-selected')?.dataset.kg || 12);
 
             // --- NEW: DYNAMIC DATE LOGIC ---
             try {
@@ -451,28 +466,19 @@
             }
 
             function syncRequestSummary() {
-                const selectedMaterials = Array.from(materialCheckboxes)
-                    .filter((c) => c.checked)
-                    .map((c) => c.value);
-
                 if (previewMaterial) {
-                    previewMaterial.innerText = selectedMaterials.length ? selectedMaterials.join(', ') : 'No material selected';
+                    previewMaterial.innerText = selectedMaterials.length ? selectedMaterials.join(', ') : 'None selected';
                 }
-                if (previewWeight && weightSelect) {
-                    previewWeight.innerText = weightSelect.value;
+                if (previewWeight) {
+                    previewWeight.innerText = selectedWeightLabel;
                 }
                 if (summaryNeighborhood && pickupLocation) {
                     const locationLabel = pickupLocation.textContent.replace('📍 Pickup Location: ', '').trim();
                     summaryNeighborhood.textContent = `📍 ${locationLabel}`;
-                    const heatmapProfileZone = document.getElementById('heatmap-profile-zone');
-                    if (heatmapProfileZone) {
-                        heatmapProfileZone.textContent = `Profile zone focus: ${locationLabel}`;
-                    }
                 }
 
-                if (priorityBadge && weightSelect) {
-                    const value = weightSelect.value;
-                    if (value.includes('50 kg+')) {
+                if (priorityBadge) {
+                    if (selectedWeightLabel.includes('50 kg+')) {
                         priorityBadge.innerText = 'Center Priority • Vehicle Required';
                         priorityBadge.className = 'badge heavy';
                         if (requestStatusLabel) requestStatusLabel.innerText = 'Center Priority';
@@ -484,18 +490,38 @@
                 }
             }
 
-            function updatePipeline(status) {
-                document.querySelectorAll('#pipelineTrack .pipeline-step').forEach((step) => {
-                    step.classList.remove('active');
-                });
-                const target = document.querySelector(`#pipelineTrack .pipeline-step[data-stage="${status}"]`);
-                if (target) target.classList.add('active');
+            syncRequestSummary();
+            function animateTileFeedback(tile) {
+                tile.classList.remove('tile-burst');
+                // Force reflow so repeated clicks replay the animation.
+                void tile.offsetWidth;
+                tile.classList.add('tile-burst');
+                setTimeout(() => tile.classList.remove('tile-burst'), 320);
             }
 
-            syncRequestSummary();
-            materialCheckboxes.forEach((cb) => cb.addEventListener('change', syncRequestSummary));
-            if (weightSelect) weightSelect.addEventListener('change', syncRequestSummary);
-            updatePipeline('submitted');
+            materialTiles.forEach((tile) => {
+                tile.addEventListener('click', () => {
+                    tile.classList.toggle('tile-selected');
+                    animateTileFeedback(tile);
+                    const value = tile.dataset.value;
+                    if (selectedMaterials.includes(value)) {
+                        selectedMaterials = selectedMaterials.filter((v) => v !== value);
+                    } else {
+                        selectedMaterials.push(value);
+                    }
+                    syncRequestSummary();
+                });
+            });
+            weightTiles.forEach((tile) => {
+                tile.addEventListener('click', () => {
+                    weightTiles.forEach((t) => t.classList.remove('tile-selected'));
+                    tile.classList.add('tile-selected');
+                    animateTileFeedback(tile);
+                    selectedWeightLabel = tile.dataset.label;
+                    selectedWeightKg = Number(tile.dataset.kg || 12);
+                    syncRequestSummary();
+                });
+            });
 
             // --- 2. Open the modal ---
             pickupButton.addEventListener('click', function(e) {
@@ -528,20 +554,15 @@
 
             // --- 4. NEW: The Confirmation Logic ---
             confirmSlotButton.addEventListener('click', async function() {
-                const weightSelect = document.getElementById('weight');
-                const selectedMaterials = Array.from(materialCheckboxes)
-                    .filter((c) => c.checked)
-                    .map((c) => c.value);
-
                 const location = '{{ current_user.address or "" }}';
-                const material_type = selectedMaterials.length ? selectedMaterials.join(', ') : 'Mixed Recyclables';
+                let material_type = 'Mixed Recyclables';
+                if (selectedMaterials.length === 1) {
+                    material_type = selectedMaterials[0];
+                }
+                const material_breakdown = selectedMaterials.length > 1 ? selectedMaterials.join(', ') : '';
 
-                let estimated_kg = 10;
-                if (weightSelect.value.includes('0-15 kg')) estimated_kg = 12;
-                if (weightSelect.value.includes('15-50 kg')) estimated_kg = 32;
-                if (weightSelect.value.includes('50 kg+')) estimated_kg = 55;
-
-                const weight_category = weightSelect.value;
+                const estimated_kg = selectedWeightKg;
+                const weight_category = selectedWeightLabel;
 
                 const selectedSlot = document.querySelector('input[name="slot"]:checked');
                 let requested_window = 'Standard window';
@@ -553,7 +574,6 @@
                 confirmSlotButton.disabled = true;
                 confirmSlotButton.textContent = 'Matching recyclers nearby...';
                 if (matchingState) matchingState.style.display = 'block';
-                updatePipeline('in_transit');
 
                 try {
                     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -565,6 +585,8 @@
                         },
                         body: JSON.stringify({
                             material_type,
+                            selected_materials: selectedMaterials,
+                            material_breakdown,
                             estimated_kg,
                             weight_category,
                             location,
@@ -583,19 +605,12 @@
                     if (successNeighborhood && data.location) {
                         successNeighborhood.textContent = data.location;
                     }
-                    const successPin = document.getElementById('success-pickup-pin');
-                    if (successPin) {
-                        successPin.textContent = data.pickup_pin || 'Not available';
-                    }
-
                     closeModal();
                     pickupCard.style.display = 'none';
                     successCard.style.display = 'block';
-                    updatePipeline('submitted');
                 } catch (err) {
                     console.error(err);
                     alert('Could not create pickup opportunity');
-                    updatePipeline('submitted');
                 } finally {
                     confirmSlotButton.disabled = false;
                     confirmSlotButton.textContent = 'Confirm Request Window';

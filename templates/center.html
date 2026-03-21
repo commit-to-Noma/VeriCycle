@@ -234,6 +234,17 @@ body {
 .center-token-flow strong {
     color: #0b5d4a;
 }
+.active-job-card {
+    margin-top: 0.75rem;
+    border: 1px solid rgba(22, 163, 74, 0.22);
+    border-radius: 10px;
+    padding: 0.75rem;
+    background: rgba(240, 253, 244, 0.55);
+}
+.active-job-card h3 {
+    margin: 0 0 0.35rem;
+    color: #0b5d4a !important;
+}
 
 /* Status badges */
 .status-badge {
@@ -302,14 +313,14 @@ body {
         <div class="center-primary-column">
             <article class="card flow-card flow-card-direct">
                 <span class="section-kicker">Direct Deposit Lane</span>
-                <h3>Direct Recycler Deposit Verification</h3>
-                <p>Scan a recycler QR code, capture material details, and publish a verified event with transparent payout math.</p>
+                <h3>Center Verification Control</h3>
+                <p>Scan recycler ID, inspect the active pickup, and finalize verification plus anchoring from this lane.</p>
 
                 <form id="verify-form" action="{{ url_for('confirm_dropoff') }}" method="POST" class="verify-form">
                     <input type="hidden" id="collector-id-scan" name="collector_id" value="0.0.7267109">
 
                     <button type="button" class="btn-primary-large btn-form" id="scan-btn">
-                        Scan Recycler QR Code
+                        Scan Recycler ID
                     </button>
 
                     <div id="scan-results" style="display: none;">
@@ -363,6 +374,11 @@ body {
                 <p>Review recycler-submitted pickup jobs from Business Hub and Community Hub, then verify each event into proof and reward tracks.</p>
                 <div id="submitted-assignments-list" class="center-queue-list">
                     <p>Loading submitted pickups...</p>
+                </div>
+                <div class="active-job-card" id="active-job-card" style="display:none;">
+                    <h3>Active Pickup</h3>
+                    <p id="active-job-text">32kg Plastics - Randburg</p>
+                    <button class="btn-primary" id="active-verify-btn" style="margin-top:0.5rem;">Verify &amp; Anchor</button>
                 </div>
             </article>
 
@@ -428,7 +444,7 @@ body {
                     <li><strong>Validate:</strong> Check material type, weight, and queue context.</li>
                     <li><strong>Finalize:</strong> Publish verified event with reward-ready metadata.</li>
                 </ol>
-                <p class="hub-record-meta">This panel is tuned for judge visibility: role guardrails, payout traceability, and a clear handoff into proof artifacts.</p>
+                <p class="hub-record-meta">Center verification is the source-of-truth for status, anchoring, and reward progression.</p>
             </article>
 
             <article class="card center-guide-card-muted">
@@ -478,6 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const rewardTier = document.getElementById('reward-tier');
     const rewardTotal = document.getElementById('reward-total');
     let calculatedTotal = 0;
+    let selectedActiveAssignmentId = null;
 
     function escapeHtml(value) {
         return String(value || '')
@@ -533,8 +550,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="center-queue-item-meta">Pipeline reward: ${reward} ECO</div>
                         <div class="center-queue-item-meta">${location}</div>
                         <div class="center-queue-item-meta">${escapeHtml(submittedAt)}</div>
+                        <button class="btn-primary" onclick="setActivePickup(${Number(row.assignment_id)}, '${weight}', '${material.replace(/'/g, "&#39;")}', '${location.replace(/'/g, "&#39;")}')" style="margin-top: 0.65rem;">
+                            Set as Active Pickup
+                        </button>
                         <button class="btn-primary" onclick="verifySubmittedAssignment(${Number(row.assignment_id)})" style="margin-top: 0.65rem;">
-                            Verify Submitted Record
+                            Verify &amp; Anchor
                         </button>
                     </div>
                 `;
@@ -547,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function verifySubmittedAssignment(assignmentId) {
         try {
-            const res = await fetch(`/api/center/assignments/${assignmentId}/verify`, {
+            const res = await fetch(`/verify-and-anchor/${assignmentId}`, {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
@@ -566,6 +586,19 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Could not verify submitted pickup');
         }
     }
+
+    function setActivePickup(assignmentId, weight, material, location) {
+        selectedActiveAssignmentId = Number(assignmentId);
+        const card = document.getElementById('active-job-card');
+        const text = document.getElementById('active-job-text');
+        const verifyButton = document.getElementById('active-verify-btn');
+        if (!card || !text || !verifyButton) return;
+        text.textContent = `${weight}kg ${material} - ${location}`;
+        card.style.display = 'block';
+        verifyButton.onclick = () => verifySubmittedAssignment(selectedActiveAssignmentId);
+    }
+
+    window.setActivePickup = setActivePickup;
 
     window.verifySubmittedAssignment = verifySubmittedAssignment;
 
