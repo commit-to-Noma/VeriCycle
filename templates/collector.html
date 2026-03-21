@@ -1,1252 +1,724 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-        <div class="dashboard-header">
+<style>
+    .collector-shell {
+        max-width: 1240px;
+        margin: 0 auto;
+    }
+    .collector-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.55rem;
+        border-radius: 999px;
+        background: #f8fafc;
+        border: 1px solid #dbe4ea;
+        color: #64748b;
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.14);
+    }
+    .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    .kpi-card {
+        min-height: 228px;
+        padding: 1.35rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        gap: 0.45rem;
+    }
+    .kpi-head {
+        margin: 0;
+        color: #64748b;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+    }
+    .kpi-number {
+        margin: 0;
+        color: #0b5d4a;
+        font-size: 2rem;
+        font-weight: 500;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .tooltip-help {
+        display: inline-flex;
+        width: 17px;
+        height: 17px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 1px solid #cbd5e1;
+        background: #e5e7eb;
+        color: #64748b;
+        font-size: 0.72rem;
+        cursor: help;
+        position: relative;
+        margin-left: 0.3rem;
+    }
+    .tooltip-help::after {
+        content: attr(data-tip);
+        position: absolute;
+        left: 50%;
+        top: calc(100% + 8px);
+        transform: translateX(-50%);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        background: #ffffff;
+        border: 1px solid #dbe4ea;
+        border-radius: 8px;
+        padding: 0.5rem 0.65rem;
+        min-width: 250px;
+        max-width: 300px;
+        color: #334155;
+        font-size: 0.76rem;
+        line-height: 1.35;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+        z-index: 20;
+    }
+    .tooltip-help:hover::after { opacity: 1; }
+    .ring-wrap { width: 142px; height: 142px; position: relative; }
+    .ring-svg { width: 142px; height: 142px; transform: rotate(-90deg); }
+    .ring-bg { fill: none; stroke: #e2e8f0; stroke-width: 12; }
+    .ring-fill { fill: none; stroke: #16a34a; stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 0.65s ease; }
+    .ring-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        width: 100%;
+    }
+    .ring-main { color: #0b5d4a; font-size: 0.92rem; font-weight: 500; }
+    .ring-sub { color: #64748b; font-size: 0.78rem; font-weight: 600; }
+
+    .section-card { padding: 1rem; margin-top: 0.9rem; }
+    .section-title { margin: 0 0 0.55rem 0; color: #0b5d4a; }
+    .list-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 0.65rem;
+        background: #ffffff;
+    }
+    .list-item:not(:last-child) { border-bottom: 1px solid #e2e8f0; }
+    .item-top { display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; }
+    .item-primary { margin: 0; color: #0f172a; font-size: 1rem; font-weight: 700; }
+    .item-meta { margin: 0.15rem 0 0 0; color: #64748b; font-size: 0.83rem; }
+
+    .drop-details {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.28s ease;
+    }
+    .drop-details.open {
+        max-height: 220px;
+        margin-top: 0.7rem;
+    }
+    .field {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.6rem;
+        margin-bottom: 0.5rem;
+        background: #f8fafc;
+        color: #1e293b;
+    }
+    .field:focus {
+        outline: none;
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+    .table-wrap table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: collapse;
+    }
+    .table-wrap th,
+    .table-wrap td {
+        padding: 0.7rem;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+    }
+    .table-wrap th {
+        background: #f1f5f9;
+        color: #334155;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+    .status-pill {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 0.2rem 0.58rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+    .status-verified { background: #dbeafe; color: #1d4ed8; }
+    .status-anchored { background: #dcfce7; color: #15803d; }
+    .status-pending { background: #fef9c3; color: #a16207; }
+    .hedera-link { color: #16a34a !important; font-weight: 700; text-decoration: none; }
+
+    .bottom-grid {
+        display: grid;
+        grid-template-columns: 60% 40%;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .faq-card {
+        background: #eef2f1;
+        border: 1px solid #d7e0dc;
+        border-radius: 12px;
+        padding: 1rem;
+    }
+    .faq-item {
+        border: 1px solid #dbe4ea;
+        border-radius: 8px;
+        margin-top: 0.55rem;
+        background: #ffffff;
+    }
+    .faq-item summary {
+        cursor: pointer;
+        padding: 0.65rem 0.75rem;
+        color: #0f172a;
+        font-weight: 600;
+    }
+    .faq-item p {
+        margin: 0;
+        padding: 0 0.75rem 0.75rem 0.75rem;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    .action-center-card {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .primary-cta {
+        width: 100%;
+        border: none;
+        border-radius: 12px;
+        padding: 1rem 1.1rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #fff;
+        background: #16a34a;
+        cursor: pointer;
+        box-shadow: 0 12px 24px rgba(22, 163, 74, 0.24);
+    }
+
+    .toast-wrap {
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        pointer-events: none;
+        z-index: 1200;
+    }
+    .toast {
+        opacity: 0;
+        transform: translateY(-8px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        background: #16a34a;
+        color: #fff;
+        border-radius: 999px;
+        padding: 0.65rem 1rem;
+        font-weight: 700;
+        box-shadow: 0 10px 20px rgba(22, 163, 74, 0.28);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: #64748b; }
+
+    @media (max-width: 1100px) {
+        .kpi-row { grid-template-columns: repeat(2, 1fr); }
+        .bottom-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+        .kpi-row { grid-template-columns: 1fr; }
+        .item-top { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+
+<div class="toast-wrap"><div id="dashboard-toast" class="toast"></div></div>
+
+<div class="collector-shell">
+    <div class="collector-header">
+        <div>
             <h2>Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
-            <p><strong>Recycler Hub</strong> · Find recycling opportunities, submit recycling events, grow your Rewards Wallet, and build proof of income.</p>
+            <p><strong>Recycler Hub</strong> · Find jobs, record drop-offs, and track verified recycling impact.</p>
+        </div>
+        <div class="status-chip" id="system-status-chip" title="5 Agents Online">
+            <span class="status-dot" id="system-health-dot"></span>
+            <span id="system-health-text">System Operational</span>
+        </div>
+    </div>
+
+    <div class="kpi-row">
+        <div class="tech-card kpi-card">
+            <p class="kpi-head">Current Balance</p>
+            <p class="kpi-number" id="kpi-ecocoin">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</p>
+            <a href="/wallet" class="btn-secondary" style="text-decoration:none; border-radius:999px; padding:0.44rem 0.8rem;">View Wallet</a>
         </div>
 
-        <!-- Agent Status: System Health Summary -->
-        <div class="recycler-health-row">
-            <div class="health-status-mini card">
-                <span class="health-dot health-dot-ok" id="system-health-dot"></span>
-                <span id="system-health-text" style="font-weight:600;">Checking…</span>
-                <span id="system-health-detail" style="color:#888; font-size:0.8rem; margin-left:0.5rem;"></span>
-            </div>
+        <div class="tech-card kpi-card">
+            <p class="kpi-head">Total Recycled</p>
+            <p class="kpi-number" id="kpi-kg">{{ "{:,.1f}".format(total_recycled_completed or 0) }} kg</p>
+            <p class="item-meta">Completed and verified recycler activity</p>
         </div>
 
-        <section class="recycler-shell">
-            <div class="recycler-hero-row">
-                <div class="kpi-card">
-                    <h4>Current Balance</h4>
-                    <p class="kpi-value" id="kpi-ecocoin">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</p>
-                    <a href="/wallet" class="btn-modern-pill">View Wallet</a>
-                </div>
-
-                <div class="kpi-card metric-card">
-                    <h3>Total Kilograms Recycled</h3>
-                    <p class="kpi-value" id="kpi-kg">--</p>
-                </div>
-
-                <div class="chart-card metric-card">
-                    <h3>Personal Goal</h3>
-                    <p class="chart-label" id="personal-goal-label">-- / -- kg</p>
-
-                    <div class="chart-canvas-container">
-                        <span class="chart-percentage" id="personal-percent">--%</span>
-                        <canvas id="personalGoalChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-card metric-card">
-                    <h3>
-                        Neighborhood Goal
-                        <span class="tooltip" data-tooltip="Your neighborhood (Sandton) is a high-activity area, so you earn a +2.5% bonus on Rewards Wallet payouts!">ⓘ</span>
-                    </h3>
-                    <p class="chart-label" id="neighborhood-goal-label">-- / -- kg</p>
-
-                    <div class="chart-canvas-container">
-                        <span class="chart-percentage" id="neighborhood-percent">--%</span>
-                        <canvas id="neighborhoodGoalChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="recycler-main-grid">
-
-                <!-- Current Proof Flow Panel -->
-                <div class="card recycler-proof-flow-card">
-                    <h3>Current Proof Flow</h3>
-                    <p class="mockup-subtitle">Your recycling event follows one trust ladder: Submitted, Verified, Anchored, Rewarded, and Proof Ready.</p>
-                    <div class="proof-flow-steps">
-                        <div class="proof-step proof-step-done">
-                            <span class="proof-step-num">1</span>
-                            <div class="proof-step-body">
-                                <strong>Submitted</strong>
-                                <span>Job accepted and material submission captured.</span>
-                            </div>
-                        </div>
-                        <div class="proof-step proof-step-active">
-                            <span class="proof-step-num">2</span>
-                            <div class="proof-step-body">
-                                <strong>Verified</strong>
-                                <span>Center verification confirms material and weight.</span>
-                            </div>
-                        </div>
-                        <div class="proof-step">
-                            <span class="proof-step-num">3</span>
-                            <div class="proof-step-body">
-                                <strong>Anchored</strong>
-                                <span>Trusted event evidence is linked on Hedera.</span>
-                            </div>
-                        </div>
-                        <div class="proof-step">
-                            <span class="proof-step-num">4</span>
-                            <div class="proof-step-body">
-                                <strong>Rewarded</strong>
-                                <span>Reward outcome is recorded with settlement evidence.</span>
-                            </div>
-                        </div>
-                        <div class="proof-step">
-                            <span class="proof-step-num">5</span>
-                            <div class="proof-step-body">
-                                <strong>Proof Ready</strong>
-                                <span>Proof bundle is ready to inspect and download.</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card recycler-actions-card" id="pickup-opportunities-card">
-                    <h3>Open Pickup Opportunities</h3>
-                    <p class="mockup-subtitle">Find available recycling requests from businesses and communities and accept the next live pickup job.</p>
-                    <div id="pickup-opportunities-list">
-                        <p>Loading opportunities...</p>
-                    </div>
-                </div>
-
-                <div class="card recycler-actions-card" id="accepted-pickups-card">
-                    <h3>Accepted Pickup Jobs</h3>
-                    <p class="mockup-subtitle">Track accepted jobs and submit collected materials for Verification Center review.</p>
-                    <div id="accepted-pickups-list">
-                        <p>Loading accepted jobs...</p>
-                    </div>
-                </div>
-
-                <div class="card recycler-ledger" id="activity-section">
-                    <h3>Verified Events</h3>
-                    <p class="mockup-subtitle">Your Verified, Anchored, Rewarded, and Proof Ready records with Hedera links.</p>
-
-                    <table id="activity-table" class="event-table">
-                        <tr>
-                            <th>Date/Time</th>
-                            <th>Description</th>
-                            <th>Amount</th>
-                            <th>Settlement</th>
-                            <th>Proof Bundle</th>
-                            <th>Hedera TX</th>
-                        </tr>
-                        <tbody id="activity-tbody">
-                            {% for act in activities %}
-                                {% set display_status = act.status or act.verified_status %}
-                                {% set status_raw = (display_status or '')|string %}
-                                {% set status_lower = status_raw|lower %}
-                                {% set status_label = 'Hedera delayed (retry)' if ('pending' in status_lower and 'hedera' in status_lower) else display_status %}
-                                {% set hidden = status_lower in ['failed', 'rejected'] %}
-                                {% set proof_final = act.logbook_status in ['anchored', 'offchain_final', 'demo_skipped'] %}
-                                <tr class="activity-row {% if hidden %}hidden-status{% endif %}" data-status="{{ display_status }}">
-                                    <td>{{ act.timestamp }}</td>
-                                    <td>{{ act.desc }}</td>
-                                    <td>{{ act.amount }}</td>
-                                    <td>
-                                        {% if hidden %}
-                                            <span class="status-muted">{{ status_label }} <span class="status-note">(hidden)</span></span>
-                                        {% elif proof_final and act.logbook_status == 'anchored' %}
-                                            <span class="status-badge status-badge-paid">Anchored</span>
-                                        {% elif proof_final and act.logbook_status == 'offchain_final' %}
-                                            <span class="status-badge status-badge-fallback">Fallback (Off-chain final)</span>
-                                        {% elif proof_final and act.logbook_status == 'demo_skipped' %}
-                                            <span class="status-badge status-badge-fallback">Fallback (Demo skipped)</span>
-                                        {% else %}
-                                            {{ status_label }}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if act.proof_bundle_url %}
-                                            <a href="{{ act.proof_bundle_url }}">Download Proof</a>
-                                        {% elif act.id %}
-                                            <a href="/api/proof-bundle/{{ act.id }}">Download Proof</a>
-                                        {% else %}
-                                            —
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if act.hedera_tx_id %}
-                                            <div>Anchor: <a href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
-                                        {% elif act.logbook_status == "demo_skipped" %}
-                                            Demo mode: Hedera skipped
-                                        {% elif act.logbook_status == "offchain_final" %}
-                                            On-chain anchor: Pending/Unavailable
-                                            <form method="post" action="/admin/retry-logbook/{{ act.id }}" class="inline-retry-form">
-                                                <button type="submit" class="btn-secondary btn-compact">Retry Hedera Log</button>
-                                            </form>
-                                        {% elif demo_mode and ((not act.logbook_status) or act.logbook_status == "pending") %}
-                                            Demo mode: processing...
-                                        {% elif act.logbook_status == "failed" or act.pipeline_stage == "log_failed" %}
-                                            On-chain anchor: Failed
-                                            <form method="post" action="/admin/retry-logbook/{{ act.id }}" class="inline-retry-form">
-                                                <button type="submit" class="btn-secondary btn-compact">Retry Hedera Log</button>
-                                            </form>
-                                        {% elif not act.hedera_tx_id %}
-                                            On-chain anchor: Pending/Unavailable
-                                        {% else %}
-                                            —
-                                        {% endif %}
-                                        {% if act.reward_tx_id %}
-                                            <div class="tx-subline">Reward: <a href="https://hashscan.io/testnet/transaction/{{ act.reward_tx_id }}" target="_blank" rel="noopener">View on Hedera</a></div>
-                                        {% elif act.reward_status == "finalized_no_transfer" %}
-                                            <div class="tx-subline">Reward: {{ reward_status_label(act.reward_status, act.reward_last_error, act.pipeline_stage) }}</div>
-                                        {% elif act.pipeline_stage in ["rewarded", "attested"] %}
-                                            <div class="tx-subline">Reward: {{ reward_status_label(act.reward_status, act.reward_last_error, act.pipeline_stage) or 'Reward pending' }}</div>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card recycler-actions-card">
-                    <h3>Quick Actions</h3>
-                    <p class="mockup-subtitle">Trigger recycling events, review live pickup demand, and monitor proof-of-income records.</p>
-                    <div class="recycler-action-stack">
-                        <button class="btn-primary" id="trigger-deposit-btn">
-                            Trigger Recycling Event
-                        </button>
-                        <a href="#pickup-opportunities-card" class="btn-secondary">View Open Pickup Opportunities</a>
-                        <a href="{{ url_for('swap') }}" class="btn-secondary">Open Wallet & Exchange</a>
-                        <p class="mockup-subtitle">Recycler Hub → Verification Center → Hedera proof → Reward payout → Compliance</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    <!-- This is the new 2-column QR card -->
-    <div class="card">
-        <div class="qr-grid">
-
-            <div class="instructions">
-                <h3>How to verify a drop-off</h3>
-                <ol>
-                    <li>Press the "Generate" button below.</li>
-                    <li>Show your unique QR code to the recycling center.</li>
-                    <li>The center will scan your code and weigh your materials.</li>
-                    <li>Your reward will be deposited instantly!</li>
-                </ol>
-                <button class="btn-primary" id="generate-btn">Generate Drop-off QR Code</button>
-            </div>
-            
-            <div class="qr-code-container" id="qr-code-container">
-                <div class="qr-placeholder">
-                    Click "Generate" to create your code
-                </div>
-            </div>
-
-        </div> </div>
-
-    
-
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const demoMode = {{ 'true' if demo_mode else 'false' }};
-        const faqPanels = Array.from(document.querySelectorAll('.faq-accordion details'));
-        faqPanels.forEach((panel) => {
-            panel.addEventListener('toggle', () => {
-                if (!panel.open) return;
-                faqPanels.forEach((other) => {
-                    if (other !== panel) other.open = false;
-                });
-            });
-        });
-        
-        // --- 1. GLOBAL VARIABLES ---
-        const generateButton = document.getElementById('generate-btn');
-        const qrContainer = document.getElementById('qr-code-container');
-        let personalChart = null;
-        let neighborhoodChart = null;
-        let currentData = {}; 
-        let pendingAnim = null; // holds pending animation values until modal is closed
-
-        function normalizeTimelineData(data) {
-            const normalized = data || {};
-            const source = Array.isArray(normalized.timeline)
-                ? normalized.timeline
-                : (Array.isArray(normalized.activities) ? normalized.activities : []);
-            normalized.timeline = source;
-            normalized.activities = source;
-            return normalized;
-        }
-
-        // --- 2. ANIMATION FUNCTION ---
-        function animateValue(element, start, end, duration, suffix = '', decimals = 0) {
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                let currentValue = progress * (end - start) + start;
-                element.textContent = currentValue.toFixed(decimals) + suffix;
-                if (progress < 1) window.requestAnimationFrame(step);
-            };
-            window.requestAnimationFrame(step);
-        }
-
-        // Smooth-scroll helper (animates scroll to top over `duration` ms)
-        function smoothScrollToTop(duration = 350) {
-            const start = document.documentElement.scrollTop || document.body.scrollTop || 0;
-            if (start === 0) return;
-            const startTime = performance.now();
-            const step = (now) => {
-                const elapsed = now - startTime;
-                const t = Math.min(1, elapsed / duration);
-                // easeOutCubic
-                const eased = 1 - Math.pow(1 - t, 3);
-                const current = Math.round(start * (1 - eased));
-                window.scrollTo(0, current);
-                if (t < 1) requestAnimationFrame(step);
-                else {
-                    window.scrollTo(0, 0);
-                }
-            };
-            requestAnimationFrame(step);
-        }
-
-        // Animate scrollTop for any element (works for documentElement/body as well)
-        function smoothScrollElementToTop(el, duration = 350) {
-            if (!el) return Promise.resolve();
-            return new Promise((resolve) => {
-                const initial = el.scrollTop || 0;
-                if (initial === 0) { resolve(); return; }
-                const startTime = performance.now();
-                const tick = (now) => {
-                    const elapsed = now - startTime;
-                    const t = Math.min(1, elapsed / duration);
-                    const eased = 1 - Math.pow(1 - t, 3);
-                    const value = Math.round(initial * (1 - eased));
-                    try { el.scrollTop = value; } catch (e) {}
-                    // For document, sync both
-                    if (el === document.documentElement || el === document.body) {
-                        try { document.documentElement.scrollTop = value; } catch (e) {}
-                        try { document.body.scrollTop = value; } catch (e) {}
-                        try { window.scrollTo(0, value); } catch (e) {}
-                    }
-                    if (t < 1) requestAnimationFrame(tick);
-                    else { try { el.scrollTop = 0; } catch(e){}; resolve(); }
-                };
-                requestAnimationFrame(tick);
-            });
-        }
-
-        // animateValue that returns a Promise resolved after duration
-        function animateValuePromise(element, start, end, duration, suffix = '', decimals = 0) {
-            return new Promise((resolve) => {
-                animateValue(element, start, end, duration, suffix, decimals);
-                setTimeout(() => resolve(), duration + 20);
-            });
-        }
-
-        function escapeHtml(value) {
-            return String(value || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
-        function toHashScanTxLink(txId) {
-            if (!txId) return '—';
-            return `<a href="https://hashscan.io/testnet/transaction/${encodeURIComponent(txId)}" target="_blank" rel="noopener">View on Hedera</a>`;
-        }
-
-        function statusBadge(label, tone) {
-            return `<span class="status-badge status-${tone}">${escapeHtml(label)}</span>`;
-        }
-
-        function isTreasuryRefillRequired(rewardLastError) {
-            const text = String(rewardLastError || '').toLowerCase();
-            return text.includes('insufficient_token_balance')
-                || text.includes('treasury has zero eco balance')
-                || (text.includes('treasury') && text.includes('balance'));
-        }
-
-        function rewardOutcomeLabel(activity) {
-            const serverLabel = String(activity?.reward_status_label || '').trim();
-            if (serverLabel) return serverLabel;
-            const rewardStatus = String(activity?.reward_status || '').toLowerCase();
-            const rewardError = activity?.reward_last_error || '';
-            if (rewardStatus === 'paid') return null;
-            if (rewardStatus === 'finalized_no_transfer') {
-                return isTreasuryRefillRequired(rewardError)
-                    ? 'Reward recorded, treasury refill required'
-                    : 'Reward finalized (no transfer)';
-            }
-            const stage = String(activity?.pipeline_stage || '').toLowerCase();
-            if (stage === 'rewarded' || stage === 'attested') return 'Reward pending';
-            return null;
-        }
-
-        function rewardOutcomeHtml(activity) {
-            const htsTx = activity?.hts_tx_id || activity?.reward_tx_id;
-            if (String(activity?.reward_status || '').toLowerCase() === 'paid' && htsTx) {
-                return `HTS: ${toHashScanTxLink(htsTx)}`;
-            }
-
-            const label = rewardOutcomeLabel(activity);
-            if (label) {
-                const tone = label === 'Reward recorded, treasury refill required' ? 'warn' : (label === 'Reward pending' ? 'pending' : 'muted');
-                return `HTS: ${statusBadge(label, tone)}`;
-            }
-
-            return 'HTS: —';
-        }
-
-        function proofSnapshotCard(items) {
-            const rows = Array.isArray(items) ? items : [];
-            const total = rows.length;
-            const anchored = rows.filter(x => (x.logbook_status || '').toLowerCase() === 'anchored').length;
-            const paid = rows.filter(x => (x.reward_status || '').toLowerCase() === 'paid').length;
-            const fallback = rows.filter(x => (x.reward_status || '').toLowerCase() === 'finalized_no_transfer').length;
-            const latestAnchored = rows.find(x => (x.logbook_status || '').toLowerCase() === 'anchored' && (x.hcs_tx_id || x.logbook_tx_id || x.hedera_tx_id));
-            const latestPaid = rows.find(x => (x.reward_status || '').toLowerCase() === 'paid' && (x.hts_tx_id || x.reward_tx_id));
-            const latestFallback = rows.find(x => (x.reward_status || '').toLowerCase() === 'finalized_no_transfer');
-            const latestRewardLine = latestPaid ? rewardOutcomeHtml(latestPaid) : (latestFallback ? rewardOutcomeHtml(latestFallback) : 'HTS: —');
-
-            return `
-                <div class="proof-summary-grid">
-                    <div class="proof-summary-chip"><strong>${total}</strong><span>Total Rows</span></div>
-                    <div class="proof-summary-chip"><strong>${anchored}</strong><span>Anchored Records</span></div>
-                    <div class="proof-summary-chip"><strong>${paid}</strong><span>Reward Outcomes</span></div>
-                    <div class="proof-summary-chip"><strong>${fallback}</strong><span>No-transfer finalizations</span></div>
-                </div>
-                <p style="margin:10px 0 0 0;">Latest HCS: ${latestAnchored ? toHashScanTxLink(latestAnchored.hcs_tx_id || latestAnchored.logbook_tx_id || latestAnchored.hedera_tx_id) : '—'}</p>
-                <p style="margin:6px 0 0 0;">${latestRewardLine}</p>
-            `;
-        }
-
-        function formatDateTimeDisplay(value) {
-            if (!value) return '—';
-            const parsed = new Date(value);
-            if (Number.isNaN(parsed.getTime())) return value;
-            return parsed.toLocaleString();
-        }
-
-        function healthChip(health) {
-            const norm = (health || 'unknown').toLowerCase();
-            let color = '#aaa';
-            if (norm === 'ok') color = '#4CAF50';
-            if (norm === 'degraded') color = '#E57373';
-            return `<span style="color:${color}; font-weight:600; text-transform:capitalize;">${escapeHtml(norm)}</span>`;
-        }
-
-        function renderSystemHealth(data) {
-            const dot = document.getElementById('system-health-dot');
-            const text = document.getElementById('system-health-text');
-            const detail = document.getElementById('system-health-detail');
-            if (!dot || !text || !detail) return;
-
-            const agents = Array.isArray(data?.agents) ? data.agents : [];
-            if (!agents.length) {
-                dot.className = 'health-dot health-dot-warn';
-                text.textContent = 'No agent status yet';
-                detail.textContent = 'Waiting for first heartbeat.';
-                return;
-            }
-
-            const hasDegraded = agents.some(a => (a?.health || '').toLowerCase() === 'degraded');
-            const healthyCount = agents.filter(a => (a?.health || '').toLowerCase() === 'ok').length;
-
-            if (hasDegraded) {
-                dot.className = 'health-dot health-dot-warn';
-                text.textContent = 'Degraded';
-                detail.textContent = `${healthyCount}/${agents.length} agents healthy.`;
-                return;
-            }
-
-            dot.className = 'health-dot health-dot-ok';
-            text.textContent = 'Operational';
-            detail.textContent = `${healthyCount}/${agents.length} agents healthy.`;
-        }
-
-        function renderAgentStatusPanel(data) {
-            const tbody = document.getElementById('agent-status-tbody');
-            if (!tbody) return;
-
-            const agents = Array.isArray(data?.agents) ? data.agents : [];
-            if (!agents.length) {
-                tbody.innerHTML = '<tr><td colspan="5" style="padding: 0.75rem; color: #aaa;">No agent logs yet.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = '';
-            agents.forEach((item) => {
-                const derivedHealth = item.last_seen ? (item.health || 'ok') : 'unknown';
-                const errorSnippet = item.last_error ? escapeHtml(item.last_error).slice(0, 120) : '—';
-
-                const row = document.createElement('tr');
-                row.style.borderBottom = '1px solid #2a2a2a';
-                row.innerHTML = `
-                    <td style="padding: 0.5rem;">${escapeHtml(item.agent || '—')}</td>
-                    <td style="padding: 0.5rem;">${healthChip(derivedHealth)}</td>
-                    <td style="padding: 0.5rem;">${escapeHtml(formatDateTimeDisplay(item.last_seen))}</td>
-                    <td style="padding: 0.5rem;">${toHashScanTxLink(item.last_tx)}</td>
-                    <td style="padding: 0.5rem; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${errorSnippet}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        async function loadAgentStatus() {
-            try {
-                const response = await fetch('/api/agent-status');
-                const payload = await response.json();
-                renderSystemHealth(payload);
-                renderAgentStatusPanel(payload);
-            } catch (error) {
-                renderSystemHealth({ agents: [] });
-                const tbody = document.getElementById('agent-status-tbody');
-                if (tbody) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="padding: 0.75rem; color: #E57373;">Unable to load agent status.</td></tr>';
-                }
-                console.error('Error loading agent status:', error);
-            }
-        }
-
-        async function loadPickupOpportunities() {
-            const container = document.getElementById('pickup-opportunities-list');
-            if (!container) return;
-
-            try {
-                const res = await fetch('/api/opportunities/open');
-                if (!res.ok) {
-                    container.innerHTML = '<p>Unable to load pickup opportunities.</p>';
-                    return;
-                }
-                const data = await res.json();
-                const rows = Array.isArray(data.rows) ? data.rows : [];
-
-                if (!rows.length) {
-                    container.innerHTML = '<p>No open opportunities right now. Demo mode will preload a new pickup shortly. Refresh in a moment.</p>';
-                    return;
-                }
-
-                container.innerHTML = rows.map((row) => {
-                    const sourceLabel = row.source_role === 'business' ? 'Business' : 'Community';
-                    const material = escapeHtml(row.material_type);
-                    const weight = escapeHtml(row.estimated_kg);
-                    const location = escapeHtml(row.location);
-                    const requestedWindow = escapeHtml(row.requested_window || 'Standard window');
-                    const notes = row.notes ? `<div style="margin-top: 0.35rem; color: #aaa;">${escapeHtml(row.notes)}</div>` : '';
-
-                    return `
-                        <div class="card job-item" style="margin-bottom: 0.75rem; padding: 1rem;">
-                            <strong>${sourceLabel} Pickup</strong><br>
-                            <span>${material} · ${weight} kg</span><br>
-                            <span>${location}</span><br>
-                            <span>${requestedWindow}</span>
-                            ${notes}
-                            <button class="btn-secondary btn-compact" onclick="acceptOpportunity(${Number(row.id)})" style="margin-top: 0.5rem;">
-                                Accept Job
-                            </button>
-                        </div>
-                    `;
-                }).join('');
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = '<p>Unable to load pickup opportunities.</p>';
-            }
-        }
-
-        async function loadAcceptedAssignments() {
-            const container = document.getElementById('accepted-pickups-list');
-            if (!container) return;
-
-            try {
-                const res = await fetch('/api/opportunities/my-assignments');
-                if (!res.ok) {
-                    container.innerHTML = '<p>Unable to load accepted jobs.</p>';
-                    return;
-                }
-                const data = await res.json();
-                const rows = Array.isArray(data.rows) ? data.rows : [];
-
-                if (!rows.length) {
-                    container.innerHTML = '<p>No accepted pickups yet. Accept one open job above to continue the demo flow.</p>';
-                    return;
-                }
-
-                container.innerHTML = rows.map((row) => {
-                    const canSubmit = row.status === 'accepted';
-                    const submitted = row.status === 'submitted';
-                    const completed = row.status === 'completed';
-                    const sourceLabel = row.source_role === 'business' ? 'Business' : 'Community';
-                    const material = escapeHtml(row.material_type || 'Mixed recyclables');
-                    const estimated = Number(row.estimated_kg || 0);
-                    const location = escapeHtml(row.location || 'Unknown location');
-                    const status = escapeHtml(row.status || 'unknown');
-                    const statusLower = String(row.status || '').toLowerCase();
-                    const normalizedStatus = statusLower === 'completed'
-                        ? 'Verified'
-                        : (statusLower === 'submitted' || statusLower === 'accepted' ? 'Submitted' : status);
-                    const defaultMaterial = escapeHtml(row.material_type || '');
-                    const requestedWindow = escapeHtml(row.requested_window || 'Standard window');
-                    const estimatedReward = Number(row.estimated_reward_eco || 0);
-                    const verificationNotes = row.verification_notes ? `<div style="margin-top:0.5rem; color:#b8c1cc;">${escapeHtml(row.verification_notes)}</div>` : '';
-                    const linkedActivity = row.linked_activity_id ? `<div style="margin-top:0.35rem; color:#8fb3ff;">Pipeline activity #${Number(row.linked_activity_id)}</div>` : '';
-
-                    return `
-                        <div class="card job-item" style="margin-bottom: 0.75rem; padding: 1rem;">
-                            <strong>${sourceLabel} Pickup</strong><br>
-                            <span>${material} · est. ${estimated.toFixed(1)} kg</span><br>
-                            <span>${location}</span><br>
-                            <span>${requestedWindow}</span><br>
-                            <span>Trust Status: ${escapeHtml(normalizedStatus)}</span><br>
-                            ${estimatedReward > 0 ? `<span>Pipeline reward: ${estimatedReward.toFixed(2)} ECO</span><br>` : ''}
-
-                            ${canSubmit ? `
-                                <div style="margin-top:0.75rem;">
-                                    <input type="text" id="mat_${Number(row.assignment_id)}" placeholder="Material type" value="${defaultMaterial}" style="margin-bottom:0.5rem; width:100%;">
-                                    <input type="number" step="0.1" id="kg_${Number(row.assignment_id)}" placeholder="Actual weight (kg)" value="${estimated.toFixed(1)}" style="margin-bottom:0.5rem; width:100%;">
-                                    <textarea id="notes_${Number(row.assignment_id)}" placeholder="Notes (optional)" style="width:100%;"></textarea>
-                                    <button class="btn-secondary btn-compact" onclick="submitAssignment(${Number(row.assignment_id)})" style="margin-top:0.5rem;">
-                                        Submit for Verification
-                                    </button>
-                                </div>
-                            ` : ''}
-
-                            ${submitted ? '<div style="margin-top:0.5rem;">Submitted and waiting for Verified status.</div>' : ''}
-                            ${completed ? '<div style="margin-top:0.5rem;">Verified and advancing toward Anchored, Rewarded, and Proof Ready.</div>' : ''}
-                            ${verificationNotes}
-                            ${linkedActivity}
-                        </div>
-                    `;
-                }).join('');
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = '<p>Unable to load accepted jobs.</p>';
-            }
-        }
-
-        async function acceptOpportunity(opportunityId) {
-            try {
-                const res = await fetch(`/api/opportunities/${opportunityId}/accept`, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                if (!res.ok) {
-                    alert('Could not accept opportunity');
-                    return;
-                }
-                const data = await res.json();
-
-                if (!data.ok) {
-                    alert(data.error || 'Could not accept opportunity');
-                    return;
-                }
-
-                alert('Pickup opportunity accepted.');
-                loadPickupOpportunities();
-                loadAcceptedAssignments();
-            } catch (err) {
-                console.error(err);
-                alert('Could not accept opportunity');
-            }
-        }
-
-        async function submitAssignment(assignmentId) {
-            const materialType = document.getElementById(`mat_${assignmentId}`)?.value || '';
-            const weightKg = document.getElementById(`kg_${assignmentId}`)?.value || '';
-            const notes = document.getElementById(`notes_${assignmentId}`)?.value || '';
-
-            try {
-                const res = await fetch(`/api/assignments/${assignmentId}/submit`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: JSON.stringify({
-                        material_type: materialType,
-                        weight_kg: weightKg,
-                        notes,
-                    }),
-                });
-
-                const data = await res.json();
-                if (!data.ok) {
-                    alert(data.error || 'Could not submit assignment');
-                    return;
-                }
-
-                alert('Submitted for Verification. Queue updated for Verification Center review.');
-                loadAcceptedAssignments();
-            } catch (err) {
-                console.error(err);
-                alert('Could not submit assignment');
-            }
-        }
-
-        window.acceptOpportunity = acceptOpportunity;
-        window.submitAssignment = submitAssignment;
-
-        // --- 3. QR CODE LOGIC ---
-        generateButton.addEventListener('click', function() {
-            if (!currentData.profile_complete) {
-                alert("Please complete your profile before generating a QR code.");
-                window.location.href = "/profile";
-                return;
-            }
-            qrContainer.innerHTML = ''; 
-            const qrImage = document.createElement('img');
-            qrImage.src = '/generate-qr?' + new Date().getTime();
-            qrContainer.appendChild(qrImage);
-        });
-
-        // --- 4. MAIN DATA LOADER ---
-        async function initializeDashboard() {
-            try {
-                // Fetch fresh server data (always from backend, no cache)
-                const response = await fetch('/api/my-dashboard-data');
-                const serverData = await response.json();
-                
-                // Set as current data
-                currentData = normalizeTimelineData(serverData);
-
-                // Check for withdrawal return flag (from swap page)
-                const withdrawalFlag = sessionStorage.getItem('demo_just_withdrew');
-                if (withdrawalFlag) {
-                    const withdrawalData = JSON.parse(withdrawalFlag);
-
-                    // Capture old values for animation
-                    const oldEco = Number(currentData.total_eco) || 0;
-                    const oldKg = Number(currentData.total_kg) || 0;
-                    const oldPersonal = Number(currentData.current_kg) || 0;
-                    const oldNeighborhood = Number(currentData.neighborhood_current_kg) || 0;
-
-                    // Compute new values (swap deducts ECO only in demo)
-                    const newEco = oldEco - (Number(withdrawalData.swapAmount) || 0);
-                    const newKg = oldKg;
-                    const newPersonal = oldPersonal;
-                    const newNeighborhood = oldNeighborhood;
-
-                    // Apply changes to currentData
-                    currentData.total_eco = newEco;
-
-                    // Add Swap Transaction
-                    currentData.timeline.unshift({
-                        timestamp: new Date().toISOString(),
-                        desc: withdrawalData.swapDesc,
-                        amount: -withdrawalData.swapAmount,
-                        status: 'verified'
-                    });
-
-                    // Add Withdrawal Transaction
-                    currentData.timeline.unshift({
-                        timestamp: new Date().toISOString(),
-                        desc: withdrawalData.withdrawDesc,
-                        amount: 0,
-                        status: 'verified'
-                    });
-
-                    // Record pending animation so numbers animate when the dashboard loads
-                    pendingAnim = {
-                        type: 'withdraw',
-                        oldEco, newEco,
-                        oldKg, newKg,
-                        oldPersonal, newPersonal,
-                        oldNeighborhood, newNeighborhood,
-                        swapAmount: Number(withdrawalData.swapAmount) || 0
-                    };
-
-                    sessionStorage.removeItem('demo_just_withdrew');
-                }
-
-                // Draw Dashboard
-                drawDashboard(currentData);
-                renderActivityList();
-                loadAgentStatus();
-                loadPickupOpportunities();
-                loadAcceptedAssignments();
-
-                // If a pending animation was recorded (e.g. from a withdraw flag),
-                // run it immediately so the user sees the animated update on load.
-                if (pendingAnim) {
-                    // Ensure viewport is at top before running animations
-                    const docEl = document.documentElement;
-                    const bodyEl = document.body;
-                    const mainDashboard = document.querySelector('.app-dashboard') || document.querySelector('main') || null;
-                    Promise.all([
-                        smoothScrollElementToTop(docEl, 200),
-                        smoothScrollElementToTop(bodyEl, 200)
-                    ]).then(() => {
-                        if (mainDashboard) return smoothScrollElementToTop(mainDashboard, 180);
-                    }).then(() => runPendingAnimations()).catch(() => runPendingAnimations());
-                }
-
-            } catch (e) {
-                console.error("Error initializing dashboard:", e);
-            }
-        }
-
-        // --- 5. HANDLE DEPOSIT (Backend-Driven) ---
-        async function handleDeposit() {
-            try {
-                // Show loading state
-                document.getElementById('trigger-deposit-btn').disabled = true;
-                
-                // Call backend to create activity and process it
-                const response = await fetch('/api/simulate-deposit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const result = await response.json();
-                
-                if (!response.ok || result.total_eco === undefined) {
-                    alert('Error: ' + (result.error || 'Failed to process deposit'));
-                    document.getElementById('trigger-deposit-btn').disabled = false;
-                    return;
-                }
-                
-                const bonusAmount = 518.00;
-                const weightAmount = 10.0;
-
-                // Get old values from current UI
-                let oldEco = Number(currentData.total_eco) || 0;
-                let oldKg = Number(currentData.total_kg) || 0;
-                let oldPersonal = Number(currentData.current_kg) || 0;
-                let oldNeighborhood = Number(currentData.neighborhood_current_kg) || 0;
-
-                // Update from server response
-                currentData = normalizeTimelineData(result);
-                
-                const newEco = Number(currentData.total_eco) || 0;
-                const newKg = Number(currentData.total_kg) || 0;
-                const newPersonal = Math.min(newKg, 30);  // Personal goal is weekly
-                const newNeighborhood = Number(currentData.neighborhood_current_kg) || 0;
-
-                // Re-render the activity list so the new item appears immediately
-                renderActivityList();
-
-                // Save pending animation payload so the numbers animate after the user presses 'Awesome!'
-                pendingAnim = {
-                    type: 'deposit',
-                    oldEco, newEco,
-                    oldKg, newKg,
-                    oldPersonal, newPersonal,
-                    oldNeighborhood, newNeighborhood,
-                    bonusAmount, weightAmount
-                };
-
-                // Show the modal immediately; actual scroll + animations run when user clicks "Awesome!"
-                document.querySelector('#success-modal .success-subtitle').textContent = `Submitted successfully. Verified is pending center confirmation. Hedera anchoring and rewards continue automatically. (${weightAmount.toFixed(1)}kg submitted)`;
-                const confettiCanvas = document.getElementById('confetti-canvas');
-                const modalConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
-                document.getElementById('success-modal').style.display = 'flex';
-                document.body.classList.add('modal-open');
-                modalConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-                
-                document.getElementById('trigger-deposit-btn').disabled = false;
-
-                // After re-rendering activities, ensure hidden rows stay hidden
-                applyHiddenStatusStyles();
-                console.log('[FRONTEND] Deposit success. Activity ID:', result.activity_id);
-                
-            } catch (e) {
-                console.error('[FRONTEND] Error in handleDeposit:', e);
-                alert('Error processing deposit');
-                document.getElementById('trigger-deposit-btn').disabled = false;
-            }
-        }
-
-        // --- 6. HIDE/SHOW FAILED & REJECTED ROWS ---
-        // Adds a toggle button and hides rows with status 'failed' or 'rejected' by default.
-        function applyHiddenStatusStyles() {
-            const rows = document.querySelectorAll('tr.activity-row');
-            rows.forEach(r => {
-                const st = (r.getAttribute('data-status') || '').toLowerCase();
-                if (st === 'failed' || st === 'rejected') {
-                    r.style.display = 'none';
-                } else {
-                    r.style.display = '';
-                }
-            });
-        }
-
-        // Create toggle UI
-        (function insertHiddenToggle() {
-            const container = document.getElementById('activity-section');
-            if (!container) return;
-            const btn = document.createElement('button');
-            btn.className = 'btn-secondary';
-            btn.style.marginTop = '0.75rem';
-            btn.textContent = 'Show failed/rejected items';
-            btn.dataset.shown = 'false';
-            btn.addEventListener('click', function() {
-                const shown = btn.dataset.shown === 'true';
-                const rows = document.querySelectorAll('tr.activity-row');
-                rows.forEach(r => {
-                    const st = (r.getAttribute('data-status') || '').toLowerCase();
-                    if (st === 'failed' || st === 'rejected') {
-                        r.style.display = shown ? 'none' : '';
-                    }
-                });
-                btn.dataset.shown = (!shown).toString();
-                btn.textContent = shown ? 'Show failed/rejected items' : 'Hide failed/rejected items';
-            });
-            container.insertBefore(btn, container.querySelector('#activity-table'));
-        })();
-
-        // Apply initially
-        applyHiddenStatusStyles();
-
-        // --- 6. DRAW DASHBOARD (Static Render) ---
-        function drawDashboard(data) {
-             // Safety fallback for zeroes
-             const eco = data.total_eco || 0;
-             const kg = data.total_kg || 0;
-             const curKg = data.current_kg || 0;
-             const goalKg = data.weekly_goal || 30;
-             const hoodCur = data.neighborhood_current_kg || 0;
-             const hoodGoal = data.neighborhood_goal_kg || 1000;
-
-             document.getElementById('kpi-ecocoin').textContent = eco.toFixed(0);
-             document.getElementById('kpi-kg').textContent = `${kg.toFixed(1)} kg`;
-             
-             document.getElementById('personal-goal-label').textContent = `${curKg.toFixed(1)} / ${goalKg.toFixed(1)} kg`;
-             document.getElementById('neighborhood-goal-label').textContent = `${hoodCur.toFixed(1)} / ${hoodGoal.toFixed(1)} kg`;
-
-             // Update Charts (Static)
-             // ... (Keep your existing Chart.js code here) ...
-             // Use the code from previous steps for Chart creation
-             updateCharts(curKg, goalKg, hoodCur, hoodGoal);
-        }
-
-        // Run any pending animations that were recorded (deposit or withdrawal)
-        function runPendingAnimations() {
-            if (!pendingAnim) return Promise.resolve();
-            const anim = pendingAnim;
-            pendingAnim = null; // clear immediately to avoid double-run
-
-            const ecEl = document.getElementById('kpi-ecocoin');
-            const kgEl = document.getElementById('kpi-kg');
-            const pPctEl = document.getElementById('personal-percent');
-            const nPctEl = document.getElementById('neighborhood-percent');
-
-            // compute percentages safely
-            const oldPersonalPct = (anim.oldPersonal / (currentData.weekly_goal || 30)) * 100;
-            const newPersonalPct = (anim.newPersonal / (currentData.weekly_goal || 30)) * 100;
-            const oldNeighborhoodPct = (anim.oldNeighborhood / (currentData.neighborhood_goal_kg || 1000)) * 100;
-            const newNeighborhoodPct = (anim.newNeighborhood / (currentData.neighborhood_goal_kg || 1000)) * 100;
-
-            const promises = [
-                animateValuePromise(ecEl, anim.oldEco, anim.newEco, 900, '', 0),
-                animateValuePromise(kgEl, anim.oldKg, anim.newKg, 900, ' kg', 1),
-                animateValuePromise(pPctEl, oldPersonalPct, newPersonalPct, 900, '%', 0),
-                animateValuePromise(nPctEl, oldNeighborhoodPct, newNeighborhoodPct, 900, '%', 1)
-            ];
-
-            return Promise.all(promises).then(() => {
-                // update labels and charts after animation
-                try {
-                    document.getElementById('personal-goal-label').textContent = `${anim.newPersonal.toFixed(1)} / ${currentData.weekly_goal.toFixed(1)} kg`;
-                    updateCharts(anim.newPersonal, currentData.weekly_goal, anim.newNeighborhood, currentData.neighborhood_goal_kg);
-                } catch (e) {}
-            });
-        }
-
-        function updateCharts(curKg, goalKg, hoodCur, hoodGoal) {
-             const personalCtx = document.getElementById('personalGoalChart').getContext('2d');
-             if (personalChart) personalChart.destroy(); 
-             personalChart = new Chart(personalCtx, {
-                 type: 'doughnut',
-                 data: {
-                     datasets: [{
-                         data: [curKg, Math.max(0, goalKg - curKg)],
-                         backgroundColor: ['#4CAF50', '#333'],
-                         borderColor: ['#1e1e1e'],
-                         borderWidth: 0
-                     }]
-                 },
-                 options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
-             });
-             
-             // Add Percentage Text
-             let pPct = (curKg / goalKg) * 100;
-             document.getElementById('personal-percent').textContent = `${pPct.toFixed(0)}%`;
-
-             const neighborhoodCtx = document.getElementById('neighborhoodGoalChart').getContext('2d');
-             if (neighborhoodChart) neighborhoodChart.destroy();
-             neighborhoodChart = new Chart(neighborhoodCtx, {
-                 type: 'doughnut',
-                 data: {
-                     datasets: [{
-                         data: [hoodCur, Math.max(0, hoodGoal - hoodCur)],
-                         backgroundColor: ['#0D47A1', '#333'],
-                         borderColor: ['#1e1e1e'],
-                         borderWidth: 0
-                     }]
-                 },
-                 options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
-             });
-             
-             let nPct = (hoodCur / hoodGoal) * 100;
-             document.getElementById('neighborhood-percent').textContent = `${nPct.toFixed(1)}%`;
-        }
-
-        function renderActivityList() {
-            const tbody = document.getElementById('activity-tbody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            const normalizeStatusLabel = (value) => {
-                const status = (value || '').toString();
-                const lower = status.toLowerCase();
-                const normalized = lower.replace(/[_\s-]+/g, ' ');
-                if (normalized.includes('pending') && normalized.includes('hedera')) {
-                    return 'Hedera delayed (retry)';
-                }
-                return status;
-            };
-
-            const sortedTimeline = [...(currentData.timeline || [])].sort((left, right) => {
-                const leftTs = new Date(left?.timestamp || '').getTime();
-                const rightTs = new Date(right?.timestamp || '').getTime();
-                const leftSafe = Number.isNaN(leftTs) ? 0 : leftTs;
-                const rightSafe = Number.isNaN(rightTs) ? 0 : rightTs;
-                return rightSafe - leftSafe;
-            });
-
-            const proofSummaryEl = document.getElementById('collector-proof-summary-content');
-            if (proofSummaryEl) {
-                proofSummaryEl.innerHTML = proofSnapshotCard(sortedTimeline);
-            }
-
-            if (!sortedTimeline.length) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="event-empty-state">
-                            You haven't made any drop-offs yet. Generate your first QR code below to get started!
-                        </td>
-                    </tr>
-                `;
-                if (proofSummaryEl) {
-                    proofSummaryEl.innerHTML = '<div class="event-empty-state">No proof snapshots yet. Your Verified Events will appear here.</div>';
-                }
-                return;
-            }
-
-            sortedTimeline.forEach(act => {
-                const rawStatus = (act.status || act.verified_status || '').toString();
-                const displayStatus = normalizeStatusLabel(rawStatus || 'pending');
-                const statusLower = displayStatus.toLowerCase();
-                const hidden = statusLower === 'failed' || statusLower === 'rejected';
-                const amount = Number(act.amount) || 0;
-                const logbookStatus = (act.logbook_status || '').toLowerCase();
-                const rewardStatus = (act.reward_status || '').toLowerCase();
-
-                const settlementBadge = (() => {
-                    if (hidden || (act.pipeline_stage || '').toLowerCase() === 'rejected') {
-                        return statusBadge('Rejected', 'warn');
-                    }
-                    if (logbookStatus === 'anchored') {
-                        return statusBadge('Anchored', 'ok');
-                    }
-                    if (logbookStatus === 'offchain_final' || logbookStatus === 'demo_skipped' || rewardStatus === 'finalized_no_transfer') {
-                        return statusBadge('Fallback (Off-chain final)', 'muted');
-                    }
-                    return statusBadge('Fallback (Off-chain final)', 'pending');
-                })();
-
-                const statusCell = (() => {
-                    return settlementBadge;
-                })();
-
-                const row = document.createElement('tr');
-                row.className = `activity-row${hidden ? ' hidden-status' : ''}`;
-                row.setAttribute('data-status', displayStatus);
-                row.style.borderBottom = '1px solid #2a2a2a';
-
-                const txCell = (() => {
-                    const hcsTx = act.hcs_tx_id || act.logbook_tx_id || act.hedera_tx_id;
-                    const rewardLine = (() => {
-                        const rendered = rewardOutcomeHtml(act);
-                        return rendered ? `<div class="tx-line">${rendered}</div>` : '';
-                    })();
-
-                    if (hcsTx) return `<div class="tx-line">HCS: ${toHashScanTxLink(hcsTx)}</div>${rewardLine}`;
-                    if (logbookStatus === 'demo_skipped') {
-                        return `<div class="tx-line">HCS: Demo skipped</div>${rewardLine}`;
-                    }
-                    if (logbookStatus === 'offchain_final') {
-                        return `<div class="tx-line">HCS: Pending/Unavailable</div>${rewardLine}`;
-                    }
-                    if (demoMode && (!logbookStatus || logbookStatus === 'pending')) {
-                        return `<div class="tx-line">HCS: processing...</div>${rewardLine}`;
-                    }
-                    if (logbookStatus === 'failed' || (act.pipeline_stage || '').toLowerCase() === 'log_failed') {
-                        return `<div class="tx-line">HCS: Failed</div>${rewardLine}`;
-                    }
-                    return `<div class="tx-line">HCS: Pending/Unavailable</div>${rewardLine}`;
-                })();
-
-                const proofCell = (() => {
-                    if (act.proof_bundle_url) {
-                        return `<a href="${act.proof_bundle_url}" class="proof-link">Download Proof</a>`;
-                    }
-                    if (!act.id) return '—';
-                    return `<a href="/api/proof-bundle/${encodeURIComponent(act.id)}" class="proof-link">Download Proof</a>`;
-                })();
-
-                row.innerHTML = `
-                    <td>${formatDateTimeDisplay(act.timestamp)}</td>
-                    <td>${act.desc || ''}</td>
-                    <td>${amount.toFixed(2)}</td>
-                    <td>${statusCell}</td>
-                    <td>${proofCell}</td>
-                    <td>${txCell}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // --- EVENT LISTENERS ---
-        document.getElementById('trigger-deposit-btn').addEventListener('click', handleDeposit);
-        
-        document.getElementById('modal-close-btn').addEventListener('click', function() {
-            const successModalEl = document.getElementById('success-modal');
-            if (successModalEl) {
-                // hide and disable pointer events to ensure it can't block scrolling
-                successModalEl.style.display = 'none';
-                successModalEl.style.pointerEvents = 'none';
-                successModalEl.style.visibility = 'hidden';
-            }
-            document.body.classList.remove('modal-open');
-
-            // Find possible scroll containers (document + main dashboard)
-            const docEl = document.documentElement;
-            const bodyEl = document.body;
-            const mainDashboard = document.querySelector('.app-dashboard') || document.querySelector('main') || null;
-
-            // Perform a fast, visible smooth-scroll UP so the user sees the motion,
-            // then run the pending animations once the scroll completes.
-            Promise.all([
-                smoothScrollElementToTop(docEl, 420),
-                smoothScrollElementToTop(bodyEl, 420)
-            ]).then(() => {
-                if (mainDashboard) return smoothScrollElementToTop(mainDashboard, 300);
-            }).then(() => {
-                // After the visible scroll completes, run the KPI animations
-                return runPendingAnimations();
-            }).then(() => {
-                const firstKpi = document.getElementById('kpi-ecocoin');
-                if (firstKpi && typeof firstKpi.focus === 'function') firstKpi.focus();
-            }).finally(() => {
-                // restore modal pointer handling shortly after animations
-                setTimeout(() => {
-                    if (successModalEl) {
-                        successModalEl.style.pointerEvents = '';
-                        successModalEl.style.visibility = '';
-                    }
-                }, 200);
-            });
-        });
-
-        // Init
-        initializeDashboard();
-    });
-    </script>
-
-    <div class="modal-overlay proof-modal-overlay" id="success-modal">
-        <div class="card modal-content success-modal-content proof-success-modal">
-            <canvas id="confetti-canvas"></canvas>
-
-            <div class="proof-modal-topline">
-                <div class="proof-issued-badge">⛓️ Trust Flow Started</div>
-                <div class="proof-modal-status-row">
-                    <span class="proof-state-chip proof-state-chip-blue">Submitted ✅</span>
-                    <span class="proof-state-chip proof-state-chip-amber">Verified (pending)</span>
-                </div>
-            </div>
-
-            <h2 class="proof-issued-title">Submission Captured</h2>
-            <p class="success-subtitle proof-issued-subtitle">
-                Your recycling event is now in the trust pipeline. The next steps are visible and auditable.
+        <div class="tech-card kpi-card">
+            <p class="kpi-head">Monthly Impact Target
+                <span class="tooltip-help" data-tip="Recycling 50kg offsets the average monthly footprint of a local household.">?</span>
             </p>
-
-            <div class="proof-modal-grid">
-                <section class="proof-modal-panel proof-modal-reward-panel">
-                    <span class="section-kicker">Reward Preview</span>
-                    <h3>Reward payout prepared</h3>
-
-                    <div class="reward-summary proof-reward-summary">
-                        <p><span>Base Reward (10.0kg Cans)</span><strong>500.00 ECO</strong></p>
-                        <p><span>Neighborhood Bonus (2.5%)</span><strong>+ 12.50 ECO</strong></p>
-                        <p><span>Bronze Tier Bonus (1.0%)</span><strong>+ 5.00 ECO</strong></p>
-                        <hr>
-                        <p class="total"><span>Total Payout</span><strong id="modal-eco-value">+518 ECO</strong></p>
-                    </div>
-
-                    <div class="proof-trust-mini">
-                        <div class="proof-trust-mini-item">
-                            <span class="proof-mini-label">Proof integrity</span>
-                            <strong>Pending finalization</strong>
-                        </div>
-                        <div class="proof-trust-mini-item">
-                            <span class="proof-mini-label">Settlement path</span>
-                            <strong>Reward-aware pipeline</strong>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="proof-modal-panel proof-modal-timeline-panel">
-                    <span class="section-kicker">Trust Status</span>
-                    <h3>Visible pipeline states</h3>
-
-                    <div class="proof-modal-timeline">
-                        <div class="proof-modal-step proof-modal-step-done">
-                            <div class="proof-modal-step-dot">1</div>
-                            <div class="proof-modal-step-body">
-                                <strong>Submitted ✅</strong>
-                                <span>Recorded and queued for center verification.</span>
-                            </div>
-                        </div>
-
-                        <div class="proof-modal-step proof-modal-step-active">
-                            <div class="proof-modal-step-dot">2</div>
-                            <div class="proof-modal-step-body">
-                                <strong>Verified (pending)</strong>
-                                <span>Verification Center confirms material type and weight.</span>
-                            </div>
-                        </div>
-
-                        <div class="proof-modal-step">
-                            <div class="proof-modal-step-dot">3</div>
-                            <div class="proof-modal-step-body">
-                                <strong>Anchored (Hedera)</strong>
-                                <span>HashScan-linked transaction is attached to the record.</span>
-                            </div>
-                        </div>
-
-                        <div class="proof-modal-step">
-                            <div class="proof-modal-step-dot">4</div>
-                            <div class="proof-modal-step-body">
-                                <strong>Rewarded</strong>
-                                <span>Wallet reward history is updated with settlement evidence.</span>
-                            </div>
-                        </div>
-
-                        <div class="proof-modal-step">
-                            <div class="proof-modal-step-dot">5</div>
-                            <div class="proof-modal-step-body">
-                                <strong>Proof Ready</strong>
-                                <span>Downloadable proof bundle is available for audits.</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+            <div class="ring-wrap">
+                <svg class="ring-svg" viewBox="0 0 120 120">
+                    <circle class="ring-bg" cx="60" cy="60" r="44"></circle>
+                    <circle id="personal-ring-fill" class="ring-fill" cx="60" cy="60" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"></circle>
+                </svg>
+                <div class="ring-center">
+                    <div class="ring-main" id="personal-goal-label">25 / 50 kg</div>
+                    <div class="ring-sub" id="personal-percent">50%</div>
+                </div>
             </div>
+        </div>
 
-            <div class="proof-next-step proof-next-step-strong">
-                <span class="proof-next-icon">✅</span>
-                <span>This event is now positioned to become verifiable proof of recycling and proof of income.</span>
-            </div>
-
-            <div class="proof-modal-actions">
-                <button class="btn-primary-large btn-form" id="modal-close-btn">Continue</button>
-                <a href="{{ url_for('proof_hub') }}" class="btn-secondary">Open Proof Hub</a>
+        <div class="tech-card kpi-card">
+            <p class="kpi-head">Neighborhood Goal
+                <span title="Combined recycling progress from all VeriCycle users in your area toward the community monthly target." style="cursor:help; color:#94a3b8; margin-left:0.25rem; font-size:0.82rem;">(?)</span>
+            </p>
+            <div class="ring-wrap">
+                <svg class="ring-svg" viewBox="0 0 120 120">
+                    <circle class="ring-bg" cx="60" cy="60" r="44"></circle>
+                    <circle id="neighborhood-ring-fill" class="ring-fill" cx="60" cy="60" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"></circle>
+                </svg>
+                <div class="ring-center">
+                    <div class="ring-main" id="neighborhood-goal-label">14.5k / 25k kg</div>
+                    <div class="ring-sub" id="neighborhood-percent">58%</div>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="tech-card section-card">
+        <h3 class="section-title">Open Pickup Opportunities</h3>
+        <div id="pickup-opportunities-list"><p>Loading opportunities...</p></div>
+    </div>
+
+    <div class="tech-card section-card">
+        <h3 class="section-title">My Accepted Pickups</h3>
+        <div id="accepted-pickups-list"><p>Loading accepted jobs...</p></div>
+    </div>
+
+    <div class="tech-card section-card">
+        <h3 class="section-title">Verified Recycling Activity</h3>
+        <div class="table-wrap">
+            <table id="activity-table">
+                <tr>
+                    <th>Date</th>
+                    <th>Weight (kg)</th>
+                    <th>Material</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Hedera Anchor</th>
+                </tr>
+                <tbody id="activity-tbody">
+                    {% for act in activities %}
+                        {% set status_raw = (act.status or act.verified_status or 'pending')|lower %}
+                        <tr>
+                            <td class="activity-date" data-ts="{{ act.timestamp }}">{{ act.timestamp }}</td>
+                            <td class="activity-weight" data-desc="{{ act.desc|e }}">—</td>
+                            <td class="activity-material" data-desc="{{ act.desc|e }}">—</td>
+                            <td>{{ act.amount }}</td>
+                            <td>
+                                {% if 'anchored' in status_raw %}
+                                    <span class="status-pill status-anchored">Anchored</span>
+                                {% elif 'verified' in status_raw or status_raw == 'completed' %}
+                                    <span class="status-pill status-verified">Verified</span>
+                                {% else %}
+                                    <span class="status-pill status-pending">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if act.hedera_tx_id %}
+                                    <a class="hedera-link" href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">{{ (act.hedera_tx_id|string)[:8] }}...{{ (act.hedera_tx_id|string)[-4:] }}</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bottom-grid">
+        <section class="faq-card">
+            <h3 style="margin:0;">Need Help?</h3>
+            <details class="faq-item" open>
+                <summary>How do I get paid in EcoCoin?</summary>
+                <p>After your drop-off is verified, rewards are credited instantly to your Rewards Wallet.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Why is my pickup marked 'Pending'?</summary>
+                <p>Pending means the center still needs to verify weight/material before payout is finalized.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What is the 'Proof Flow'?</summary>
+                <p>Submitted → Verified → Anchored → Rewarded. This chain creates auditable proof records.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What materials are accepted?</summary>
+                <p>Paper, cardboard, cans, glass, plastics, and mixed recyclables depending on partner intake rules.</p>
+            </details>
+            <details class="faq-item">
+                <summary>How is my EcoCoin calculated?</summary>
+                <p>1 EcoCoin is rewarded for every 1 kg of verified material you drop off.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What happens if a center disagrees with my weight?</summary>
+                <p>The center's calibrated scale provides the final verified weight anchored to Hedera.</p>
+            </details>
+        </section>
+
+        <section class="tech-card action-center-card">
+            <button class="primary-cta" id="trigger-deposit-btn">Trigger Recycling Event</button>
+            <div class="tech-card" style="padding:0.85rem;">
+                <h3 style="margin:0 0 0.5rem 0;">Digital ID</h3>
+                <div class="qr-code-container" id="qr-code-container" style="text-align:center; min-height:185px; display:flex; align-items:center; justify-content:center; background:rgba(0, 200, 100, 0.05); border-radius:8px;">
+                    <div class="qr-placeholder" style="color:#64748b; font-size:0.9rem;">Click Generate to create your code</div>
+                </div>
+                <button class="btn-primary" id="generate-btn" style="display:block; width:100%; margin-top:0.75rem; border:none; padding:0.65rem; border-radius:8px; color:#fff; font-weight:700;">Generate QR Code</button>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toastEl = document.getElementById('dashboard-toast');
+    const qrContainer = document.getElementById('qr-code-container');
+    const generateButton = document.getElementById('generate-btn');
+    const oppContainer = document.getElementById('pickup-opportunities-list');
+    const acceptedContainer = document.getElementById('accepted-pickups-list');
+    let currentData = {};
+
+    function showToast(message, tone = 'success') {
+        toastEl.className = `toast ${tone === 'error' ? 'error' : ''}`.trim();
+        toastEl.textContent = message;
+        requestAnimationFrame(() => toastEl.classList.add('show'));
+        setTimeout(() => toastEl.classList.remove('show'), 3000);
+    }
+
+    function formatTs(value) {
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return value || '—';
+        const dateText = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+        const timeText = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        return `${dateText} • ${timeText}`;
+    }
+
+    function applyTableFormatting() {
+        document.querySelectorAll('.activity-date').forEach((cell) => {
+            cell.textContent = formatTs(cell.getAttribute('data-ts') || cell.textContent || '');
+        });
+
+        document.querySelectorAll('.activity-weight, .activity-material').forEach((cell) => {
+            const desc = cell.getAttribute('data-desc') || '';
+            const match = desc.match(/(\d+(?:\.\d+)?)\s*kg\s*of\s*([^\)]+)/i) || desc.match(/(\d+(?:\.\d+)?)\s*kg\s*\(?([^\)]+)?\)?/i);
+            const isWeight = cell.classList.contains('activity-weight');
+            if (!match) {
+                cell.textContent = isWeight ? '—' : 'Mixed';
+                return;
+            }
+            const weight = match[1] || '—';
+            const material = (match[2] || 'Mixed').trim();
+            cell.textContent = isWeight ? weight : material;
+        });
+    }
+
+    function updateRing(fillId, labelId, percentId, current, target, compact = false) {
+        const safeTarget = Number(target) > 0 ? Number(target) : 1;
+        const safeCurrent = Math.max(0, Number(current) || 0);
+        const pct = Math.min((safeCurrent / safeTarget) * 100, 100);
+        const circumference = 276.46;
+        const offset = circumference - (pct / 100) * circumference;
+        const ring = document.getElementById(fillId);
+        if (ring) {
+            ring.style.strokeDasharray = `${circumference}`;
+            ring.style.strokeDashoffset = offset.toFixed(2);
+        }
+        const left = compact && safeCurrent >= 1000 ? `${(safeCurrent / 1000).toFixed(1)}k` : safeCurrent.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        const right = compact && safeTarget >= 1000 ? `${(safeTarget / 1000).toFixed(0)}k` : safeTarget.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        document.getElementById(labelId).textContent = `${left} / ${right} kg`;
+        document.getElementById(percentId).textContent = `${Math.round(pct)}%`;
+    }
+
+    function renderSystemHealth(data) {
+        const text = document.getElementById('system-health-text');
+        const chip = document.getElementById('system-status-chip');
+        const agents = Array.isArray(data?.agents) ? data.agents : [];
+        const healthy = agents.filter((a) => (a?.health || '').toLowerCase() === 'ok').length;
+        if (!agents.length) {
+            text.textContent = 'System Operational';
+            chip.title = 'No agent heartbeat yet';
+            return;
+        }
+        text.textContent = agents.some((a) => (a?.health || '').toLowerCase() === 'degraded') ? 'System Degraded' : 'System Operational';
+        chip.title = `${healthy} Agents Online`;
+    }
+
+    async function loadAgentStatus() {
+        try {
+            const response = await fetch('/api/agent-status');
+            renderSystemHealth(await response.json());
+        } catch (e) {
+            renderSystemHealth({ agents: [] });
+        }
+    }
+
+    function cardHtml(sourceLabel, weight, material, statusOrTime, actionHtml) {
+        return `
+            <div class="list-item">
+                <div class="item-top">
+                    <div>
+                        <p class="item-primary">${sourceLabel} | ${weight}kg | ${statusOrTime}</p>
+                        <p class="item-meta">${material}</p>
+                    </div>
+                    ${actionHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    async function loadPickupOpportunities() {
+        try {
+            const res = await fetch('/api/opportunities/open');
+            if (!res.ok) {
+                oppContainer.innerHTML = '<p>Unable to load pickup opportunities.</p>';
+                return;
+            }
+            const rows = (await res.json()).rows || [];
+            if (!rows.length) {
+                oppContainer.innerHTML = '<p>No open opportunities right now.</p>';
+                return;
+            }
+            oppContainer.innerHTML = rows.map((row) => {
+                const source = (row.source_name || row.business_name || 'Local Partner').toString();
+                const weight = Number(row.estimated_kg || 0).toFixed(1);
+                const material = (row.material_type || 'Mixed').toString();
+                const when = (row.requested_window || 'Today').toString();
+                const action = `<button class="btn-primary accept-btn" data-id="${Number(row.id)}" style="border:none; color:#fff; border-radius:8px; padding:0.5rem 0.75rem; font-weight:700;">Accept</button>`;
+                return cardHtml(source, weight, material, when, action);
+            }).join('');
+        } catch (e) {
+            oppContainer.innerHTML = '<p>Unable to load pickup opportunities.</p>';
+        }
+    }
+
+    async function loadAcceptedAssignments() {
+        try {
+            const res = await fetch('/api/opportunities/my-assignments');
+            if (!res.ok) {
+                acceptedContainer.innerHTML = '<p>Unable to load accepted jobs.</p>';
+                return;
+            }
+            const rows = (await res.json()).rows || [];
+            if (!rows.length) {
+                acceptedContainer.innerHTML = '<p>No accepted pickups yet.</p>';
+                return;
+            }
+            acceptedContainer.innerHTML = rows.map((row) => {
+                const source = (row.source_name || row.business_name || row.location || 'Local Partner').toString();
+                const weight = Number(row.estimated_kg || 0).toFixed(1);
+                const material = (row.material_type || 'Mixed').toString();
+                const statusLabel = row.status === 'accepted' ? 'Pending' : 'Submitted';
+                const id = Number(row.assignment_id);
+                const action = row.status === 'accepted'
+                    ? `<button class="btn-primary toggle-drop" data-id="${id}" style="border:none; color:#fff; border-radius:8px; padding:0.5rem 0.75rem; font-weight:700;">Record Drop-off</button>`
+                    : '<span class="item-meta">Awaiting center verification</span>';
+                const details = row.status === 'accepted'
+                    ? `
+                        <div id="drop_${id}" class="drop-details">
+                            <input class="field" id="drop_weight_${id}" type="number" step="0.1" value="${weight}" placeholder="Actual weight (kg)">
+                            <button class="btn-primary submit-drop" data-id="${id}" data-material="${material}" style="border:none; color:#fff; border-radius:8px; padding:0.55rem 0.8rem; font-weight:700;">Submit</button>
+                        </div>
+                    `
+                    : '';
+                return `
+                    <div class="list-item">
+                        <div class="item-top">
+                            <div>
+                                <p class="item-primary">${source} | ${weight}kg | ${statusLabel}</p>
+                                <p class="item-meta">${material}</p>
+                            </div>
+                            ${action}
+                        </div>
+                        ${details}
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            acceptedContainer.innerHTML = '<p>Unable to load accepted jobs.</p>';
+        }
+    }
+
+    async function acceptOpportunity(id) {
+        try {
+            const res = await fetch(`/api/opportunities/${id}/accept`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                showToast(data.error || 'Could not accept opportunity', 'error');
+                return;
+            }
+            showToast('Pickup opportunity secured!');
+            loadPickupOpportunities();
+            loadAcceptedAssignments();
+        } catch (e) {
+            showToast('Could not accept opportunity', 'error');
+        }
+    }
+
+    async function submitDropoff(id, material, weight) {
+        try {
+            const res = await fetch(`/api/assignments/${id}/submit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ material_type: material, weight_kg: weight }),
+            });
+            const data = await res.json();
+            if (!data.ok) {
+                showToast(data.error || 'Could not submit drop-off', 'error');
+                return;
+            }
+            showToast('Drop-off submitted to center');
+            loadAcceptedAssignments();
+        } catch (e) {
+            showToast('Could not submit drop-off', 'error');
+        }
+    }
+
+    oppContainer.addEventListener('click', (event) => {
+        const btn = event.target.closest('.accept-btn');
+        if (!btn) return;
+        acceptOpportunity(Number(btn.dataset.id));
+    });
+
+    acceptedContainer.addEventListener('click', (event) => {
+        const toggle = event.target.closest('.toggle-drop');
+        if (toggle) {
+            const panel = document.getElementById(`drop_${Number(toggle.dataset.id)}`);
+            if (panel) panel.classList.toggle('open');
+            return;
+        }
+        const submit = event.target.closest('.submit-drop');
+        if (!submit) return;
+        const id = Number(submit.dataset.id);
+        const material = submit.dataset.material || 'Mixed';
+        const weight = Number(document.getElementById(`drop_weight_${id}`)?.value || 0);
+        submitDropoff(id, material, weight);
+    });
+
+    generateButton.addEventListener('click', () => {
+        if (!currentData.profile_complete) {
+            showToast('Complete profile before generating QR', 'error');
+            window.location.href = '/profile';
+            return;
+        }
+        qrContainer.innerHTML = '';
+        const qrImage = document.createElement('img');
+        qrImage.src = '/generate-qr?' + new Date().getTime();
+        qrImage.style.maxWidth = '100%';
+        qrContainer.appendChild(qrImage);
+    });
+
+    async function initializeDashboard() {
+        try {
+            const response = await fetch('/api/my-dashboard-data');
+            currentData = await response.json();
+
+            if (currentData.total_eco !== undefined) {
+                document.getElementById('kpi-ecocoin').textContent = Number(currentData.total_eco).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' ECO';
+            }
+            if (currentData.total_recycled_completed !== undefined) {
+                document.getElementById('kpi-kg').textContent = Number(currentData.total_recycled_completed).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' kg';
+            }
+
+            const personalCurrent = Number(currentData.total_recycled_completed || 0);
+            const personalTarget = Number(currentData.weekly_goal || 50);
+            updateRing('personal-ring-fill', 'personal-goal-label', 'personal-percent', personalCurrent, personalTarget, false);
+
+            const neighborhoodCurrent = Number(currentData.neighborhood_current_kg || 14500);
+            const neighborhoodTarget = Number(currentData.neighborhood_goal_kg || 25000);
+            updateRing('neighborhood-ring-fill', 'neighborhood-goal-label', 'neighborhood-percent', neighborhoodCurrent, neighborhoodTarget, true);
+
+            applyTableFormatting();
+            loadAgentStatus();
+            loadPickupOpportunities();
+            loadAcceptedAssignments();
+        } catch (e) {
+            showToast('Could not initialize dashboard', 'error');
+        }
+    }
+
+    async function handleDeposit() {
+        const btn = document.getElementById('trigger-deposit-btn');
+        try {
+            btn.disabled = true;
+            const res = await fetch('/api/simulate-deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+            const data = await res.json();
+            if (!res.ok) {
+                showToast(data.error || 'Failed to trigger event', 'error');
+                btn.disabled = false;
+                return;
+            }
+            showToast('Recycling event triggered successfully');
+            setTimeout(() => {
+                btn.disabled = false;
+                initializeDashboard();
+            }, 700);
+        } catch (e) {
+            showToast('Failed to trigger event', 'error');
+            btn.disabled = false;
+        }
+    }
+
+    document.getElementById('trigger-deposit-btn').addEventListener('click', handleDeposit);
+    initializeDashboard();
+});
+</script>
 {% endblock %}

@@ -1,62 +1,220 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="ecocoin-page">
-    <a href="/collector" class="back-link">← Back to Recycler Hub</a>
+<div style="max-width: 1100px; margin: 0 auto;">
+    <a href="/collector" class="back-link">â† Back to Recycler Hub</a>
 
-    <h1>Rewards Wallet</h1>
-    <p class="mockup-subtitle">This is verified income history, not points. Every reward is traceable.</p>
+    <h1 style="margin: 0.8rem 0 0.3rem 0; font-size: clamp(2rem, 4vw, 3rem); color: #0f172a;">Rewards & Exchange</h1>
+    <p style="margin: 0 0 1.1rem 0; color: #64748b;">Swap ECO like a crypto desk, or redeem instant sponsored utility vouchers.</p>
 
-    <div class="eco-balance-card">
-        <h2>Your Balance</h2>
-        <p class="eco-amount">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</p>
-    </div>
-
-    <div class="eco-metrics">
-        <div>Verified Events: {{ wallet_verified_events }}</div>
-        <div>Proof Records: {{ wallet_proof_records }}</div>
-        <div>Total Earned: {{ "{:,.0f}".format(wallet_total_earned or 0) }} ECO</div>
-    </div>
-
-    <div class="eco-history">
-        <h3>Hedera-linked Rewards</h3>
-
-        {% if wallet_recent_rewards %}
-            {% for reward in wallet_recent_rewards %}
-                <div class="eco-row">
-                    <span>+{{ "{:,.0f}".format(reward.amount or 0) }} ECO</span>
-                    <span>{{ reward.description }}</span>
-                    <a href="https://hashscan.io/testnet/transaction/{{ reward.tx_id }}" target="_blank" rel="noopener">View on Hedera</a>
+    <!-- 50/50 Grid: Left (Financials) + Right (Vouchers) -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- LEFT COLUMN: Balance + Swap -->
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Available Balance (Compact Horizontal) -->
+            <div class="tech-card" style="padding: 1rem 1.2rem; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <span style="color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Available Balance</span>
+                    <span title="EcoCoin (ECO) is a verified digital asset pegged to your recycling efforts. It can be swapped for crypto or redeemed for real-world vouchers." style="cursor:help; color:#94a3b8; font-size:0.8rem;">(?)</span>
                 </div>
-            {% endfor %}
-        {% else %}
-            <div class="eco-row">
-                <span>Demo mode</span>
-                <span>Rewards are being finalized</span>
-                <span>Hedera link pending</span>
+                <div style="font-size: 1.8rem; color: #0b5d4a; font-weight: 700;">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</div>
             </div>
-        {% endif %}
-    </div>
 
-    <div class="eco-exchange">
-        <h3>Exchange Rewards</h3>
+            <!-- Swap Card -->
+            <div class="tech-card" id="swap-card" data-wallet-balance="{{ wallet_balance or 0 }}" style="padding: 1.2rem; flex: 1;">
+                <h3 style="margin: 0 0 0.8rem 0; color: #0b5d4a; font-size: 1.1rem;">Swap Interface</h3>
 
-        <div class="exchange-option">
-            <strong>Bank Transfer</strong>
-            <p>100 ECO ~ R10 (demo rate)</p>
+                <div style="margin-bottom: 0.75rem;">
+                    <label for="eco-pay" style="display: block; margin-bottom: 0.3rem; color: #475569; font-weight: 600; font-size: 0.9rem;">You Pay</label>
+                    <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.7rem; background: #f8fafc;">
+                        <input id="eco-pay" type="number" min="0" step="1" placeholder="0.00" style="flex: 1; border: none; background: transparent; font-size: 1.1rem; color: #0f172a; outline: none;">
+                        <button id="swap-max" type="button" style="border: none; background: transparent; color: #16a34a; font-weight: 700; cursor: pointer; margin-right: 0.5rem; font-size: 0.9rem;">MAX</button>
+                        <span style="color: #334155; font-weight: 700; font-size: 0.9rem;">ECO</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 0.75rem;">
+                    <label for="receive-token" style="display: block; margin-bottom: 0.3rem; color: #475569; font-weight: 600; font-size: 0.9rem;">You Receive</label>
+                    <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.7rem; background: #f8fafc; gap: 0.6rem;">
+                        <input id="receive-amount" type="text" readonly placeholder="0.00" style="flex: 1; border: none; background: transparent; font-size: 1.1rem; color: #0f172a; outline: none;">
+                        <select id="receive-token" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.35rem 0.4rem; color: #334155; font-weight: 700; background: #ffffff; font-size: 0.9rem;">
+                            <option value="USDT">USDT</option>
+                            <option value="HBAR">HBAR</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="swap-now" class="btn-primary" style="margin-top: 1rem; width: 100%; border: none; border-radius: 10px; padding: 0.75rem; color: #fff; font-size: 0.95rem; font-weight: 700;">Swap Now</button>
+            </div>
         </div>
 
-        <div class="exchange-option">
-            <strong>Airtime / Data</strong>
-            <p>Instant mobile rewards</p>
-        </div>
+        <!-- RIGHT COLUMN: 2x2 Voucher Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <!-- Everyday Retail -->
+            <div class="tech-card" style="padding: 1rem;">
+                <p style="margin: 0 0 0.65rem 0; font-weight: 700; color: #334155; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;">Everyday Retail</p>
+                <div class="voucher-row" data-brand="Walmart / Makro" style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.5rem;">
+                    <span style="flex:1; font-weight:600; color:#0f172a; font-size:0.82rem;">Walmart</span>
+                    <select class="voucher-amount-select" style="border:1px solid #cbd5e1; border-radius:7px; padding:0.2rem 0.35rem; color:#334155; background:#f8fafc; font-size:0.75rem;">
+                        <option>R50</option><option>R100</option><option>R200</option>
+                    </select>
+                    <button class="redeem-btn btn-secondary" style="padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; white-space:nowrap; border:none; cursor:pointer;">Redeem</button>
+                </div>
+                <div class="voucher-row" data-brand="Shoprite / Checkers" style="display:flex; align-items:center; gap:0.4rem;">
+                    <span style="flex:1; font-weight:600; color:#0f172a; font-size:0.82rem;">Shoprite</span>
+                    <select class="voucher-amount-select" style="border:1px solid #cbd5e1; border-radius:7px; padding:0.2rem 0.35rem; color:#334155; background:#f8fafc; font-size:0.75rem;">
+                        <option>R50</option><option>R100</option><option>R200</option>
+                    </select>
+                    <button class="redeem-btn btn-secondary" style="padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; white-space:nowrap; border:none; cursor:pointer;">Redeem</button>
+                </div>
+            </div>
 
-        <div class="exchange-option">
-            <strong>Retail Vouchers</strong>
-            <p>Shoprite / Pick n Pay (demo)</p>
-        </div>
+            <!-- Food & Dining -->
+            <div class="tech-card" style="padding: 1rem;">
+                <p style="margin: 0 0 0.65rem 0; font-weight: 700; color: #334155; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;">Food &amp; Dining</p>
+                <div class="voucher-row" data-brand="Uber Eats" style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.5rem;">
+                    <span style="flex:1; font-weight:600; color:#0f172a; font-size:0.82rem;">Uber Eats</span>
+                    <select class="voucher-amount-select" style="border:1px solid #cbd5e1; border-radius:7px; padding:0.2rem 0.35rem; color:#334155; background:#f8fafc; font-size:0.75rem;">
+                        <option>R50</option><option>R100</option><option>R200</option>
+                    </select>
+                    <button class="redeem-btn btn-secondary" style="padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; white-space:nowrap; border:none; cursor:pointer;">Redeem</button>
+                </div>
+                <div class="voucher-row" data-brand="KFC" style="display:flex; align-items:center; gap:0.4rem;">
+                    <span style="flex:1; font-weight:600; color:#0f172a; font-size:0.82rem;">KFC</span>
+                    <select class="voucher-amount-select" style="border:1px solid #cbd5e1; border-radius:7px; padding:0.2rem 0.35rem; color:#334155; background:#f8fafc; font-size:0.75rem;">
+                        <option>R50</option><option>R100</option><option>R200</option>
+                    </select>
+                    <button class="redeem-btn btn-secondary" style="padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; white-space:nowrap; border:none; cursor:pointer;">Redeem</button>
+                </div>
+            </div>
 
-        <small>*Demo conversion rates for hackathon</small>
+            <!-- Digital Entertainment -->
+            <div class="tech-card" style="padding: 1rem;">
+                <p style="margin: 0 0 0.65rem 0; font-weight: 700; color: #334155; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;">Digital Entertainment</p>
+                <div class="voucher-row" data-brand="PlayStation Store" style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.5rem;">
+                    <span style="flex:1; font-weight:600; color:#0f172a; font-size:0.82rem;">PlayStation</span>
+                    <select class="voucher-amount-select" style="border:1px solid #cbd5e1; border-radius:7px; padding:0.2rem 0.35rem; color:#334155; background:#f8fafc; font-size:0.75rem;">
+                        <option>R50</option><option>R100</option><option>R200</option>
+                    </select>
+                    <button class="redeem-btn btn-secondary" style="padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; white-space:nowrap; border:none; cursor:pointer;">Redeem</button>
+                </div>
+                <div class="voucher-row" data-brand="Netflix" style="display:flex; align-items:center; gap:0.4rem;">
+                    <span style="flex:1; font-weight:600; color:#0f172a; font-size:0.82rem;">Netflix</span>
+                    <select class="voucher-amount-select" style="border:1px solid #cbd5e1; border-radius:7px; padding:0.2rem 0.35rem; color:#334155; background:#f8fafc; font-size:0.75rem;">
+                        <option>R50</option><option>R100</option><option>R200</option>
+                    </select>
+                    <button class="redeem-btn btn-secondary" style="padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; white-space:nowrap; border:none; cursor:pointer;">Redeem</button>
+                </div>
+            </div>
+
+            <!-- Universal Prepaid -->
+            <div class="tech-card" style="padding: 1rem;">
+                <p style="margin: 0 0 0.65rem 0; font-weight: 700; color: #334155; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;">Universal Prepaid</p>
+                <div class="voucher-row" data-brand="Visa Virtual Prepaid" style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.5rem;">
+                    <span style="flex:1; font-weight:600; color:#0f172a; font-size:0.82rem;">Visa</span>
+                    <select class="voucher-amount-select" style="border:1px solid #cbd5e1; border-radius:7px; padding:0.2rem 0.35rem; color:#334155; background:#f8fafc; font-size:0.75rem;">
+                        <option>R50</option><option>R100</option><option>R200</option>
+                    </select>
+                    <button class="redeem-btn btn-secondary" style="padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; white-space:nowrap; border:none; cursor:pointer;">Redeem</button>
+                </div>
+                <div class="voucher-row" data-brand="Mastercard Reward Card" style="display:flex; align-items:center; gap:0.4rem;">
+                    <span style="flex:1; font-weight:600; color:#0f172a; font-size:0.82rem;">Mastercard</span>
+                    <select class="voucher-amount-select" style="border:1px solid #cbd5e1; border-radius:7px; padding:0.2rem 0.35rem; color:#334155; background:#f8fafc; font-size:0.75rem;">
+                        <option>R50</option><option>R100</option><option>R200</option>
+                    </select>
+                    <button class="redeem-btn btn-secondary" style="padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; white-space:nowrap; border:none; cursor:pointer;">Redeem</button>
+                </div>
+            </div>
+
+
+<div id="voucher-modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); z-index: 1300; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="tech-card" style="width: min(460px, 100%); padding: 1.2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.7rem;">
+            <h3 id="voucher-title" style="margin:0; color:#0b5d4a;">Voucher</h3>
+            <button id="voucher-close" type="button" style="border:none; background:transparent; color:#64748b; font-size:1.2rem; cursor:pointer;">Ã—</button>
+        </div>
+        <p id="voucher-value" style="margin:0 0 0.75rem 0; color:#475569;">Value</p>
+        <div style="height: 72px; border-radius: 8px; border: 1px solid #cbd5e1; background: repeating-linear-gradient(90deg, #0f172a 0px, #0f172a 3px, #ffffff 3px, #ffffff 6px);"></div>
+        <div id="voucher-code" style="margin-top:0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem; color:#0f172a; font-weight:700;">VOUCHER-X89B-2026</div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ecoPayInput = document.getElementById('eco-pay');
+    const receiveAmountInput = document.getElementById('receive-amount');
+    const receiveTokenSelect = document.getElementById('receive-token');
+    const maxButton = document.getElementById('swap-max');
+    const swapButton = document.getElementById('swap-now');
+
+    const swapCard = document.getElementById('swap-card');
+    const walletBalance = Number(swapCard?.dataset.walletBalance || 0);
+    const rates = {
+        USDT: 0.015,
+        HBAR: 0.0202,
+    };
+
+    function recalcReceiveAmount() {
+        const eco = Number(ecoPayInput.value || 0);
+        const token = receiveTokenSelect.value;
+        const rate = rates[token] || 0;
+        const receive = eco * rate;
+        receiveAmountInput.value = receive > 0 ? receive.toFixed(token === 'USDT' ? 2 : 4) : '';
+    }
+
+    ecoPayInput.addEventListener('input', recalcReceiveAmount);
+    receiveTokenSelect.addEventListener('change', recalcReceiveAmount);
+
+    maxButton.addEventListener('click', function () {
+        ecoPayInput.value = walletBalance.toFixed(0);
+        recalcReceiveAmount();
+    });
+
+    swapButton.addEventListener('click', function () {
+        if (!Number(ecoPayInput.value || 0)) return;
+        swapButton.textContent = 'Swap Submitted';
+        swapButton.disabled = true;
+        setTimeout(() => {
+            swapButton.textContent = 'Swap Now';
+            swapButton.disabled = false;
+        }, 1200);
+    });
+
+    const modal = document.getElementById('voucher-modal');
+    const closeButton = document.getElementById('voucher-close');
+    const voucherTitle = document.getElementById('voucher-title');
+    const voucherValue = document.getElementById('voucher-value');
+    const voucherCode = document.getElementById('voucher-code');
+
+    function buildVoucherCode() {
+        const token = Math.random().toString(36).slice(2, 6).toUpperCase();
+        return `VOUCHER-${token}-2026`;
+    }
+
+    document.querySelectorAll('.redeem-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const row = btn.closest('.voucher-row');
+            const brand = row ? row.getAttribute('data-brand') : 'Voucher';
+            const select = row ? row.querySelector('.voucher-amount-select') : null;
+            const amount = select ? select.value : '';
+            voucherTitle.textContent = brand || 'Voucher';
+            voucherValue.textContent = amount ? `${brand} â€” ${amount} Voucher` : brand;
+            voucherCode.textContent = buildVoucherCode();
+            modal.style.display = 'flex';
+        });
+    });
+
+    closeButton.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    recalcReceiveAmount();
+});
+</script>
 {% endblock %}

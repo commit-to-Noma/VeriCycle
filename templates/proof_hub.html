@@ -1,138 +1,250 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-header">
-    <h2>Proof Hub</h2>
-    <p>Hedera verification workspace for judges: inspect anchored evidence, verify trust flow, and export proof documentation.</p>
+<style>
+    .audit-shell {
+        max-width: 1280px;
+        margin: 0 auto;
+    }
+    .audit-hero {
+        margin-bottom: 1rem;
+    }
+    .audit-hero h1 {
+        margin: 0;
+        color: #0f172a;
+        font-size: clamp(1.8rem, 3.6vw, 2.7rem);
+    }
+    .audit-hero p {
+        margin: 0.35rem 0 0 0;
+        color: #64748b;
+    }
+    .verify-card {
+        max-width: 880px;
+        margin: 0 auto 1rem auto;
+        padding: 1rem;
+        text-align: center;
+    }
+    .verify-input-wrap {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.6rem;
+        margin-top: 0.7rem;
+    }
+    .verify-input {
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 0.75rem 0.85rem;
+        color: #0f172a;
+        background: #f8fafc;
+    }
+    .verify-input:focus {
+        outline: none;
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+    }
+    .ledger-card { padding: 1rem; }
+    .ledger-table-wrap {
+        overflow-x: auto;
+        border: 1px solid #dbe4ea;
+        border-radius: 10px;
+    }
+    .ledger-table {
+        width: 100%;
+        min-width: 980px;
+        border-collapse: collapse;
+    }
+    .ledger-table th,
+    .ledger-table td {
+        padding: 0.72rem;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+    }
+    .ledger-table th {
+        background: #f1f5f9;
+        color: #334155;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+    }
+    .ledger-table tbody tr {
+        background: #ffffff;
+    }
+    .anchor-link {
+        color: #16a34a !important;
+        text-decoration: none;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .evidence-btn {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #e2e8f0;
+        color: #334155 !important;
+        text-decoration: none;
+        padding: 0.35rem 0.55rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        display: inline-block;
+    }
+    .auditor-tools {
+        margin-top: 1rem;
+        padding: 1rem;
+    }
+    .tools-grid {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .tools-grid .tool-card {
+        min-width: 220px;
+        max-width: 340px;
+        flex: 1;
+    }
+    .tool-card {
+        border: 1px solid #dbe4ea;
+        border-radius: 10px;
+        background: #ffffff;
+        padding: 0.8rem;
+    }
+    .verify-message {
+        margin-top: 0.5rem;
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    .verify-message.good { color: #15803d; }
+    .verify-message.bad { color: #b45309; }
+</style>
+
+<div class="audit-shell">
+    <header class="audit-hero">
+        <h1>VeriCycle Proof & Audit Hub</h1>
+        <p>Immutable, Hedera-anchored evidence for ESG reporting and compliance.</p>
+    </header>
+
+    <section class="tech-card verify-card">
+        <h3 style="margin:0; color:#0b5d4a;">Verify a Hash</h3>
+        <div class="verify-input-wrap">
+            <input id="hash-verify-input" class="verify-input" type="text" placeholder="Enter Hedera Transaction Hash to verify event authenticity.">
+            <button id="hash-verify-btn" class="btn-primary" style="border:none; border-radius:10px; padding:0.72rem 0.95rem; color:#fff; font-weight:700;">Verify</button>
+        </div>
+        <div id="verify-message" class="verify-message"></div>
+    </section>
+
+    <section class="tech-card ledger-card">
+        <h3 style="margin:0 0 0.65rem 0; color:#0b5d4a;">Proof Ledger</h3>
+        <div class="ledger-table-wrap">
+            <table class="ledger-table" id="proof-ledger-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Event ID</th>
+                        <th>Material & Weight</th>
+                        <th>Hedera Anchor</th>
+                        <th>Evidence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    {% set tx = row.hedera_tx_id or row.hcs_tx_id or row.logbook_tx_id or '' %}
+                    <tr data-anchor="{{ tx|lower }}">
+                        <td class="audit-date" data-ts="{{ row.timestamp }}">{{ row.timestamp }}</td>
+                        <td>#{{ row.id }}</td>
+                        <td class="mat-weight" data-desc="{{ row.desc|e }}">{{ row.desc }}</td>
+                        <td>
+                            {% if tx %}
+                                <a class="anchor-link" href="https://hashscan.io/testnet/transaction/{{ tx }}" target="_blank" rel="noopener">{{ tx[:6] }}...{{ tx[-4:] }}</a>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.id %}
+                                <a class="evidence-btn" href="/api/proof-bundle/{{ row.id }}">Download JSON</a>
+                            {% else %}
+                                <span style="color:#94a3b8;">N/A</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="tech-card auditor-tools">
+        <h3 style="margin:0; color:#0b5d4a;">Auditor Tools</h3>
+        <div class="tools-grid">
+            <div class="tool-card" style="display: flex; flex-direction: column;">
+                <h4 style="margin:0 0 0.4rem 0; color:#0f172a;">Generate Evidence Pack</h4>
+                <p style="margin:0 0 0.55rem 0; color:#64748b; font-size:0.86rem; flex:1;">Export supporting JSON and proof artifacts for an external audit file.</p>
+                <button class="btn-secondary" id="export-pdf-btn" onclick="window.print()" style="border:none; cursor:pointer; padding:0.45rem 0.7rem; border-radius:8px; font-size:inherit; margin-top:auto;">Export PDF</button>
+            </div>
+            <div class="tool-card" style="display: flex; flex-direction: column;">
+                <h4 style="margin:0 0 0.4rem 0; color:#0f172a;">Simulate Discrepancy</h4>
+                <p style="margin:0 0 0.55rem 0; color:#64748b; font-size:0.86rem; flex:1;">Validate remediation flow when an anchor appears missing or mismatched.</p>
+                <a class="btn-secondary" href="{{ url_for('proof_integrity') }}" style="display:inline-block; text-decoration:none; padding:0.45rem 0.7rem; border-radius:8px; text-align:center; margin-top:auto;">Open Proof Verifier</a>
+            </div>
+        </div>
+    </section>
 </div>
 
-<section class="proof-hub-hero-strip">
-    <div class="proof-hero-chip">
-        <span>✅</span>
-        <span>Verified recycling evidence</span>
-    </div>
-    <div class="proof-hero-chip">
-        <span>⛓️</span>
-        <span>Hedera-linked proof records</span>
-    </div>
-    <div class="proof-hero-chip">
-        <span>📄</span>
-        <span>Proof-of-income ready</span>
-    </div>
-</section>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('hash-verify-input');
+    const button = document.getElementById('hash-verify-btn');
+    const message = document.getElementById('verify-message');
 
-<section class="proof-hub-layout">
-    <div class="proof-hub-main">
-        <section class="card proof-hub-card proof-hub-evidence-card">
-            <div class="proof-hub-head">
-                <div>
-                    <span class="section-kicker">Trust Evidence</span>
-                    <h3>Latest Hedera-linked proof records</h3>
-                </div>
-                <span class="proof-status-pill">Judge-facing</span>
-            </div>
+    function formatDate(raw) {
+        const d = new Date(raw);
+        if (Number.isNaN(d.getTime())) return raw || '—';
+        return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    }
 
-            <div class="proof-evidence-grid proof-evidence-grid-premium">
-                <div class="proof-summary-chip proof-summary-chip-premium">
-                    <span class="proof-chip-label">Latest HCS anchor</span>
-                    <strong>{{ evidence.latest_hcs_tx or '—' }}</strong>
-                    <span class="proof-chip-meta">Consensus-linked verification record</span>
-                    {% if evidence.latest_hcs_link %}
-                        <a href="{{ evidence.latest_hcs_link }}" target="_blank" rel="noopener">View on Hedera</a>
-                    {% endif %}
-                </div>
+    document.querySelectorAll('.audit-date').forEach((cell) => {
+        cell.textContent = formatDate(cell.getAttribute('data-ts') || cell.textContent || '');
+    });
 
-                <div class="proof-summary-chip proof-summary-chip-premium">
-                    <span class="proof-chip-label">Latest HTS reward</span>
-                    <strong>{{ evidence.latest_hts_tx or '—' }}</strong>
-                    <span class="proof-chip-meta">Reward settlement evidence</span>
-                    {% if evidence.latest_hts_link %}
-                        <a href="{{ evidence.latest_hts_link }}" target="_blank" rel="noopener">View on Hedera</a>
-                    {% endif %}
-                </div>
+    document.querySelectorAll('.mat-weight').forEach((cell) => {
+        const desc = cell.getAttribute('data-desc') || '';
+        const match = desc.match(/(\d+(?:\.\d+)?)\s*kg\s*of\s*([^\)]+)/i) || desc.match(/(\d+(?:\.\d+)?)\s*kg\s*\(?([^\)]+)?\)?/i);
+        if (!match) {
+            cell.textContent = desc || 'Mixed recyclables';
+            return;
+        }
+        cell.textContent = `${match[2] ? match[2].trim() : 'Mixed'} • ${match[1]}kg`;
+    });
 
-                <div class="proof-summary-chip proof-summary-chip-premium">
-                    <span class="proof-chip-label">Latest commerce event</span>
-                    <strong>{{ evidence.latest_commerce_tx or '—' }}</strong>
-                    <span class="proof-chip-meta">Agent-to-agent value exchange trail</span>
-                    {% if evidence.latest_commerce_link %}
-                        <a href="{{ evidence.latest_commerce_link }}" target="_blank" rel="noopener">Open Commerce Record</a>
-                    {% endif %}
-                </div>
-            </div>
-        </section>
+    button.addEventListener('click', function () {
+        const value = (input.value || '').trim().toLowerCase();
+        if (!value) {
+            message.className = 'verify-message bad';
+            message.textContent = 'Enter a Hedera hash to verify.';
+            return;
+        }
 
-        <section class="card proof-hub-card proof-flow-judge-card">
-            <div class="proof-hub-head">
-                <div>
-                    <span class="section-kicker">Verification Flow</span>
-                    <h3>How proof becomes trustworthy</h3>
-                </div>
-            </div>
+        let matched = false;
+        document.querySelectorAll('#proof-ledger-table tbody tr').forEach((row) => {
+            const anchor = (row.getAttribute('data-anchor') || '').toLowerCase();
+            if (anchor && anchor.includes(value)) {
+                row.style.outline = '2px solid #16a34a';
+                row.style.outlineOffset = '-2px';
+                matched = true;
+            } else {
+                row.style.outline = 'none';
+            }
+        });
 
-            <div class="proof-judge-flow">
-                <div class="proof-judge-step proof-judge-step-done">
-                    <div class="proof-judge-dot">1</div>
-                    <div class="proof-judge-body">
-                        <strong>Submitted</strong>
-                        <span>Pickup or deposit activity is captured in VeriCycle.</span>
-                    </div>
-                </div>
-
-                <div class="proof-judge-step proof-judge-step-done">
-                    <div class="proof-judge-dot">2</div>
-                    <div class="proof-judge-body">
-                        <strong>Verified</strong>
-                        <span>Submitted materials and event details are validated through the platform flow.</span>
-                    </div>
-                </div>
-
-                <div class="proof-judge-step proof-judge-step-active">
-                    <div class="proof-judge-dot">3</div>
-                    <div class="proof-judge-body">
-                        <strong>Anchored</strong>
-                        <span>HCS-linked records provide tamper-evident trust evidence.</span>
-                    </div>
-                </div>
-
-                <div class="proof-judge-step proof-judge-step-active">
-                    <div class="proof-judge-dot">4</div>
-                    <div class="proof-judge-body">
-                        <strong>Rewarded</strong>
-                        <span>HTS-linked reward outcomes become visible for settlement checks.</span>
-                    </div>
-                </div>
-
-                <div class="proof-judge-step proof-judge-step-active">
-                    <div class="proof-judge-dot">5</div>
-                    <div class="proof-judge-body">
-                        <strong>Proof Ready</strong>
-                        <span>Proof bundles and supporting records are available for inspection and export.</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <aside class="proof-hub-side">
-        <section class="card proof-hub-card proof-tools-card">
-            <span class="section-kicker">Proof Tools</span>
-            <h3>Inspect and export</h3>
-            <div class="proof-tools-stack">
-                <a class="btn-primary" href="{{ url_for('proof_integrity') }}">Open Proof Verifier</a>
-                <a class="btn-secondary" href="/api/income-report.pdf" target="_blank">Download Proof-of-Income PDF</a>
-            </div>
-        </section>
-
-        <section class="card proof-hub-card proof-trust-card">
-            <span class="section-kicker">Why this matters</span>
-            <h3>From recycling activity to trusted proof</h3>
-            <div class="proof-trust-points">
-                <div class="proof-trust-point">Recyclers gain verifiable work history</div>
-                <div class="proof-trust-point">Businesses gain auditable sustainability records</div>
-                <div class="proof-trust-point">Judges can inspect visible evidence, not just claims</div>
-            </div>
-        </section>
-    </aside>
-</section>
+        if (matched) {
+            message.className = 'verify-message good';
+            message.textContent = 'Hash verified against Hedera-anchored ledger entries.';
+        } else {
+            message.className = 'verify-message bad';
+            message.textContent = 'No matching anchor found in this proof ledger.';
+        }
+    });
+});
+</script>
 {% endblock %}

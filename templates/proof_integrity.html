@@ -6,20 +6,20 @@
     <title>Proof Integrity Checker - VeriCycle</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="dark-theme">
+<body class="light-theme">
     {% include '_navbar.html' %}
     <main class="container" style="max-width: 920px; margin-top: 24px;">
-        <div class="card">
+        <div class="tech-card" style="padding:1.5rem;">
             <h2>Proof Integrity Checker</h2>
             <p class="mockup-subtitle">Paste a proof JSON payload and verify its hash integrity instantly.</p>
-            <textarea id="proofInput" rows="16" style="width:100%; background:#121212; color:#f4f4f4; border:1px solid #333; border-radius:8px; padding:10px;" placeholder='{"proof_hash":"...", "activity_id": ...}'></textarea>
+            <textarea id="proofInput" rows="16" style="width:100%; background:#f8fafc; color:#0f172a; border:1px solid #cbd5e1; border-radius:8px; padding:10px;" placeholder='{"proof_hash":"...", "activity_id": ...}'></textarea>
             <div style="margin-top:12px; display:flex; gap:8px;">
                 <button id="verifyBtn" class="btn-primary">Verify Proof</button>
                 <button id="clearBtn" class="btn-secondary">Clear</button>
             </div>
         </div>
 
-        <div class="card" id="proofResult">
+        <div class="tech-card" id="proofResult" style="padding:1.5rem; margin-top:1rem;">
             <h3>Result</h3>
             <p>Awaiting verification...</p>
         </div>

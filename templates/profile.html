@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-        <div class="dashboard-header">
-            <h2>My Profile</h2>
-            <p>Keep your account details up to date.</p>
-        </div>
+<div class="container" style="max-width:600px; margin:0 auto;">
+    <div class="dashboard-header">
+        <h2>My Profile</h2>
+        <p>Keep your account details up to date.</p>
+    </div>
 
-        <div class="card">
-            
-            <form action="{{ url_for('profile') }}" method="POST" class="verify-form">
-                
+    <div class="tech-card" style="padding:1.5rem; margin-bottom:1rem;">
+        <form action="{{ url_for('profile') }}" method="POST" class="verify-form">
+
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" name="email" value="{{ current_user.email }}" disabled>
@@ -42,18 +42,18 @@
 
                 <div class="form-group">
                     <label for="address">
-                        Address (Optional)
+                        Address
                         <span class="tooltip" data-tooltip="Providing an address helps us identify recycling needs in your neighborhood.">ⓘ</span>
                     </label>
-                    <input type="text" id="address" name="address" value="{{ current_user.address or '' }}" placeholder="e.g., 123 Main St, Roodepoort">
+                    <input type="text" id="address" name="address" value="{{ current_user.address or '' }}" placeholder="e.g., 123 Main St, Roodepoort" required>
                 </div>
 
             <button type="submit" class="btn-primary-large btn-form">Save and Continue</button>
 
         </form>
-    </div> <!-- This DIV now correctly closes the Profile card -->
+    </div> <!-- tech-card -->
 
-    <div class="card">
+    <div class="tech-card" style="padding:1.5rem;">
         <h3>My Hedera Wallet</h3>
         <p class="form-note" style="margin-top: -1rem; margin-bottom: 1.5rem; line-height: 1.5;">
             Your VeriCycle account is a real, self-custody Hedera wallet. This allows us to send you EcoCoin directly and securely.
@@ -75,7 +75,8 @@
         <p class="form-note">
             <strong>This is your wallet.</strong> You can import this account into a wallet like <a href="https://www.hashpack.app/" target="_blank" style="color: #2196F3;">HashPack</a> at any time using your Private Key.
         </p>
-    </div>
+    </div> <!-- tech-card -->
+end_block
     <script>
     (() => {
         const field = document.getElementById("privateKeyField");
@@ -89,4 +90,5 @@
         });
     })();
     </script>
+</div> <!-- /container -->
 {% endblock %}

@@ -4158,6 +4158,71 @@ body.dark-theme {
     color: #e2e8f0;
 }
 
+/* Light Theme (Premium SaaS Dashboard) */
+body.light-theme {
+    background-color: #f4f9f5 !important;
+    color: #1a202c !important;
+}
+
+body.light-theme h1,
+body.light-theme h2,
+body.light-theme h3,
+body.light-theme h4,
+body.light-theme h5,
+body.light-theme h6 {
+    color: #0b5d4a !important;
+}
+
+body.light-theme p,
+body.light-theme span,
+body.light-theme a {
+    color: #2d3748 !important;
+}
+
+body.light-theme a:not(.btn-primary):not(.btn-primary-large):not(.btn-secondary):not(.btn-modern-pill) {
+    color: #16a34a !important;
+}
+
+body.light-theme .btn-primary,
+body.light-theme .btn-primary-large,
+body.light-theme .btn-modern-pill,
+body.light-theme .btn-glow-green {
+    background-color: #16a34a !important;
+    color: #ffffff !important;
+    border-color: #16a34a !important;
+}
+
+body.light-theme .btn-secondary {
+    background-color: #e2e8f0 !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-theme .btn-secondary:hover {
+    background-color: #cbd5e1 !important;
+    color: #1f2937 !important;
+}
+
+body.light-theme .card,
+body.light-theme .kpi-card,
+body.light-theme .chart-card,
+body.light-theme .proof-hub-card,
+body.light-theme [class*="card"] {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(0, 200, 100, 0.2) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02), 0 10px 20px rgba(0, 200, 100, 0.05) !important;
+    color: #1a202c !important;
+}
+
+body.light-theme .card:hover,
+body.light-theme .kpi-card:hover,
+body.light-theme .chart-card:hover {
+    border-color: rgba(0, 200, 100, 0.8) !important;
+    box-shadow: 0 0 25px rgba(0, 200, 100, 0.15) !important;
+    transform: translateY(-5px);
+}
+
 .dark-theme .card,
 .kpi-card,
 .chart-card,
@@ -4723,6 +4788,7 @@ body.drawer-open{
     align-items: center;
     justify-content: space-between;
     gap: var(--space-16);
+    width: 100%;
 }
 
 .logo-link{
@@ -4802,13 +4868,15 @@ body.drawer-open{
     right: -360px;
     width: min(340px, 92vw);
     height: 100vh;
-    background: #101622;
-    border-left: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(15px);
+    border-left: 1px solid rgba(22, 163, 74, 0.18);
     z-index: 1400;
     transition: right 0.25s ease;
     padding: 18px 14px;
     box-sizing: border-box;
     overflow-y: auto;
+    color: #1e293b;
 }
 
 .nav-drawer.open{
@@ -4840,14 +4908,14 @@ body.drawer-open{
 .nav-drawer-links a{
     display: block;
     text-decoration: none;
-    color: #fff;
+    color: #1e293b;
     padding: 10px 12px;
     border-radius: 10px;
     background: transparent;
 }
 
 .nav-drawer-links a:hover{
-    background: rgba(255,255,255,0.06);
+    background: rgba(22, 163, 74, 0.12);
 }
 
 main.container.app-dashboard,

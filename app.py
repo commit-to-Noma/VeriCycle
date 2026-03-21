@@ -37,7 +37,7 @@ import re
 import threading
 from collections import defaultdict
 from sqlalchemy.exc import OperationalError
-from sqlalchemy import text
+from sqlalchemy import text, func
 from urllib.parse import urlencode
 
 # -----------------------------------------------------------------
@@ -1624,6 +1624,7 @@ def proof_hub():
     return render_template(
         'proof_hub.html',
         active_page='proof_hub',
+        rows=rows,
         golden_runs=golden_runs,
         evidence=evidence,
     )
@@ -1711,6 +1712,12 @@ def collector_dashboard():
         .order_by(Activity.timestamp.desc())
         .all()
     )
+    total_recycled_completed = (
+        db.session.query(func.coalesce(func.sum(Activity.amount), 0.0))
+        .filter(Activity.user_id == current_user.id, func.lower(Activity.status) == 'completed')
+        .scalar()
+        or 0.0
+    )
     wallet_snapshot = build_rewards_wallet_snapshot(current_user)
     return render_template(
         'collector.html',
@@ -1718,6 +1725,7 @@ def collector_dashboard():
         active_page='dashboard',
         demo_mode=DEMO_MODE,
         wallet_balance=wallet_snapshot["balance"],
+        total_recycled_completed=round(float(total_recycled_completed), 1),
     )
 
 
@@ -2630,11 +2638,19 @@ def get_dashboard_data():
                 match = re.search(r'(\d+\.?\d*)\s*kg', a.desc)
                 if match:
                     total_kg += float(match.group(1))
+
+        total_recycled_completed = (
+            db.session.query(func.coalesce(func.sum(Activity.amount), 0.0))
+            .filter(Activity.user_id == current_user.id, func.lower(Activity.status) == 'completed')
+            .scalar()
+            or 0.0
+        )
     except Exception as e:
         print('Error fetching activities:', e)
         timeline = []
         total_eco = 0
         total_kg = 0
+        total_recycled_completed = 0
     
     # Demo user gets seed data plus their activities
     if current_user.email.lower().strip() == 'recycler@vericycle.com':
@@ -2696,6 +2712,7 @@ def get_dashboard_data():
     
     data = {
         "total_kg": round(total_kg, 1),
+        "total_recycled_completed": round(float(total_recycled_completed), 1),
         "total_eco": round(total_eco, 2),
         "weekly_goal": 30,
         "current_kg": min(total_kg, 30),  # Personal weekly goal progress

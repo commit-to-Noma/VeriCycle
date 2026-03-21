@@ -6,8 +6,100 @@
   <title>Community Hub - VeriCycle</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+    /* === Community Hub — Eco Light Design System === */
+    body {
+        background: #f0f7f2 !important;
+        color: #1a202c !important;
+    }
+    main { padding: 1.5rem 0 3rem; }
+    main > h2 {
+        font-size: clamp(1.7rem, 3vw, 2.4rem);
+        color: #0b5d4a;
+        margin: 0 0 0.25rem 0;
+    }
+    main > p, .muted {
+        color: #64748b !important;
+        margin-top: 0;
+        margin-bottom: 1.2rem;
+    }
+    h3 { color: #0b5d4a !important; }
+    label { color: #374151; font-weight: 600; font-size: 0.9rem; }
+    .card {
+        background: rgba(255,255,255,0.82) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(22,163,74,0.18) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 2px 24px rgba(0,160,70,0.07) !important;
+        padding: 1.3rem !important;
+        margin-bottom: 1rem !important;
+        color: #1a202c !important;
+    }
+    .card h3 { color: #0b5d4a !important; margin-top: 0; }
+    .card p  { color: #64748b !important; }
+    select, input[type=text], input[type=number] {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.45rem 0.65rem;
+        background: #f8fafc;
+        color: #0f172a;
+        font-size: 0.9rem;
+    }
+    select:focus, input:focus {
+        outline: none;
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+    }
+    button[type=submit] {
+        background: #16a34a;
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        padding: 0.5rem 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background 0.15s;
+    }
+    button[type=submit]:hover { background: #15803d; }
+    .btn-primary {
+        background: #16a34a !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 999px;
+        padding: 0.52rem 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: inline-block;
+        text-decoration: none;
+    }
+    .btn-primary:hover { background: #15803d !important; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+        background: rgba(220,252,231,0.55);
+        color: #16a34a;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        letter-spacing: 0.07em;
+        font-weight: 700;
+        padding: 0.65rem 0.8rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(22,163,74,0.2);
+    }
+    td {
+        padding: 0.72rem 0.8rem;
+        color: #374151;
+        border-bottom: 1px solid rgba(22,163,74,0.08);
+        font-size: 0.9rem;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(240,253,244,0.55); }
+    strong { color: #0b5d4a; }
+    </style>
 </head>
-<body class="dark-theme">
+<body class="light-theme">
     {% include '_navbar.html' %}
 
     <main class="container">

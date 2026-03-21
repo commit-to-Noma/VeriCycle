@@ -6,8 +6,107 @@
     <title>Request Pickup - VeriCycle</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+    /* === Request Pickup — Eco Light Design System === */
+    body {
+        background: #f0f7f2 !important;
+        color: #1a202c !important;
+    }
+    .dashboard-header h2 { color: #0b5d4a; }
+    .dashboard-header p  { color: #64748b; }
+    .back-link { color: #16a34a !important; font-weight: 600; text-decoration: none; font-size: 0.9rem; display: inline-block; margin-bottom: 0.75rem; }
+    /* Glassmorphism card */
+    .card {
+        background: rgba(255,255,255,0.82) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(22,163,74,0.18) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 4px 24px rgba(0,160,70,0.07) !important;
+        color: #1a202c !important;
+        padding: 1.3rem;
+    }
+    .card h2, .card h3 { color: #0b5d4a !important; }
+    .card p, .form-note { color: #64748b !important; }
+    /* Form */
+    .pickup-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    .form-group { margin-bottom: 0.85rem; }
+    .form-group label { display: block; color: #374151; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.3rem; }
+    .form-group select, .form-group input {
+        width: 100%; box-sizing: border-box;
+        border: 1px solid #cbd5e1; border-radius: 8px;
+        padding: 0.52rem 0.7rem;
+        background: #f8fafc; color: #0f172a; font-size: 0.9rem;
+    }
+    .form-group select:focus, .form-group input:focus {
+        outline: none; border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+    }
+    /* Cost / summary card */
+    .pickup-cost-card {
+        background: rgba(220,252,231,0.52);
+        border: 1px solid rgba(22,163,74,0.22);
+        border-radius: 12px;
+        padding: 1.1rem;
+    }
+    .pickup-cost-header {
+        display: flex; align-items: center; gap: 0.5rem;
+        margin-bottom: 0.6rem;
+    }
+    .pickup-cost-icon { font-size: 1.5rem; }
+    .pickup-cost-title { font-weight: 700; color: #0b5d4a; font-size: 1rem; }
+    .pickup-cost-desc { color: #64748b; font-size: 0.86rem; margin: 0 0 0.7rem; }
+    .pickup-total-line {
+        display: flex; justify-content: space-between;
+        color: #374151; font-size: 0.87rem; margin-bottom: 0.35rem;
+    }
+    .pickup-total-final {
+        display: flex; justify-content: space-between;
+        font-weight: 700; color: #0b5d4a; font-size: 0.95rem;
+        margin-bottom: 0.35rem;
+    }
+    .pickup-note { color: #94a3b8; font-size: 0.78rem; text-align: center; margin-top: 0.5rem; }
+    /* Success card */
+    #success-card h2 { color: #16a34a !important; }
+    #success-card h3 { color: #0b5d4a !important; }
+    #success-card p  { color: #64748b !important; }
+    /* Slots modal */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(15,23,42,0.45); backdrop-filter: blur(4px);
+        z-index: 1200; display: none;
+        align-items: center; justify-content: center; padding: 1rem;
+    }
+    .modal-overlay .card { background: rgba(255,255,255,0.96) !important; max-width: 500px; width: 100%; }
+    .modal-overlay h2 { color: #0b5d4a !important; }
+    .modal-overlay p  { color: #64748b !important; }
+    .slot-option {
+        display: flex; align-items: flex-start; gap: 0.75rem;
+        border: 1px solid rgba(22,163,74,0.2); border-radius: 10px;
+        padding: 0.8rem; margin-bottom: 0.55rem;
+        background: rgba(240,253,244,0.5); cursor: pointer;
+    }
+    .slot-day   { display: block; font-weight: 700; color: #0b5d4a; }
+    .slot-time  { color: #64748b; font-size: 0.84rem; }
+    .modal-close { float: right; border: none; background: transparent; font-size: 1.4rem; color: #94a3b8; cursor: pointer; }
+    /* Buttons */
+    .btn-primary, .btn-primary-large, .btn-form {
+        background: #16a34a !important; color: #fff !important;
+        border: none !important; border-radius: 999px !important;
+        padding: 0.65rem 1.3rem; font-weight: 700; cursor: pointer;
+        font-size: 0.95rem; width: 100%; display: block;
+        text-align: center; text-decoration: none; margin-top: 0.75rem;
+        transition: background 0.15s;
+    }
+    .btn-primary:hover, .btn-primary-large:hover { background: #15803d !important; }
+    @media (max-width: 720px) { .pickup-form-grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
-<body class="dark-theme request-pickup-page">
+<body class="light-theme request-pickup-page">
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard" style="overflow:visible;">

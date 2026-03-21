@@ -7,7 +7,26 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="home-light">
+<body class="light-theme home-light">
+    <style>
+    /* Eco Glassmorphism Override for Homepage */
+    body.home-light .stakeholder-card,
+    body.home-light .step-card,
+    body.home-light .advantage-card,
+    body.home-light .proof-stat-card,
+    body.home-light .activity-feed-container {
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(14px);
+        border: 1px solid rgba(22, 163, 74, 0.18) !important;
+        box-shadow: 0 8px 16px rgba(26, 26, 26, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    }
+    body.home-light .stakeholder-card:hover,
+    body.home-light .step-card:hover,
+    body.home-light .advantage-card:hover {
+        border-color: rgba(22, 163, 74, 0.32);
+        box-shadow: 0 12px 24px rgba(22, 163, 74, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    }
+    </style>
     <a class="skip-link" href="#main-content">Skip to main content</a>
     {% include '_navbar.html' %}
 

@@ -1,13 +1,207 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+/* === Business Hub — Eco Light Design System === */
+body {
+    background: #f0f7f2 !important;
+    color: #1a202c !important;
+}
+.biz-shell {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0.5rem 0 2rem;
+}
+/* Page hero */
+.biz-hero {
+    margin-bottom: 1.2rem;
+}
+.biz-hero h2 {
+    margin: 0 0 0.25rem 0;
+    font-size: clamp(1.7rem, 3vw, 2.4rem);
+    color: #0b5d4a;
+}
+.biz-hero p {
+    margin: 0;
+    color: #64748b;
+}
+
+/* Trust strip */
+.trust-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(22, 163, 74, 0.14);
+}
+.trust-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(220, 252, 231, 0.75);
+    backdrop-filter: blur(8px);
+    color: #15803d;
+    border: 1px solid rgba(22, 163, 74, 0.28);
+    border-radius: 999px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.trust-chip-icon { color: #16a34a; font-style: normal; }
+
+/* Glassmorphism card base — overrides the dark .card */
+.card {
+    background: rgba(255, 255, 255, 0.80) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid rgba(22, 163, 74, 0.18) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 24px rgba(0, 160, 70, 0.07) !important;
+    color: #1a202c !important;
+    padding: 1.25rem;
+}
+.card h3 { color: #0b5d4a !important; }
+.card p { color: #64748b !important; }
+
+/* Section kicker label */
+.section-kicker {
+    display: inline-block;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: #16a34a;
+    margin-bottom: 0.3rem;
+}
+
+/* KPI stat grid */
+.hub-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+}
+.hub-stat-card {
+    text-align: center;
+    padding: 1.4rem 1rem;
+}
+.hub-stat-card strong {
+    display: block;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #0b5d4a;
+    margin: 0.3rem 0;
+    line-height: 1;
+}
+.hub-stat-card p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.82rem;
+}
+
+/* Split 2-col section */
+.hub-split-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+}
+.hub-surface-accent {
+    background: linear-gradient(135deg, rgba(220, 252, 231, 0.85), rgba(240, 253, 244, 0.85)) !important;
+    border-left: 4px solid #16a34a !important;
+    border-color: rgba(22, 163, 74, 0.32) !important;
+}
+.hub-surface-accent h3 { color: #0b5d4a !important; }
+.hub-cta-row {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+/* Pipeline brief */
+.hub-pipeline-brief {
+    padding: 1rem 1.3rem;
+    margin-bottom: 1.2rem;
+    border-left: 4px solid rgba(22, 163, 74, 0.3) !important;
+}
+.hub-pipeline-brief h3 { color: #0b5d4a !important; margin: 0.2rem 0 !important; }
+
+/* Table section */
+.hub-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+.hub-section-head h3 { margin: 0; color: #0b5d4a !important; }
+
+.event-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 580px;
+}
+.event-table thead th {
+    background: rgba(220, 252, 231, 0.55) !important;
+    color: #16a34a;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.07em;
+    font-weight: 700;
+    padding: 0.65rem 0.8rem;
+    border-bottom: 1px solid rgba(22, 163, 74, 0.2);
+    text-align: left;
+}
+.event-table tbody td {
+    padding: 0.75rem 0.8rem;
+    color: #374151 !important;
+    border-bottom: 1px solid rgba(22, 163, 74, 0.08);
+    font-size: 0.89rem;
+}
+.event-table tbody tr:hover {
+    background: rgba(240, 253, 244, 0.55);
+}
+.hub-record-meta {
+    color: #94a3b8;
+    font-size: 0.78rem;
+    margin-top: 0.2rem;
+}
+.hub-empty {
+    color: #94a3b8;
+    font-style: italic;
+    padding: 0.5rem 0;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 0.22rem 0.62rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.status-badge-paid   { background: #dcfce7; color: #15803d; }
+.status-badge-pending { background: #fef9c3; color: #a16207; }
+.status-badge-failed  { background: #fee2e2; color: #b91c1c; }
+.status-badge-fallback { background: #ede9fe; color: #6d28d9; }
+
+/* Overflow wrapper for tables */
+.table-scroll { overflow-x: auto; }
+
+@media (max-width: 1100px) { .hub-stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px)  { .hub-split-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="biz-shell">
 <div class="trust-strip business-trust-strip">
     <span class="trust-chip"><span class="trust-chip-icon">✓</span>Business-owned records tied to source requests</span>
     <span class="trust-chip"><span class="trust-chip-icon">⎈</span>Verification center handoff is role-gated</span>
     <span class="trust-chip"><span class="trust-chip-icon">◎</span>Proof and Hedera anchors visible when ready</span>
 </div>
 
-<div class="dashboard-header">
+<div class="biz-hero">
     <h2>Business Hub</h2>
     <p>Launch pickup requests, track recycler progress, and keep verified recycling records with proof and Hedera-backed audit links.</p>
 </div>
@@ -196,4 +390,5 @@
         <p class="hub-empty">Verified Events will appear here after recycler submission, center verification, and proof pipeline completion.</p>
     {% endif %}
 </section>
+</div><!-- /biz-shell -->
 {% endblock %}

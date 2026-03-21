@@ -6,9 +6,81 @@
     <title>Find Center - VeriCycle</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+    /* === Center Finder — Eco Light Design System === */
+    body {
+        background: #f0f7f2 !important;
+        color: #1a202c !important;
+    }
+    .dashboard-header h2 { color: #0b5d4a; }
+    .dashboard-header p  { color: #64748b; }
+    /* Glassmorphism card */
+    .card {
+        background: rgba(255,255,255,0.82) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(22,163,74,0.18) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 4px 24px rgba(0,160,70,0.07) !important;
+        color: #1a202c !important;
+        padding: 1.3rem;
+    }
+    .card h3 { color: #0b5d4a !important; margin-top: 0; }
+    .card p  { color: #64748b !important; }
+    /* Search grid */
+    .search-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        align-items: start;
+    }
+    /* Form */
+    .verify-form .form-group { margin-bottom: 0.85rem; }
+    .verify-form label { display: block; color: #374151; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.3rem; }
+    .verify-form select, .verify-form input {
+        width: 100%; box-sizing: border-box;
+        border: 1px solid #cbd5e1; border-radius: 8px;
+        padding: 0.52rem 0.7rem;
+        background: #f8fafc; color: #0f172a; font-size: 0.9rem;
+    }
+    .verify-form select:focus, .verify-form input:focus {
+        outline: none; border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+    }
+    /* Priority role-selector buttons */
+    .role-selector { display: flex; gap: 0.5rem; margin-top: 0.3rem; }
+    .role-btn {
+        border: 1px solid #cbd5e1; border-radius: 999px;
+        background: #f8fafc; color: #374151;
+        padding: 0.38rem 0.9rem; font-size: 0.84rem; font-weight: 600;
+        cursor: pointer; transition: background 0.15s, color 0.15s;
+    }
+    .role-btn.active {
+        background: #16a34a; color: #fff; border-color: #16a34a;
+    }
+    .hidden-form-group { display: none; }
+    /* Result card */
+    .result-card { display: flex; flex-direction: column; gap: 0.5rem; }
+    .result-logo { height: 48px; object-fit: contain; margin-bottom: 0.4rem; filter: brightness(0.9); }
+    .result-card h4 { color: #0b5d4a; margin: 0; font-size: 1.05rem; }
+    .result-reason { color: #64748b; font-size: 0.87rem; margin: 0; }
+    .result-rate { display: flex; justify-content: space-between; font-size: 0.87rem; color: #374151; padding: 0.3rem 0; border-bottom: 1px solid rgba(22,163,74,0.1); }
+    .result-rate.bonus { color: #16a34a; }
+    .result-rate.total { font-weight: 700; color: #0b5d4a; border-bottom: none; font-size: 0.95rem; }
+    /* Buttons */
+    .btn-primary-large.btn-form, .btn-primary {
+        display: block; width: 100%; box-sizing: border-box;
+        background: #16a34a !important; color: #fff !important;
+        border: none !important; border-radius: 999px !important;
+        padding: 0.65rem 1.2rem; font-weight: 700; font-size: 0.95rem;
+        cursor: pointer; text-align: center; text-decoration: none;
+        margin-top: 0.75rem; transition: background 0.15s;
+    }
+    .btn-primary-large.btn-form:hover, .btn-primary:hover { background: #15803d !important; }
+    @media (max-width: 720px) { .search-grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
-<body class="dark-theme">
-    
+<body class="light-theme">
     {% include '_navbar.html' %}
 
     <main class="container app-dashboard" style="overflow:visible;">
