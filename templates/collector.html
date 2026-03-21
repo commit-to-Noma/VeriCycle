@@ -467,7 +467,7 @@
             </details>
             <details class="faq-item">
                 <summary>What materials are accepted?</summary>
-                <p>Paper, cardboard, cans, glass, plastics, and mixed recyclables depending on partner intake rules.</p>
+                <p>Paper & Cardboard, Plastics, Glass, Metals, E-Waste, Organic Waste, and Mixed Recyclables.</p>
             </details>
             <details class="faq-item">
                 <summary>How is my EcoCoin calculated?</summary>
@@ -579,13 +579,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function cardHtml(sourceLabel, weight, material, statusOrTime, actionHtml) {
+    function cardHtml(sourceLabel, weight, material, statusOrTime, actionHtml, extraMeta = '') {
         return `
             <div class="list-item">
                 <div class="item-top">
                     <div>
                         <p class="item-primary">${sourceLabel} | ${weight}kg | ${statusOrTime}</p>
                         <p class="item-meta">${material}</p>
+                        ${extraMeta}
                     </div>
                     ${actionHtml}
                 </div>
@@ -610,8 +611,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const weight = Number(row.estimated_kg || 0).toFixed(1);
                 const material = (row.material_type || 'Mixed').toString();
                 const when = (row.requested_window || 'Today').toString();
+                const extraMeta = row.priority === 'center'
+                    ? '<p class="item-meta" style="color:#b91c1c; font-weight:700;">HIGH IMPACT: Heavy load requires center-priority routing</p>'
+                    : '';
                 const action = `<button class="btn-primary accept-btn" data-id="${Number(row.id)}">Accept</button>`;
-                return cardHtml(source, weight, material, when, action);
+                return cardHtml(source, weight, material, when, action, extraMeta);
             }).join('');
         } catch (e) {
             oppContainer.innerHTML = '<p>Unable to load pickup opportunities.</p>';

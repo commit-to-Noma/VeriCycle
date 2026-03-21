@@ -158,6 +158,19 @@ body {
     margin-bottom: 0.65rem;
     background: rgba(240, 253, 244, 0.45);
 }
+.center-queue-item.center-priority {
+    border-color: rgba(185, 28, 28, 0.24);
+    background: rgba(254, 242, 242, 0.85);
+}
+.center-priority-pin {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #fee2e2;
+    color: #991b1b;
+}
 .center-queue-item-head {
     display: flex;
     justify-content: space-between;
@@ -296,9 +309,13 @@ body {
                             <label for="material-type">Material Type:</label>
                             <select id="material-type" name="material" required>
                                 <option value="" disabled selected>-- Select Material --</option>
-                                <option value="cans">Cans (50 ECO/kg)</option>
-                                <option value="paper">Paper (30 ECO/kg)</option>
-                                <option value="glass">Glass (20 ECO/kg)</option>
+                                <option value="paper & cardboard">Paper & Cardboard</option>
+                                <option value="plastics">Plastics</option>
+                                <option value="glass">Glass</option>
+                                <option value="metals">Metals</option>
+                                <option value="e-waste">E-Waste</option>
+                                <option value="organic waste">Organic Waste</option>
+                                <option value="mixed recyclables">Mixed Recyclables</option>
                             </select>
                         </div>
 
@@ -461,6 +478,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await res.json();
             const rows = Array.isArray(data.rows) ? data.rows : [];
+            rows.sort((a, b) => {
+                const aHeavy = (a.priority || 'standard') === 'center' ? 1 : 0;
+                const bHeavy = (b.priority || 'standard') === 'center' ? 1 : 0;
+                return bHeavy - aHeavy;
+            });
 
             if (!rows.length) {
                 container.innerHTML = '<p>No submitted pickups yet. Demo mode will preload a submitted record automatically.</p>';
@@ -475,13 +497,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const reward = Number(row.estimated_reward_eco || 0).toFixed(2);
                 const location = escapeHtml(row.location || 'Unknown location');
                 const submittedAt = row.submitted_at ? new Date(row.submitted_at).toLocaleString() : '';
+                const isHeavy = (row.priority || 'standard') === 'center';
 
                 return `
-                    <div class="center-queue-item">
+                    <div class="center-queue-item ${isHeavy ? 'center-priority' : ''}">
                         <div class="center-queue-item-head">
                             <strong>${recyclerEmail}</strong>
                             <span class="status-badge status-badge-pending">Submitted · ${source}</span>
                         </div>
+                        ${isHeavy ? '<div class="center-priority-pin">Center Priority • Vehicle Required</div>' : ''}
                         <div class="center-queue-item-meta">${material} · ${weight} kg</div>
                         <div class="center-queue-item-meta">Pipeline reward: ${reward} ECO</div>
                         <div class="center-queue-item-meta">${location}</div>
@@ -524,9 +548,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Prices for materials
     const prices = {
-        'cans': 50,
-        'paper': 30,
-        'glass': 20
+        'paper & cardboard': 30,
+        'plastics': 38,
+        'glass': 20,
+        'metals': 50,
+        'e-waste': 55,
+        'organic waste': 16,
+        'mixed recyclables': 32
     };
 
     // --- NEW: FUNCTION TO SHOW THE BANNER ---

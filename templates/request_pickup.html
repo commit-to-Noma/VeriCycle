@@ -89,6 +89,51 @@
         color: #166534 !important;
         font-size: 0.88rem;
     }
+    .material-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.45rem;
+        margin-top: 0.35rem;
+    }
+    .material-grid label {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.42rem 0.5rem;
+        font-size: 0.82rem;
+        color: #374151;
+    }
+    .material-grid input[type="checkbox"] {
+        accent-color: #16a34a;
+    }
+    .badge {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 0.24rem 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .badge.heavy {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .badge.normal {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .heatmap-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.75rem 0.85rem;
+        margin-top: 0.75rem;
+        color: #475569;
+        font-size: 0.84rem;
+        line-height: 1.5;
+    }
     /* Success card */
     #success-card h2 { color: #16a34a !important; }
     #success-card h3 { color: #0b5d4a !important; }
@@ -184,21 +229,24 @@
                         </div>
 
                     <div class="form-group">
-                        <label for="pickup-materials">Material Type:</label>
-                        <select id="pickup-materials">
-                            <option>Mixed (Paper, Plastic, Cans)</option>
-                            <option>Mainly Paper/Cardboard</option>
-                            <option>Mainly Plastic</option>
-                            <option>Mainly Cans/Metal</option>
-                        </select>
+                        <label for="material">Material Type:</label>
+                        <div id="material" class="material-grid">
+                            <label><input type="checkbox" value="Paper & Cardboard" checked> Paper & Cardboard</label>
+                            <label><input type="checkbox" value="Plastics" checked> Plastics</label>
+                            <label><input type="checkbox" value="Glass"> Glass</label>
+                            <label><input type="checkbox" value="Metals"> Metals</label>
+                            <label><input type="checkbox" value="E-Waste"> E-Waste</label>
+                            <label><input type="checkbox" value="Organic Waste"> Organic Waste</label>
+                            <label><input type="checkbox" value="Mixed Recyclables"> Mixed Recyclables</label>
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="pickup-weight">Estimated Weight:</label>
-                        <select id="pickup-weight">
-                            <option>Under 10 kg</option>
-                            <option>10 kg - 25 kg</option>
-                            <option>25 kg +</option>
+                        <label for="weight">Estimated Weight:</label>
+                        <select id="weight">
+                            <option>0-15 kg (1-2 bags)</option>
+                            <option>15-50 kg (2-5 bags)</option>
+                            <option>50 kg+ (Requires vehicle)</option>
                         </select>
                     </div>
                 </div>
@@ -211,30 +259,27 @@
 
                     <div class="summary-highlight">
                         <p id="summary-neighborhood">📍 Randburg</p>
-                        <p><strong id="summary-material-strong">Mixed Materials</strong></p>
-                        <p id="summary-weight-short">Under 10 kg</p>
+                        <p><strong id="previewMaterial">Paper & Cardboard, Plastics</strong></p>
+                        <p id="previewWeight">0-15 kg (1-2 bags)</p>
                     </div>
 
                     <p class="pickup-cost-desc">
                         Pickup requests help connect recyclable waste to nearby recyclers and verified centers.
                     </p>
 
-                    <div class="pickup-total-line">
-                        <span>Estimated Material:</span>
-                        <span id="summary-material">Mixed (Paper, Plastic, Cans)</span>
-                    </div>
-                    <div class="pickup-total-line">
-                        <span>Estimated Weight:</span>
-                        <span id="summary-weight">Under 10 kg</span>
-                    </div>
-
                     <div class="pickup-total-final">
                         <span>Pickup Priority:</span>
-                        <span>Standard</span>
+                        <span id="priorityBadge" class="badge normal">Standard Pickup</span>
                     </div>
                     <div class="pickup-total-line" style="margin-top: 0.75rem; border-top: 1px solid #333; padding-top: 0.75rem;">
                         <span>Request Status:</span>
                         <span>Ready to Publish</span>
+                    </div>
+
+                    <div class="heatmap-card">
+                        🔥 High demand: Randburg<br>
+                        ⚠ Medium: Sandton<br>
+                        ✓ Low: Roodepoort
                     </div>
                     
                     <button class="btn-primary-large btn-form" id="confirm-pickup-btn">
@@ -325,15 +370,14 @@
             const confirmSlotButton = document.getElementById('confirm-slot-btn');
             const pickupCard = document.getElementById('pickup-card');
             const successCard = document.getElementById('success-card');
-            const materialSelect = document.getElementById('pickup-materials');
-            const weightSelect = document.getElementById('pickup-weight');
-            const summaryMaterial = document.getElementById('summary-material');
-            const summaryWeight = document.getElementById('summary-weight');
+            const materialCheckboxes = document.querySelectorAll('#material input[type="checkbox"]');
+            const weightSelect = document.getElementById('weight');
             const summaryNeighborhood = document.getElementById('summary-neighborhood');
-            const summaryMaterialStrong = document.getElementById('summary-material-strong');
-            const summaryWeightShort = document.getElementById('summary-weight-short');
+            const previewMaterial = document.getElementById('previewMaterial');
+            const previewWeight = document.getElementById('previewWeight');
             const neighborhoodSelect = document.getElementById('neighborhood');
             const matchingState = document.getElementById('matching-state');
+            const priorityBadge = document.getElementById('priorityBadge');
 
             // --- NEW: DYNAMIC DATE LOGIC ---
             try {
@@ -359,27 +403,35 @@
             }
 
             function syncRequestSummary() {
-                if (summaryMaterial && materialSelect) {
-                    summaryMaterial.textContent = materialSelect.options[materialSelect.selectedIndex].text;
+                const selectedMaterials = Array.from(materialCheckboxes)
+                    .filter((c) => c.checked)
+                    .map((c) => c.value);
+
+                if (previewMaterial) {
+                    previewMaterial.innerText = selectedMaterials.length ? selectedMaterials.join(', ') : 'No material selected';
                 }
-                if (summaryWeight && weightSelect) {
-                    summaryWeight.textContent = weightSelect.options[weightSelect.selectedIndex].text;
+                if (previewWeight && weightSelect) {
+                    previewWeight.innerText = weightSelect.value;
                 }
                 if (summaryNeighborhood && neighborhoodSelect) {
                     const hood = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text;
                     summaryNeighborhood.textContent = `📍 ${hood.replace(/ \(.+\)/, '')}`;
                 }
-                if (summaryMaterialStrong && materialSelect) {
-                    const mat = materialSelect.options[materialSelect.selectedIndex].text;
-                    summaryMaterialStrong.textContent = mat.includes('Mixed') ? 'Mixed Materials' : mat;
-                }
-                if (summaryWeightShort && weightSelect) {
-                    summaryWeightShort.textContent = weightSelect.options[weightSelect.selectedIndex].text;
+
+                if (priorityBadge && weightSelect) {
+                    const value = weightSelect.value;
+                    if (value.includes('50 kg+')) {
+                        priorityBadge.innerText = 'Center Priority • Vehicle Required';
+                        priorityBadge.className = 'badge heavy';
+                    } else {
+                        priorityBadge.innerText = 'Standard Pickup';
+                        priorityBadge.className = 'badge normal';
+                    }
                 }
             }
 
             syncRequestSummary();
-            if (materialSelect) materialSelect.addEventListener('change', syncRequestSummary);
+            materialCheckboxes.forEach((cb) => cb.addEventListener('change', syncRequestSummary));
             if (weightSelect) weightSelect.addEventListener('change', syncRequestSummary);
             if (neighborhoodSelect) neighborhoodSelect.addEventListener('change', syncRequestSummary);
 
@@ -414,16 +466,20 @@
 
             // --- 4. NEW: The Confirmation Logic ---
             confirmSlotButton.addEventListener('click', async function() {
-                const materialSelect = document.getElementById('pickup-materials');
-                const weightSelect = document.getElementById('pickup-weight');
+                const weightSelect = document.getElementById('weight');
+                const selectedMaterials = Array.from(materialCheckboxes)
+                    .filter((c) => c.checked)
+                    .map((c) => c.value);
 
                 const location = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text;
-                const material_type = materialSelect.value;
+                const material_type = selectedMaterials.length ? selectedMaterials.join(', ') : 'Mixed Recyclables';
 
                 let estimated_kg = 10;
-                if (weightSelect.value.includes('Under 10')) estimated_kg = 8;
-                if (weightSelect.value.includes('10 kg - 25 kg')) estimated_kg = 18;
-                if (weightSelect.value.includes('25 kg +')) estimated_kg = 30;
+                if (weightSelect.value.includes('0-15 kg')) estimated_kg = 12;
+                if (weightSelect.value.includes('15-50 kg')) estimated_kg = 32;
+                if (weightSelect.value.includes('50 kg+')) estimated_kg = 55;
+
+                const weight_category = weightSelect.value;
 
                 const selectedSlot = document.querySelector('input[name="slot"]:checked');
                 let requested_window = 'Standard window';
@@ -447,6 +503,7 @@
                         body: JSON.stringify({
                             material_type,
                             estimated_kg,
+                            weight_category,
                             location,
                             requested_window,
                             notes: 'Created from pickup request UI'

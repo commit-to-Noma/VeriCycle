@@ -228,11 +228,24 @@ def can_access_activity_proof(user, activity: Activity | None) -> bool:
 
 
 DEMO_REWARD_RATE_BY_MATERIAL = {
-    "cans": 13.0,
-    "paper": 7.8,
+    "paper & cardboard": 7.8,
+    "plastics": 10.5,
     "glass": 5.2,
+    "metals": 13.0,
+    "e-waste": 14.0,
+    "organic waste": 4.8,
     "mixed recyclables": 10.0,
 }
+
+UNIFIED_MATERIAL_TAXONOMY = [
+    "Paper & Cardboard",
+    "Plastics",
+    "Glass",
+    "Metals",
+    "E-Waste",
+    "Organic Waste",
+    "Mixed Recyclables",
+]
 
 DEMO_LOGIN_ALIASES = {
     "recycler1": "recycler@vericycle.com",
@@ -323,13 +336,33 @@ def normalize_material_key(material_type: str | None) -> str:
     normalized = (material_type or "").strip().lower()
     if not normalized:
         return "mixed recyclables"
-    if "can" in normalized or "aluminum" in normalized or "metal" in normalized:
-        return "cans"
     if "paper" in normalized or "cardboard" in normalized:
-        return "paper"
+        return "paper & cardboard"
+    if "plastic" in normalized:
+        return "plastics"
     if "glass" in normalized:
         return "glass"
+    if "metal" in normalized or "can" in normalized or "aluminum" in normalized:
+        return "metals"
+    if "e-waste" in normalized or "ewaste" in normalized or "electronic" in normalized:
+        return "e-waste"
+    if "organic" in normalized:
+        return "organic waste"
     return "mixed recyclables"
+
+
+def canonical_material_label(material_type: str | None) -> str:
+    key = normalize_material_key(material_type)
+    mapping = {
+        "paper & cardboard": "Paper & Cardboard",
+        "plastics": "Plastics",
+        "glass": "Glass",
+        "metals": "Metals",
+        "e-waste": "E-Waste",
+        "organic waste": "Organic Waste",
+        "mixed recyclables": "Mixed Recyclables",
+    }
+    return mapping.get(key, "Mixed Recyclables")
 
 
 def calculate_demo_reward_amount(material_type: str | None, weight_kg: float | int | None) -> float:
@@ -903,6 +936,7 @@ def ensure_activity_columns():
                 source_user_id INTEGER NOT NULL,
                 material_type VARCHAR(80) NOT NULL,
                 estimated_kg FLOAT NOT NULL,
+                priority VARCHAR(20) NOT NULL DEFAULT 'standard',
                 location VARCHAR(200) NOT NULL,
                 requested_window VARCHAR(100),
                 status VARCHAR(30) NOT NULL DEFAULT 'open',
@@ -934,6 +968,11 @@ def ensure_activity_columns():
 
     assignment_cols = db.session.execute(text("PRAGMA table_info(opportunity_assignment)")).mappings().all()
     assignment_existing = {c.get("name") for c in assignment_cols}
+
+    pickup_cols = db.session.execute(text("PRAGMA table_info(pickup_opportunity)")).mappings().all()
+    pickup_existing = {c.get("name") for c in pickup_cols}
+    if "priority" not in pickup_existing:
+        db.session.execute(text("ALTER TABLE pickup_opportunity ADD COLUMN priority VARCHAR(20) NOT NULL DEFAULT 'standard'"))
 
     if "submitted_at" not in assignment_existing:
         db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN submitted_at DATETIME"))
@@ -1762,10 +1801,10 @@ def request_pickup():
 
 @app.route('/business/create-pickup')
 @login_required
-def business_create_pickup():
+def create_pickup():
     if not can_create_opportunity_business(current_user):
         return redirect(url_for(access_denied_redirect_for(current_user)))
-    return redirect(url_for('request_pickup'))
+    return render_template('business/create_pickup.html', active_page='business')
 
 
 @app.route('/business')
@@ -1832,6 +1871,7 @@ def business_dashboard():
             "id": req.id,
             "material_type": req.material_type,
             "estimated_kg": req.estimated_kg,
+            "priority": req.priority,
             "location": req.location,
             "requested_window": req.requested_window,
             "status": req.status,
@@ -1877,6 +1917,7 @@ def api_create_opportunity():
 
     material_type = (data.get('material_type') or '').strip()
     estimated_kg_raw = data.get('estimated_kg')
+    weight_category = (data.get('weight_category') or '').strip()
     location = (data.get('location') or '').strip()
     requested_window = (data.get('requested_window') or '').strip()
     notes = (data.get('notes') or '').strip()
@@ -1895,11 +1936,15 @@ def api_create_opportunity():
     if not location:
         return jsonify({"ok": False, "error": "Location is required"}), 400
 
+    canonical_material = canonical_material_label(material_type)
+    priority = 'center' if (estimated_kg >= 50 or '50 kg+' in weight_category) else 'standard'
+
     opportunity = PickupOpportunity(
         source_role='business' if role == 'business' else 'resident',
         source_user_id=current_user.id,
-        material_type=material_type,
+        material_type=canonical_material,
         estimated_kg=estimated_kg,
+        priority=priority,
         location=location,
         requested_window=requested_window or None,
         notes=notes or None,
@@ -1912,6 +1957,7 @@ def api_create_opportunity():
         "ok": True,
         "opportunity_id": opportunity.id,
         "status": opportunity.status,
+        "priority": opportunity.priority,
     })
 
 
@@ -1934,6 +1980,7 @@ def api_list_open_opportunities():
             "source_role": row.source_role,
             "material_type": row.material_type,
             "estimated_kg": row.estimated_kg,
+            "priority": row.priority,
             "location": row.location,
             "requested_window": row.requested_window,
             "notes": row.notes,
@@ -2017,6 +2064,7 @@ def api_my_assignments():
             "source_role": opp.source_role if opp else None,
             "material_type": opp.material_type if opp else None,
             "estimated_kg": opp.estimated_kg if opp else None,
+            "priority": opp.priority if opp else 'standard',
             "location": opp.location if opp else None,
             "requested_window": opp.requested_window if opp else None,
         })
@@ -2056,7 +2104,7 @@ def api_submit_assignment(assignment_id):
         return jsonify({"ok": False, "error": "Weight must be greater than zero"}), 400
 
     assignment.submitted_at = datetime.now(timezone.utc)
-    assignment.submitted_material_type = material_type
+    assignment.submitted_material_type = canonical_material_label(material_type)
     assignment.submitted_weight_kg = weight_kg
     assignment.submission_notes = notes or None
     assignment.status = 'submitted'
@@ -2093,6 +2141,7 @@ def api_center_submitted_assignments():
         recycler = row.recycler_user
         material_type = row.submitted_material_type or (opp.material_type if opp else None)
         reward_estimate = calculate_demo_reward_amount(material_type, row.submitted_weight_kg)
+        priority = (opp.priority if opp and opp.priority else 'standard')
 
         payload.append({
             "assignment_id": row.id,
@@ -2100,8 +2149,9 @@ def api_center_submitted_assignments():
             "recycler_email": recycler.email if recycler else "Unknown",
             "source_role": opp.source_role if opp else None,
             "location": opp.location if opp else None,
-            "material_type": material_type,
+            "material_type": canonical_material_label(material_type),
             "weight_kg": row.submitted_weight_kg,
+            "priority": priority,
             "estimated_reward_eco": reward_estimate,
             "notes": row.submission_notes,
             "submitted_at": row.submitted_at.isoformat() if row.submitted_at else None,
@@ -2129,7 +2179,7 @@ def api_center_verify_assignment(assignment_id):
     if not recycler:
         return jsonify({"ok": False, "error": "Recycler not found"}), 400
 
-    material = assignment.submitted_material_type or (opp.material_type if opp else 'Mixed recyclables')
+    material = canonical_material_label(assignment.submitted_material_type or (opp.material_type if opp else 'Mixed recyclables'))
     weight = float(assignment.submitted_weight_kg or 0)
 
     if weight <= 0:
