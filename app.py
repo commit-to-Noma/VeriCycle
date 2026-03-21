@@ -1809,9 +1809,24 @@ def wallet():
 @app.route('/request-pickup')
 @login_required 
 def request_pickup():
-    if not (can_create_opportunity_business(current_user) or can_create_opportunity_resident(current_user)):
+    if not can_create_opportunity_business(current_user):
         return redirect(url_for(access_denied_redirect_for(current_user)))
     return render_template('request_pickup.html', active_page='dashboard')
+
+
+@app.route('/resident/impact')
+@login_required
+def resident_impact():
+    if not is_resident_user(current_user):
+        return redirect(url_for(access_denied_redirect_for(current_user)))
+
+    # Demo-focused summary for residents: keeps impact narrative separate from private pickup dispatch.
+    impact_snapshot = {
+        "hotspots_resolved": 24,
+        "active_neighbors": 142,
+        "waste_diverted_kg": 850,
+    }
+    return render_template('resident_impact.html', active_page='resident-impact', impact_snapshot=impact_snapshot)
 
 
 @app.route('/business/create-pickup')

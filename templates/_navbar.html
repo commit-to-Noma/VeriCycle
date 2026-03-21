@@ -15,7 +15,6 @@
                 <a href="{{ url_for('business_dashboard') }}" class="nav-button {% if request.path.startswith('/business') %}active{% endif %}">Business Hub</a>
             {% elif current_effective_role == 'resident' %}
                 <a href="{{ url_for('household_dashboard') }}" class="nav-button {% if request.path.startswith('/household') %}active{% endif %}">Community Hub</a>
-                <a href="{{ url_for('request_pickup') }}" class="nav-button {% if request.path.startswith('/request-pickup') %}active{% endif %}">My Impact</a>
             {% elif current_effective_role == 'center' %}
                 <a href="{{ url_for('center_dashboard') }}" class="nav-button {% if request.path.startswith('/center') %}active{% endif %}">Verification Center</a>
             {% elif current_effective_role == 'admin' %}
@@ -53,7 +52,6 @@
             <a href="{{ url_for('request_pickup') }}">Create Pickup Request</a>
         {% elif current_effective_role == 'resident' %}
             <a href="{{ url_for('household_dashboard') }}">Community Hub</a>
-            <a href="{{ url_for('request_pickup') }}">My Impact</a>
         {% elif current_effective_role == 'center' %}
             <a href="{{ url_for('center_dashboard') }}">Verification Center</a>
         {% elif current_effective_role == 'admin' %}

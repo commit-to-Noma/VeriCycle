@@ -107,13 +107,19 @@
     flex-wrap: wrap;
   }
   .boost-btn {
-    background: #22c55e;
-    color: white;
-    border: none;
+    background: #16a34a !important;
+    color: #ffffff !important;
+    border: 1px solid #15803d !important;
     padding: 0.5rem 1rem;
     border-radius: 999px;
     cursor: pointer;
     font-weight: 700;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.22);
+    transition: transform 0.12s ease, background 0.15s ease;
+  }
+  .boost-btn:hover {
+    background: #15803d !important;
+    transform: translateY(-1px);
   }
   .status {
     font-weight: 700;
@@ -138,78 +144,205 @@
       <p>Community signal aggregation helps prioritize cleanup demand before routing to verified centers.</p>
     </section>
 
+    <div style="background: linear-gradient(135deg, #16a34a 0%, #059669 100%); border-radius: 12px; padding: 24px; color: white; margin-bottom: 24px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+      <div style="text-align: center;">
+        <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">24</h4>
+        <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Hotspots Resolved</p>
+      </div>
+
+      <div style="width: 1px; height: 40px; background-color: rgba(255,255,255,0.3);"></div>
+
+      <div style="text-align: center;">
+        <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">142</h4>
+        <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Active Neighbors</p>
+      </div>
+
+      <div style="width: 1px; height: 40px; background-color: rgba(255,255,255,0.3);"></div>
+
+      <div style="text-align: center;">
+        <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">850<span style="font-size: 1rem;">kg</span></h4>
+        <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Waste Diverted</p>
+      </div>
+    </div>
+
     <section class="panel">
       <span class="section-kicker">Report a Neighborhood Hotspot</span>
       <h3 style="margin:0.2rem 0 0.6rem; color:#0b5d4a;">Report a Neighborhood Issue</h3>
       <div class="report-grid">
-        <input class="field" type="text" placeholder="Enter location (e.g. Street + Area)">
-        <input class="field" type="text" placeholder="Describe the issue briefly">
+        <input class="field" type="text" id="hotspot-title" placeholder="Give this issue a short title...">
+        <input class="field" type="text" id="hotspot-location" placeholder="Enter street or landmark...">
+        <input class="field" type="text" id="hotspot-description" placeholder="Describe the issue...">
       </div>
-      <button class="btn-primary" type="button" style="margin-top:0.85rem;">Report a Neighborhood Issue</button>
+      <button class="btn-primary" id="submit-hotspot-btn" type="button" style="margin-top:0.85rem;">Report a Neighborhood Issue</button>
     </section>
+
+    <div style="margin-bottom: 16px; font-size: 0.875rem; color: #374151;">
+      🏆 This Week's Top Voices: Sarah M., Thabo_99, GreenRandburg
+    </div>
 
     <section class="panel">
       <span class="section-kicker">Live Feed</span>
       <h3 style="margin:0.2rem 0 0.9rem; color:#0b5d4a;">Active Neighborhood Hotspots</h3>
 
-      <div class="hotspot-card">
-        <h3>Overflowing Street Bins</h3>
-        <p class="location">Corner Main St &amp; 4th Ave, Randburg</p>
-        <p class="desc">
-          Bins have not been collected for 3 days. Waste is spilling onto the street.
-        </p>
-        <div class="hotspot-footer">
-          <button class="boost-btn" data-count="12">Add My Voice (12)</button>
-          <span class="status yellow">Gathering Support</span>
+      <div id="hotspot-feed-container">
+
+      <div id="verification-card" style="border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #eff6ff;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <h3 style="color: #1e3a8a; font-weight: bold; font-size: 1.1rem; margin: 0;">Center Reports: Cleanup Complete</h3>
+          <span id="verification-status" style="font-weight: bold; color: #1d4ed8; font-size: 0.875rem;">Pending Verification</span>
+        </div>
+        <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 8px;">Location: 14th Ave, Randburg (Scheduled for Thu 08:00-12:00)</p>
+        <p id="verification-note" style="color: #374151; margin-bottom: 16px;">The Verification Center reported this area as cleared. Please confirm if the waste was successfully collected.</p>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button id="verification-yes-btn" style="background-color: #16a34a; color: white; padding: 6px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer;">✓ Yes, Collected</button>
+          <button id="verification-missed-btn" style="background-color: white; color: #dc2626; padding: 6px 16px; border-radius: 6px; border: 1px solid #dc2626; font-weight: bold; cursor: pointer;">✕ Missed / Incomplete</button>
         </div>
       </div>
 
       <div class="hotspot-card">
-        <h3>Illegal Dumping Reported</h3>
+        <h3>Illegal dumping by school gate</h3>
         <p class="location">Park Entrance, Roodepoort</p>
         <p class="desc">
-          Large pile of plastics and old furniture dumped near playground.
+          Large pile of plastics and old furniture dumped near the playground entrance.
         </p>
         <div class="hotspot-footer">
           <button class="boost-btn" data-count="58">Add My Voice (58)</button>
-          <span class="status red">Priority: Center Notified</span>
+          <span class="status red">🔴 Priority: Center Notified</span>
         </div>
       </div>
 
       <div class="hotspot-card">
-        <h3>Recycling Bags Not Collected</h3>
+        <h3>Missed recycling route this week</h3>
         <p class="location">Sandton Drive</p>
         <p class="desc">
-          Weekly recycling skipped. Bags piling up outside homes.
+          Weekly recycling was skipped. Bags are piling up outside homes on this route.
         </p>
         <div class="hotspot-footer">
           <button class="boost-btn" data-count="27">Add My Voice (27)</button>
-          <span class="status orange">Escalating</span>
+          <span class="status orange">🟠 Escalating</span>
         </div>
       </div>
 
       <div class="hotspot-card">
-        <h3>Missed Collection Near Taxi Rank</h3>
-        <p class="location">Beyers Naude Dr, Randpark Ridge</p>
+        <h3>Overflowing bins near taxi rank</h3>
+        <p class="location">Corner Main St &amp; 4th Ave, Randburg</p>
         <p class="desc">
-          Overflowing mixed recyclables around public bins after a missed pickup cycle.
+          Bins have not been collected for 3 days. Waste is spilling onto the street and blocking the walkway.
         </p>
         <div class="hotspot-footer">
-          <button class="boost-btn" data-count="19">Add My Voice (19)</button>
-          <span class="status yellow">Gathering Support</span>
+          <button class="boost-btn" data-count="12">Add My Voice (12)</button>
+          <span class="status yellow">🟡 Gathering Support</span>
         </div>
+      </div>
+
+      <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #f9fafb; opacity: 0.7;">
+        <h3 style="color: #6b7280; font-weight: bold; font-size: 1.1rem; margin-bottom: 4px;">Blocked Storm Drain</h3>
+        <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 8px;">Location: Pretoria CBD</p>
+        <p style="color: #6b7280; margin-bottom: 16px;">Plastics blocking the main storm drain causing flooding.</p>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button disabled style="background-color: #e5e7eb; color: #9ca3af; padding: 6px 12px; border-radius: 6px; border: 1px solid #d1d5db; cursor: not-allowed;">Outside Your Zone</button>
+          <span style="font-weight: bold; color: #9ca3af; font-size: 0.875rem;">Viewing Only</span>
+        </div>
+      </div>
+
       </div>
     </section>
   </main>
 
   <script>
   document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.boost-btn').forEach((button) => {
-      button.addEventListener('click', () => {
-        const current = Number(button.dataset.count || '0') + 1;
-        button.dataset.count = String(current);
-        button.textContent = `Add My Voice (${current})`;
+    const verificationCard = document.getElementById('verification-card');
+    const verificationStatus = document.getElementById('verification-status');
+    const verificationNote = document.getElementById('verification-note');
+    const verificationYesBtn = document.getElementById('verification-yes-btn');
+    const verificationMissedBtn = document.getElementById('verification-missed-btn');
+
+    function lockVerificationButtons() {
+      if (verificationYesBtn) {
+        verificationYesBtn.disabled = true;
+        verificationYesBtn.style.cursor = 'default';
+        verificationYesBtn.style.opacity = '0.7';
+      }
+      if (verificationMissedBtn) {
+        verificationMissedBtn.disabled = true;
+        verificationMissedBtn.style.cursor = 'default';
+        verificationMissedBtn.style.opacity = '0.7';
+      }
+    }
+
+    if (verificationYesBtn && verificationMissedBtn && verificationStatus && verificationNote && verificationCard) {
+      verificationYesBtn.addEventListener('click', function () {
+        verificationStatus.textContent = '✅ Verified by Residents';
+        verificationStatus.style.color = '#166534';
+        verificationNote.textContent = 'Residents confirmed this hotspot was collected successfully. This report is now marked as verified.';
+        verificationCard.style.background = '#ecfdf5';
+        verificationCard.style.border = '1px solid #86efac';
+        verificationYesBtn.textContent = 'Confirmed ✓';
+        lockVerificationButtons();
       });
+
+      verificationMissedBtn.addEventListener('click', function () {
+        verificationStatus.textContent = '🔴 Reopened: Center Follow-up Required';
+        verificationStatus.style.color = '#b91c1c';
+        verificationNote.textContent = 'Residents flagged this cleanup as missed or incomplete. The issue has been reopened and escalated for follow-up.';
+        verificationCard.style.background = '#fef2f2';
+        verificationCard.style.border = '1px solid #fca5a5';
+        verificationMissedBtn.textContent = 'Flagged ✓';
+        lockVerificationButtons();
+      });
+    }
+
+    document.getElementById('submit-hotspot-btn').addEventListener('click', function(e) {
+      e.preventDefault();
+
+      const titleValue = document.getElementById('hotspot-title').value;
+      const locationValue = document.getElementById('hotspot-location').value;
+      const descriptionValue = document.getElementById('hotspot-description').value;
+
+      if(!titleValue || !locationValue || !descriptionValue) {
+        alert('Please fill in the title, location, and description.');
+        return;
+      }
+
+      const newCardHTML = `
+        <div class="hotspot-card">
+          <h3>${titleValue}</h3>
+          <p class="location">${locationValue}</p>
+          <p class="desc">${descriptionValue}</p>
+          <div class="hotspot-footer">
+            <button class="boost-btn" data-count="1">Add My Voice (1)</button>
+            <span class="status yellow">🟡 Gathering Support</span>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('hotspot-feed-container').insertAdjacentHTML('afterbegin', newCardHTML);
+
+      document.getElementById('hotspot-title').value = '';
+      document.getElementById('hotspot-location').value = '';
+      document.getElementById('hotspot-description').value = '';
+    });
+
+    document.getElementById('hotspot-feed-container').addEventListener('click', function (event) {
+      const button = event.target.closest('.boost-btn');
+      if (!button) return;
+
+      if (button.disabled) {
+        return;
+      }
+
+      button.textContent = 'Supported ✓';
+      button.disabled = true;
+      button.style.background = '#15803d';
+      button.style.cursor = 'default';
+      button.style.opacity = '0.95';
+
+      const card = button.closest('.hotspot-card');
+      const status = card ? card.querySelector('.status') : null;
+      if (status) {
+        status.className = 'status orange';
+        status.textContent = '🟠 Escalating';
+      }
     });
   });
   </script>

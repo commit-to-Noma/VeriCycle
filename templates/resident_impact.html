@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Impact - VeriCycle</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .impact-shell {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 2rem 1rem 2.5rem;
+    }
+    .impact-hero {
+      background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 1.4rem;
+      box-shadow: 0 10px 24px rgba(5, 150, 105, 0.2);
+      margin-bottom: 1rem;
+    }
+    .impact-grid {
+      display: grid;
+      gap: 0.85rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 1rem;
+    }
+    .impact-card {
+      background: #fff;
+      border: 1px solid #dcfce7;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 8px 20px rgba(2, 6, 23, 0.05);
+    }
+    .impact-value {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #065f46;
+      letter-spacing: -0.02em;
+    }
+    .impact-label {
+      margin: 0.2rem 0 0;
+      color: #374151;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+    .impact-note {
+      margin-top: 1rem;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 10px;
+      padding: 0.9rem;
+      color: #14532d;
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+    @media (max-width: 860px) {
+      .impact-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="light-theme">
+  {% include '_navbar.html' %}
+
+  <main class="impact-shell">
+    <section class="impact-hero">
+      <h2 style="margin:0;">My Impact</h2>
+      <p style="margin:0.45rem 0 0; opacity:0.95;">
+        Your impact comes from community action: reporting hotspots, adding support, and helping verified cleanup events get prioritized.
+      </p>
+    </section>
+
+    <section class="impact-grid" aria-label="Resident impact summary cards">
+      <article class="impact-card">
+        <p class="impact-value">{{ impact_snapshot.hotspots_resolved }}</p>
+        <p class="impact-label">Hotspots Resolved</p>
+      </article>
+      <article class="impact-card">
+        <p class="impact-value">{{ impact_snapshot.active_neighbors }}</p>
+        <p class="impact-label">Active Neighbors</p>
+      </article>
+      <article class="impact-card">
+        <p class="impact-value">{{ impact_snapshot.waste_diverted_kg }}kg</p>
+        <p class="impact-label">Waste Diverted</p>
+      </article>
+    </section>
+
+    <section class="impact-note">
+      When a hotspot reaches high support, it becomes a structured, auditable action in the verification pipeline.
+      This keeps the resident experience focused on neighborhood-scale problems instead of private one-off dispatches.
+    </section>
+  </main>
+</body>
+</html>
