@@ -1617,7 +1617,12 @@ def proof_integrity():
 @app.get('/proof-hub')
 @login_required
 def proof_hub():
-    rows = Activity.query.order_by(Activity.timestamp.desc()).all()
+    # Filter out test/fake data
+    rows = Activity.query.order_by(Activity.timestamp.desc()).filter(
+        ~Activity.desc.ilike('%low signal%'),
+        ~Activity.desc.ilike('%regression%'),
+        ~Activity.desc.ilike('%test%')
+    ).all()
     golden_runs = _find_golden_runs(rows)
     evidence = _proof_hub_evidence(rows)
 

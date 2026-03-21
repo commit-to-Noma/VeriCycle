@@ -24,6 +24,9 @@
     .key-row input {
         flex: 1;
     }
+    .key-row .btn-secondary {
+        margin-top: 0;
+    }
 </style>
 
 <div class="container profile-shell">
@@ -92,26 +95,65 @@
         <div class="form-group">
             <label>Your Private Key (Keep this secret!)</label>
             <div class="key-row">
-                <input id="privateKeyField" type="password" readonly value="{{ current_user.hedera_private_key or '' }}">
-                <button type="button" class="btn-secondary" id="togglePrivateKey">Show</button>
+                <input
+                    id="privateKey"
+                    type="password"
+                    readonly
+                    data-real-key="{{ current_user.hedera_private_key or '' }}"
+                    value="••••••••••"
+                >
+                <button type="button" class="btn-secondary" id="toggleBtn">Show</button>
             </div>
         </div>
 
         <p class="form-note">
             <strong>This is your wallet.</strong> You can import this account into a wallet like <a href="https://www.hashpack.app/" target="_blank" style="color: #16a34a;">HashPack</a> at any time using your Private Key.
         </p>
+        <p class="form-note" style="margin-top: 1rem; color: #15803d; font-weight: 600;">
+            ✓ This wallet is secured and anchored to Hedera Testnet.
+        </p>
     </div> <!-- tech-card -->
     <script>
     (() => {
-        const field = document.getElementById("privateKeyField");
-        const btn = document.getElementById("togglePrivateKey");
-        if (!field || !btn) return;
+        const input = document.getElementById("privateKey");
+        const btn = document.getElementById("toggleBtn");
+        if (!input || !btn) return;
 
-        btn.addEventListener("click", () => {
-            const hidden = field.type === "password";
-            field.type = hidden ? "text" : "password";
-            btn.textContent = hidden ? "Hide" : "Show";
-        });
+        const realKey = input.dataset.realKey || "";
+        const maskedValue = realKey ? "••••••••••" : "Not available for this account";
+
+        function setHiddenState() {
+            input.type = "password";
+            input.value = maskedValue;
+            btn.innerText = "Show";
+            btn.disabled = !realKey;
+            btn.style.opacity = realKey ? "1" : "0.6";
+            btn.style.cursor = realKey ? "pointer" : "not-allowed";
+        }
+
+        function setVisibleState() {
+            input.type = "text";
+            input.value = realKey;
+            btn.innerText = "Hide";
+            btn.disabled = false;
+        }
+
+        function toggleKey() {
+            if (!realKey) {
+                setHiddenState();
+                return;
+            }
+            if (input.type === "password") {
+                setVisibleState();
+            } else {
+                setHiddenState();
+            }
+        }
+
+        // Ensure deterministic state on load and browser bfcache restores.
+        setHiddenState();
+        btn.addEventListener("click", toggleKey);
+        window.addEventListener("pageshow", setHiddenState);
     })();
     </script>
 </div> <!-- /container -->

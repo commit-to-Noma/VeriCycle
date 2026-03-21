@@ -21,10 +21,16 @@ Core Color Palette:
 */
 
 /* --- Base Styles --- */
+html, body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    background-color: #ffffff;
+    background: #f8fafc;
     color: #2d3748;
 }
 
@@ -10968,17 +10974,30 @@ body {
     box-sizing: border-box;
 }
 
+header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+}
+
 .navbar,
 .public-header {
+    position: sticky;
     top: 0;
-    z-index: 1300;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+    z-index: 1000;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: none !important;
 }
 
 header:not(.navbar):not(.public-header) {
-    position: static !important;
-    top: auto !important;
-    z-index: auto !important;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
     box-shadow: none !important;
 }
 
@@ -10990,18 +11009,99 @@ body.light-theme textarea {
     border: 1px solid #cbd5e0;
 }
 
+/* === STANDARDIZED TECH CARD === */
 .tech-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 1.2rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .tech-card:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
+/* === MICRO INTERACTIONS === */
 button:active,
 .btn-primary:active,
 .btn-primary-large:active,
 .btn-secondary:active {
+    transform: scale(0.97);
+}
+
+/* === STANDARDIZED STATUS BADGES === */
+.status-submitted {
+    background: #fef9c3;
+    color: #854d0e;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.status-verified {
+    background: #dcfce7;
+    color: #166534;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.status-pending {
+    background: #fef9c3;
+    color: #854d0e;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+/* === EMPTY STATE === */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    font-style: italic;
+}
+
+/* === LOADING STATES === */
+.verifying {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.verifying::before {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(22, 163, 74, 0.3);
+    border-top-color: #16a34a;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* === FORM FOCUS IMPROVEMENTS === */
+select:focus {
+    outline: none;
+    border: 1px solid #16a34a;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
     transform: scale(0.98);
 }
 

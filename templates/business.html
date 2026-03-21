@@ -105,6 +105,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+    align-items: stretch;
     margin-bottom: 1.2rem;
 }
 .hub-surface-accent {
@@ -139,9 +140,26 @@ body {
 
 .event-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     min-width: 580px;
 }
+
+.event-table th:nth-child(2),
+.event-table td:nth-child(2) {
+    width: 30%;
+}
+
+.event-table th:nth-child(3),
+.event-table td:nth-child(3) {
+    width: 20%;
+}
+
+.event-table th:nth-child(1),
+.event-table td:nth-child(1) {
+    width: 15%;
+}
+
 .event-table thead th {
     background: rgba(220, 252, 231, 0.55) !important;
     color: #16a34a;
@@ -258,6 +276,9 @@ body {
     <span class="section-kicker">Proof Pipeline Clarity</span>
     <h3>What judges should see in this dashboard</h3>
     <p>Each row below represents a business-sourced pickup moving through one status language system: Submitted, Verified, Anchored, Rewarded, and Proof Ready.</p>
+    <div style="margin-top:1rem; padding:1rem; background:rgba(22,163,74,0.06); border-left:3px solid #16a34a; border-radius:6px;">
+        <p style="margin:0; color:#0b5d4a; font-size:0.9rem; font-weight:600;">🔗 <strong>System Story:</strong> This dashboard demonstrates end-to-end traceability through multi-stakeholder verification, creating tamper-proof records anchored to Hedera. Each pickup is auditable from creation through final reward.</p>
+    </div>
 </section>
 
 <section class="card">
@@ -287,7 +308,8 @@ body {
                         <strong>#{{ row.id }} · {{ row.material_type }}</strong>
                         <div class="hub-record-meta">{{ row.estimated_kg }} kg · {{ row.location or 'Location pending' }}</div>
                     </td>
-                    <td>{{ row.requested_window or 'Flexible' }}</td>
+                    <td style="white-space: pre-line;">{% if row.created_at %}{{ row.created_at.strftime('%a, %b %d') }}
+{{ row.requested_window or 'Flexible' }}{% else %}{{ row.requested_window or 'Flexible' }}{% endif %}</td>
                     <td>{{ row.assigned_recycler_email or 'Waiting for acceptance' }}</td>
                     <td>
                         {% set status_text = row.status_label or 'Pending review' %}
@@ -387,7 +409,9 @@ body {
             </tbody>
         </table>
     {% else %}
-        <p class="hub-empty">Verified Events will appear here after recycler submission, center verification, and proof pipeline completion.</p>
+        <div class="empty-state">
+            No verified events yet. Completed pickups will appear here.
+        </div>
     {% endif %}
 </section>
 </div><!-- /biz-shell -->

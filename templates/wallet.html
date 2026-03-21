@@ -240,6 +240,12 @@
     background: #f8f9fa;
     font-size: 0.88rem;
     cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.swap-token-select:focus {
+    outline: none;
+    border: 1.5px solid #16a34a;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
 }
 .swap-rate-hint {
     font-size: 0.76rem;
@@ -374,12 +380,21 @@
 }
 .voucher-redeem-btn:hover { background: #16a34a; color: #fff; }
 
+.voucher-meta {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
 /* Voucher modal */
 .voucher-modal-backdrop {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(15, 23, 42, 0.4);
     backdrop-filter: blur(6px);
     z-index: 1300;
     align-items: center;
@@ -644,6 +659,10 @@
                     <button class="redeem-btn voucher-redeem-btn">Redeem</button>
                 </div>
             </div>
+
+            <p class="voucher-meta">
+                Powered by partner network • Instant redemption
+            </p>
 
         </div>
     </div>

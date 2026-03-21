@@ -316,6 +316,10 @@
         .kpi-row { grid-template-columns: 1fr; }
         .item-top { flex-direction: column; align-items: flex-start; }
     }
+
+    .page-container {
+        padding-bottom: 4rem;
+    }
 </style>
 
 <div class="toast-wrap"><div id="dashboard-toast" class="toast"></div></div>
@@ -330,6 +334,10 @@
             <span class="status-dot" id="system-health-dot"></span>
             <span id="system-health-text">System Operational</span>
         </div>
+    </div>
+
+    <div style="margin-bottom:1.5rem; padding:1rem; background:rgba(22,163,74,0.06); border-left:3px solid #16a34a; border-radius:8px; font-size:0.9rem; color:#0b5d4a;">
+        <strong>💚 Your Impact:</strong> Every kg you recycle creates an immutable audit record. Your verified activities build multi-stakeholder proof that drives real environmental and economic value.
     </div>
 
     <div class="kpi-row">
@@ -413,18 +421,19 @@
                 <tbody id="activity-tbody">
                     {% for act in activities %}
                         {% set status_raw = (act.status or act.verified_status or 'pending')|lower %}
+                        {% set weight_val = [act.desc.split('kg') | first] if 'kg' in act.desc else [] %}
                         <tr>
                             <td class="activity-date" data-ts="{{ act.timestamp }}">{{ act.timestamp }}</td>
                             <td class="activity-material" data-desc="{{ act.desc|e }}">—</td>
                             <td class="activity-weight" data-desc="{{ act.desc|e }}">—</td>
-                            <td class="col-amount-val">{{ act.amount }}</td>
+                            <td class="col-amount-val">{% if weight_val %}{{ act.amount }}{% else %}—{% endif %}</td>
                             <td>
                                 {% if 'anchored' in status_raw %}
-                                    <span class="status-pill status-anchored">Anchored</span>
+                                    <span class="status-badge status-verified">Anchored</span>
                                 {% elif 'verified' in status_raw or status_raw == 'completed' %}
-                                    <span class="status-pill status-verified">Verified</span>
+                                    <span class="status-badge status-verified">Verified</span>
                                 {% else %}
-                                    <span class="status-pill status-pending">Pending</span>
+                                    <span class="status-badge status-pending">Pending</span>
                                 {% endif %}
                             </td>
                             <td>
