@@ -35,7 +35,7 @@
 	<div class="admin-ops-card" id="ops-hts-card">
 		<div class="ops-card-icon">🪙</div>
 		<div class="ops-card-body">
-			<span class="ops-card-label">HTS Paid</span>
+			<span class="ops-card-label">HTS Rewarded</span>
 			<span class="ops-card-value" id="admin-hts-count">—</span>
 		</div>
 	</div>
@@ -77,6 +77,7 @@
 	<div class="admin-actions-row" style="margin-top: 0.85rem;">
 		<button id="createDemoDepositBtn" class="btn-primary">Inject Test Load</button>
 		<button id="generateEvidencePackBtn" class="btn-secondary">Generate Evidence Pack</button>
+		<button id="resetDemoBtn" class="btn-danger" style="display:none;">Reset Demo Data</button>
 
 		<form method="post" action="/admin/cleanup-stale-running" class="inline-form">
 			<button type="submit" class="btn-danger">Mark Running as Failed</button>
@@ -1038,16 +1039,61 @@ function runAutoVerify() {
 }
 
 function updateOpsSummary(activities) {
-	const active = 4;
-	const hcs = 7;
-	const hts = 7;
+	const list = Array.isArray(activities) ? activities : [];
+	const toStateSet = (activity) => new Set([
+		(activity?.status || '').toString().toLowerCase(),
+		(activity?.verified_status || '').toString().toLowerCase(),
+		(activity?.stage || activity?.pipeline_stage || '').toString().toLowerCase(),
+		(activity?.logbook_status || '').toString().toLowerCase(),
+		(activity?.reward_status || '').toString().toLowerCase(),
+	]);
+	const isRejected = (states) => states.has('failed') || states.has('rejected');
+	const isVerified = (states) => !isRejected(states)
+		&& ['verified', 'logged', 'rewarded', 'attested', 'paid', 'completed', 'anchored'].some((s) => states.has(s));
+	const hasAnchored = (activity, states) => (
+		(activity?.hcs_tx_id || activity?.logbook_tx_id || activity?.hedera_tx_id)
+		|| ['anchored', 'offchain_final', 'demo_skipped'].some((s) => states.has(s))
+	);
+	const hasRewarded = (activity, states) => (
+		(activity?.hts_tx_id || activity?.reward_tx_id)
+		|| ['paid', 'finalized_no_transfer'].some((s) => states.has(s))
+	);
+
+	let verified = 0;
+	let hcs = 0;
+	let hts = 0;
+	list.forEach((activity) => {
+		const states = toStateSet(activity);
+		if (isVerified(states)) verified += 1;
+		if (hasAnchored(activity, states)) hcs += 1;
+		if (hasRewarded(activity, states)) hts += 1;
+	});
+
+	const safeValue = (n) => (Number(n) > 0 ? String(n) : '—');
 	const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-	el('admin-active-events', active);
-	el('admin-hcs-count', hcs);
-	el('admin-hts-count', hts);
-	el('admin-health-status', 'Operational');
+	el('admin-active-events', safeValue(verified));
+	el('admin-hcs-count', safeValue(hcs));
+	el('admin-hts-count', safeValue(hts));
+	el('admin-health-status', list.length ? 'Operational' : 'Awaiting Data');
 	const hCard = document.getElementById('ops-system-health-card');
 	if (hCard) hCard.querySelector('.ops-card-icon').textContent = '🟢';
+}
+
+function resetDemo() {
+	fetch('/admin/reset-demo', {
+		method: 'POST',
+		headers: { 'X-Requested-With': 'XMLHttpRequest' }
+	})
+		.then(r => r.json())
+		.then((payload) => {
+			if (!payload?.ok) {
+				throw new Error(payload?.error || 'Reset failed');
+			}
+			location.reload();
+		})
+		.catch((err) => {
+			alert(err.message || 'Reset failed');
+		});
 }
 
 function loadActivities() {
@@ -1084,6 +1130,10 @@ document.getElementById("showDebug").addEventListener("change", () => {
 	renderActivities(adminActivities);
 	restoreProofStatusesFromCache();
 	runAutoVerify();
+	const resetBtn = document.getElementById('resetDemoBtn');
+	if (resetBtn) {
+		resetBtn.style.display = document.getElementById("showDebug")?.checked ? 'inline-flex' : 'none';
+	}
 });
 
 document.getElementById("dateRange").addEventListener("change", () => {
@@ -1160,6 +1210,16 @@ document.getElementById("generateEvidencePackBtn").addEventListener("click", () 
 			}
 		});
 });
+
+const resetDemoBtn = document.getElementById('resetDemoBtn');
+if (resetDemoBtn) {
+	resetDemoBtn.addEventListener('click', () => {
+		if (!window.confirm('Reset demo data now? This clears current records and reseeds judge demo state.')) {
+			return;
+		}
+		resetDemo();
+	});
+}
 
 loadActivities();
 refreshAdminLiveState();

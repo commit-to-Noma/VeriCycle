@@ -271,6 +271,17 @@ A **fully working system**, not a concept or prototype.
 8. **Business & Recycler** view verified results
 9. **EcoCoin** reward recorded or issued
 
+## Demo Flow (Recommended for Judges)
+
+1. Business creates request
+2. Recycler accepts and submits
+3. Center verifies
+4. Hedera anchor created (HCS)
+5. Rewards issued (HTS)
+6. Proof accessible via HashScan
+
+This sequence keeps the narrative clean across all 4 stakeholders (Business, Recycler, Center, Community) while showing the core Proof of Income value proposition end-to-end.
+
 ---
 
 ## Why People Will Use It

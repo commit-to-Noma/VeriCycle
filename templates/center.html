@@ -974,7 +974,7 @@ body {
 </div>
 
     <div id="center-toast" role="status" aria-live="polite" style="display:none;">
-        <span id="center-toast-text">Verified -> Anchored -> Reward queued</span>
+        <span id="center-toast-text">Success: Anchored to Hedera</span>
     </div>
 
 <script>
@@ -1749,8 +1749,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             }, 'Could not verify submitted pickup');
 
-            const rewardText = Number(data.reward_amount || 0).toFixed(2);
-            showBanner(`Verified -> Anchored -> Reward queued (${rewardText} ECO)`);
+            showToast('Success: Anchored to Hedera');
             setQueueButtonState(buttonEl, 'Verified ✓', true);
             setTrustStep('anchored', 'active');
             setTimeout(() => setTrustStep('rewarded', 'active'), 220);
@@ -1810,7 +1809,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // --- NEW: FUNCTION TO SHOW THE BANNER ---
-    function showBanner(text) {
+    function showToast(text) {
         if (centerToastText) {
             centerToastText.textContent = text;
         } else {
@@ -1820,6 +1819,10 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             centerToast.style.display = 'none';
         }, 2600);
+    }
+
+    function showBanner(text) {
+        showToast(text);
     }
 
     function addDirectRecentFallbackRow(materialLabel, weightValue, rewardValue, txUrl) {
@@ -1950,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const approvedRate = Number(data.eco_rate_per_kg || prices[(materialType.value || '').toLowerCase()] || 0);
                 const approvedWeight = Number(data.weight_kg || weight || 0);
                 const payoutFormula = data.payout_formula || `${approvedWeight.toFixed(1)} kg x ${approvedRate.toFixed(1)} ECO/kg = ${approvedReward.toFixed(2)} ECO`;
-                showBanner(`Center approved: ${approvedReward.toFixed(2)} ECO (${payoutFormula})`);
+                showToast('Success: Anchored to Hedera');
                 // --- BROADCAST CHANNEL (Real-time signal) ---
                 const channel = new BroadcastChannel('vericycle_demo');
                 channel.postMessage({

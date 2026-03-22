@@ -747,7 +747,7 @@
         </div>
         <div class="wallet-header-actions">
             <span class="status-badge">Live Rates Active</span>
-            <button id="redeem-cash-btn" class="redeem-cash-btn" type="button" title="Redeem ECO to cash payout request">Redeem to Cash</button>
+            <button id="redeem-cash-btn" class="redeem-cash-btn" type="button" disabled title="Bank/Voucher redemption coming soon">Redeem ECO</button>
         </div>
     </div>
     <div class="trust-signals">
@@ -1026,12 +1026,6 @@ document.addEventListener('DOMContentLoaded', function () {
         balanceDisplay.dataset.balance = String(walletBalance);
         balanceDisplay.innerHTML = `${walletBalance.toLocaleString('en-US', { maximumFractionDigits: 0 })}<span class="eco-symbol">ECO</span>`;
         if (swapCard) swapCard.dataset.walletBalance = String(walletBalance);
-        if (cashButton) {
-            cashButton.title = walletBalance < 20
-                ? `Minimum cash redeem is 20 ECO. Current balance: ${walletBalance.toFixed(0)} ECO.`
-                : 'Redeem ECO to cash payout request';
-            cashButton.classList.toggle('is-locked', walletBalance < 20);
-        }
     }
 
     function parseVoucherEcoCost(valueLabel) {
@@ -1195,35 +1189,33 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    cashButton.addEventListener('click', async function () {
-        if (walletBalance < 20) {
-            showToast(`You need at least 20 ECO for cash redemption. Current balance: ${walletBalance.toFixed(0)} ECO.`, 'error');
-            return;
-        }
-        const raw = window.prompt('Enter ECO amount to redeem as cash (minimum 20 ECO):', '50');
-        if (raw === null) return;
-        const ecoAmount = Number(raw);
-        if (!Number.isFinite(ecoAmount) || ecoAmount <= 0) {
-            showToast('Enter a valid ECO amount', 'error');
-            return;
-        }
-        cashButton.disabled = true;
-        try {
-            const data = await callApiJson('/api/wallet/redeem-cash', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ eco_amount: ecoAmount }),
-            });
-            walletBalance = Number(data.balance || 0);
-            renderBalance();
-            renderHistory(data.history_rows || []);
-            showToast(data.message || 'Cash redeem recorded');
-        } catch (err) {
-            showToast(err.message || 'Cash redeem failed', 'error');
-        } finally {
-            cashButton.disabled = false;
-        }
-    });
+    if (cashButton && !cashButton.disabled) {
+        cashButton.addEventListener('click', async function () {
+            const raw = window.prompt('Enter ECO amount to redeem as cash (minimum 20 ECO):', '50');
+            if (raw === null) return;
+            const ecoAmount = Number(raw);
+            if (!Number.isFinite(ecoAmount) || ecoAmount <= 0) {
+                showToast('Enter a valid ECO amount', 'error');
+                return;
+            }
+            cashButton.disabled = true;
+            try {
+                const data = await callApiJson('/api/wallet/redeem-cash', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ eco_amount: ecoAmount }),
+                });
+                walletBalance = Number(data.balance || 0);
+                renderBalance();
+                renderHistory(data.history_rows || []);
+                showToast(data.message || 'Cash redeem recorded');
+            } catch (err) {
+                showToast(err.message || 'Cash redeem failed', 'error');
+            } finally {
+                cashButton.disabled = false;
+            }
+        });
+    }
 
     copyBtn.addEventListener('click', function () {
         if (navigator.clipboard) {

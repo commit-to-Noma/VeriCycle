@@ -1436,6 +1436,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ material_type: material, weight_kg: weight }),
             }, 'Could not submit drop-off');
             showSubmissionSuccessModal(data.proof_bundle_url || '{{ url_for('proof_hub') }}');
+            showToast('Success: Anchored to Hedera');
             loadAcceptedAssignments();
         } catch (e) {
             hideSubmissionSuccessModal();

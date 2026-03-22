@@ -576,6 +576,11 @@ body {
 
 <div class="biz-shell">
 {% set summary_data = summary if summary is mapping else {} %}
+{% set goal_current = (summary_data.get('goal_current_kg', 0) or 0)|float %}
+{% set goal_target = (summary_data.get('goal_target_kg', 1000) or 1000)|float %}
+{% set goal_percent = summary_data.get('goal_percent', 0) %}
+{% set eco_funded_total = (summary_data.get('eco_funded_total', 0) or 0)|float %}
+{% set capital_injected = (summary_data.get('capital_injected_zar', eco_funded_total) or eco_funded_total)|float %}
 <div class="trust-strip business-trust-strip">
     <span class="trust-chip"><span class="trust-chip-icon">✓</span>Business-owned records tied to source requests</span>
     <span class="trust-chip"><span class="trust-chip-icon">⎈</span>Verification center handoff is role-gated</span>
@@ -590,15 +595,15 @@ body {
 <section class="hub-stat-grid">
     <article class="card hub-stat-card">
         <span class="section-kicker">Total Recycled</span>
-        <strong>885.5 kg</strong>
+        <strong>{{ "{:,.1f}".format(goal_current) }} kg</strong>
         <p>Verified material diverted through your business collection requests.</p>
         <div style="margin-top: 18px; border-top: 1px solid #f1f5f9; padding-top: 10px; text-align:left;">
             <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-bottom: 4px; font-weight: 600;">
-                <span>Monthly Target: 1000 kg</span>
-                <span style="color: #16a34a;">88.5%</span>
+                <span>Monthly Target: {{ "{:,.0f}".format(goal_target) }} kg</span>
+                <span style="color: #16a34a;">{{ goal_percent }}%</span>
             </div>
             <div style="width: 100%; background: #e2e8f0; border-radius: 999px; height: 6px; overflow: hidden;">
-                <div style="background: #16a34a; width: 88.5%; height: 100%; border-radius: 999px;"></div>
+                <div style="background: #16a34a; width: {{ goal_percent }}%; height: 100%; border-radius: 999px;"></div>
             </div>
         </div>
     </article>
@@ -614,10 +619,10 @@ body {
     </article>
     <article class="card hub-stat-card">
         <span class="section-kicker">ECO Funded</span>
-        <strong>3,450 ECO</strong>
+        <strong>{{ "{:,.1f}".format(eco_funded_total) }} ECO</strong>
         <p>Total EcoCoin distributed directly to local recyclers.</p>
         <div style="margin-top: 10px; font-weight: 700; color: #065f46; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 6px; display: inline-block; font-size: 0.85rem;">
-            Capital Injected: R 3,450.00
+            Capital Injected: R {{ "{:,.2f}".format(capital_injected) }}
         </div>
     </article>
 </section>
@@ -635,14 +640,14 @@ body {
         <div class="esg-metric">
             <div class="esg-metric-label">Environmental</div>
             <div class="esg-metric-value">
-                1,320 <span>kg CO2e Averted</span>
+                {{ "{:,.0f}".format((summary_data.get('co2e_averted_kg', 0) or 0)|float) }} <span>kg CO2e Averted</span>
             </div>
         </div>
 
         <div class="esg-metric">
             <div class="esg-metric-label">Social</div>
             <div class="esg-metric-value">
-                14 <span>Micro-Jobs Funded</span>
+                {{ summary_data.get('micro_jobs_funded', 0) }} <span>Micro-Jobs Funded</span>
             </div>
         </div>
     </div>
@@ -780,10 +785,13 @@ body {
                             <a href="https://hashscan.io/testnet/transaction/{{ row.hcs_tx_id or row.hedera_tx_id }}" class="hashscan-link" target="_blank" rel="noopener">View on HashScan ↗</a>
                         {% elif row.hts_tx_id or row.reward_tx_id %}
                             <a href="https://hashscan.io/testnet/transaction/{{ row.hts_tx_id or row.reward_tx_id }}" class="hashscan-link" target="_blank" rel="noopener">View on HashScan ↗</a>
-                        {% elif row.proof_url %}
-                            <a href="{{ row.proof_url }}" class="hashscan-link">Download Proof</a>
                         {% else %}
                             —
+                        {% endif %}
+                        {% if row.proof_url %}
+                            <div class="table-secondary-meta" style="margin-top: 0.35rem;">
+                                <a href="{{ row.proof_url }}" class="hashscan-link">Download Proof</a>
+                            </div>
                         {% endif %}
                     </td>
                 </tr>

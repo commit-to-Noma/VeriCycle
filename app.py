@@ -1175,6 +1175,114 @@ def ensure_demo_community_hotspots(force_reset: bool = False) -> None:
         db.session.commit()
 
 
+def seed_demo_data(force_reset: bool = False) -> None:
+    """Seed a judge-ready dataset with completed, pending, flagged, and community records."""
+    if _is_prod:
+        return
+
+    ensure_demo_login_accounts()
+    ensure_demo_business_verified_transactions()
+    ensure_demo_community_hotspots(force_reset=force_reset)
+
+    recycler_user = _find_first_user_by_effective_role('recycler')
+    center_user = _find_first_user_by_effective_role('center')
+    business_user = _find_first_user_by_effective_role('business')
+    if not recycler_user or not center_user or not business_user:
+        return
+
+    changed = False
+
+    # Ensure at least one pending event is visible in center/admin flows.
+    pending_event = (
+        Activity.query
+        .filter(
+            Activity.pipeline_stage.in_(['created', 'signals_collected', 'verified', 'logged']),
+            ~Activity.status.in_(['rejected', 'failed'])
+        )
+        .order_by(Activity.id.desc())
+        .first()
+    )
+    if not pending_event:
+        pending_activity = Activity(
+            user_id=recycler_user.id,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            desc='Pending Verification Pickup (18.0kg of Plastics)',
+            amount=calculate_demo_reward_amount('Plastics', 18.0),
+            status='pending',
+            verified_status='pending',
+            pipeline_stage='created',
+            logbook_status='pending',
+            reward_status=None,
+        )
+        db.session.add(pending_activity)
+        changed = True
+
+    # Ensure at least one flagged event exists for admin anomaly review.
+    flagged_event = (
+        Activity.query
+        .filter_by(pipeline_stage='needs_review')
+        .order_by(Activity.id.desc())
+        .first()
+    )
+    if not flagged_event:
+        anomaly = Activity(
+            user_id=recycler_user.id,
+            timestamp=(datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(),
+            desc='Judge Demo Rejected Review Event',
+            amount=calculate_demo_reward_amount('Mixed Recyclables', 12.0),
+            status='pending',
+            verified_status='pending',
+            pipeline_stage='needs_review',
+            review_status='pending_review',
+            review_reason='conflicting_or_insufficient_signals',
+            confidence_score=0.2,
+            trust_weight=0.2,
+            logbook_status='pending',
+            reward_status=None,
+        )
+        db.session.add(anomaly)
+        db.session.flush()
+        create_verification_signal(
+            activity_id=anomaly.id,
+            signal_type='center_verification',
+            source_role='center',
+            source_user_id=center_user.id,
+            value='conflict_detected',
+            is_positive=False,
+            metadata={
+                'verified_by': center_user.email,
+                'reason': 'weight_material_mismatch',
+            },
+        )
+        changed = True
+
+    # Ensure at least one open business request exists.
+    open_business_request = (
+        PickupOpportunity.query
+        .filter_by(source_role='business', source_user_id=business_user.id)
+        .filter(PickupOpportunity.status.in_(['open', 'accepted', 'in_transit', 'submitted']))
+        .order_by(PickupOpportunity.created_at.desc())
+        .first()
+    )
+    if not open_business_request:
+        db.session.add(PickupOpportunity(
+            source_role='business',
+            source_user_id=business_user.id,
+            material_type='Plastics',
+            estimated_kg=46.0,
+            priority='standard',
+            location='Braamfontein Office Park, Johannesburg',
+            requested_window='Today 16:00-18:00',
+            notes='[DEMO-BIZ-SEED] Open business request for judge walkthrough.',
+            status='open',
+            created_at=datetime.now(timezone.utc),
+        ))
+        changed = True
+
+    if changed:
+        db.session.commit()
+
+
 def purge_stale_demo_seed_rows() -> None:
     if _is_prod:
         return
@@ -1969,6 +2077,10 @@ with app.app_context():
         ensure_demo_login_accounts()
     except Exception as e:
         print(f"[DEMO] Demo account seed skipped: {e}", flush=True)
+    try:
+        seed_demo_data(force_reset=False)
+    except Exception as e:
+        print(f"[DEMO] Demo data seed skipped: {e}", flush=True)
 
 # -----------------------------------------------------------------
 # 4. HELPER FUNCTION FOR FLASK-LOGIN
@@ -5363,14 +5475,37 @@ def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stag
 
 
 @app.route('/admin/monitor')
+@login_required
 def admin_monitor():
     if not is_admin_user():
-        admin_user = User.query.filter_by(role='admin').order_by(User.id.asc()).first()
-        if not admin_user:
-            flash('Admin monitor is unavailable because no admin account is configured.', 'error')
-            return redirect(url_for('home'))
-        login_user(admin_user, remember=False, force=True, fresh=True)
+        flash('Admin access only.', 'error')
+        return redirect(url_for(access_denied_redirect_for(current_user)))
     return render_template('admin_monitor.html', active_page='admin_monitor')
+
+
+@app.post('/admin/reset-demo')
+@login_required
+def reset_demo():
+    if not is_admin_user():
+        abort(403)
+
+    try:
+        db.session.remove()
+        db.drop_all()
+        db.create_all()
+        ensure_activity_columns()
+        seed_layer0_if_empty()
+        seed_demo_data(force_reset=True)
+        db.session.commit()
+
+        admin_user = User.query.filter_by(email='admin@vericycle.com').first()
+        if admin_user:
+            login_user(admin_user, remember=False, force=True, fresh=True)
+
+        return jsonify({"ok": True, "status": "reset complete"})
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": f"Reset failed: {exc}"}), 500
 
 
 @app.route('/api/config')
