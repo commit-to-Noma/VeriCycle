@@ -32,6 +32,7 @@ import requests
 import json
 import hashlib
 import re 
+import math
 import threading
 from collections import defaultdict
 from sqlalchemy.exc import OperationalError
@@ -110,7 +111,7 @@ login_manager.login_message_category = None
 # 3. DATABASE MODEL
 # - Define `User` and `Activity` models used across routes.
 # -----------------------------------------------------------------
-from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask, AgentCommerceEvent, DeadLetterTask, AdminAuditLog, VerificationSignal, PickupOpportunity, OpportunityAssignment
+from models import User, Activity, Location, WasteSchedule, HouseholdProfile, PickupEvent, AgentLog, AgentTask, AgentCommerceEvent, DeadLetterTask, AdminAuditLog, VerificationSignal, PickupOpportunity, OpportunityAssignment, WalletTransaction
 from extensions import db as _db  # ensure db is available for seed helper
 from agents.proof_utils import build_proof_hash
 from demo_profile import DEMO_PROFILES, apply_demo_profile, profile_health
@@ -346,72 +347,8 @@ def _find_first_user_by_effective_role(target_role: str) -> User | None:
 
 
 def ensure_demo_pickup_flow_seed() -> None:
-    """
-    Keep demo flows non-empty in local/test judging runs.
-    Creates one starter open opportunity and one starter submitted assignment only
-    when the pickup flow tables are empty.
-    """
-    if _is_prod:
-        return
-
-    # Do not keep re-seeding after real stakeholder activity starts.
-    # The seed should bootstrap empty databases only.
-    has_any_opportunity = db.session.query(PickupOpportunity.id).first() is not None
-    has_any_assignment = db.session.query(OpportunityAssignment.id).first() is not None
-    if has_any_opportunity or has_any_assignment:
-        return
-
-    business_user = _find_first_user_by_effective_role("business")
-    recycler_user = _find_first_user_by_effective_role("recycler")
-    if not business_user or not recycler_user:
-        return
-
-    made_changes = False
-
-    if not (recycler_user.hedera_account_id or '').strip():
-        recycler_user.hedera_account_id = '0.0.7267109'
-        made_changes = True
-
-    db.session.add(PickupOpportunity(
-        source_role="business",
-        source_user_id=business_user.id,
-        material_type="Cans",
-        estimated_kg=12.0,
-        location="Sandton Business District",
-        requested_window="Today 14:00-17:00",
-        notes="Demo seeded pickup for judge flow",
-        status="open",
-    ))
-    made_changes = True
-
-    seeded_opportunity = PickupOpportunity(
-        source_role="business",
-        source_user_id=business_user.id,
-        material_type="Paper",
-        estimated_kg=9.5,
-        location="Rosebank Office Hub",
-        requested_window="Today 09:00-12:00",
-        notes="Demo seeded submitted assignment",
-        status="accepted",
-    )
-    db.session.add(seeded_opportunity)
-    db.session.flush()
-
-    seeded_assignment = OpportunityAssignment(
-        opportunity_id=seeded_opportunity.id,
-        recycler_user_id=recycler_user.id,
-        status="submitted",
-        submitted_at=datetime.now(timezone.utc),
-        submitted_material_type="Paper",
-        submitted_weight_kg=9.5,
-        submission_notes="Preloaded for center verification demo",
-        verification_status="pending",
-    )
-    db.session.add(seeded_assignment)
-    made_changes = True
-
-    if made_changes:
-        db.session.commit()
+    """Disabled for clean-slate demos where all activity must be user-triggered."""
+    return
 
 
 def normalize_material_key(material_type: str | None) -> str:
@@ -478,61 +415,130 @@ def build_rewards_wallet_snapshot(user: User) -> dict:
         .order_by(Activity.id.desc())
         .all()
     )
+    wallet_rows = (
+        WalletTransaction.query
+        .filter_by(user_id=user.id)
+        .order_by(WalletTransaction.created_at.desc(), WalletTransaction.id.desc())
+        .all()
+    )
+
+    def is_activity_rewarded(activity: Activity) -> bool:
+        states = {
+            (activity.status or "").strip().lower(),
+            (activity.verified_status or "").strip().lower(),
+            (activity.pipeline_stage or "").strip().lower(),
+            (activity.logbook_status or "").strip().lower(),
+            (activity.reward_status or "").strip().lower(),
+        }
+        if "failed" in states or "rejected" in states:
+            return False
+        return bool(states & {"verified", "anchored", "completed", "logged", "rewarded", "attested", "paid"})
+
+    def parse_activity_dt(activity: Activity):
+        raw = (activity.timestamp or "").strip()
+        if not raw:
+            return None
+        try:
+            return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except Exception:
+            return None
 
     balance = 0.0
+    total_earned = 0.0
     verified_events = 0
     proof_records = 0
     recent_rewards = []
+    history_rows = []
 
     for row in rows:
-        status_value = (row.status or row.verified_status or "").strip().lower()
-        is_verified = status_value == "verified"
-        if is_verified:
-            verified_events += 1
-            balance += float(row.amount or 0.0)
-
         if row.proof_hash or row.hcs_tx_id or row.logbook_tx_id or row.hedera_tx_id:
             proof_records += 1
+
+        if not is_activity_rewarded(row):
+            continue
+
+        amount = float(row.amount or 0.0)
+        balance += amount
+        total_earned += amount
+        verified_events += 1
 
         tx_id = row.hts_tx_id or row.reward_tx_id or row.hcs_tx_id or row.logbook_tx_id or row.hedera_tx_id
         if len(recent_rewards) < 8 and tx_id:
             recent_rewards.append({
-                "amount": float(row.amount or 0.0),
+                "amount": amount,
                 "description": row.desc or "Recycling event",
                 "tx_id": tx_id,
                 "hashscan_url": hashscan_link(tx_id),
             })
 
-    if user.email.lower().strip() == "recycler@vericycle.com":
-        balance += 1175.0
-        verified_events += 2
-        proof_records += 2
+        status_text = "Rewarded"
+        state_hint = (row.reward_status or row.logbook_status or row.pipeline_stage or row.status or row.verified_status or "").strip().lower()
+        if state_hint in {"anchored", "logged", "attested"}:
+            status_text = "Anchored"
+        elif state_hint in {"verified", "completed"}:
+            status_text = "Verified"
 
-    if not recent_rewards:
-        recent_rewards = [
-            {
-                "amount": 50.0,
-                "description": "Plastic Recycling",
-                "tx_id": "0.0.1001@1700000000.000000001",
-                "hashscan_url": hashscan_link("0.0.1001@1700000000.000000001"),
-            },
-            {
-                "amount": 30.0,
-                "description": "Glass Deposit",
-                "tx_id": "0.0.1001@1700000000.000000002",
-                "hashscan_url": hashscan_link("0.0.1001@1700000000.000000002"),
-            },
-        ]
+        history_rows.append({
+            "created_at": parse_activity_dt(row),
+            "date": row.timestamp,
+            "activity": row.desc or "Verified recycling activity",
+            "status": status_text,
+            "amount_eco": amount,
+            "note": "ECO earned from verified recycling activity",
+            "link_url": f"/api/proof-bundle/{row.id}",
+            "link_label": "View proof",
+        })
 
-    if balance <= 0:
-        balance = 1250.0
+    for tx in wallet_rows:
+        amount_eco = float(tx.amount_eco or 0.0)
+        balance += amount_eco
+
+        action_label = {
+            "swap": "Swap",
+            "voucher": "Voucher Redeem",
+            "cash": "Cash Redeem",
+        }.get((tx.action_type or "").strip().lower(), "Wallet Action")
+
+        out_value_text = ""
+        if tx.amount_out is not None and tx.out_asset:
+            if str(tx.out_asset).upper() == "ZAR":
+                out_value_text = f"R{float(tx.amount_out):,.0f}"
+            else:
+                out_value_text = f"{float(tx.amount_out):,.4f} {str(tx.out_asset).upper()}"
+
+        base_activity = tx.reference_label or action_label
+        activity_text = f"{action_label} · {base_activity}" if tx.reference_label else action_label
+        if out_value_text:
+            activity_text = f"{activity_text} ({out_value_text})"
+
+        history_rows.append({
+            "created_at": tx.created_at,
+            "date": tx.created_at.isoformat() if tx.created_at else "",
+            "activity": activity_text,
+            "status": "Completed" if (tx.status or "").strip().lower() == "completed" else humanize_status_token(tx.status),
+            "amount_eco": amount_eco,
+            "note": tx.note or "Wallet deduction",
+            "link_url": None,
+            "link_label": "-",
+        })
+
+    def _history_sort_key(item):
+        dt = item.get("created_at")
+        if isinstance(dt, datetime):
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.timestamp()
+        return 0.0
+
+    history_rows.sort(key=_history_sort_key, reverse=True)
 
     return {
         "balance": round(balance, 2),
         "verified_events": verified_events,
         "proof_records": proof_records,
-        "total_earned": round(balance, 2),
+        "total_earned": round(total_earned, 2),
         "recent_rewards": recent_rewards[:5],
+        "history_rows": history_rows[:80],
     }
 
 
@@ -650,6 +656,39 @@ def purge_stale_demo_seed_rows() -> None:
         "Demo seeded pickup for judge flow",
         "Demo seeded submitted assignment",
     }
+
+    # Hard clean in non-demo mode: remove preloaded judge seed data entirely.
+    if not DEMO_MODE:
+        stale_opportunities = (
+            PickupOpportunity.query
+            .filter(PickupOpportunity.notes.in_(demo_notes))
+            .all()
+        )
+        removed_assignments = 0
+        for opportunity in stale_opportunities:
+            assignments = list(opportunity.assignments or [])
+            for assignment in assignments:
+                db.session.delete(assignment)
+                removed_assignments += 1
+            db.session.delete(opportunity)
+
+        # Remove legacy seeded recycler history rows if present.
+        seed_desc_values = {
+            "Verified Drop-off (8.5kg of Paper)",
+            "Verified Drop-off (15.0kg of Cans)",
+        }
+        seeded_activities = (
+            Activity.query
+            .filter(Activity.desc.in_(seed_desc_values))
+            .filter(or_(Activity.amount == 425.0, Activity.amount == 750.0))
+            .all()
+        )
+        for row in seeded_activities:
+            db.session.delete(row)
+
+        if stale_opportunities or removed_assignments or seeded_activities:
+            db.session.commit()
+        return
 
     has_real_activity = db.session.query(Activity.id).first() is not None
     has_real_pickup_data = (
@@ -2051,33 +2090,54 @@ def collector_dashboard():
         # Silent role redirect avoids stale cross-page flash leakage during judging flows.
         return redirect(url_for(access_denied_redirect_for(current_user)))
 
+    purge_stale_demo_seed_rows()
     ensure_demo_pickup_flow_seed()
 
     # Require profile completion for recycler users (including legacy collector rows).
     if not current_user.full_name or not current_user.phone_number or not current_user.id_number:
         flash('You must complete your profile before accessing the dashboard.', 'error')
         return redirect(url_for('profile'))
-    # Expose one newest-first activity list for the dashboard table.
+    # Use the same dashboard payload as the API to keep server-rendered KPIs consistent.
+    dashboard_response = get_dashboard_data()
+    dashboard_payload = dashboard_response.get_json(silent=True) if dashboard_response else {}
+    dashboard_payload = dashboard_payload or {}
+
+    # Expose one newest-first activity list for the initial dashboard table render.
     activities = (
         Activity.query
         .filter_by(user_id=current_user.id)
         .order_by(Activity.timestamp.desc())
         .all()
     )
-    total_recycled_completed = (
-        db.session.query(func.coalesce(func.sum(Activity.amount), 0.0))
-        .filter(Activity.user_id == current_user.id, func.lower(Activity.status) == 'completed')
-        .scalar()
-        or 0.0
-    )
-    wallet_snapshot = build_rewards_wallet_snapshot(current_user)
+
+    wallet_balance = float(dashboard_payload.get("total_eco") or 0.0)
+    total_recycled_completed = float(dashboard_payload.get("total_recycled_completed") or 0.0)
+    current_kg = float(dashboard_payload.get("current_kg") or 0.0)
+    monthly_goal = float(dashboard_payload.get("monthly_goal") or dashboard_payload.get("weekly_goal") or 10.0)
+    neighborhood_current_kg = float(dashboard_payload.get("neighborhood_current_kg") or 0.0)
+    neighborhood_goal_kg = float(dashboard_payload.get("neighborhood_goal_kg") or 4000.0)
+
+    personal_percent = 0
+    if monthly_goal > 0:
+        personal_percent = min(int(round((current_kg / monthly_goal) * 100)), 100)
+
+    neighborhood_percent = 0
+    if neighborhood_goal_kg > 0:
+        neighborhood_percent = min(int(round((neighborhood_current_kg / neighborhood_goal_kg) * 100)), 100)
+
     return render_template(
         'collector.html',
         activities=activities,
         active_page='dashboard',
         demo_mode=DEMO_MODE,
-        wallet_balance=wallet_snapshot["balance"],
+        wallet_balance=wallet_balance,
         total_recycled_completed=round(float(total_recycled_completed), 1),
+        current_kg=round(float(current_kg), 1),
+        monthly_goal=round(float(monthly_goal), 1),
+        personal_percent=personal_percent,
+        neighborhood_current_kg=round(float(neighborhood_current_kg), 1),
+        neighborhood_goal_kg=round(float(neighborhood_goal_kg), 1),
+        neighborhood_percent=neighborhood_percent,
     )
 
 
@@ -2095,8 +2155,180 @@ def wallet():
         wallet_proof_records=wallet_snapshot["proof_records"],
         wallet_total_earned=wallet_snapshot["total_earned"],
         wallet_recent_rewards=wallet_snapshot["recent_rewards"],
+        wallet_history_rows=wallet_snapshot["history_rows"],
         active_page='wallet',
     )
+
+
+WALLET_SWAP_RATES = {
+    "USDT": 0.0150,
+    "HBAR": 0.0202,
+}
+
+
+def _wallet_snapshot_payload_for_user(user: User) -> dict:
+    snapshot = build_rewards_wallet_snapshot(user)
+    return {
+        "ok": True,
+        "balance": snapshot["balance"],
+        "verified_events": snapshot["verified_events"],
+        "proof_records": snapshot["proof_records"],
+        "total_earned": snapshot["total_earned"],
+        "history_rows": snapshot["history_rows"],
+    }
+
+
+def _wallet_require_recycler() -> tuple[bool, object]:
+    if not can_accept_opportunity_recycler(current_user):
+        return False, (jsonify({"ok": False, "error": "Only recyclers can use wallet actions"}), 403)
+    return True, None
+
+
+def _wallet_try_debit(*, amount_eco: float, action_type: str, amount_out: float | None, out_asset: str | None, reference_label: str | None, note: str | None):
+    snapshot = build_rewards_wallet_snapshot(current_user)
+    available = float(snapshot["balance"])
+    if amount_eco <= 0:
+        return False, jsonify({"ok": False, "error": "Amount must be greater than zero"}), 400
+    if amount_eco > available:
+        return False, jsonify({"ok": False, "error": "Insufficient ECO balance"}), 400
+
+    tx_ref = f"WALLET-{action_type.upper()}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{current_user.id}"
+    tx = WalletTransaction(
+        user_id=current_user.id,
+        action_type=action_type,
+        status="completed",
+        amount_eco=-float(amount_eco),
+        amount_out=float(amount_out) if amount_out is not None else None,
+        out_asset=(out_asset or None),
+        reference_label=(reference_label or None),
+        note=(note or None),
+        tx_ref=tx_ref,
+    )
+    db.session.add(tx)
+    db.session.commit()
+    return True, tx, None
+
+
+@app.get('/api/wallet/snapshot')
+@login_required
+def api_wallet_snapshot():
+    allowed, error_response = _wallet_require_recycler()
+    if not allowed:
+        return error_response
+    return jsonify(_wallet_snapshot_payload_for_user(current_user))
+
+
+@app.post('/api/wallet/swap')
+@login_required
+def api_wallet_swap():
+    allowed, error_response = _wallet_require_recycler()
+    if not allowed:
+        return error_response
+
+    data = request.get_json(silent=True) or request.form
+    token = str(data.get("token") or "USDT").strip().upper()
+    if token not in WALLET_SWAP_RATES:
+        return jsonify({"ok": False, "error": "Unsupported swap token"}), 400
+
+    try:
+        eco_amount = float(data.get("eco_amount"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "eco_amount must be numeric"}), 400
+
+    rate = WALLET_SWAP_RATES[token]
+    amount_out = eco_amount * rate
+    ok, tx_or_response, error_status = _wallet_try_debit(
+        amount_eco=eco_amount,
+        action_type="swap",
+        amount_out=amount_out,
+        out_asset=token,
+        reference_label=f"ECO -> {token}",
+        note=f"Swapped {eco_amount:.2f} ECO into {amount_out:.4f} {token}",
+    )
+    if not ok:
+        return tx_or_response, error_status
+
+    payload = _wallet_snapshot_payload_for_user(current_user)
+    payload.update({
+        "message": f"Swap complete: {eco_amount:.2f} ECO -> {amount_out:.4f} {token}",
+        "tx_ref": tx_or_response.tx_ref,
+    })
+    return jsonify(payload)
+
+
+@app.post('/api/wallet/redeem-voucher')
+@login_required
+def api_wallet_redeem_voucher():
+    allowed, error_response = _wallet_require_recycler()
+    if not allowed:
+        return error_response
+
+    data = request.get_json(silent=True) or request.form
+    brand = str(data.get("brand") or "Voucher").strip()[:120]
+    value_label = str(data.get("value") or "R0").strip().upper()
+
+    match = re.search(r'(\d+(?:\.\d+)?)', value_label)
+    if not match:
+        return jsonify({"ok": False, "error": "Invalid voucher value"}), 400
+
+    voucher_zar = float(match.group(1))
+    eco_cost = voucher_zar  # Demo rule: 1 ECO == R1 voucher value.
+
+    ok, tx_or_response, error_status = _wallet_try_debit(
+        amount_eco=eco_cost,
+        action_type="voucher",
+        amount_out=voucher_zar,
+        out_asset="ZAR",
+        reference_label=brand,
+        note=f"Redeemed {brand} voucher ({value_label})",
+    )
+    if not ok:
+        return tx_or_response, error_status
+
+    voucher_code = f"VCH-{datetime.now(timezone.utc).strftime('%y%m%d')}-{tx_or_response.id:05d}"
+    payload = _wallet_snapshot_payload_for_user(current_user)
+    payload.update({
+        "message": f"Voucher redeemed: {brand} {value_label}",
+        "voucher_code": voucher_code,
+        "tx_ref": tx_or_response.tx_ref,
+    })
+    return jsonify(payload)
+
+
+@app.post('/api/wallet/redeem-cash')
+@login_required
+def api_wallet_redeem_cash():
+    allowed, error_response = _wallet_require_recycler()
+    if not allowed:
+        return error_response
+
+    data = request.get_json(silent=True) or request.form
+    try:
+        eco_amount = float(data.get("eco_amount"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "eco_amount must be numeric"}), 400
+
+    if eco_amount < 20:
+        return jsonify({"ok": False, "error": "Minimum cash redeem is 20 ECO"}), 400
+
+    cash_value = eco_amount  # Demo rule: 1 ECO == R1 cash value.
+    ok, tx_or_response, error_status = _wallet_try_debit(
+        amount_eco=eco_amount,
+        action_type="cash",
+        amount_out=cash_value,
+        out_asset="ZAR",
+        reference_label="Cash Redeem",
+        note=f"Redeemed cash payout request (R{cash_value:.0f})",
+    )
+    if not ok:
+        return tx_or_response, error_status
+
+    payload = _wallet_snapshot_payload_for_user(current_user)
+    payload.update({
+        "message": f"Cash redeem requested: R{cash_value:.0f}",
+        "tx_ref": tx_or_response.tx_ref,
+    })
+    return jsonify(payload)
 
 
 @app.route('/request-pickup')
@@ -2531,6 +2763,8 @@ def api_accept_opportunity(opportunity_id):
 def api_my_assignments():
     if not can_accept_opportunity_recycler(current_user):
         return jsonify({"rows": []})
+
+    purge_stale_demo_seed_rows()
 
     rows = (
         OpportunityAssignment.query
@@ -3342,9 +3576,74 @@ def get_dashboard_data():
     For demo user: Uses demo seed data + any new activities.
     For other users: Calculates from their verified activities database.
     """
+    purge_stale_demo_seed_rows()
+
     timeline = []
-    total_eco = 0
-    total_kg = 0
+    total_eco = 0.0
+    total_kg = 0.0
+    recent_kg_30d = 0.0
+    total_recycled_completed = 0.0
+    now_utc = datetime.now(timezone.utc)
+    recent_cutoff = now_utc - timedelta(days=30)
+
+    def parse_kg_from_desc(text_value):
+        match = re.search(r'(\d+\.?\d*)\s*kg', str(text_value or ''), re.IGNORECASE)
+        if not match:
+            return 0.0
+        try:
+            return float(match.group(1))
+        except Exception:
+            return 0.0
+
+    def activity_stage_set(activity):
+        return {
+            (activity.verified_status or '').strip().lower(),
+            (activity.status or '').strip().lower(),
+            (activity.pipeline_stage or '').strip().lower(),
+            (activity.logbook_status or '').strip().lower(),
+            (activity.reward_status or '').strip().lower(),
+        }
+
+    def counts_for_balance(activity):
+        states = activity_stage_set(activity)
+        if 'failed' in states or 'rejected' in states:
+            return False
+        return bool(states & {'verified', 'anchored', 'completed', 'logged', 'rewarded', 'attested', 'paid'})
+
+    def counts_for_progress(activity):
+        states = activity_stage_set(activity)
+        if 'failed' in states or 'rejected' in states:
+            return False
+        return bool(states & {'submitted', 'in_transit', 'accepted', 'verified', 'anchored', 'completed', 'logged', 'rewarded', 'attested', 'paid'})
+
+    def counts_for_completed(activity):
+        states = activity_stage_set(activity)
+        if 'failed' in states or 'rejected' in states:
+            return False
+        return bool(states & {'verified', 'anchored', 'completed', 'logged', 'rewarded', 'attested', 'paid'})
+
+    def assignment_weight_kg(assignment):
+        if assignment.submitted_weight_kg is not None:
+            return float(assignment.submitted_weight_kg)
+        opp = assignment.opportunity
+        if opp and opp.estimated_kg is not None:
+            return float(opp.estimated_kg)
+        return 0.0
+
+    def parse_timestamp_utc(value):
+        if not value:
+            return None
+        if isinstance(value, datetime):
+            dt = value
+        else:
+            raw = str(value).strip().replace('Z', '+00:00')
+            try:
+                dt = datetime.fromisoformat(raw)
+            except Exception:
+                return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
 
     def _generated_proof_url(activity_id, timestamp, desc, amount, trust_weight, user_email):
         qs = urlencode({
@@ -3405,21 +3704,41 @@ def get_dashboard_data():
                 'last_error': a.last_error,
             })
             
-            # Only count VERIFIED activities toward balance
-            if a.verified_status == "verified" or a.status == "verified":
-                total_eco += a.amount
-                # Extract kg from description (e.g., "Verified Drop-off (10.0kg of Cans)")
-                import re
-                match = re.search(r'(\d+\.?\d*)\s*kg', a.desc)
-                if match:
-                    total_kg += float(match.group(1))
+            if counts_for_balance(a):
+                try:
+                    total_eco += float(a.amount or 0)
+                except Exception:
+                    pass
 
-        total_recycled_completed = (
-            db.session.query(func.coalesce(func.sum(Activity.amount), 0.0))
-            .filter(Activity.user_id == current_user.id, func.lower(Activity.status) == 'completed')
-            .scalar()
-            or 0.0
+            if counts_for_completed(a):
+                kg_from_desc = parse_kg_from_desc(a.desc)
+                total_kg += kg_from_desc
+                row_dt = parse_timestamp_utc(a.timestamp)
+                if row_dt and row_dt >= recent_cutoff:
+                    recent_kg_30d += kg_from_desc
+
+        # Include assignment-stage progress so submitted/in-transit rows reflect in totals.
+        assignments = (
+            OpportunityAssignment.query
+            .filter_by(recycler_user_id=current_user.id)
+            .order_by(OpportunityAssignment.accepted_at.desc())
+            .all()
         )
+        for assignment in assignments:
+            assignment_status = (assignment.status or '').strip().lower()
+            if assignment_status not in {'completed'}:
+                continue
+            # Avoid double counting when assignment already produced a linked activity row.
+            if assignment.linked_activity_id:
+                continue
+            assignment_kg = assignment_weight_kg(assignment)
+            total_kg += assignment_kg
+            reference_dt = assignment.submitted_at or assignment.accepted_at
+            parsed_reference = parse_timestamp_utc(reference_dt)
+            if parsed_reference and parsed_reference >= recent_cutoff:
+                recent_kg_30d += assignment_kg
+
+        total_recycled_completed = total_kg
     except Exception as e:
         print('Error fetching activities:', e)
         timeline = []
@@ -3427,72 +3746,46 @@ def get_dashboard_data():
         total_kg = 0
         total_recycled_completed = 0
     
-    # Demo user gets seed data plus their activities
-    if current_user.email.lower().strip() == 'recycler@vericycle.com':
-        seed1_ts = "2025-11-12T10:00:00Z"
-        seed1_desc = "Verified Drop-off (8.5kg of Paper)"
-        seed1_amount = 425.00
-        seed2_ts = "2025-11-08T14:30:00Z"
-        seed2_desc = "Verified Drop-off (15.0kg of Cans)"
-        seed2_amount = 750.00
+    # Fixed targets for demo consistency.
+    monthly_goal = 10
 
-        seed1_hash = build_proof_hash(
-            activity_id="demo-seed-1",
-            user_email=current_user.email,
-            amount=seed1_amount,
-            description=seed1_desc,
-            created_at=seed1_ts,
-            verifier_trust_weight=0.85,
-        )
-        seed2_hash = build_proof_hash(
-            activity_id="demo-seed-2",
-            user_email=current_user.email,
-            amount=seed2_amount,
-            description=seed2_desc,
-            created_at=seed2_ts,
-            verifier_trust_weight=0.85,
-        )
+    # Dynamic neighborhood aggregation from all pipeline activity + unlinked assignment progress.
+    neighborhood_current_kg = 0.0
+    try:
+        all_acts = Activity.query.order_by(Activity.id.desc()).limit(2000).all()
+        for activity in all_acts:
+            if not counts_for_completed(activity):
+                continue
+            row_dt = parse_timestamp_utc(activity.timestamp)
+            if row_dt and row_dt >= recent_cutoff:
+                neighborhood_current_kg += parse_kg_from_desc(activity.desc)
 
-        demo_seed = [
-            {
-                "id": None,
-                "timestamp": seed1_ts,
-                "desc": seed1_desc,
-                "amount": seed1_amount,
-                "status": "verified",
-                "hedera_tx_id": None,
-                "proof_hash": seed1_hash,
-                "proof_bundle_url": _generated_proof_url("demo-seed-1", seed1_ts, seed1_desc, seed1_amount, 0.85, current_user.email),
-                "logbook_status": "pending",
-                "pipeline_stage": "attested",
-                "last_error": None
-            },
-            {
-                "id": None,
-                "timestamp": seed2_ts,
-                "desc": seed2_desc,
-                "amount": seed2_amount,
-                "status": "verified",
-                "hedera_tx_id": None,
-                "proof_hash": seed2_hash,
-                "proof_bundle_url": _generated_proof_url("demo-seed-2", seed2_ts, seed2_desc, seed2_amount, 0.85, current_user.email),
-                "logbook_status": "pending",
-                "pipeline_stage": "attested",
-                "last_error": None
-            }
-        ]
-        total_eco += 425.00 + 750.00  # Add seed data to balance
-        total_kg += 8.5 + 15.0
-        timeline = demo_seed + timeline  # Seed activities first, then user activities
-    
+        all_assignments = OpportunityAssignment.query.order_by(OpportunityAssignment.id.desc()).limit(2000).all()
+        for assignment in all_assignments:
+            assignment_status = (assignment.status or '').strip().lower()
+            if assignment_status not in {'completed'}:
+                continue
+            if assignment.linked_activity_id:
+                continue
+            reference_dt = assignment.submitted_at or assignment.accepted_at
+            parsed_reference = parse_timestamp_utc(reference_dt)
+            if parsed_reference and parsed_reference >= recent_cutoff:
+                neighborhood_current_kg += assignment_weight_kg(assignment)
+    except Exception as agg_err:
+        print(f"[DASHBOARD] Neighborhood aggregate fallback: {agg_err}")
+        neighborhood_current_kg = total_recycled_completed
+
+    neighborhood_goal_kg = 4000
+
     data = {
         "total_kg": round(total_kg, 1),
         "total_recycled_completed": round(float(total_recycled_completed), 1),
         "total_eco": round(total_eco, 2),
-        "weekly_goal": 30,
-        "current_kg": min(total_kg, 30),  # Personal weekly goal progress
-        "neighborhood_current_kg": 165.0,  # Static for now
-        "neighborhood_goal_kg": 1000,
+        "weekly_goal": monthly_goal,
+        "monthly_goal": monthly_goal,
+        "current_kg": round(float(recent_kg_30d), 1),
+        "neighborhood_current_kg": round(float(neighborhood_current_kg), 1),
+        "neighborhood_goal_kg": round(float(neighborhood_goal_kg), 1),
         "profile_complete": "1" if current_user.full_name else "0",
         "timeline": timeline,
         "activities": timeline

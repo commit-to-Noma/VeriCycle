@@ -317,3 +317,29 @@ class OpportunityAssignment(db.Model):
         "Activity",
         backref=db.backref("opportunity_assignment", uselist=False)
     )
+
+
+class WalletTransaction(db.Model):
+    __tablename__ = "wallet_transaction"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    action_type = db.Column(db.String(30), nullable=False)  # swap | voucher | cash
+    status = db.Column(db.String(30), nullable=False, default="completed")
+
+    amount_eco = db.Column(db.Float, nullable=False)  # negative for deductions
+    amount_out = db.Column(db.Float, nullable=True)
+    out_asset = db.Column(db.String(20), nullable=True)  # USDT | HBAR | ZAR
+
+    reference_label = db.Column(db.String(140), nullable=True)  # brand / provider label
+    note = db.Column(db.String(255), nullable=True)
+    tx_ref = db.Column(db.String(160), nullable=True)
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    user = db.relationship("User", backref=db.backref("wallet_transactions", lazy=True))

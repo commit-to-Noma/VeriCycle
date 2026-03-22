@@ -79,43 +79,27 @@
         font-weight: 500;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    .tooltip-help {
+    .kpi-note {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+    .kpi-help {
         display: inline-flex;
-        width: 17px;
-        height: 17px;
+        width: 18px;
+        height: 18px;
         align-items: center;
         justify-content: center;
+        margin-left: 0.35rem;
         border-radius: 50%;
         border: 1px solid #cbd5e1;
-        background: #e5e7eb;
-        color: #64748b;
+        background: #e2e8f0;
+        color: #475569;
         font-size: 0.72rem;
+        line-height: 1;
         cursor: help;
-        position: relative;
-        margin-left: 0.3rem;
     }
-    .tooltip-help::after {
-        content: attr(data-tip);
-        position: absolute;
-        left: 50%;
-        top: calc(100% + 8px);
-        transform: translateX(-50%);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s ease;
-        background: #ffffff;
-        border: 1px solid #dbe4ea;
-        border-radius: 8px;
-        padding: 0.5rem 0.65rem;
-        min-width: 250px;
-        max-width: 300px;
-        color: #334155;
-        font-size: 0.76rem;
-        line-height: 1.35;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
-        z-index: 20;
-    }
-    .tooltip-help:hover::after { opacity: 1; }
     .ring-wrap { width: 142px; height: 142px; position: relative; }
     .ring-svg { width: 142px; height: 142px; transform: rotate(-90deg); }
     .ring-bg { fill: none; stroke: #e2e8f0; stroke-width: 12; }
@@ -133,18 +117,46 @@
 
     .section-card { padding: 1rem; margin-top: 0.9rem; }
     .section-title { margin: 0 0 0.55rem 0; color: #0b5d4a; }
-    .token-flow-card {
-        background: #eefbf2;
-        border: 1px solid #cfead8;
-        border-left: 4px solid #16a34a;
+    .section-head-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.7rem;
+        flex-wrap: wrap;
     }
-    .token-flow-line {
-        margin: 0.28rem 0;
+    .section-controls {
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .sort-select {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #f8fafc;
         color: #334155;
-        font-size: 0.84rem;
+        padding: 0.38rem 0.55rem;
+        font-size: 0.82rem;
+        font-weight: 600;
     }
-    .token-flow-line strong {
-        color: #0b5d4a;
+    .load-more-wrap {
+        margin-top: 0.45rem;
+        display: flex;
+        justify-content: center;
+    }
+    .load-more-btn {
+        border: 2px solid #15803d;
+        border-radius: 999px;
+        background: #dcfce7;
+        color: #14532d;
+        padding: 0.5rem 0.95rem;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        box-shadow: 0 8px 18px rgba(22, 163, 74, 0.16);
+    }
+    .load-more-btn:hover {
+        background: #bbf7d0;
     }
     .list-item {
         border: 1px solid #e2e8f0;
@@ -471,7 +483,7 @@
 
     <div class="kpi-row">
         <div class="tech-card kpi-card">
-            <p class="kpi-head">Current Balance</p>
+            <p class="kpi-head">Current Balance <span class="kpi-help" title="Available ECO from verified records.">?</span></p>
             <p class="kpi-number" id="kpi-ecocoin">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</p>
             <a href="/wallet" class="btn-primary kpi-wallet-btn">View Wallet</a>
         </div>
@@ -479,59 +491,60 @@
         <div class="tech-card kpi-card">
             <p class="kpi-head">Total Recycled</p>
             <p class="kpi-number" id="kpi-kg">{{ "{:,.1f}".format(total_recycled_completed or 0) }} kg</p>
-            <p class="item-meta">Completed and verified recycler activity</p>
+            <p class="kpi-note">Lifetime verified and anchored recycling weight.</p>
         </div>
 
         <div class="tech-card kpi-card">
-            <p class="kpi-head">Monthly Impact Target
-                <span class="tooltip-help" data-tip="Recycling 50kg offsets the average monthly footprint of a local household.">?</span>
-            </p>
+            <p class="kpi-head">Monthly Impact Target</p>
             <div class="ring-wrap">
                 <svg class="ring-svg" viewBox="0 0 120 120">
                     <circle class="ring-bg" cx="60" cy="60" r="44"></circle>
                     <circle id="personal-ring-fill" class="ring-fill" cx="60" cy="60" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"></circle>
                 </svg>
                 <div class="ring-center">
-                    <div class="ring-main" id="personal-goal-label">25 / 50 kg</div>
-                    <div class="ring-sub" id="personal-percent">50%</div>
+                    <div class="ring-main" id="personal-goal-label">{{ "{:,.1f}".format(current_kg or 0) }} / {{ "{:,.1f}".format(monthly_goal or 10) }} kg</div>
+                    <div class="ring-sub" id="personal-percent">{{ personal_percent or 0 }}%</div>
                 </div>
             </div>
+            <p class="kpi-note">Monthly verified recycling progress.</p>
         </div>
 
         <div class="tech-card kpi-card">
-            <p class="kpi-head">Neighborhood Goal
-                <span title="Combined recycling progress from all VeriCycle users in your area toward the community monthly target." style="cursor:help; color:#94a3b8; margin-left:0.25rem; font-size:0.82rem;">(?)</span>
-            </p>
+            <p class="kpi-head">Neighborhood Goal</p>
             <div class="ring-wrap">
                 <svg class="ring-svg" viewBox="0 0 120 120">
                     <circle class="ring-bg" cx="60" cy="60" r="44"></circle>
                     <circle id="neighborhood-ring-fill" class="ring-fill" cx="60" cy="60" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"></circle>
                 </svg>
                 <div class="ring-center">
-                    <div class="ring-main" id="neighborhood-goal-label">14.5k / 25k kg</div>
-                    <div class="ring-sub" id="neighborhood-percent">58%</div>
+                    <div class="ring-main" id="neighborhood-goal-label">{{ "{:,.1f}".format(neighborhood_current_kg or 0) }} / {{ "{:,.1f}".format(neighborhood_goal_kg or 4000) }} kg</div>
+                    <div class="ring-sub" id="neighborhood-percent">{{ neighborhood_percent or 0 }}%</div>
                 </div>
             </div>
+            <p class="kpi-note">Monthly neighborhood verified recycling progress.</p>
         </div>
     </div>
 
-    <div class="tech-card section-card token-flow-card">
-        <h3 class="section-title">Token and Proof Flow</h3>
-        <p class="token-flow-line"><strong>1. Accepted:</strong> Recycler secures the pickup assignment.</p>
-        <p class="token-flow-line"><strong>2. In Transit:</strong> Recycler has collected materials and is en route.</p>
-        <p class="token-flow-line"><strong>3. Submitted:</strong> Drop-off is sent to center verification queue.</p>
-        <p class="token-flow-line"><strong>4. Verified:</strong> Center validates weight/material and creates activity.</p>
-        <p class="token-flow-line"><strong>5. Anchored + Rewarded:</strong> Hedera logbook (HCS) and reward transfer (HTS) finalize proof.</p>
-    </div>
-
     <div class="tech-card section-card">
-        <h3 class="section-title">Open Pickup Opportunities</h3>
+        <div class="section-head-row">
+            <h3 class="section-title">Open Pickup Opportunities</h3>
+            <div class="section-controls">
+                <label for="pickup-sort" class="item-meta" style="margin:0;">Sort</label>
+                <select id="pickup-sort" class="sort-select">
+                    <option value="recent" selected>Most Recent</option>
+                    <option value="distance">Closest Distance</option>
+                    <option value="weight">Highest Weight</option>
+                </select>
+            </div>
+        </div>
         <div id="pickup-opportunities-list"><p>Loading opportunities...</p></div>
+        <div class="load-more-wrap"><button id="open-load-more" class="load-more-btn" type="button" style="display:none;">Load More</button></div>
     </div>
 
     <div class="tech-card section-card">
         <h3 class="section-title">My Accepted Pickups</h3>
         <div id="accepted-pickups-list"><p>Loading accepted jobs...</p></div>
+        <div class="load-more-wrap"><button id="accepted-load-more" class="load-more-btn" type="button" style="display:none;">Load More</button></div>
     </div>
 
     <div class="tech-card section-card">
@@ -586,6 +599,7 @@
                 </tbody>
             </table>
         </div>
+        <div class="load-more-wrap"><button id="activity-load-more" class="load-more-btn" type="button" style="display:none;">Load More</button></div>
     </div>
 
     <div class="bottom-grid">
@@ -600,8 +614,12 @@
                 <p>Pending means the center still needs to verify weight/material before payout is finalized.</p>
             </details>
             <details class="faq-item">
-                <summary>What is the 'Proof Flow'?</summary>
-                <p>Submitted → Verified → Anchored → Rewarded. This chain creates auditable proof records.</p>
+                <summary>What is the Token and Proof Flow?</summary>
+                <p>1. Accepted: Recycler secures the pickup assignment.</p>
+                <p>2. In Transit: Recycler has collected materials and is en route.</p>
+                <p>3. Submitted: Drop-off is sent to center verification queue.</p>
+                <p>4. Verified: Center validates weight/material and creates activity.</p>
+                <p>5. Anchored + Rewarded: Hedera logbook (HCS) and reward transfer (HTS) finalize proof.</p>
             </details>
             <details class="faq-item">
                 <summary>What materials are accepted?</summary>
@@ -633,7 +651,131 @@ document.addEventListener('DOMContentLoaded', function() {
     const submissionSuccessModal = document.getElementById('submission-success-modal');
     const submissionSuccessContinue = document.getElementById('submission-success-continue');
     const submissionSuccessProofLink = document.getElementById('submission-success-proof-link');
+    const pickupSortSelect = document.getElementById('pickup-sort');
+    const openLoadMoreBtn = document.getElementById('open-load-more');
+    const acceptedLoadMoreBtn = document.getElementById('accepted-load-more');
+    const activityLoadMoreBtn = document.getElementById('activity-load-more');
+    const activityTbody = document.getElementById('activity-tbody');
+    const demoChannel = typeof BroadcastChannel !== 'undefined'
+        ? new BroadcastChannel('vericycle_demo')
+        : null;
     let currentData = {};
+    let openRowsData = [];
+    let acceptedRowsData = [];
+    const OPEN_PAGE_SIZE = 4;
+    const ACCEPTED_PAGE_SIZE = 5;
+    const ACTIVITY_PAGE_SIZE = 8;
+    let openVisibleCount = OPEN_PAGE_SIZE;
+    let acceptedVisibleCount = ACCEPTED_PAGE_SIZE;
+    let activityVisibleCount = ACTIVITY_PAGE_SIZE;
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function parseKgFromDesc(textValue) {
+        const match = String(textValue || '').match(/(\d+(?:\.\d+)?)\s*kg/i);
+        if (!match) return 0;
+        const parsed = Number(match[1]);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function normalizeStageSet(row) {
+        return [
+            row?.pipeline_stage,
+            row?.status,
+            row?.verified_status,
+            row?.logbook_status,
+            row?.reward_status,
+        ].map((v) => String(v || '').toLowerCase());
+    }
+
+    function countsForProgress(row) {
+        const states = normalizeStageSet(row);
+        if (states.includes('failed') || states.includes('rejected')) return false;
+        return states.some((v) => ['accepted', 'in_transit', 'submitted', 'verified', 'anchored', 'completed', 'logged', 'rewarded', 'attested', 'paid'].includes(v));
+    }
+
+    function deriveClientKpis(data, assignments = []) {
+        const timeline = Array.isArray(data?.timeline) ? data.timeline : (Array.isArray(data?.activities) ? data.activities : []);
+        const now = Date.now();
+        const cutoff = now - (30 * 24 * 60 * 60 * 1000);
+
+        let personalKg = 0;
+        let recentKg = 0;
+        timeline.forEach((row) => {
+            if (countsForProgress(row)) {
+                const kg = parseKgFromDesc(row?.desc);
+                personalKg += kg;
+                const ts = new Date(row?.timestamp || 0).getTime();
+                if (Number.isFinite(ts) && ts >= cutoff) {
+                    recentKg += kg;
+                }
+            }
+        });
+
+        assignments.forEach((row) => {
+            const status = String(row?.status || '').toLowerCase();
+            if (!['accepted', 'in_transit', 'submitted', 'completed'].includes(status)) return;
+            const linkedId = Number(row?.linked_activity_id || 0);
+            if (linkedId) return;
+            const kg = Number(row?.submitted_weight_kg ?? row?.estimated_kg ?? 0);
+            if (Number.isFinite(kg) && kg > 0) {
+                personalKg += kg;
+                const dt = new Date(row?.submitted_at || row?.accepted_at || 0).getTime();
+                if (Number.isFinite(dt) && dt >= cutoff) {
+                    recentKg += kg;
+                }
+            }
+        });
+
+        const apiNeighborhoodCurrent = Number(data?.neighborhood_current_kg || 0);
+        let neighborhoodCurrent = Math.max(apiNeighborhoodCurrent, personalKg);
+        if (neighborhoodCurrent <= 0 && Number(data?.total_eco || 0) > 0) {
+            neighborhoodCurrent = personalKg;
+        }
+
+        const monthlyGoal = Number(data?.monthly_goal || data?.weekly_goal || 10);
+
+        const neighborhoodGoal = Number(data?.neighborhood_goal_kg || 4000);
+
+        return {
+            personalKg,
+            recentKg,
+            monthlyGoal,
+            neighborhoodCurrent,
+            neighborhoodGoal,
+        };
+    }
+
+    function applyKpiCards(data, assignments = []) {
+        const derived = deriveClientKpis(data, assignments);
+
+        if (data.total_eco !== undefined) {
+            document.getElementById('kpi-ecocoin').textContent = Number(data.total_eco).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' ECO';
+        }
+
+        const totalRecycledForCard = Number(data?.total_recycled_completed ?? derived.personalKg ?? 0);
+        document.getElementById('kpi-kg').textContent = totalRecycledForCard.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' kg';
+
+        const monthlyProgress = Number(data?.current_kg ?? derived.recentKg ?? 0);
+        const monthlyTarget = Number(data?.monthly_goal ?? derived.monthlyGoal ?? 10);
+
+        updateRing('personal-ring-fill', 'personal-goal-label', 'personal-percent', monthlyProgress, monthlyTarget, false);
+        updateRing('neighborhood-ring-fill', 'neighborhood-goal-label', 'neighborhood-percent', Number(derived.neighborhoodCurrent || 0), Number(derived.neighborhoodGoal || 4000), true);
+    }
+
+    async function refreshDashboardData() {
+        const response = await fetch('/api/my-dashboard-data');
+        currentData = await response.json();
+        applyKpiCards(currentData, acceptedRowsData);
+        renderActivityTable(currentData.timeline || currentData.activities || []);
+    }
 
     function showToast(message, tone = 'success') {
         toastEl.className = `toast ${tone === 'error' ? 'error' : ''}`.trim();
@@ -681,31 +823,83 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${dateText} • ${timeText}`;
     }
 
-    function applyTableFormatting() {
-        document.querySelectorAll('.activity-date').forEach((cell) => {
-            cell.textContent = formatTs(cell.getAttribute('data-ts') || cell.textContent || '');
+    function parseMaterialWeight(desc) {
+        const raw = String(desc || '');
+        const match = raw.match(/(\d+(?:\.\d+)?)\s*kg\s*of\s*([^\)]+)/i) || raw.match(/(\d+(?:\.\d+)?)\s*kg\s*\(?([^\)]+)?\)?/i);
+        if (!match) {
+            return { material: 'Mixed', weight: '—' };
+        }
+        return {
+            weight: match[1] || '—',
+            material: (match[2] || 'Mixed').trim(),
+        };
+    }
+
+    function normalizeTimelineStatus(row) {
+        const values = [
+            row?.pipeline_stage,
+            row?.status,
+            row?.verified_status,
+            row?.logbook_status,
+            row?.reward_status,
+        ].map((v) => String(v || '').toLowerCase());
+
+        if (values.some((v) => ['anchored', 'attested', 'logged', 'rewarded', 'paid'].includes(v))) {
+            return 'Anchored';
+        }
+        if (values.some((v) => ['verified', 'completed'].includes(v))) {
+            return 'Verified';
+        }
+        if (values.some((v) => ['submitted', 'accepted', 'in_transit'].includes(v))) {
+            return 'Submitted';
+        }
+        return 'Pending';
+    }
+
+    function renderActivityTable(timelineRows) {
+        if (!activityTbody) return;
+        const rows = Array.isArray(timelineRows) ? timelineRows : [];
+        if (!rows.length) {
+            activityTbody.innerHTML = '<tr><td colspan="6" class="item-meta" style="padding:0.85rem;">No verified activity yet.</td></tr>';
+            if (activityLoadMoreBtn) activityLoadMoreBtn.style.display = 'none';
+            return;
+        }
+
+        const sorted = [...rows].sort((a, b) => new Date(b?.timestamp || 0).getTime() - new Date(a?.timestamp || 0).getTime());
+        activityTbody.innerHTML = sorted.map((row) => {
+            const info = parseMaterialWeight(row?.desc || '');
+            const amount = Number(row?.amount || 0);
+            const status = normalizeTimelineStatus(row);
+            const tx = row?.hcs_tx_id || row?.hedera_tx_id || row?.logbook_tx_id || '';
+            const txLabel = tx ? `${String(tx).slice(0, 8)}...${String(tx).slice(-4)}` : '—';
+            return `
+                <tr>
+                    <td class="activity-date">${escapeHtml(formatTs(row?.timestamp))}</td>
+                    <td class="activity-material">${escapeHtml(info.material)}</td>
+                    <td class="activity-weight">${escapeHtml(info.weight)}</td>
+                    <td class="col-amount-val">${Number.isFinite(amount) ? amount.toFixed(2) : '—'}</td>
+                    <td><span class="status-badge ${status === 'Anchored' || status === 'Verified' ? 'status-verified' : 'status-pending'}">${status}</span></td>
+                    <td>${tx ? `<a class="hedera-link" href="https://hashscan.io/testnet/transaction/${escapeHtml(tx)}" target="_blank" rel="noopener">${escapeHtml(txLabel)}</a>` : '—'}</td>
+                </tr>
+            `;
+        }).join('');
+
+        activityVisibleCount = ACTIVITY_PAGE_SIZE;
+        applyActivityPagination();
+    }
+
+    function applyActivityPagination() {
+        if (!activityTbody) return;
+        const rows = Array.from(activityTbody.querySelectorAll('tr'));
+        if (!rows.length) {
+            if (activityLoadMoreBtn) activityLoadMoreBtn.style.display = 'none';
+            return;
+        }
+        rows.forEach((row, index) => {
+            row.style.display = index < activityVisibleCount ? '' : 'none';
         });
-
-        document.querySelectorAll('#activity-tbody tr').forEach((row) => {
-            const materialCell = row.querySelector('.activity-material');
-            const weightCell = row.querySelector('.activity-weight');
-            const amountCell = row.querySelector('.col-amount-val');
-            if (!materialCell || !weightCell || !amountCell) return;
-
-            const desc = materialCell.getAttribute('data-desc') || '';
-            const match = desc.match(/(\d+(?:\.\d+)?)\s*kg\s*of\s*([^\)]+)/i) || desc.match(/(\d+(?:\.\d+)?)\s*kg\s*\(?([^\)]+)?\)?/i);
-            if (!match) {
-                materialCell.textContent = 'Mixed';
-                weightCell.textContent = '—';
-                amountCell.textContent = '—';
-                return;
-            }
-
-            const weight = match[1] || '—';
-            const material = (match[2] || 'Mixed').trim();
-            materialCell.textContent = material;
-            weightCell.textContent = weight;
-        });
+        if (!activityLoadMoreBtn) return;
+        activityLoadMoreBtn.style.display = rows.length > activityVisibleCount ? 'inline-flex' : 'none';
     }
 
     function updateRing(fillId, labelId, percentId, current, target, compact = false) {
@@ -763,6 +957,50 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
+    function sortOpenRows(rows) {
+        const mode = (pickupSortSelect?.value || 'recent').toLowerCase();
+        const sorted = [...rows];
+        if (mode === 'distance') {
+            sorted.sort((a, b) => Number(a.distance_km || 0) - Number(b.distance_km || 0));
+            return sorted;
+        }
+        if (mode === 'weight') {
+            sorted.sort((a, b) => Number(b.estimated_kg || 0) - Number(a.estimated_kg || 0));
+            return sorted;
+        }
+        sorted.sort((a, b) => new Date(b?.created_at || 0).getTime() - new Date(a?.created_at || 0).getTime());
+        return sorted;
+    }
+
+    function renderOpenRows() {
+        const sorted = sortOpenRows(openRowsData);
+        if (!sorted.length) {
+            oppContainer.innerHTML = '<p>No open opportunities right now.</p>';
+            if (openLoadMoreBtn) openLoadMoreBtn.style.display = 'none';
+            return;
+        }
+
+        const visible = sorted.slice(0, openVisibleCount);
+        oppContainer.innerHTML = visible.map((row) => {
+            const source = (row.source_name || row.business_name || 'Local Partner').toString();
+            const weight = Number(row.estimated_kg || 0).toFixed(1);
+            const material = (row.material_type || 'Mixed').toString();
+            const when = (row.requested_window || 'Today').toString();
+            const distance = Number(row.distance_km || 0).toFixed(1);
+            const estimatedReward = Number(row.estimated_reward_eco || 0).toFixed(1);
+            const extraMeta = row.priority === 'center'
+                ? '<p class="item-meta" style="color:#b91c1c; font-weight:700;">HIGH IMPACT: Heavy load requires center-priority routing</p>'
+                : '<p class="item-meta">Standard routing available for pickup</p>';
+            const action = `<button class="btn-primary accept-btn" data-id="${Number(row.id)}">Accept</button>`;
+            const economics = `<p class="item-meta">Distance: ${distance} km · Est. reward: ${estimatedReward} ECO</p>`;
+            return cardHtml(source, weight, material, when, action, `${economics}${extraMeta}`);
+        }).join('');
+
+        if (openLoadMoreBtn) {
+            openLoadMoreBtn.style.display = sorted.length > openVisibleCount ? 'inline-flex' : 'none';
+        }
+    }
+
     async function loadPickupOpportunities() {
         try {
             const res = await fetch('/api/opportunities/open');
@@ -770,28 +1008,73 @@ document.addEventListener('DOMContentLoaded', function() {
                 oppContainer.innerHTML = '<p>Unable to load pickup opportunities.</p>';
                 return;
             }
-            const rows = (await res.json()).rows || [];
-            if (!rows.length) {
-                oppContainer.innerHTML = '<p>No open opportunities right now.</p>';
-                return;
-            }
-            oppContainer.innerHTML = rows.map((row) => {
-                const source = (row.source_name || row.business_name || 'Local Partner').toString();
-                const weight = Number(row.estimated_kg || 0).toFixed(1);
-                const material = (row.material_type || 'Mixed').toString();
-                const when = (row.requested_window || 'Today').toString();
-                const distance = Number(row.distance_km || 0).toFixed(1);
-                const estimatedReward = Number(row.estimated_reward_eco || 0).toFixed(1);
-                const extraMeta = row.priority === 'center'
-                    ? '<p class="item-meta" style="color:#b91c1c; font-weight:700;">HIGH IMPACT: Heavy load requires center-priority routing</p>'
-                    : '<p class="item-meta">Standard routing available for pickup</p>';
-                const action = `<button class="btn-primary accept-btn" data-id="${Number(row.id)}">Accept</button>`;
-                const economics = `<p class="item-meta">Distance: ${distance} km · Est. reward: ${estimatedReward} ECO</p>`;
-                return cardHtml(source, weight, material, when, action, `${economics}${extraMeta}`);
-            }).join('');
+            openRowsData = (await res.json()).rows || [];
+            openVisibleCount = OPEN_PAGE_SIZE;
+            renderOpenRows();
         } catch (e) {
             oppContainer.innerHTML = '<p>Unable to load pickup opportunities.</p>';
         }
+    }
+
+    function renderAcceptedRows() {
+        const sorted = [...acceptedRowsData].sort((a, b) => {
+            const left = new Date(b?.submitted_at || b?.accepted_at || 0).getTime();
+            const right = new Date(a?.submitted_at || a?.accepted_at || 0).getTime();
+            return left - right;
+        });
+
+        if (!sorted.length) {
+            acceptedContainer.innerHTML = '<p>No accepted pickups yet.</p>';
+            if (acceptedLoadMoreBtn) acceptedLoadMoreBtn.style.display = 'none';
+            return;
+        }
+
+        const visible = sorted.slice(0, acceptedVisibleCount);
+        acceptedContainer.innerHTML = visible.map((row) => {
+            const source = (row.source_name || row.business_name || row.location || 'Local Partner').toString();
+            const weight = Number(row.estimated_kg || 0).toFixed(1);
+            const material = (row.material_type || 'Mixed').toString();
+            const distance = Number(row.distance_km || 0).toFixed(1);
+            const estimatedReward = Number(row.estimated_reward_eco || 0).toFixed(1);
+            const statusLabel = row.status === 'accepted'
+                ? 'Accepted'
+                : (row.status === 'in_transit' ? 'In Transit' : 'Submitted');
+            const id = Number(row.assignment_id);
+            const action = (row.status === 'accepted' || row.status === 'in_transit')
+                ? `<button class="btn-primary toggle-drop" data-id="${id}">Record Drop-off</button>`
+                : '<span class="item-meta">Awaiting center verification</span>';
+            const details = (row.status === 'accepted' || row.status === 'in_transit')
+                ? `
+                    <div id="drop_${id}" class="drop-details">
+                        ${row.status === 'accepted' ? `
+                            <button class="btn-primary mark-collected" data-id="${id}">Mark Materials Collected</button>
+                        ` : ''}
+                        <input class="field" id="drop_weight_${id}" type="number" step="0.1" value="${weight}" placeholder="Actual weight (kg)">
+                        <button class="btn-primary submit-drop" data-id="${id}" data-material="${material}" ${row.status === 'accepted' ? 'disabled title="Mark materials as collected first"' : ''}>Submit to Center</button>
+                    </div>
+                `
+                : '';
+            return `
+                <div class="list-item">
+                    <div class="item-top">
+                        <div>
+                            <p class="item-primary">${source} | ${weight}kg | ${statusLabel}</p>
+                            <p class="item-meta">${material}</p>
+                            <p class="item-meta">Distance: ${distance} km · Est. reward: ${estimatedReward} ECO</p>
+                        </div>
+                        ${action}
+                    </div>
+                    ${details}
+                </div>
+            `;
+        }).join('');
+
+        if (acceptedLoadMoreBtn) {
+            acceptedLoadMoreBtn.style.display = sorted.length > acceptedVisibleCount ? 'inline-flex' : 'none';
+        }
+
+        // Refresh KPI cards after assignment refresh to include submitted/in-transit weights.
+        applyKpiCards(currentData, acceptedRowsData);
     }
 
     async function loadAcceptedAssignments() {
@@ -801,49 +1084,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 acceptedContainer.innerHTML = '<p>Unable to load accepted jobs.</p>';
                 return;
             }
-            const rows = (await res.json()).rows || [];
-            if (!rows.length) {
-                acceptedContainer.innerHTML = '<p>No accepted pickups yet.</p>';
-                return;
-            }
-            acceptedContainer.innerHTML = rows.map((row) => {
-                const source = (row.source_name || row.business_name || row.location || 'Local Partner').toString();
-                const weight = Number(row.estimated_kg || 0).toFixed(1);
-                const material = (row.material_type || 'Mixed').toString();
-                const distance = Number(row.distance_km || 0).toFixed(1);
-                const estimatedReward = Number(row.estimated_reward_eco || 0).toFixed(1);
-                const statusLabel = row.status === 'accepted'
-                    ? 'Accepted'
-                    : (row.status === 'in_transit' ? 'In Transit' : 'Submitted');
-                const id = Number(row.assignment_id);
-                const action = (row.status === 'accepted' || row.status === 'in_transit')
-                    ? `<button class="btn-primary toggle-drop" data-id="${id}">Record Drop-off</button>`
-                    : '<span class="item-meta">Awaiting center verification</span>';
-                const details = (row.status === 'accepted' || row.status === 'in_transit')
-                    ? `
-                        <div id="drop_${id}" class="drop-details">
-                            ${row.status === 'accepted' ? `
-                                <button class="btn-primary mark-collected" data-id="${id}">Mark Materials Collected</button>
-                            ` : ''}
-                            <input class="field" id="drop_weight_${id}" type="number" step="0.1" value="${weight}" placeholder="Actual weight (kg)">
-                            <button class="btn-primary submit-drop" data-id="${id}" data-material="${material}" ${row.status === 'accepted' ? 'disabled title="Mark materials as collected first"' : ''}>Submit to Center</button>
-                        </div>
-                    `
-                    : '';
-                return `
-                    <div class="list-item">
-                        <div class="item-top">
-                            <div>
-                                <p class="item-primary">${source} | ${weight}kg | ${statusLabel}</p>
-                                <p class="item-meta">${material}</p>
-                                <p class="item-meta">Distance: ${distance} km · Est. reward: ${estimatedReward} ECO</p>
-                            </div>
-                            ${action}
-                        </div>
-                        ${details}
-                    </div>
-                `;
-            }).join('');
+            acceptedRowsData = (await res.json()).rows || [];
+            acceptedVisibleCount = ACCEPTED_PAGE_SIZE;
+            renderAcceptedRows();
         } catch (e) {
             acceptedContainer.innerHTML = '<p>Unable to load accepted jobs.</p>';
         }
@@ -939,27 +1182,34 @@ document.addEventListener('DOMContentLoaded', function() {
         markCollected(id);
     });
 
+    if (pickupSortSelect) {
+        pickupSortSelect.addEventListener('change', () => {
+            openVisibleCount = OPEN_PAGE_SIZE;
+            renderOpenRows();
+        });
+    }
+    if (openLoadMoreBtn) {
+        openLoadMoreBtn.addEventListener('click', () => {
+            openVisibleCount += OPEN_PAGE_SIZE;
+            renderOpenRows();
+        });
+    }
+    if (acceptedLoadMoreBtn) {
+        acceptedLoadMoreBtn.addEventListener('click', () => {
+            acceptedVisibleCount += ACCEPTED_PAGE_SIZE;
+            renderAcceptedRows();
+        });
+    }
+    if (activityLoadMoreBtn) {
+        activityLoadMoreBtn.addEventListener('click', () => {
+            activityVisibleCount += ACTIVITY_PAGE_SIZE;
+            applyActivityPagination();
+        });
+    }
+
     async function initializeDashboard() {
         try {
-            const response = await fetch('/api/my-dashboard-data');
-            currentData = await response.json();
-
-            if (currentData.total_eco !== undefined) {
-                document.getElementById('kpi-ecocoin').textContent = Number(currentData.total_eco).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' ECO';
-            }
-            if (currentData.total_recycled_completed !== undefined) {
-                document.getElementById('kpi-kg').textContent = Number(currentData.total_recycled_completed).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' kg';
-            }
-
-            const personalCurrent = Number(currentData.total_recycled_completed || 0);
-            const personalTarget = Number(currentData.weekly_goal || 50);
-            updateRing('personal-ring-fill', 'personal-goal-label', 'personal-percent', personalCurrent, personalTarget, false);
-
-            const neighborhoodCurrent = Number(currentData.neighborhood_current_kg || 14500);
-            const neighborhoodTarget = Number(currentData.neighborhood_goal_kg || 25000);
-            updateRing('neighborhood-ring-fill', 'neighborhood-goal-label', 'neighborhood-percent', neighborhoodCurrent, neighborhoodTarget, true);
-
-            applyTableFormatting();
+            await refreshDashboardData();
             loadAgentStatus();
             loadPickupOpportunities();
             loadAcceptedAssignments();
@@ -991,6 +1241,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('trigger-deposit-btn').addEventListener('click', handleDeposit);
+
+    if (demoChannel) {
+        demoChannel.addEventListener('message', (event) => {
+            if (event?.data?.type === 'DEPOSIT') {
+                refreshDashboardData();
+                loadAcceptedAssignments();
+            }
+        });
+    }
+
+    setInterval(() => {
+        refreshDashboardData();
+        loadAcceptedAssignments();
+    }, 10000);
+
     initializeDashboard();
 });
 </script>

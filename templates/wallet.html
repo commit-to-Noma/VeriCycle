@@ -84,22 +84,31 @@
     flex-wrap: wrap;
 }
 .redeem-cash-btn {
-    border: 1px solid #cbd5e1;
+    border: 1px solid #16a34a;
     border-radius: 999px;
-    background: #f8fafc;
-    color: #475569;
+    background: #ecfdf5;
+    color: #166534;
     padding: 0.42rem 0.85rem;
     font-size: 0.8rem;
     font-weight: 700;
-    cursor: not-allowed !important;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.2s ease;
 }
-.redeem-cash-btn:hover,
-.redeem-cash-btn:disabled,
-.redeem-cash-btn:disabled:hover {
-    cursor: not-allowed !important;
+.redeem-cash-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(22, 163, 74, 0.18);
+}
+.redeem-cash-btn:focus-visible {
+    outline: 2px solid #16a34a;
+    outline-offset: 2px;
 }
 .redeem-cash-btn:disabled {
-    opacity: 0.92;
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .wallet-grid {
@@ -221,18 +230,23 @@
     border-radius: 7px;
 }
 .swap-max-btn {
-    border: none;
-    background: transparent;
-    color: #16a34a;
+    border: 1px solid #16a34a;
+    background: #ecfdf5;
+    color: #166534;
     font-weight: 700;
     font-size: 0.75rem;
     cursor: pointer;
-    padding: 0.1rem 0.4rem;
+    padding: 0.2rem 0.52rem;
     margin-right: 0.4rem;
     border-radius: 5px;
     letter-spacing: 0.04em;
 }
 .swap-max-btn:hover { background: #dcfce7; }
+.swap-max-btn:disabled {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+    color: #64748b;
+}
 .swap-divider {
     display: flex;
     align-items: center;
@@ -250,6 +264,7 @@
     justify-content: center;
     margin: 0.5rem auto;
     font-size: 1.08rem;
+    line-height: 1;
     box-shadow: 0 6px 16px rgba(34,197,94,0.28);
 }
 .swap-token-select {
@@ -301,11 +316,16 @@
     letter-spacing: 0.02em;
 }
 .swap-submit-btn:hover { opacity: 0.92; transform: translateY(-1px); }
-.swap-submit-btn:disabled { transform: none; }
+.swap-submit-btn:disabled {
+    transform: none;
+    background: #94a3b8;
+    color: #ffffff;
+    border: 1px solid #64748b;
+}
 
 .wallet-page button:disabled {
-    background: #e2e8f0;
-    color: #475569;
+    background: #94a3b8;
+    color: #ffffff;
     opacity: 1;
     cursor: not-allowed;
     box-shadow: none;
@@ -347,15 +367,22 @@
     width: 42px;
     height: 42px;
     border-radius: 10px;
-    background: #ecfdf5;
-    color: #16a34a;
-    font-weight: bold;
+    background: linear-gradient(135deg, #ecfdf5, #dcfce7);
+    color: #166534;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    font-weight: 800;
+    border: 1px solid #bbf7d0;
     flex-shrink: 0;
+}
+.logo-box svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 .voucher-cat-name {
     font-size: 0.72rem;
@@ -397,12 +424,17 @@
     font-weight: 700;
     white-space: nowrap;
     border: 1.5px solid #16a34a;
-    background: transparent;
-    color: #16a34a;
+    background: #f0fdf4;
+    color: #166534;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
 .voucher-redeem-btn:hover { background: #16a34a; color: #fff; }
+.voucher-redeem-btn:disabled {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+    color: #64748b;
+}
 
 .voucher-meta {
     text-align: center;
@@ -411,6 +443,32 @@
     margin-top: 1.5rem;
     padding-top: 1rem;
     border-top: 1px solid #e2e8f0;
+    grid-column: 1 / -1;
+}
+
+.wallet-toast {
+    position: fixed;
+    top: 84px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: #0f172a;
+    color: #fff;
+    border-radius: 999px;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.28);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 1400;
+}
+.wallet-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.wallet-toast.error {
+    background: #7f1d1d;
 }
 
 /* Voucher modal */
@@ -584,6 +642,7 @@
 
 <div class="page-container">
 <div class="wallet-page">
+    <div id="wallet-toast" class="wallet-toast" role="status" aria-live="polite"></div>
     <a href="/collector" class="wallet-back">&#8592; Back to Recycler Hub</a>
 
     <div class="title-row">
@@ -593,7 +652,7 @@
         </div>
         <div class="wallet-header-actions">
             <span class="status-badge">Live Rates Active</span>
-            <button class="redeem-cash-btn" disabled title="Coming soon via partners">Redeem to Cash</button>
+            <button id="redeem-cash-btn" class="redeem-cash-btn" type="button" title="Redeem ECO to cash payout request">Redeem to Cash</button>
         </div>
     </div>
     <div class="trust-signals">
@@ -609,7 +668,7 @@
 
             <div class="balance-card">
                 <div class="balance-label">Available Balance</div>
-                <div class="balance-amount">
+                <div class="balance-amount" id="wallet-balance-display" data-balance="{{ wallet_balance or 0 }}">
                     {{ "{:,.0f}".format(wallet_balance or 0) }}<span>ECO</span>
                 </div>
                 <div class="balance-rates">
@@ -656,7 +715,9 @@
 
             <div class="voucher-card voucher-cat-card">
                 <div class="voucher-cat-header">
-                    <div class="logo-box">S</div>
+                    <div class="logo-box" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 7h16v10H4z"></path><path d="M8 7v10"></path><path d="M12 10h5"></path><path d="M12 14h5"></path></svg>
+                    </div>
                     <span class="voucher-cat-name">Everyday Retail</span>
                 </div>
                 <div class="voucher-row-item" data-brand="Walmart / Makro">
@@ -673,7 +734,9 @@
 
             <div class="voucher-card voucher-cat-card">
                 <div class="voucher-cat-header">
-                    <div class="logo-box">F</div>
+                    <div class="logo-box" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l2 10h8l2-10"></path><path d="M9 11h6"></path></svg>
+                    </div>
                     <span class="voucher-cat-name">Food &amp; Dining</span>
                 </div>
                 <div class="voucher-row-item" data-brand="Uber Eats">
@@ -690,7 +753,9 @@
 
             <div class="voucher-card voucher-cat-card">
                 <div class="voucher-cat-header">
-                    <div class="logo-box">E</div>
+                    <div class="logo-box" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="5" y="6" width="14" height="10" rx="2"></rect><path d="M9 18h6"></path><path d="M10 10h4"></path></svg>
+                    </div>
                     <span class="voucher-cat-name">Entertainment</span>
                 </div>
                 <div class="voucher-row-item" data-brand="PlayStation Store">
@@ -707,7 +772,9 @@
 
             <div class="voucher-card voucher-cat-card">
                 <div class="voucher-cat-header">
-                    <div class="logo-box">&#9646;</div>
+                    <div class="logo-box" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"></rect><path d="M3 10h18"></path><path d="M7 14h4"></path></svg>
+                    </div>
                     <span class="voucher-cat-name">Universal Prepaid</span>
                 </div>
                 <div class="voucher-row-item" data-brand="Visa Virtual Prepaid">
@@ -740,31 +807,31 @@
                         <th>Activity</th>
                         <th>Status</th>
                         <th>Amount (ECO)</th>
+                        <th>Note</th>
                         <th>Hedera</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>2026-03-22 10:41</td>
-                        <td>Plastics drop-off · Randburg</td>
-                        <td>Rewarded</td>
-                        <td>+58.00</td>
-                        <td><a href="{{ url_for('proof_hub') }}">View proof</a></td>
-                    </tr>
-                    <tr>
-                        <td>2026-03-21 16:18</td>
-                        <td>Mixed recyclables · Sandton</td>
-                        <td>Anchored</td>
-                        <td>+42.00</td>
-                        <td><a href="{{ url_for('proof_hub') }}">View proof</a></td>
-                    </tr>
-                    <tr>
-                        <td>2026-03-20 09:05</td>
-                        <td>Paper &amp; cardboard · Rosebank</td>
-                        <td>Rewarded</td>
-                        <td>+31.00</td>
-                        <td><a href="{{ url_for('proof_hub') }}">View proof</a></td>
-                    </tr>
+                <tbody id="wallet-history-tbody">
+                    {% if wallet_history_rows %}
+                        {% for row in wallet_history_rows %}
+                        <tr>
+                            <td>{{ row.date }}</td>
+                            <td>{{ row.activity }}</td>
+                            <td>{{ row.status }}</td>
+                            <td>{{ "%+.2f"|format(row.amount_eco or 0) }}</td>
+                            <td>{{ row.note or '-' }}</td>
+                            <td>
+                                {% if row.link_url %}
+                                    <a href="{{ row.link_url }}">{{ row.link_label or 'View' }}</a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="6" style="color:#64748b;">No reward or redemption activity yet.</td></tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
@@ -810,12 +877,101 @@ document.addEventListener('DOMContentLoaded', function () {
     const receiveTokenSelect = document.getElementById('receive-token');
     const maxButton = document.getElementById('swap-max');
     const swapButton = document.getElementById('swap-now');
+    const cashButton = document.getElementById('redeem-cash-btn');
     const rateDisplay = document.getElementById('rate-display');
+    const balanceDisplay = document.getElementById('wallet-balance-display');
+    const historyTbody = document.getElementById('wallet-history-tbody');
+    const toast = document.getElementById('wallet-toast');
 
     const swapCard = document.getElementById('swap-card');
-    const walletBalance = Number(swapCard?.dataset.walletBalance || 0);
+    let walletBalance = Number(swapCard?.dataset.walletBalance || 0);
     const rates = { USDT: 0.015, HBAR: 0.0202 };
     const rateLabels = { USDT: 'USDT', HBAR: 'HBAR' };
+
+    function showToast(message, tone = 'ok') {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.className = `wallet-toast ${tone === 'error' ? 'error' : ''}`.trim();
+        requestAnimationFrame(() => toast.classList.add('show'));
+        setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+
+    function formatDate(value) {
+        if (!value) return '-';
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return String(value);
+        const day = d.toLocaleDateString('en-CA');
+        const tm = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+        return `${day} ${tm}`;
+    }
+
+    function formatAmount(amount) {
+        const n = Number(amount || 0);
+        const sign = n >= 0 ? '+' : '';
+        return `${sign}${n.toFixed(2)}`;
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderBalance() {
+        if (!balanceDisplay) return;
+        balanceDisplay.dataset.balance = String(walletBalance);
+        balanceDisplay.innerHTML = `${walletBalance.toLocaleString('en-US', { maximumFractionDigits: 0 })}<span>ECO</span>`;
+        if (swapCard) swapCard.dataset.walletBalance = String(walletBalance);
+        if (cashButton) {
+            cashButton.disabled = walletBalance < 20;
+            cashButton.title = walletBalance < 20 ? 'Minimum cash redeem is 20 ECO' : 'Redeem ECO to cash payout request';
+        }
+    }
+
+    function updateActionState() {
+        const entered = Number(ecoPayInput.value || 0);
+        swapButton.disabled = !(entered > 0 && entered <= walletBalance);
+        maxButton.disabled = walletBalance <= 0;
+    }
+
+    function renderHistory(rows) {
+        if (!historyTbody) return;
+        const list = Array.isArray(rows) ? rows : [];
+        if (!list.length) {
+            historyTbody.innerHTML = '<tr><td colspan="6" style="color:#64748b;">No reward or redemption activity yet.</td></tr>';
+            return;
+        }
+        historyTbody.innerHTML = list.map((row) => {
+            const link = row.link_url
+                ? `<a href="${escapeHtml(row.link_url)}">${escapeHtml(row.link_label || 'View')}</a>`
+                : '-';
+            return `
+                <tr>
+                    <td>${escapeHtml(formatDate(row.date))}</td>
+                    <td>${escapeHtml(row.activity || '-')}</td>
+                    <td>${escapeHtml(row.status || '-')}</td>
+                    <td>${formatAmount(row.amount_eco)}</td>
+                    <td>${escapeHtml(row.note || '-')}</td>
+                    <td>${link}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function refreshSnapshot() {
+        const res = await fetch('/api/wallet/snapshot');
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+            throw new Error(data.error || 'Could not refresh wallet');
+        }
+        walletBalance = Number(data.balance || 0);
+        renderBalance();
+        renderHistory(data.history_rows || []);
+        return data;
+    }
 
     function recalcReceiveAmount() {
         const eco = Number(ecoPayInput.value || 0);
@@ -826,6 +982,20 @@ document.addEventListener('DOMContentLoaded', function () {
         void receiveAmountInput.offsetWidth;
         receiveAmountInput.classList.add('swap-value-pulse');
         rateDisplay.textContent = rate.toFixed(4) + ' ' + rateLabels[token];
+        updateActionState();
+    }
+
+    async function callApiJson(url, options = {}) {
+        const response = await fetch(url, options);
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) {
+            throw new Error('Wallet service is temporarily unavailable. Please refresh and try again.');
+        }
+        const payload = await response.json();
+        if (!response.ok || payload.ok === false) {
+            throw new Error(payload.error || 'Wallet action failed. Please try again.');
+        }
+        return payload;
     }
 
     ecoPayInput.addEventListener('input', recalcReceiveAmount);
@@ -837,14 +1007,33 @@ document.addEventListener('DOMContentLoaded', function () {
         recalcReceiveAmount();
     });
 
-    swapButton.addEventListener('click', function () {
-        if (!Number(ecoPayInput.value || 0)) { ecoPayInput.focus(); return; }
-        swapButton.textContent = 'Swap Submitted';
+    swapButton.addEventListener('click', async function () {
+        const ecoAmount = Number(ecoPayInput.value || 0);
+        const token = receiveTokenSelect.value;
+        if (!ecoAmount || ecoAmount <= 0) {
+            ecoPayInput.focus();
+            return;
+        }
         swapButton.disabled = true;
-        setTimeout(function () {
+        swapButton.textContent = 'Swapping...';
+        try {
+            const data = await callApiJson('/api/wallet/swap', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eco_amount: ecoAmount, token }),
+            });
+            walletBalance = Number(data.balance || 0);
+            renderBalance();
+            renderHistory(data.history_rows || []);
+            ecoPayInput.value = '';
+            recalcReceiveAmount();
+            showToast(data.message || 'Swap complete');
+        } catch (err) {
+            showToast(err.message || 'Swap failed', 'error');
+        } finally {
             swapButton.textContent = 'Swap Now';
             swapButton.disabled = false;
-        }, 2000);
+        }
     });
 
     var modal = document.getElementById('voucher-modal');
@@ -860,18 +1049,62 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.querySelectorAll('.redeem-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', async function () {
             var row = btn.closest('[data-brand]');
             var brand = row ? row.getAttribute('data-brand') : 'Voucher';
             var select = row ? row.querySelector('.voucher-amount-select') : null;
             var amount = select ? select.value : '';
-            voucherTitle.textContent = brand;
-            voucherBrandBadge.textContent = brand;
-            voucherValue.textContent = amount ? amount + ' Reward Voucher' : 'Reward Voucher';
-            voucherCode.textContent = buildVoucherCode();
-            modal.classList.add('is-open');
-            copyBtn.textContent = 'Copy';
+            btn.disabled = true;
+            try {
+                const data = await callApiJson('/api/wallet/redeem-voucher', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ brand: brand, value: amount }),
+                });
+
+                walletBalance = Number(data.balance || 0);
+                renderBalance();
+                renderHistory(data.history_rows || []);
+
+                voucherTitle.textContent = brand;
+                voucherBrandBadge.textContent = brand;
+                voucherValue.textContent = amount ? amount + ' Reward Voucher' : 'Reward Voucher';
+                voucherCode.textContent = data.voucher_code || buildVoucherCode();
+                modal.classList.add('is-open');
+                copyBtn.textContent = 'Copy';
+                showToast(data.message || 'Voucher redeemed');
+            } catch (err) {
+                showToast(err.message || 'Voucher redeem failed', 'error');
+            } finally {
+                btn.disabled = false;
+            }
         });
+    });
+
+    cashButton.addEventListener('click', async function () {
+        const raw = window.prompt('Enter ECO amount to redeem as cash (minimum 20 ECO):', '50');
+        if (raw === null) return;
+        const ecoAmount = Number(raw);
+        if (!Number.isFinite(ecoAmount) || ecoAmount <= 0) {
+            showToast('Enter a valid ECO amount', 'error');
+            return;
+        }
+        cashButton.disabled = true;
+        try {
+            const data = await callApiJson('/api/wallet/redeem-cash', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eco_amount: ecoAmount }),
+            });
+            walletBalance = Number(data.balance || 0);
+            renderBalance();
+            renderHistory(data.history_rows || []);
+            showToast(data.message || 'Cash redeem recorded');
+        } catch (err) {
+            showToast(err.message || 'Cash redeem failed', 'error');
+        } finally {
+            cashButton.disabled = false;
+        }
     });
 
     copyBtn.addEventListener('click', function () {
@@ -886,6 +1119,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     closeButton.addEventListener('click', function () { modal.classList.remove('is-open'); });
     modal.addEventListener('click', function (e) { if (e.target === modal) modal.classList.remove('is-open'); });
+
+    refreshSnapshot()
+        .then(() => updateActionState())
+        .catch(() => {
+            showToast('Wallet sync unavailable. Refresh the page.', 'error');
+            updateActionState();
+        });
 });
 </script>
 {% endblock %}
