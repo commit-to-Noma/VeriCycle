@@ -91,7 +91,15 @@
     padding: 0.42rem 0.85rem;
     font-size: 0.8rem;
     font-weight: 700;
-    cursor: not-allowed;
+    cursor: not-allowed !important;
+}
+.redeem-cash-btn:hover,
+.redeem-cash-btn:disabled,
+.redeem-cash-btn:disabled:hover {
+    cursor: not-allowed !important;
+}
+.redeem-cash-btn:disabled {
+    opacity: 0.92;
 }
 
 .wallet-grid {
