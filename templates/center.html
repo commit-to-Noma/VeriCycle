@@ -84,7 +84,7 @@ body {
 /* Main grid */
 .center-main-grid {
     display: grid;
-    grid-template-columns: 1fr 320px;
+    grid-template-columns: 1fr;
     gap: 1.2rem;
 }
 .center-primary-column { display: flex; flex-direction: column; gap: 1rem; }
@@ -308,6 +308,60 @@ body {
 .center-token-flow strong {
     color: #0b5d4a;
 }
+.center-help-card {
+    padding: 1rem 1.1rem;
+}
+.center-help-card h3 {
+    margin: 0;
+    color: #0b5d4a !important;
+}
+.center-faq-item {
+    border: 1px solid #dbe4ea;
+    border-radius: 8px;
+    margin-top: 0.55rem;
+    background: #ffffff;
+}
+.center-faq-item summary {
+    cursor: pointer;
+    padding: 0.65rem 0.75rem;
+    color: #0f172a;
+    font-weight: 700;
+}
+.center-faq-item p {
+    margin: 0;
+    padding: 0 0.75rem 0.75rem 0.75rem;
+    color: #64748b;
+    font-size: 0.98rem;
+    line-height: 1.55;
+}
+.center-faq-answer {
+    padding: 0 0.75rem 0.85rem 0.75rem;
+}
+.center-faq-answer p {
+    margin: 0.28rem 0;
+    padding: 0;
+    color: #475569;
+}
+.center-faq-list {
+    margin: 0.25rem 0 0;
+    padding-left: 1.1rem;
+}
+.center-faq-list li {
+    margin: 0.38rem 0;
+    color: #475569;
+    font-size: 0.98rem;
+    line-height: 1.5;
+}
+.center-faq-list li strong {
+    color: #0b5d4a;
+}
+.center-bottom-grid {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
 .active-job-card {
     margin-top: 0.75rem;
     border: 1px solid rgba(22, 163, 74, 0.22);
@@ -374,64 +428,192 @@ body {
     transform: translateY(0);
     opacity: 1;
 }
-.scan-modal {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    background: rgba(15, 23, 42, 0.4);
-    z-index: 2450;
+/* 1. Force the Overlay to cover the entire screen */
+.modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(5px) !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
-.scan-modal.open {
-    display: flex;
+
+/* 2. Fix the Hidden State */
+.modal-overlay.hidden {
+    display: none !important;
 }
+
+/* 3. Style the White Modal Card so it pops */
 .scan-modal-card {
-    width: min(92vw, 460px);
-    background: #ffffff;
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+    max-width: 420px !important;
+    width: 90% !important;
+    padding: 1.5rem !important;
+    position: relative !important;
+    animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
     border: 1px solid #bbf7d0;
-    border-radius: 14px;
-    padding: 1rem;
-    box-shadow: 0 18px 45px rgba(2, 6, 23, 0.28);
 }
-.scan-modal-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+
+/* 4. Add a smooth "Pop Up" animation */
+@keyframes modalPop {
+    0% { transform: translateY(20px) scale(0.95); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
 }
-.scan-close {
-    border: none;
-    background: transparent;
-    color: #334155;
-    font-size: 1.1rem;
-    cursor: pointer;
-}
-.scan-visual {
-    margin: 0.9rem 0;
-    border: 1px dashed #86efac;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
-    height: 160px;
+
+/* The Camera Viewport */
+.scanner-viewport {
+    position: relative;
+    background: #0f172a;
+    height: 260px;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #166534;
+    overflow: hidden;
+    box-shadow: inset 0 4px 20px rgba(0,0,0,0.6);
+}
+.scanner-text {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    z-index: 2;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* The Targeting Reticles (Corners) */
+.scanner-reticle {
+    position: absolute;
+    width: 45px;
+    height: 45px;
+    border-color: #22c55e;
+    border-style: solid;
+    border-width: 0;
+    z-index: 3;
+    opacity: 0.8;
+}
+
+.top-left { top: 20px; left: 20px; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 12px; }
+.top-right { top: 20px; right: 20px; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 12px; }
+.bottom-left { bottom: 20px; left: 20px; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 12px; }
+.bottom-right { bottom: 20px; right: 20px; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 12px; }
+
+/* The Animated Sweeping Laser */
+.scanner-laser {
+    position: absolute;
+    top: 20px;
+    left: 10%;
+    width: 80%;
+    height: 2px;
+    background: #22c55e;
+    box-shadow: 0 0 12px 3px rgba(34, 197, 94, 0.6);
+    z-index: 4;
+    animation: scan-sweep 2.5s infinite linear alternate;
+}
+
+/* Animation Keyframes */
+@keyframes scan-sweep {
+    0% { top: 20px; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 238px; opacity: 0; }
+}
+
+/* --- Premium Modal Controls --- */
+
+/* Clear separation from the camera viewport */
+.manual-entry-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.manual-entry-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b !important;
+    margin-bottom: 0.75rem;
     font-weight: 700;
-    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-.scan-modal-actions {
+
+.manual-entry-controls {
     display: flex;
-    gap: 0.6rem;
-    justify-content: flex-end;
+    gap: 12px;
+    align-items: center;
 }
-.btn-ghost {
-    border: 1px solid #cbd5e1;
-    background: #fff;
-    color: #334155;
-    border-radius: 8px;
-    padding: 0.45rem 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
+
+/* Bulletproof Input Field */
+.qr-manual-input {
+    flex: 1;
+    padding: 0.85rem 1rem !important;
+    border: 2px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    outline: none !important;
+    font-family: monospace !important;
+    font-size: 1rem !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    transition: border-color 0.2s;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+
+.qr-manual-input:focus {
+    border-color: #22c55e !important;
+}
+
+/* Bulletproof Resolve Button */
+.qr-resolve-btn {
+    background-color: #16a34a !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 0.85rem 1.5rem !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 6px rgba(22, 163, 74, 0.2) !important;
+    white-space: nowrap;
+}
+
+.qr-resolve-btn:hover {
+    background-color: #15803d !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 12px rgba(22, 163, 74, 0.25) !important;
+}
+
+.qr-resolve-btn:active {
+    transform: translateY(0) !important;
+}
+
+/* Upgraded Close Button */
+.qr-close-btn {
+    background: #f1f5f9 !important;
+    border: none !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    cursor: pointer !important;
+    color: #64748b !important;
+    transition: all 0.2s !important;
+}
+
+.qr-close-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
 }
 .trust-progress {
     margin-top: 0.55rem;
@@ -517,6 +699,7 @@ body {
 @media (max-width: 900px) {
     .center-main-grid { grid-template-columns: 1fr; }
     .center-header-signal { align-items: flex-start; }
+    .center-bottom-grid { grid-template-columns: 1fr; }
 }
 </style>
 <section class="center-shell">
@@ -552,30 +735,16 @@ body {
 
                 <form id="verify-form" action="/verify-and-anchor/direct" method="POST" class="verify-form">
                     <input type="hidden" id="collector-id-input" name="collector_id" value="">
+                    <input type="hidden" id="qr-intent-code-input" name="qr_intent_code" value="">
 
                     <button type="button" class="btn-primary-large btn-form scanner-activate-btn" id="scan-btn">
-                        📷 Activate QR Scanner
+                        📷 Scan / Paste QR Intent
                     </button>
-                    <p id="scan-feedback" class="scan-note">Activate scanner to identify recycler profile before intake.</p>
+                    <p id="scan-feedback" class="scan-note">Scan or paste QR intent to auto-load recycler and source context.</p>
 
                     <div id="verified-profile-card" class="verified-profile-card" aria-live="polite">
                         <div style="font-weight:800; color:#166534;">✅ Recycler Identified: <span id="verified-profile-id">0.0.7267109</span></div>
                         <div style="margin-top:0.18rem; color:#334155; font-size:0.86rem;">Status: Active / Ready for Intake</div>
-                    </div>
-
-                    <div class="scan-modal" id="scan-modal" aria-hidden="true">
-                        <div class="scan-modal-card" role="dialog" aria-modal="true" aria-labelledby="scan-modal-title">
-                            <div class="scan-modal-head">
-                                <h4 id="scan-modal-title" style="margin:0; color:#0b5d4a;">Recycler QR Scanner</h4>
-                                <button type="button" class="scan-close" id="scan-modal-close" aria-label="Close scanner">✕</button>
-                            </div>
-                            <p style="margin:0.4rem 0 0; color:#475569; font-size:0.9rem;">Production uses camera-based QR parsing. Demo mode simulates the scan event.</p>
-                            <div class="scan-visual">SCANNER FRAME</div>
-                            <div class="scan-modal-actions">
-                                <button type="button" class="btn-ghost" id="scan-cancel-btn">Cancel</button>
-                                <button type="button" class="btn-primary" id="scan-simulate-btn">Simulate Scan</button>
-                            </div>
-                        </div>
                     </div>
 
                     <div id="scan-results" style="display: none;">
@@ -648,95 +817,160 @@ body {
                 </div>
             </article>
 
-            <article class="card">
-                <h3>Recent Verifications</h3>
-                <p id="verification-last-updated" class="scan-note" style="margin-top:-0.2rem; margin-bottom:0.55rem;">Updated just now</p>
-                <div class="location-list" id="verification-list">
-                    <h4 class="verification-date-header" id="today-header">Today</h4>
-                    <div style="overflow-x:auto;">
-                        <table id="today-table" style="width:100%; border-collapse:collapse; font-size:0.86rem;">
-                            <thead>
-                                <tr>
-                                    <th style="text-align:left; padding:0.45rem;">Time</th>
-                                    <th style="text-align:left; padding:0.45rem;">Recycler ID</th>
-                                    <th style="text-align:left; padding:0.45rem;">Material</th>
-                                    <th style="text-align:left; padding:0.45rem;">Weight</th>
-                                    <th style="text-align:left; padding:0.45rem;">Reward (ECO)</th>
-                                    <th style="text-align:left; padding:0.45rem;">Hedera Tx ID</th>
-                                </tr>
-                            </thead>
-                            <tbody id="today-list"></tbody>
-                        </table>
-                    </div>
-
-                    <h4 class="verification-date-header" id="yesterday-header">Yesterday</h4>
-                    <div id="yesterday-wrap" style="overflow-x:auto;">
-                        <table id="yesterday-table" style="width:100%; border-collapse:collapse; font-size:0.86rem;">
-                            <thead>
-                                <tr>
-                                    <th style="text-align:left; padding:0.45rem;">Time</th>
-                                    <th style="text-align:left; padding:0.45rem;">Recycler ID</th>
-                                    <th style="text-align:left; padding:0.45rem;">Material</th>
-                                    <th style="text-align:left; padding:0.45rem;">Weight</th>
-                                    <th style="text-align:left; padding:0.45rem;">Reward (ECO)</th>
-                                    <th style="text-align:left; padding:0.45rem;">Hedera Tx ID</th>
-                                </tr>
-                            </thead>
-                            <tbody id="yesterday-list"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </article>
         </div>
+    </div>
 
-        <aside class="center-side-column">
-            <article class="card center-guide-card">
-                <span class="section-kicker">Center Role Guide</span>
-                <h3>How this lane protects trust</h3>
-                <ol class="center-guide-list">
-                    <li><strong>Intake:</strong> Confirm source lane and recycler identity.</li>
-                    <li><strong>Validate:</strong> Check material type, weight, and queue context.</li>
-                    <li><strong>Finalize:</strong> Publish verified event with reward-ready metadata.</li>
-                </ol>
-                <p class="hub-record-meta">Center verification is the source-of-truth for status, anchoring, and reward progression.</p>
-            </article>
+    <section class="card" style="margin-top:1rem; padding:1rem 1.1rem;">
+        <h3>Recent Verifications</h3>
+        <p id="verification-last-updated" class="scan-note" style="margin-top:-0.2rem; margin-bottom:0.55rem;">Updated just now</p>
+        <div class="location-list" id="verification-list">
+            <h4 class="verification-date-header" id="today-header">Today</h4>
+            <div style="overflow-x:auto;">
+                <table id="today-table" style="width:100%; border-collapse:collapse; font-size:0.86rem;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding:0.45rem;">Time</th>
+                            <th style="text-align:left; padding:0.45rem;">Recycler ID</th>
+                            <th style="text-align:left; padding:0.45rem;">Material</th>
+                            <th style="text-align:left; padding:0.45rem;">Weight</th>
+                            <th style="text-align:left; padding:0.45rem;">Reward (ECO)</th>
+                            <th style="text-align:left; padding:0.45rem;">Hedera Tx ID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="today-list"></tbody>
+                </table>
+            </div>
 
-            <article class="card center-guide-card-muted">
-                <span class="section-kicker">Queue Discipline</span>
-                <h3>Trust-state consistency</h3>
-                <div class="center-mini-metrics">
-                    <span class="status-badge status-badge-pending">Submitted</span>
-                    <span class="status-badge status-badge-paid">Verified</span>
-                    <span class="status-badge status-badge-fallback">Anchored / Rewarded / Proof Ready</span>
+            <h4 class="verification-date-header" id="yesterday-header">Yesterday</h4>
+            <div id="yesterday-wrap" style="overflow-x:auto;">
+                <table id="yesterday-table" style="width:100%; border-collapse:collapse; font-size:0.86rem;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding:0.45rem;">Time</th>
+                            <th style="text-align:left; padding:0.45rem;">Recycler ID</th>
+                            <th style="text-align:left; padding:0.45rem;">Material</th>
+                            <th style="text-align:left; padding:0.45rem;">Weight</th>
+                            <th style="text-align:left; padding:0.45rem;">Reward (ECO)</th>
+                            <th style="text-align:left; padding:0.45rem;">Hedera Tx ID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="yesterday-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <div class="center-bottom-grid">
+        <section class="card center-guide-card">
+            <span class="section-kicker">Community Dispatch Board</span>
+            <h3>Top resident hotspots</h3>
+            <p class="hub-record-meta" id="community-priority-updated">Updated just now</p>
+            <div id="community-priority-list" class="priority-board-list">
+                <p class="tx-meta">Loading community priorities...</p>
+            </div>
+        </section>
+
+        <section class="card center-help-card">
+            <h3>Need Help?</h3>
+            <details class="center-faq-item" open>
+                <summary>What is Queue Discipline and trust-state consistency?</summary>
+                <div class="center-faq-answer">
+                    <p>Queue Discipline keeps every event in one trust sequence:</p>
+                    <ul class="center-faq-list">
+                        <li><strong>Submitted</strong> -> <strong>Verified</strong> -> <strong>Anchored / Rewarded / Proof Ready</strong></li>
+                        <li>Agent coverage by stage: Collector Agent Active, Verifier Agent Active, Reward Agent Active.</li>
+                    </ul>
                 </div>
-                <div class="center-mini-metrics" style="margin-top:0.65rem;">
-                    <span class="status-badge status-badge-paid">Collector Agent Active</span>
-                    <span class="status-badge status-badge-paid">Verifier Agent Active</span>
-                    <span class="status-badge status-badge-paid">Reward Agent Active</span>
+            </details>
+            <details class="center-faq-item">
+                <summary>How does this lane protect trust work?</summary>
+                <div class="center-faq-answer">
+                    <ul class="center-faq-list">
+                        <li><strong>Intake:</strong> Confirm source lane and recycler identity.</li>
+                        <li><strong>Validate:</strong> Check material type, weight, and queue context.</li>
+                        <li><strong>Finalize:</strong> Publish the verified event with reward-ready metadata.</li>
+                    </ul>
+                    <p>Center verification is the source-of-truth for status, anchoring, and reward progression.</p>
                 </div>
-            </article>
-
-            <article class="card center-guide-card">
-                <span class="section-kicker">Community Dispatch Board</span>
-                <h3>Top resident hotspots</h3>
-                <p class="hub-record-meta" id="community-priority-updated">Updated just now</p>
-                <div id="community-priority-list" class="priority-board-list">
-                    <p class="tx-meta">Loading community priorities...</p>
+            </details>
+            <details class="center-faq-item">
+                <summary>What should I do after resolving a QR intent?</summary>
+                <div class="center-faq-answer">
+                    <ul class="center-faq-list">
+                        <li>Confirm recycler profile auto-loaded correctly.</li>
+                        <li>Verify material and measured weight.</li>
+                        <li>Submit <strong>Verify &amp; Anchor</strong>.</li>
+                    </ul>
+                    <p>The event appears in recent verifications only after attested backend confirmation.</p>
                 </div>
-            </article>
-
-            <article class="card center-guide-card center-token-flow">
-                <span class="section-kicker">Token and Proof Handoff</span>
-                <h3>Stage to transaction mapping</h3>
-                <p><strong>Submitted:</strong> Recycler payload enters center queue.</p>
-                <p><strong>Verified:</strong> Center confirms material and weight for payout math.</p>
-                <p><strong>Anchored:</strong> Logbook entry is published to Hedera Consensus Service (HCS).</p>
-                <p><strong>Rewarded:</strong> ECO payout is finalized through Hedera Token Service (HTS).</p>
-                <p><strong>Proof Ready:</strong> Proof bundle links verification, anchors, and reward outcomes.</p>
-            </article>
-        </aside>
+            </details>
+            <details class="center-faq-item">
+                <summary>Why is a submitted pickup still pending?</summary>
+                <div class="center-faq-answer">
+                    <p>Pending means center validation is not complete yet.</p>
+                    <ul class="center-faq-list">
+                        <li>Set as Active Pickup.</li>
+                        <li>Complete the inspection checklist.</li>
+                        <li>Run <strong>Verify &amp; Anchor</strong> to move it to anchored and reward-ready.</li>
+                    </ul>
+                </div>
+            </details>
+            <details class="center-faq-item">
+                <summary>Which checks must pass before verification?</summary>
+                <div class="center-faq-answer">
+                    <ul class="center-faq-list">
+                        <li>Recycler identity verified.</li>
+                        <li>No contamination observed.</li>
+                        <li>Material-match confirmation complete.</li>
+                        <li>Weight capture is realistic and measured.</li>
+                    </ul>
+                    <p>These checks prevent bad data and keep proof and payout records audit-ready.</p>
+                </div>
+            </details>
+            <details class="center-faq-item">
+                <summary>How does Token and Proof Handoff map by stage?</summary>
+                <div class="center-faq-answer">
+                    <ul class="center-faq-list">
+                        <li><strong>Submitted:</strong> Recycler payload enters center queue.</li>
+                        <li><strong>Verified:</strong> Center confirms material and weight for payout math.</li>
+                        <li><strong>Anchored:</strong> Logbook entry is published to Hedera Consensus Service (HCS).</li>
+                        <li><strong>Rewarded:</strong> ECO payout is finalized through Hedera Token Service (HTS).</li>
+                        <li><strong>Proof Ready:</strong> Proof bundle links verification, anchors, and reward outcomes.</li>
+                    </ul>
+                </div>
+            </details>
+        </section>
     </div>
 </section>
+
+<div id="scanModal" class="modal-overlay hidden">
+    <div class="modal-card scan-modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; color: #0f172a; font-weight: 700;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10v4c0 1.1.9 2 2 2h4l4 4V4L9 8H5c-1.1 0-2 .9-2 2z"></path></svg>
+                Identify Recycler
+            </h3>
+            <button id="closeScanModalBtn" class="qr-close-btn">&times;</button>
+        </div>
+
+        <div class="scanner-viewport">
+            <div class="scanner-reticle top-left"></div>
+            <div class="scanner-reticle top-right"></div>
+            <div class="scanner-reticle bottom-left"></div>
+            <div class="scanner-reticle bottom-right"></div>
+            <div class="scanner-laser"></div>
+            <p class="scanner-text">Position QR code within frame</p>
+        </div>
+
+        <div class="manual-entry-section">
+            <label class="manual-entry-label">Manual Entry / Simulation</label>
+            <div class="manual-entry-controls">
+                <input type="text" id="pasteQrInput" class="qr-manual-input" placeholder="Paste Intent Code...">
+                <button id="scanResolveIntentBtn" class="qr-resolve-btn">Resolve</button>
+            </div>
+        </div>
+    </div>
+</div>
 
     <div id="center-toast" role="status" aria-live="polite" style="display:none;">
         <span id="center-toast-text">Verified -> Anchored -> Reward queued</span>
@@ -770,6 +1004,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const verifyBtn = document.getElementById('verify-btn');
     const todayList = document.getElementById('today-list');
     const collectorIdInput = document.getElementById('collector-id-input');
+    const qrIntentCodeInput = document.getElementById('qr-intent-code-input');
     const collectorFoundInput = document.getElementById('collector-found-input');
     const scanFeedback = document.getElementById('scan-feedback');
     const hederaLink = document.getElementById('hedera-link');
@@ -779,10 +1014,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const activePickupProcessing = document.getElementById('active-pickup-processing');
     const trustProgress = document.getElementById('trust-progress');
     const trustPips = trustProgress ? Array.from(trustProgress.querySelectorAll('.trust-pip')) : [];
-    const scanModal = document.getElementById('scan-modal');
-    const scanModalClose = document.getElementById('scan-modal-close');
+    const scanModal = document.getElementById('scanModal') || document.getElementById('scan-modal');
+    const scanModalClose = document.getElementById('closeScanModalBtn') || document.getElementById('scan-modal-close');
     const scanCancelBtn = document.getElementById('scan-cancel-btn');
     const scanSimulateBtn = document.getElementById('scan-simulate-btn');
+    const scanResolveIntentBtn = document.getElementById('scanResolveIntentBtn') || document.getElementById('scan-resolve-intent-btn');
+    const qrIntentPaste = document.getElementById('pasteQrInput') || document.getElementById('qr-intent-paste');
     const verificationLastUpdated = document.getElementById('verification-last-updated');
     const verifiedProfileCard = document.getElementById('verified-profile-card');
     const verifiedProfileId = document.getElementById('verified-profile-id');
@@ -812,6 +1049,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let submittedVerifyInFlight = false;
     const directRecentStorageKey = 'vericycle.center.directRecentRows';
     let lastPriorityRefreshMs = Date.now();
+    let communityBoardNeedsReset = true;
 
     function escapeHtml(value) {
         return String(value || '')
@@ -820,6 +1058,19 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    async function fetchJsonSafe(url, options = {}, fallbackMessage = 'Request failed') {
+        const response = await fetch(url, options);
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) {
+            throw new Error('Service temporarily unavailable. Please refresh and try again.');
+        }
+        const payload = await response.json();
+        if (!response.ok || payload.ok === false || payload.success === false) {
+            throw new Error(payload.error || payload.message || fallbackMessage);
+        }
+        return payload;
     }
 
     function resetTrustProgress() {
@@ -864,80 +1115,60 @@ document.addEventListener('DOMContentLoaded', function() {
         if (normalized === 'confirmed') return '<span class="priority-chip priority-chip-complete">Resident Confirmed</span>';
         if (normalized === 'reopened') return '<span class="priority-chip priority-chip-open">Follow-up Required</span>';
         if (normalized === 'submitted') return '<span class="priority-chip priority-chip-submitted">Submitted to Center</span>';
-        if (normalized === 'accepted' || normalized === 'in_transit') return '<span class="priority-chip priority-chip-inflight">Recycler Assigned</span>';
-        if (normalized === 'completed') return '<span class="priority-chip priority-chip-complete">Handled</span>';
+        if (normalized === 'accepted' || normalized === 'in_transit') return '<span class="priority-chip priority-chip-inflight">Center Scheduled</span>';
+        if (normalized === 'completed') return '<span class="priority-chip priority-chip-complete">Cleanup Marked Complete</span>';
         return '<span class="priority-chip priority-chip-open">Open</span>';
     }
 
     function defaultCommunityDispatchRows() {
         return [
             {
-                hotspot_key: 'illegal-dumping-by-school-gate::park-entrance-roodepoort',
-                title: 'Illegal dumping by school gate',
+                hotspot_key: 'mixed-collection-overflow-zone::park-entrance-roodepoort',
+                title: 'Mixed collection overflow zone',
                 location: 'Park Entrance, Roodepoort',
                 status: 'open',
                 priority: 'center',
                 report_count: 58,
                 support_count: 58,
+                type_label: 'Mixed Collection',
                 can_prioritize: true,
             },
             {
-                hotspot_key: 'missed-recycling-route-this-week::sandton-drive',
-                title: 'Missed recycling route this week',
+                hotspot_key: 'community-agreed-dirty-hotspot::sandton-drive',
+                title: 'Community-agreed dirty hotspot',
                 location: 'Sandton Drive',
                 status: 'open',
-                priority: 'standard',
+                priority: 'center',
                 report_count: 27,
                 support_count: 27,
+                type_label: 'Community Consensus',
                 can_prioritize: true,
             },
             {
-                hotspot_key: 'overflowing-bins-near-taxi-rank::corner-main-st-4th-ave-randburg',
-                title: 'Overflowing bins near taxi rank',
+                hotspot_key: 'missed-trash-collection-route::corner-main-st-4th-ave-randburg',
+                title: 'Missed trash collection route',
                 location: 'Corner Main St & 4th Ave, Randburg',
                 status: 'open',
                 priority: 'standard',
                 report_count: 12,
                 support_count: 12,
+                type_label: 'Missed Collection',
                 can_prioritize: true,
             }
         ];
     }
 
     function readDispatchOverrides() {
-        try {
-            const raw = localStorage.getItem(dispatchBoardStorageKey);
-            const parsed = raw ? JSON.parse(raw) : [];
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (err) {
-            console.error(err);
-            return [];
-        }
+        return [];
     }
 
     function writeDispatchOverrides(rows) {
-        try {
-            localStorage.setItem(dispatchBoardStorageKey, JSON.stringify(rows));
-        } catch (err) {
-            console.error(err);
-        }
+        void rows;
     }
 
     function mergedDispatchRows(apiRows) {
-        const baseRows = Array.isArray(apiRows) && apiRows.length ? apiRows : defaultCommunityDispatchRows();
-        const merged = new Map();
-
-        defaultCommunityDispatchRows().forEach((row) => {
-            merged.set(String(row.hotspot_key), { ...row });
-        });
-        baseRows.forEach((row) => {
-            merged.set(String(row.hotspot_key), { ...(merged.get(String(row.hotspot_key)) || {}), ...row });
-        });
-        readDispatchOverrides().forEach((row) => {
-            merged.set(String(row.hotspot_key), { ...(merged.get(String(row.hotspot_key)) || {}), ...row });
-        });
-
-        return Array.from(merged.values()).sort((a, b) => {
+        const rows = Array.isArray(apiRows) && apiRows.length ? [...apiRows] : defaultCommunityDispatchRows();
+        return rows.sort((a, b) => {
             const aPriority = String(a.priority || '') === 'center' ? 1 : 0;
             const bPriority = String(b.priority || '') === 'center' ? 1 : 0;
             if (bPriority !== aPriority) return bPriority - aPriority;
@@ -946,12 +1177,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function persistDispatchState(hotspotKey, changes) {
-        const rows = mergedDispatchRows([]);
-        const updated = rows.map((row) => {
-            if (String(row.hotspot_key) !== String(hotspotKey)) return row;
-            return { ...row, ...changes };
-        });
-        writeDispatchOverrides(updated);
+        void hotspotKey;
+        void changes;
         if (dispatchBoardChannel) {
             dispatchBoardChannel.postMessage({ type: 'dispatch-board-updated', hotspotKey, changes });
         }
@@ -966,18 +1193,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return '<div class="priority-board-actions"><button class="btn-primary" disabled style="opacity:0.75; cursor:default;">Confirmed by Community</button></div>';
         }
         if (status === 'completed') {
-            return '<div class="priority-board-actions"><button class="btn-primary" disabled style="opacity:0.75; cursor:default;">Handled by Center</button></div>';
+            return '<div class="priority-board-actions"><button class="btn-primary" disabled style="opacity:0.75; cursor:default;">Awaiting Resident Confirmation</button></div>';
         }
         if (status === 'submitted') {
-            return '<div class="priority-board-actions"><button class="btn-primary" disabled style="opacity:0.75; cursor:default;">Received at Center</button></div>';
+            return `<div class="priority-board-actions"><button class="btn-primary" onclick="completeCommunityHotspot('${hotspotKey}', this)">Mark Cleaned • Request Resident Confirm</button></div>`;
         }
         if (status === 'accepted' || status === 'in_transit') {
-            return '<div class="priority-board-actions"><button class="btn-primary" disabled style="opacity:0.75; cursor:default;">Received • Working Now</button></div>';
+            return `<div class="priority-board-actions"><button class="btn-primary" onclick="prioritizeCommunityHotspot('${hotspotKey}', this)">Select for Center Dispatch</button></div>`;
         }
         if (priority === 'center') {
-            return `<div class="priority-board-actions"><button class="btn-primary" onclick="markCommunityHotspotWorking('${hotspotKey}', this)">Received • Start Working</button></div>`;
+            return `<div class="priority-board-actions"><button class="btn-primary" onclick="prioritizeCommunityHotspot('${hotspotKey}', this)">Select for Center Dispatch</button></div>`;
         }
-        return `<div class="priority-board-actions"><button class="btn-primary" onclick="prioritizeCommunityHotspot('${hotspotKey}', this)">Prioritize Dispatch Today</button></div>`;
+        return `<div class="priority-board-actions"><button class="btn-primary" onclick="prioritizeCommunityHotspot('${hotspotKey}', this)">Route to Center Queue</button></div>`;
     }
 
     function renderCommunityPriorityItem(row) {
@@ -985,6 +1212,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const location = escapeHtml(row.location || 'Unspecified location');
         const reportCount = Number(row.report_count || 0);
         const supportCount = Number(row.support_count || 0);
+        const typeLabel = escapeHtml(row.type_label || 'Resident Report');
         const priorityText = (row.priority || 'standard') === 'center' ? 'Center Priority' : 'Standard Priority';
         const statusChip = priorityStatusChip(row.status);
         const hotspotKey = escapeHtml(row.hotspot_key || '');
@@ -996,6 +1224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${statusChip}
                 </div>
                 <div class="priority-board-meta">${location}</div>
+                <div class="priority-board-meta">Type: ${typeLabel}</div>
                 <div class="priority-board-meta">Reports: ${reportCount} · Support: ${supportCount} · ${escapeHtml(priorityText)}</div>
                 ${renderPriorityAction(row)}
             </div>
@@ -1005,10 +1234,11 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadCommunityPriorityBoard() {
         if (!communityPriorityList) return;
         try {
-            const res = await fetch(`/api/community/hotspots/board?audience=center&_ts=${Date.now()}`, {
+            const resetFlag = communityBoardNeedsReset ? '&reset=1' : '';
+            const data = await fetchJsonSafe(`/api/community/hotspots/board?audience=center${resetFlag}&_ts=${Date.now()}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const data = await res.json().catch(() => ({}));
+            }, 'Unable to load community hotspots');
+            communityBoardNeedsReset = false;
             const rows = mergedDispatchRows(Array.isArray(data.rows) ? data.rows : []);
 
             if (!rows.length) {
@@ -1036,18 +1266,14 @@ document.addEventListener('DOMContentLoaded', function() {
             buttonEl.textContent = 'Prioritizing...';
         }
         try {
-            const res = await fetch('/api/center/community-hotspots/prioritize', {
+            await fetchJsonSafe('/api/center/community-hotspots/prioritize', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({ hotspot_key: hotspotKey })
-            });
-            const data = await res.json();
-            if (!res.ok || !data.ok) {
-                throw new Error(data.error || 'Unable to prioritize this hotspot.');
-            }
+            }, 'Unable to prioritize this hotspot.');
             showBanner('Community hotspot prioritized for dispatch lane.');
             loadCommunityPriorityBoard();
             loadSubmittedAssignments();
@@ -1065,23 +1291,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function markCommunityHotspotWorking(hotspotKey, buttonEl) {
+        void hotspotKey;
+        void buttonEl;
+    }
+
+    async function completeCommunityHotspot(hotspotKey, buttonEl) {
         if (!hotspotKey) return;
         if (buttonEl) {
             buttonEl.disabled = true;
-            buttonEl.textContent = 'Updating...';
+            buttonEl.textContent = 'Marking...';
         }
-        persistDispatchState(hotspotKey, {
-            hotspot_key: hotspotKey,
-            priority: 'center',
-            status: 'in_transit',
-            can_prioritize: false,
-        });
-        showBanner('Center received the hotspot and dispatch is now working on it.');
-        loadCommunityPriorityBoard();
+        try {
+            await fetchJsonSafe('/api/center/community-hotspots/complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ hotspot_key: hotspotKey })
+            }, 'Unable to mark hotspot cleanup completion.');
+            showBanner('Center marked hotspot cleaned. Waiting for resident confirmation.');
+            loadCommunityPriorityBoard();
+        } catch (err) {
+            console.error(err);
+            showBanner(err.message || 'Unable to mark completion');
+            if (buttonEl) {
+                buttonEl.disabled = false;
+                buttonEl.textContent = 'Mark Cleaned • Request Resident Confirm';
+            }
+        }
     }
 
     window.prioritizeCommunityHotspot = prioritizeCommunityHotspot;
     window.markCommunityHotspotWorking = markCommunityHotspotWorking;
+    window.completeCommunityHotspot = completeCommunityHotspot;
 
     if (dispatchBoardChannel) {
         dispatchBoardChannel.addEventListener('message', function (event) {
@@ -1204,10 +1447,9 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadRecentVerifications() {
         if (!todayList) return;
         try {
-            const res = await fetch(`/api/center/recent-verifications?scope=recent&_ts=${Date.now()}`, {
+            const data = await fetchJsonSafe(`/api/center/recent-verifications?scope=recent&_ts=${Date.now()}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const data = await res.json();
+            }, 'Unable to load recent verifications');
             const apiRows = Array.isArray(data.rows) ? data.rows : [];
             const cachedRows = loadDirectRecentCache();
             const rows = mergeAndDedupeRows(apiRows, cachedRows);
@@ -1270,12 +1512,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openScanModal() {
         if (!scanModal) return;
+        scanModal.classList.remove('hidden');
         scanModal.classList.add('open');
         scanModal.setAttribute('aria-hidden', 'false');
     }
 
     function closeScanModal() {
         if (!scanModal) return;
+        scanModal.classList.add('hidden');
         scanModal.classList.remove('open');
         scanModal.setAttribute('aria-hidden', 'true');
     }
@@ -1283,23 +1527,22 @@ document.addEventListener('DOMContentLoaded', function() {
     async function performCollectorLookup(collectorId) {
         if (!collectorId) {
             scannedCollectorId = '';
+            if (qrIntentCodeInput) qrIntentCodeInput.value = '';
             scanResultsDiv.style.display = 'none';
             if (verifiedProfileCard) verifiedProfileCard.classList.remove('open');
             if (materialInput) materialInput.disabled = true;
             if (weightKgInput) weightKgInput.disabled = true;
             verifyBtn.disabled = true;
             verifyBtn.textContent = 'Scan ID to Begin';
-            if (scanFeedback) scanFeedback.textContent = 'Activate scanner to identify recycler profile before intake.';
+            if (scanFeedback) scanFeedback.textContent = 'Scan or paste QR intent to auto-load recycler and source context.';
             return;
         }
 
         scanBtn.textContent = 'Scanner Active...';
         scanBtn.disabled = true;
         try {
-            const res = await fetch(`/api/collectors/lookup?hedera_account_id=${encodeURIComponent(collectorId)}`);
-            const data = await res.json();
-
-            if (!res.ok || !data.ok) {
+            const data = await fetchJsonSafe(`/api/collectors/lookup?hedera_account_id=${encodeURIComponent(collectorId)}`, {}, 'Collector lookup failed');
+            if (!data.ok) {
                 scannedCollectorId = '';
                 scanResultsDiv.style.display = 'none';
                 if (verifiedProfileCard) verifiedProfileCard.classList.remove('open');
@@ -1312,6 +1555,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             scannedCollectorId = collectorId;
+            if (qrIntentCodeInput) qrIntentCodeInput.value = '';
             if (collectorFoundInput) {
                 collectorFoundInput.value = `${data.collector_name || 'Verified Recycler'} (${collectorId})`;
             }
@@ -1338,7 +1582,74 @@ document.addEventListener('DOMContentLoaded', function() {
             if (scanFeedback) scanFeedback.textContent = 'Unable to scan recycler ID right now. Try again.';
         } finally {
             scanBtn.disabled = false;
-            scanBtn.textContent = '📷 Activate QR Scanner';
+            scanBtn.textContent = '📷 Scan / Paste QR Intent';
+        }
+    }
+
+    async function resolveQrIntentAndPrefill(qrIntentCode) {
+        const trimmed = String(qrIntentCode || '').trim();
+        if (!trimmed) {
+            if (scanFeedback) scanFeedback.textContent = 'Paste a QR intent payload first.';
+            return;
+        }
+
+        scanBtn.textContent = 'Resolving Intent...';
+        scanBtn.disabled = true;
+        try {
+            const data = await fetchJsonSafe('/api/qr-intents/resolve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ qr_intent_code: trimmed }),
+            }, 'Could not resolve QR intent.');
+
+            const intent = data.intent || {};
+            const recycler = data.recycler || {};
+            const collectorId = recycler.account_id || intent.recycler_account_id || '';
+            scannedCollectorId = collectorId;
+            if (collectorIdInput) collectorIdInput.value = collectorId;
+            if (qrIntentCodeInput) qrIntentCodeInput.value = trimmed;
+            if (collectorFoundInput) {
+                collectorFoundInput.value = `${recycler.name || recycler.email || 'Verified Recycler'} (${collectorId || 'N/A'})`;
+            }
+            if (verifiedProfileId) {
+                verifiedProfileId.textContent = collectorId || 'N/A';
+            }
+            if (verifiedProfileCard) {
+                verifiedProfileCard.classList.add('open');
+            }
+
+            scanResultsDiv.style.display = 'block';
+            if (materialInput) {
+                materialInput.disabled = false;
+                const material = String(intent.material_type || '').toLowerCase();
+                if (material) materialInput.value = material;
+            }
+            if (weightKgInput) {
+                weightKgInput.disabled = false;
+                const estKg = Number(intent.estimated_kg || 0);
+                if (Number.isFinite(estKg) && estKg > 0) {
+                    weightKgInput.value = estKg.toFixed(1);
+                }
+            }
+
+            if (String(intent.source_type || '') === 'pickup_assignment' && intent.source_ref_id) {
+                selectedActiveAssignmentId = Number(intent.source_ref_id);
+                if (activePickupProcessing) activePickupProcessing.style.display = 'none';
+                if (scanFeedback) {
+                    scanFeedback.textContent = `Pickup QR resolved (assignment #${selectedActiveAssignmentId}). Verify measured weight/material and submit.`;
+                }
+            } else if (scanFeedback) {
+                scanFeedback.textContent = 'Direct deposit QR resolved. Enter measured weight/material and submit.';
+            }
+
+            calculateReward();
+            closeScanModal();
+        } catch (err) {
+            console.error(err);
+            if (scanFeedback) scanFeedback.textContent = 'Could not resolve QR intent right now.';
+        } finally {
+            scanBtn.disabled = false;
+            scanBtn.textContent = '📷 Scan / Paste QR Intent';
         }
     }
 
@@ -1347,13 +1658,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!container) return;
 
         try {
-            const res = await fetch('/api/center/submitted-assignments');
-            if (!res.ok) {
-                container.innerHTML = '<p>Unable to load submitted pickups.</p>';
-                return;
-            }
-
-            const data = await res.json();
+            const data = await fetchJsonSafe('/api/center/submitted-assignments', {}, 'Unable to load submitted pickups');
             const rows = Array.isArray(data.rows) ? data.rows : [];
             rows.sort((a, b) => {
                 const aHeavy = (a.priority || 'standard') === 'center' ? 1 : 0;
@@ -1437,31 +1742,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const res = await fetch(`/verify-and-anchor/${assignmentId}`, {
+            const data = await fetchJsonSafe(`/verify-and-anchor/${assignmentId}`, {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-
-            const data = await res.json();
-            if (!data.ok) {
-                if (data.processing) {
-                    showBanner(data.message || 'Processing collector pipeline... please wait.');
-                    setQueueButtonState(buttonEl, 'Processing...', true);
-                    setTrustStep('anchored', 'waiting');
-                } else if ((data.error || '').toLowerCase().includes('already verified')) {
-                    showBanner('This pickup has already been verified.');
-                    setQueueButtonState(buttonEl, 'Already Verified', true);
-                    setTrustStep('verified', 'active');
-                    setTrustStep('anchored', 'active');
-                    setTrustStep('rewarded', 'active');
-                    setTrustStep('audit', 'active');
-                } else {
-                    showBanner(data.error || 'Could not verify submitted pickup');
-                    setQueueButtonState(buttonEl, 'Verify & Anchor', false);
-                    resetTrustProgress();
-                }
-                return;
-            }
+            }, 'Could not verify submitted pickup');
 
             const rewardText = Number(data.reward_amount || 0).toFixed(2);
             showBanner(`Verified -> Anchored -> Reward queued (${rewardText} ECO)`);
@@ -1627,9 +1911,14 @@ document.addEventListener('DOMContentLoaded', function() {
             performCollectorLookup(demoId);
         });
     }
+    if (scanResolveIntentBtn) {
+        scanResolveIntentBtn.addEventListener('click', function() {
+            resolveQrIntentAndPrefill(qrIntentPaste ? qrIntentPaste.value : '');
+        });
+    }
 
     // 2. When the "Verify & Pay" button is clicked
-    verifyForm.addEventListener('submit', function(e) {
+    verifyForm.addEventListener('submit', async function(e) {
         e.preventDefault(); 
         
         verifyBtn.textContent = "Verifying...";
@@ -1637,17 +1926,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData(verifyForm);
 
-        fetch("/verify-and-anchor/direct", {
-            method: 'POST',
-            credentials: 'same-origin', // <-- send cookies with request
-            body: formData
-        })
-        .then(response => {
-            // Try to parse the JSON error message on non-OK
-            return response.json().then(data => ({ ok: response.ok, data }));
-        })
-        .then(({ok, data}) => {
-            if (ok && data.success) {
+        try {
+            const data = await fetchJsonSafe("/verify-and-anchor/direct", {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: formData
+            }, 'Could not complete center verification');
+            if (data.success) {
                 const collectorId = scannedCollectorId;
                 const weight = formData.get('weight');
                 const material = materialType.options[materialType.selectedIndex].text;
@@ -1668,13 +1953,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 verifyForm.reset();
                 scannedCollectorId = '';
+                if (qrIntentCodeInput) qrIntentCodeInput.value = '';
                 rewardSummary.style.display = 'none';
                 scanResultsDiv.style.display = 'none';
                 if (materialInput) materialInput.disabled = true;
                 if (weightKgInput) weightKgInput.disabled = true;
                 scanBtn.style.display = 'block';
                 if (scanFeedback) {
-                    scanFeedback.textContent = 'Activate scanner to identify recycler profile before intake.';
+                    scanFeedback.textContent = 'Scan or paste QR intent to auto-load recycler and source context.';
                 }
                 if (verifiedProfileCard) verifiedProfileCard.classList.remove('open');
                 if (hederaLink) {
@@ -1687,21 +1973,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     verifyBtn.disabled = false;
                     calculateReward(); // Resets button text
                 }, 2000);
-
-            } else {
-                // Show server-provided message when available
-                const msg = (data && (data.message || data.error)) ? (data.message || data.error) : 'Error! Try Again.';
-                showBanner(msg);
-                verifyBtn.textContent = msg;
-                verifyBtn.disabled = false;
             }
-        })
-        .catch(err => {
+        } catch (err) {
             console.error('Error:', err);
-            showBanner("Error! Try Again.");
-            verifyBtn.textContent = "Error! Try Again.";
+            showBanner(err.message || "Error! Try Again.");
+            verifyBtn.textContent = "Verify & Anchor";
             verifyBtn.disabled = false;
-        });
+        }
     });
 
     // Keep queue and verification timeline live during demo.

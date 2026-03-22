@@ -31,6 +31,9 @@ import os
 import requests
 import json
 import hashlib
+import hmac
+import base64
+import uuid
 import re 
 import math
 import threading
@@ -227,14 +230,48 @@ def can_access_activity_proof(user, activity: Activity | None) -> bool:
     return opportunity.source_user_id == user.id and opportunity.source_role in {"business", "resident"}
 
 
+ECO_PAYOUT_MODEL_BY_MATERIAL = {
+    "glass": {
+        "eco_per_kg": 1.2,
+        "cash_range_zar": "R 0.50 - R 0.80",
+        "premium_label": "+ 50% more value",
+    },
+    "paper & cardboard": {
+        "eco_per_kg": 2.8,
+        "cash_range_zar": "R 1.50 - R 2.00",
+        "premium_label": "+ 40% more value",
+    },
+    "plastics": {
+        "eco_per_kg": 5.0,
+        "cash_range_zar": "R 3.00 - R 4.00",
+        "premium_label": "+ 25% more value",
+    },
+    "metals": {
+        "eco_per_kg": 16.0,
+        "cash_range_zar": "R 10.00 - R 14.00",
+        "premium_label": "+ 15% more value",
+    },
+    "e-waste": {
+        "eco_per_kg": 35.0,
+        "cash_range_zar": "R 20.00 - R 25.00",
+        "premium_label": "+ 40% more value",
+    },
+    # Fallback categories kept for internal routes not explicitly priced in the pitch table.
+    "organic waste": {
+        "eco_per_kg": 2.0,
+        "cash_range_zar": "R 1.00 - R 1.60",
+        "premium_label": "+ 25% more value",
+    },
+    "mixed recyclables": {
+        "eco_per_kg": 4.0,
+        "cash_range_zar": "R 2.50 - R 3.50",
+        "premium_label": "+ 20% more value",
+    },
+}
+
 DEMO_REWARD_RATE_BY_MATERIAL = {
-    "paper & cardboard": 7.8,
-    "plastics": 10.5,
-    "glass": 5.2,
-    "metals": 13.0,
-    "e-waste": 14.0,
-    "organic waste": 4.8,
-    "mixed recyclables": 10.0,
+    key: float(spec["eco_per_kg"])
+    for key, spec in ECO_PAYOUT_MODEL_BY_MATERIAL.items()
 }
 
 UNIFIED_MATERIAL_TAXONOMY = [
@@ -257,6 +294,7 @@ DEMO_LOGIN_ALIASES = {
 
 DEMO_LOGIN_PASSWORD = "1234"
 DEMO_LOGIN_TARGET_EMAILS = set(DEMO_LOGIN_ALIASES.values())
+QR_INTENT_TTL_MINUTES = 180
 
 
 def ensure_demo_login_accounts() -> None:
@@ -338,6 +376,67 @@ def resolve_demo_login_alias(identifier: str | None) -> str:
     return DEMO_LOGIN_ALIASES.get(normalized, normalized)
 
 
+def _qr_secret_bytes() -> bytes:
+    return str(app.config.get('SECRET_KEY') or 'vericycle-dev').encode('utf-8')
+
+
+def _qr_sign_payload(payload_json: str) -> str:
+    return hmac.new(_qr_secret_bytes(), payload_json.encode('utf-8'), hashlib.sha256).hexdigest()
+
+
+def _qr_encode_payload(payload: dict) -> str:
+    payload_json = json.dumps(payload, sort_keys=True, separators=(',', ':'))
+    body = base64.urlsafe_b64encode(payload_json.encode('utf-8')).decode('ascii').rstrip('=')
+    sig = _qr_sign_payload(payload_json)
+    return f"{body}.{sig}"
+
+
+def _qr_decode_payload(token: str) -> tuple[dict | None, str | None]:
+    raw = (token or '').strip()
+    if not raw or '.' not in raw:
+        return None, 'Invalid QR intent payload'
+    body, sig = raw.rsplit('.', 1)
+    if not body or not sig:
+        return None, 'Invalid QR intent payload'
+    try:
+        padded = body + '=' * ((4 - len(body) % 4) % 4)
+        payload_json = base64.urlsafe_b64decode(padded.encode('ascii')).decode('utf-8')
+    except Exception:
+        return None, 'Invalid QR intent encoding'
+
+    expected = _qr_sign_payload(payload_json)
+    if not hmac.compare_digest(expected, sig):
+        return None, 'QR intent signature mismatch'
+
+    try:
+        payload = json.loads(payload_json)
+    except Exception:
+        return None, 'Invalid QR intent content'
+
+    issued_raw = payload.get('issued_at')
+    issued_at = None
+    if isinstance(issued_raw, str) and issued_raw.strip():
+        try:
+            issued_at = datetime.fromisoformat(issued_raw.strip().replace('Z', '+00:00'))
+        except Exception:
+            issued_at = None
+    elif isinstance(issued_raw, datetime):
+        issued_at = issued_raw
+
+    if not issued_at:
+        return None, 'QR intent timestamp missing'
+
+    if issued_at.tzinfo is None:
+        issued_at = issued_at.replace(tzinfo=timezone.utc)
+    issued_at = issued_at.astimezone(timezone.utc)
+
+    age_minutes = (datetime.now(timezone.utc) - issued_at).total_seconds() / 60.0
+    if age_minutes > QR_INTENT_TTL_MINUTES:
+        return None, 'QR intent expired'
+
+    return payload, None
+
+
 def _find_first_user_by_effective_role(target_role: str) -> User | None:
     users = User.query.order_by(User.id.asc()).all()
     for row in users:
@@ -384,6 +483,11 @@ def canonical_material_label(material_type: str | None) -> str:
     return mapping.get(key, "Mixed Recyclables")
 
 
+def eco_payout_spec(material_type: str | None) -> dict:
+    material_key = normalize_material_key(material_type)
+    return ECO_PAYOUT_MODEL_BY_MATERIAL.get(material_key, ECO_PAYOUT_MODEL_BY_MATERIAL["mixed recyclables"])
+
+
 def estimate_pickup_distance_km(location: str | None) -> float:
     normalized = (location or "").strip().lower()
     if "randburg" in normalized:
@@ -401,11 +505,8 @@ def estimate_pickup_distance_km(location: str | None) -> float:
 
 def calculate_demo_reward_amount(material_type: str | None, weight_kg: float | int | None) -> float:
     safe_weight = max(0.0, float(weight_kg or 0.0))
-    material_key = normalize_material_key(material_type)
-    base_rate = DEMO_REWARD_RATE_BY_MATERIAL.get(material_key, DEMO_REWARD_RATE_BY_MATERIAL["mixed recyclables"])
-    base_amount = safe_weight * base_rate
-    total_amount = base_amount + (base_amount * 0.025) + (base_amount * 0.01)
-    return round(min(200.0, max(1.0 if safe_weight > 0 else 0.0, total_amount)), 2)
+    rate_per_kg = float(eco_payout_spec(material_type).get("eco_per_kg", 0.0))
+    return round(safe_weight * rate_per_kg, 2)
 
 
 def build_rewards_wallet_snapshot(user: User) -> dict:
@@ -648,6 +749,123 @@ def parse_community_hotspot_details(notes: str | None, fallback_location: str | 
     return ("Community Cleanup Request", fallback, False)
 
 
+def _community_demo_hotspot_specs() -> list[dict]:
+    return [
+        {
+            "title": "Mixed collection overflow zone",
+            "location": "Park Entrance, Roodepoort",
+            "description": "Mixed recyclables and bulky waste piling up near public access routes.",
+            "material_type": "Mixed Recyclables",
+            "estimated_kg": 55.0,
+            "priority": "center",
+            "support_reports": 3,
+            "type_label": "Mixed Collection",
+        },
+        {
+            "title": "Community-agreed dirty hotspot",
+            "location": "Sandton Drive",
+            "description": "Residents repeatedly report persistent litter and illegal dumping in this corridor.",
+            "material_type": "Mixed Recyclables",
+            "estimated_kg": 42.0,
+            "priority": "center",
+            "support_reports": 2,
+            "type_label": "Community Consensus",
+        },
+        {
+            "title": "Missed trash collection route",
+            "location": "Corner Main St & 4th Ave, Randburg",
+            "description": "Municipal collection missed multiple windows; bins remain overflowing.",
+            "material_type": "Mixed Recyclables",
+            "estimated_kg": 32.0,
+            "priority": "standard",
+            "support_reports": 1,
+            "type_label": "Missed Collection",
+        },
+    ]
+
+
+def _community_demo_type_label(title: str | None, location: str | None) -> str:
+    key = normalize_hotspot_key(title, location)
+    for spec in _community_demo_hotspot_specs():
+        if normalize_hotspot_key(spec["title"], spec["location"]) == key:
+            return spec["type_label"]
+    return "Resident Report"
+
+
+def ensure_demo_community_hotspots(force_reset: bool = False) -> None:
+    if _is_prod:
+        return
+
+    resident_user = (
+        User.query
+        .filter(func.lower(func.trim(User.role)) == 'resident')
+        .order_by(User.id.asc())
+        .first()
+    )
+    if not resident_user:
+        return
+
+    resident_rows = (
+        PickupOpportunity.query
+        .filter_by(source_role='resident')
+        .order_by(PickupOpportunity.created_at.desc())
+        .all()
+    )
+
+    changed = False
+    for spec in _community_demo_hotspot_specs():
+        seed_key = normalize_hotspot_key(spec["title"], spec["location"])
+        matched_rows: list[PickupOpportunity] = []
+        for row in resident_rows:
+            title, location, _ = parse_community_hotspot_details(row.notes, row.location)
+            if normalize_hotspot_key(title, location) == seed_key:
+                matched_rows.append(row)
+
+        if not matched_rows:
+            base = PickupOpportunity(
+                source_role='resident',
+                source_user_id=resident_user.id,
+                material_type=spec["material_type"],
+                estimated_kg=spec["estimated_kg"],
+                priority=spec["priority"],
+                location=spec["location"],
+                requested_window='Today 14:00-17:00',
+                notes=f"[Community Hotspot] {spec['title']} :: {spec['description']}",
+                status='open',
+            )
+            db.session.add(base)
+
+            for _ in range(int(spec.get("support_reports", 0))):
+                support = PickupOpportunity(
+                    source_role='resident',
+                    source_user_id=resident_user.id,
+                    material_type=spec["material_type"],
+                    estimated_kg=max(8.0, float(spec["estimated_kg"]) * 0.35),
+                    priority=spec["priority"],
+                    location=spec["location"],
+                    requested_window='Today 14:00-17:00',
+                    notes=f"[Community Support Escalation] {spec['title']} @ {spec['location']}. +1 resident support escalation",
+                    status='open',
+                )
+                db.session.add(support)
+            changed = True
+            continue
+
+        if force_reset:
+            for row in matched_rows:
+                row.status = 'open'
+                row.priority = spec["priority"]
+                for assignment in (row.assignments or []):
+                    if assignment.status in {'accepted', 'in_transit', 'submitted'}:
+                        assignment.status = 'cancelled'
+                        if assignment.verification_status in {None, '', 'pending'}:
+                            assignment.verification_status = 'cancelled'
+            changed = True
+
+    if changed:
+        db.session.commit()
+
+
 def purge_stale_demo_seed_rows() -> None:
     if _is_prod:
         return
@@ -722,6 +940,7 @@ def purge_stale_demo_seed_rows() -> None:
 
 def build_community_hotspot_board() -> list[dict]:
     purge_stale_demo_seed_rows()
+    ensure_demo_community_hotspots(force_reset=False)
 
     rows = (
         PickupOpportunity.query
@@ -743,6 +962,7 @@ def build_community_hotspot_board() -> list[dict]:
                 "hotspot_key": key,
                 "title": title,
                 "location": location,
+                "type_label": _community_demo_type_label(title, location),
                 "status": (row.status or 'open'),
                 "status_rank": rank,
                 "status_label": pickup_request_status_label(row.status),
@@ -769,6 +989,10 @@ def build_community_hotspot_board() -> list[dict]:
 
         if (row.priority or '').strip().lower() == 'center':
             entry["priority"] = 'center'
+
+        if entry.get("completed_at") is None and (row.status or '').strip().lower() == 'completed':
+            entry["completed_at"] = row.created_at.isoformat() if row.created_at else datetime.now(timezone.utc).isoformat()
+            entry["completed_by"] = 'center@vericycle.com'
 
         if rank > entry["status_rank"]:
             entry["status_rank"] = rank
@@ -2557,6 +2781,7 @@ def api_list_open_opportunities():
     for row in rows:
         distance_km = estimate_pickup_distance_km(row.location)
         estimated_reward_eco = calculate_demo_reward_amount(row.material_type, row.estimated_kg)
+        payout_spec = eco_payout_spec(row.material_type)
         payload.append({
             "id": row.id,
             "source_role": row.source_role,
@@ -2566,6 +2791,8 @@ def api_list_open_opportunities():
             "location": row.location,
             "distance_km": distance_km,
             "estimated_reward_eco": estimated_reward_eco,
+            "eco_rate_per_kg": float(payout_spec.get("eco_per_kg") or 0.0),
+            "eco_premium_label": payout_spec.get("premium_label") or "+ 20% more value",
             "requested_window": row.requested_window,
             "notes": row.notes,
             "status": row.status,
@@ -2578,6 +2805,10 @@ def api_list_open_opportunities():
 @app.get('/api/community/hotspots/board')
 @login_required
 def api_community_hotspots_board():
+    reset_demo = (request.args.get('reset') or '').strip().lower() in {'1', 'true', 'yes'}
+    if reset_demo:
+        ensure_demo_community_hotspots(force_reset=True)
+
     rows = build_community_hotspot_board()
     audience = (request.args.get('audience') or '').strip().lower()
 
@@ -2618,6 +2849,49 @@ def api_center_prioritize_community_hotspot():
             continue
 
         if (row.priority or '').strip().lower() != 'center':
+            row.priority = 'center'
+            touched += 1
+
+        if (row.status or '').strip().lower() in {'open', 'accepted', 'in_transit'}:
+            row.status = 'submitted'
+            touched += 1
+
+    if touched:
+        db.session.commit()
+
+    return jsonify({"ok": True, "updated": touched, "hotspot_key": hotspot_key})
+
+
+@app.post('/api/center/community-hotspots/complete')
+@login_required
+def api_center_complete_community_hotspot():
+    if not can_verify_deposit_center(current_user):
+        return jsonify({"ok": False, "error": "Only centers can close community dispatch hotspots"}), 403
+
+    data = request.get_json(silent=True) or request.form
+    hotspot_key = (data.get('hotspot_key') or '').strip()
+    if not hotspot_key:
+        return jsonify({"ok": False, "error": "Hotspot key is required"}), 400
+
+    resident_rows = (
+        PickupOpportunity.query
+        .filter_by(source_role='resident')
+        .order_by(PickupOpportunity.created_at.desc())
+        .all()
+    )
+
+    touched = 0
+    for row in resident_rows:
+        title, location, _ = parse_community_hotspot_details(row.notes, row.location)
+        key = normalize_hotspot_key(title, location)
+        if key != hotspot_key:
+            continue
+
+        if (row.status or '').strip().lower() == 'cancelled':
+            continue
+
+        if (row.status or '').strip().lower() != 'completed':
+            row.status = 'completed'
             row.priority = 'center'
             touched += 1
 
@@ -2673,8 +2947,37 @@ def api_confirm_community_hotspot_completion():
                 latest_title = title
                 latest_location = location
 
-    if not latest_opportunity or not latest_assignment or not latest_activity:
-        return jsonify({"ok": False, "error": "No completed hotspot receipt found for confirmation"}), 404
+    if not latest_opportunity or not latest_activity:
+        for row in resident_rows:
+            title, location, _ = parse_community_hotspot_details(row.notes, row.location)
+            key = normalize_hotspot_key(title, location)
+            if key != hotspot_key:
+                continue
+            if (row.status or '').strip().lower() != 'completed':
+                continue
+
+            latest_opportunity = row
+            latest_title = title
+            latest_location = location
+            break
+
+        if not latest_opportunity:
+            return jsonify({"ok": False, "error": "No completed hotspot receipt found for confirmation"}), 404
+
+        latest_activity = Activity(
+            user_id=latest_opportunity.source_user_id,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            desc=f"Community Hotspot Completion ({latest_title})",
+            amount=0.0,
+            status='completed',
+            verified_status='verified',
+            logbook_status='anchored',
+            reward_status='finalized_no_transfer',
+            pipeline_stage='attested',
+            review_status='pending_review',
+        )
+        db.session.add(latest_activity)
+        db.session.flush()
 
     create_verification_signal(
         activity_id=latest_activity.id,
@@ -2780,6 +3083,7 @@ def api_my_assignments():
             row.submitted_material_type or (opp.material_type if opp else None),
             row.submitted_weight_kg if row.submitted_weight_kg is not None else (opp.estimated_kg if opp else 0),
         ) if (row.submitted_weight_kg is not None or (opp and opp.estimated_kg is not None)) else None
+        payout_spec = eco_payout_spec(row.submitted_material_type or (opp.material_type if opp else None))
         payload.append({
             "assignment_id": row.id,
             "opportunity_id": row.opportunity_id,
@@ -2792,6 +3096,8 @@ def api_my_assignments():
             "verification_notes": row.verification_notes,
             "linked_activity_id": row.linked_activity_id,
             "estimated_reward_eco": reward_estimate,
+            "eco_rate_per_kg": float(payout_spec.get("eco_per_kg") or 0.0),
+            "eco_premium_label": payout_spec.get("premium_label") or "+ 20% more value",
             "source_role": opp.source_role if opp else None,
             "material_type": opp.material_type if opp else None,
             "estimated_kg": opp.estimated_kg if opp else None,
@@ -3376,16 +3682,14 @@ def bulk_activities():
 @login_required 
 def confirm_dropoff():
     try:
-        collector_id = request.form.get('collector_id')
-        weight = request.form.get('weight')
-        material = canonical_material_label(request.form.get('material'))
+        source_payload = request.get_json(silent=True) or request.form
+        collector_id = (source_payload.get('collector_id') or '').strip()
+        weight = source_payload.get('weight')
+        material = canonical_material_label(source_payload.get('material'))
+        qr_intent_code = (source_payload.get('qr_intent_code') or '').strip()
 
-        if not collector_id or not weight:
+        if not weight:
             return jsonify({'success': False, 'error': 'Missing data'}), 400
-
-        collector = User.query.filter_by(hedera_account_id=collector_id).first()
-        if not collector:
-            return jsonify({'success': False, 'error': 'Collector not found'}), 404
 
         try:
             weight_value = float(weight)
@@ -3395,15 +3699,61 @@ def confirm_dropoff():
         if weight_value <= 0:
             return jsonify({'success': False, 'error': 'Weight must be greater than zero'}), 400
 
+        intent = None
+        if qr_intent_code:
+            intent, intent_error = _qr_decode_payload(qr_intent_code)
+            if intent_error:
+                return jsonify({'success': False, 'error': intent_error}), 400
+
+        collector = None
+        assignment = None
+        opportunity = None
+        source_type = 'self_deposit'
+
+        if intent:
+            source_type = (intent.get('source_type') or 'self_deposit').strip().lower()
+            collector = db.session.get(User, int(intent.get('recycler_user_id') or 0))
+            if not collector or not can_accept_opportunity_recycler(collector):
+                return jsonify({'success': False, 'error': 'Invalid recycler in QR intent'}), 400
+
+            if source_type == 'pickup_assignment':
+                assignment = db.session.get(OpportunityAssignment, int(intent.get('source_ref_id') or 0))
+                if not assignment:
+                    return jsonify({'success': False, 'error': 'Referenced pickup assignment not found'}), 404
+                if assignment.recycler_user_id != collector.id:
+                    return jsonify({'success': False, 'error': 'QR intent does not match assignment recycler'}), 400
+                if assignment.status not in {'accepted', 'in_transit', 'submitted'}:
+                    return jsonify({'success': False, 'error': 'Assignment is not ready for center verification'}), 409
+                opportunity = assignment.opportunity
+            else:
+                collector_id = (collector.hedera_account_id or '').strip()
+        else:
+            if not collector_id:
+                return jsonify({'success': False, 'error': 'Collector ID is required'}), 400
+            collector = User.query.filter_by(hedera_account_id=collector_id).first()
+            if not collector or not can_accept_opportunity_recycler(collector):
+                return jsonify({'success': False, 'error': 'Collector not found'}), 404
+
         reward_amount = calculate_demo_reward_amount(material, weight_value)
+
+        if source_type == 'pickup_assignment':
+            if opportunity and opportunity.source_role == 'business':
+                desc = f"Verified Business Pickup ({weight_value:.1f}kg of {material})"
+            elif opportunity and opportunity.source_role == 'resident':
+                desc = f"Verified Community Pickup ({weight_value:.1f}kg of {material})"
+            else:
+                desc = f"Verified Pickup ({weight_value:.1f}kg of {material})"
+        else:
+            desc = f"Verified Direct Deposit ({weight_value:.1f}kg of {material})"
 
         activity = Activity(
             user_id=collector.id,
             timestamp=datetime.utcnow().isoformat(),
-            desc=f"Pending Drop-off ({weight}kg of {material})",
+            desc=desc,
             amount=float(reward_amount),
-            verified_status="verified",
-            status="verified"
+            verified_status="pending",
+            status="pending",
+            pipeline_stage='created',
         )
 
         db.session.add(activity)
@@ -3413,10 +3763,14 @@ def confirm_dropoff():
             activity_id=activity.id,
             signal_type="collector_submission",
             source_role="operator",
-            source_user_id=current_user.id,
+            source_user_id=collector.id,
             value="submitted",
             is_positive=True,
-            metadata={"weight_kg": weight_value, "material_type": material}
+            metadata={
+                "weight_kg": weight_value,
+                "material_type": material,
+                "source_type": source_type,
+            }
         )
         create_verification_signal(
             activity_id=activity.id,
@@ -3425,9 +3779,28 @@ def confirm_dropoff():
             source_user_id=current_user.id,
             value="verified",
             is_positive=True,
-            metadata={"verified_by": current_user.email, "source": "direct_deposit"}
+            metadata={
+                "verified_by": current_user.email,
+                "source": source_type,
+                "assignment_id": assignment.id if assignment else None,
+                "intent_id": (intent or {}).get('intent_id'),
+            }
         )
         add_schedule_match_signal(activity)
+
+        if assignment:
+            assignment.submitted_material_type = material
+            assignment.submitted_weight_kg = weight_value
+            assignment.submission_notes = assignment.submission_notes or f"Verified via QR intent by {current_user.email}"
+            assignment.verified_by_center_id = current_user.id
+            assignment.verified_at = datetime.now(timezone.utc)
+            assignment.verification_status = 'verified'
+            assignment.verification_notes = f"Verified by {current_user.email}; pipeline reward {reward_amount:.2f} ECO"
+            assignment.status = 'completed'
+            assignment.linked_activity_id = activity.id
+            if opportunity:
+                opportunity.status = 'completed'
+
         db.session.commit()
 
         try:
@@ -3440,6 +3813,8 @@ def confirm_dropoff():
             "success": True,
             "message": "Drop-off recorded as pending verification.",
             "activity_id": activity.id,
+            "source_type": source_type,
+            "assignment_id": assignment.id if assignment else None,
             "reward_amount": reward_amount,
             "proof_bundle_url": f"/api/proof-bundle/{activity.id}",
             "hashscan_url": hashscan_link(activity.hcs_tx_id or activity.logbook_tx_id or activity.hedera_tx_id)
@@ -3470,6 +3845,105 @@ def api_collector_lookup():
         "collector_id": collector.hedera_account_id,
         "collector_name": collector.full_name or collector.email,
         "collector_email": collector.email,
+    })
+
+
+@app.post('/api/qr-intents/create')
+@login_required
+def api_create_qr_intent():
+    if not can_accept_opportunity_recycler(current_user):
+        return jsonify({"ok": False, "error": "Only recyclers can create QR intents"}), 403
+
+    data = request.get_json(silent=True) or request.form
+    source_type = (data.get('source_type') or 'self_deposit').strip().lower()
+    if source_type not in {'self_deposit', 'pickup_assignment'}:
+        return jsonify({"ok": False, "error": "Invalid source_type"}), 400
+
+    intent_payload = {
+        "v": 1,
+        "intent_id": f"intent-{uuid.uuid4().hex[:12]}",
+        "issued_at": datetime.now(timezone.utc).isoformat(),
+        "recycler_user_id": current_user.id,
+        "recycler_account_id": (current_user.hedera_account_id or '').strip(),
+        "recycler_email": current_user.email,
+        "source_type": source_type,
+        "source_ref_id": None,
+        "material_type": canonical_material_label((data.get('material_type') or 'Mixed Recyclables').strip() or 'Mixed Recyclables'),
+        "estimated_kg": 0.0,
+        "location": (current_user.address or '').strip() or None,
+    }
+
+    if source_type == 'pickup_assignment':
+        try:
+            assignment_id = int(data.get('assignment_id'))
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "error": "assignment_id is required for pickup_assignment"}), 400
+
+        assignment = db.session.get(OpportunityAssignment, assignment_id)
+        if not assignment or assignment.recycler_user_id != current_user.id:
+            return jsonify({"ok": False, "error": "Assignment not found"}), 404
+
+        if assignment.status not in {'accepted', 'in_transit', 'submitted'}:
+            return jsonify({"ok": False, "error": "Assignment is not eligible for QR verification"}), 409
+
+        opp = assignment.opportunity
+        material = assignment.submitted_material_type or (opp.material_type if opp else None) or 'Mixed Recyclables'
+        est_kg = assignment.submitted_weight_kg if assignment.submitted_weight_kg is not None else (opp.estimated_kg if opp else 0.0)
+
+        intent_payload.update({
+            "source_ref_id": assignment.id,
+            "material_type": canonical_material_label(material),
+            "estimated_kg": float(est_kg or 0.0),
+            "location": (opp.location if opp else None),
+        })
+
+    qr_intent_code = _qr_encode_payload(intent_payload)
+    return jsonify({
+        "ok": True,
+        "qr_intent_code": qr_intent_code,
+        "intent": intent_payload,
+    })
+
+
+@app.post('/api/qr-intents/resolve')
+@login_required
+def api_resolve_qr_intent():
+    if not can_verify_deposit_center(current_user):
+        return jsonify({"ok": False, "error": "Only centers can resolve QR intents"}), 403
+
+    data = request.get_json(silent=True) or request.form
+    qr_intent_code = (data.get('qr_intent_code') or '').strip()
+    payload, error = _qr_decode_payload(qr_intent_code)
+    if error:
+        return jsonify({"ok": False, "error": error}), 400
+
+    recycler = db.session.get(User, int(payload.get('recycler_user_id') or 0))
+    if not recycler or not can_accept_opportunity_recycler(recycler):
+        return jsonify({"ok": False, "error": "Recycler in QR intent is invalid"}), 400
+
+    assignment_preview = None
+    if payload.get('source_type') == 'pickup_assignment':
+        assignment = db.session.get(OpportunityAssignment, int(payload.get('source_ref_id') or 0))
+        if not assignment:
+            return jsonify({"ok": False, "error": "Referenced pickup assignment not found"}), 404
+        if assignment.recycler_user_id != recycler.id:
+            return jsonify({"ok": False, "error": "QR assignment does not match recycler"}), 400
+        assignment_preview = {
+            "assignment_id": assignment.id,
+            "status": assignment.status,
+            "submitted_weight_kg": assignment.submitted_weight_kg,
+        }
+
+    return jsonify({
+        "ok": True,
+        "intent": payload,
+        "recycler": {
+            "user_id": recycler.id,
+            "email": recycler.email,
+            "account_id": recycler.hedera_account_id,
+            "name": recycler.full_name or recycler.email,
+        },
+        "assignment": assignment_preview,
     })
 
 

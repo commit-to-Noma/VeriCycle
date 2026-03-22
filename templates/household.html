@@ -262,6 +262,10 @@
       <div id="community-board-list" class="status-board">
         <p style="color:#64748b; font-size:0.85rem; margin:0;">Loading community status board...</p>
       </div>
+      <h4 style="margin:0.95rem 0 0.45rem; color:#0b5d4a; font-size:0.95rem;">Top recent completed cleanup impacts</h4>
+      <div id="community-impact-list" class="status-board">
+        <p style="color:#64748b; font-size:0.85rem; margin:0;">No completed impacts yet.</p>
+      </div>
     </section>
 
     <div style="margin-bottom: 16px; font-size: 0.875rem; color: #374151;">
@@ -294,10 +298,10 @@
       </div>
 
       <div class="hotspot-card">
-        <h3>Illegal dumping by school gate</h3>
+        <h3>Mixed collection overflow zone</h3>
         <p class="location">Park Entrance, Roodepoort</p>
         <p class="desc">
-          Large pile of plastics and old furniture dumped near the playground entrance.
+          Mixed plastics, cartons, and old bags are stacking near the playground entrance.
         </p>
         <div class="hotspot-footer">
           <button class="boost-btn" data-count="58">Add My Voice (58)</button>
@@ -306,10 +310,10 @@
       </div>
 
       <div class="hotspot-card">
-        <h3>Missed recycling route this week</h3>
+        <h3>Community-agreed dirty hotspot</h3>
         <p class="location">Sandton Drive</p>
         <p class="desc">
-          Weekly recycling was skipped. Bags are piling up outside homes on this route.
+          Residents across this route flagged persistent trash build-up after missed collection.
         </p>
         <div class="hotspot-footer">
           <button class="boost-btn" data-count="27">Add My Voice (27)</button>
@@ -318,10 +322,10 @@
       </div>
 
       <div class="hotspot-card">
-        <h3>Overflowing bins near taxi rank</h3>
+        <h3>Missed trash collection route</h3>
         <p class="location">Corner Main St &amp; 4th Ave, Randburg</p>
         <p class="desc">
-          Bins have not been collected for 3 days. Waste is spilling onto the street and blocking the walkway.
+          Collection was skipped this week and curbside bags are now blocking the walkway.
         </p>
         <div class="hotspot-footer">
           <button class="boost-btn" data-count="12">Add My Voice (12)</button>
@@ -357,9 +361,11 @@
     const verificationHashscanLink = document.getElementById('verification-hashscan-link');
     const afterPhotoBtn = document.getElementById('after-photo-btn');
     const communityBoardList = document.getElementById('community-board-list');
+    const communityImpactList = document.getElementById('community-impact-list');
     const communityBoardUpdated = document.getElementById('community-board-updated');
     let lastCommunityBoardRefreshMs = Date.now();
     let activeVerificationHotspotKey = '';
+    let communityBoardNeedsReset = true;
     const dispatchBoardStorageKey = 'vericycle.communityDispatchBoard';
     const dispatchBoardChannel = typeof BroadcastChannel !== 'undefined'
       ? new BroadcastChannel('vericycle-community-dispatch')
@@ -420,80 +426,60 @@
       if (normalized === 'confirmed') return '<span class="status-pill status-pill-completed">Confirmed by Residents</span>';
       if (normalized === 'reopened') return '<span class="status-pill status-pill-open">Follow-up Required</span>';
       if (normalized === 'submitted') return '<span class="status-pill status-pill-submitted">Submitted to Center</span>';
-      if (normalized === 'accepted' || normalized === 'in_transit') return '<span class="status-pill status-pill-inflight">Recycler Assigned</span>';
-      if (normalized === 'completed') return '<span class="status-pill status-pill-completed">Handled</span>';
+      if (normalized === 'accepted' || normalized === 'in_transit') return '<span class="status-pill status-pill-inflight">Center Scheduled</span>';
+      if (normalized === 'completed') return '<span class="status-pill status-pill-completed">Cleanup Marked Complete</span>';
       return '<span class="status-pill status-pill-open">Open for Pickup</span>';
     }
 
     function defaultCommunityDispatchRows() {
       return [
         {
-          hotspot_key: 'illegal-dumping-by-school-gate::park-entrance-roodepoort',
-          title: 'Illegal dumping by school gate',
+          hotspot_key: 'mixed-collection-overflow-zone::park-entrance-roodepoort',
+          title: 'Mixed collection overflow zone',
           location: 'Park Entrance, Roodepoort',
           status: 'open',
           priority: 'center',
           report_count: 58,
           support_count: 58,
+          type_label: 'Mixed Collection',
           can_prioritize: true,
         },
         {
-          hotspot_key: 'missed-recycling-route-this-week::sandton-drive',
-          title: 'Missed recycling route this week',
+          hotspot_key: 'community-agreed-dirty-hotspot::sandton-drive',
+          title: 'Community-agreed dirty hotspot',
           location: 'Sandton Drive',
           status: 'open',
-          priority: 'standard',
+          priority: 'center',
           report_count: 27,
           support_count: 27,
+          type_label: 'Community Consensus',
           can_prioritize: true,
         },
         {
-          hotspot_key: 'overflowing-bins-near-taxi-rank::corner-main-st-4th-ave-randburg',
-          title: 'Overflowing bins near taxi rank',
+          hotspot_key: 'missed-trash-collection-route::corner-main-st-4th-ave-randburg',
+          title: 'Missed trash collection route',
           location: 'Corner Main St & 4th Ave, Randburg',
           status: 'open',
           priority: 'standard',
           report_count: 12,
           support_count: 12,
+          type_label: 'Missed Collection',
           can_prioritize: true,
         }
       ];
     }
 
     function readDispatchOverrides() {
-      try {
-        const raw = localStorage.getItem(dispatchBoardStorageKey);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (err) {
-        console.error(err);
-        return [];
-      }
+      return [];
     }
 
     function writeDispatchOverrides(rows) {
-      try {
-        localStorage.setItem(dispatchBoardStorageKey, JSON.stringify(rows));
-      } catch (err) {
-        console.error(err);
-      }
+      void rows;
     }
 
     function mergedDispatchRows(apiRows) {
-      const baseRows = Array.isArray(apiRows) && apiRows.length ? apiRows : defaultCommunityDispatchRows();
-      const merged = new Map();
-
-      defaultCommunityDispatchRows().forEach((row) => {
-        merged.set(String(row.hotspot_key), { ...row });
-      });
-      baseRows.forEach((row) => {
-        merged.set(String(row.hotspot_key), { ...(merged.get(String(row.hotspot_key)) || {}), ...row });
-      });
-      readDispatchOverrides().forEach((row) => {
-        merged.set(String(row.hotspot_key), { ...(merged.get(String(row.hotspot_key)) || {}), ...row });
-      });
-
-      return Array.from(merged.values()).sort((a, b) => {
+      const rows = Array.isArray(apiRows) && apiRows.length ? [...apiRows] : defaultCommunityDispatchRows();
+      return rows.sort((a, b) => {
         const aPriority = String(a.priority || '') === 'center' ? 1 : 0;
         const bPriority = String(b.priority || '') === 'center' ? 1 : 0;
         if (bPriority !== aPriority) return bPriority - aPriority;
@@ -502,12 +488,8 @@
     }
 
     function persistDispatchState(hotspotKey, changes) {
-      const rows = mergedDispatchRows([]);
-      const updated = rows.map((row) => {
-        if (String(row.hotspot_key) !== String(hotspotKey)) return row;
-        return { ...row, ...changes };
-      });
-      writeDispatchOverrides(updated);
+      void hotspotKey;
+      void changes;
       if (dispatchBoardChannel) {
         dispatchBoardChannel.postMessage({ type: 'dispatch-board-updated', hotspotKey, changes });
       }
@@ -611,14 +593,14 @@
 
         if (normalizedStatus === 'completed') {
           boostBtn.disabled = true;
-          boostBtn.textContent = 'Handled by Center ✓';
+          boostBtn.textContent = 'Awaiting Resident Confirmation';
           boostBtn.style.background = '#94a3b8';
           boostBtn.style.borderColor = '#64748b';
           boostBtn.style.cursor = 'default';
           boostBtn.style.opacity = '0.9';
           statusEl.className = 'status';
           statusEl.style.color = '#334155';
-          statusEl.textContent = '✅ Verified and completed by center';
+          statusEl.textContent = '✅ Cleanup marked complete by center';
           return;
         }
 
@@ -631,7 +613,7 @@
 
         if (normalizedStatus === 'accepted' || normalizedStatus === 'in_transit') {
           statusEl.className = 'status orange';
-          statusEl.textContent = '🟠 Recycler handling in progress';
+          statusEl.textContent = '🟠 Center dispatch scheduled';
           return;
         }
       });
@@ -651,19 +633,60 @@
             ${statusPillHtml(row.status)}
           </div>
           <div class="status-board-meta">${escapeHtml(row.location || 'Unspecified location')}</div>
+          <div class="status-board-meta">Type: ${escapeHtml(row.type_label || 'Resident Report')}</div>
           <div class="status-board-meta">Reports: ${Number(row.report_count || 0)} · Support: ${Number(row.support_count || 0)} · ${escapeHtml(row.priority === 'center' ? 'Center Priority' : 'Standard Priority')}</div>
         </div>
       `).join('');
     }
 
+    function renderRecentCompletedImpacts(rows) {
+      if (!communityImpactList) return;
+      const completedRows = rows
+        .filter((row) => {
+          const status = String(row.status || '').toLowerCase();
+          const residentStatus = String(row.resident_confirmation_status || '').toLowerCase();
+          return status === 'confirmed' || residentStatus === 'confirmed' || status === 'completed';
+        })
+        .sort((a, b) => {
+          const aTs = Date.parse(a.resident_confirmation_at || a.completed_at || '') || 0;
+          const bTs = Date.parse(b.resident_confirmation_at || b.completed_at || '') || 0;
+          return bTs - aTs;
+        })
+        .slice(0, 3);
+
+      if (!completedRows.length) {
+        communityImpactList.innerHTML = '<p style="color:#64748b; font-size:0.85rem; margin:0;">No completed impacts yet.</p>';
+        return;
+      }
+
+      communityImpactList.innerHTML = completedRows.map((row) => {
+        const confirmed = String(row.resident_confirmation_status || '').toLowerCase() === 'confirmed' || String(row.status || '').toLowerCase() === 'confirmed';
+        const stamp = formatReceiptDate(row.resident_confirmation_at || row.completed_at);
+        const reward = Number(row.reward_amount || 0).toFixed(2);
+        return `
+          <div class="status-board-item">
+            <div class="status-board-top">
+              <div class="status-board-title">${escapeHtml(row.title || 'Community Cleanup Request')}</div>
+              <span class="status-pill status-pill-completed">${confirmed ? 'Resident Confirmed' : 'Center Completed'}</span>
+            </div>
+            <div class="status-board-meta">${escapeHtml(row.location || 'Unspecified location')}</div>
+            <div class="status-board-meta">Type: ${escapeHtml(row.type_label || 'Resident Report')} · ECO: ${reward} · ${escapeHtml(stamp)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
     async function loadCommunityBoard() {
       try {
-        const res = await fetch(`/api/community/hotspots/board?audience=community&_ts=${Date.now()}`, {
+        const resetFlag = communityBoardNeedsReset ? '&reset=1' : '';
+        const res = await fetch(`/api/community/hotspots/board?audience=community${resetFlag}&_ts=${Date.now()}`, {
           headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
+        communityBoardNeedsReset = false;
         const data = await res.json().catch(() => ({}));
         const rows = mergedDispatchRows(Array.isArray(data.rows) ? data.rows : []);
         renderCommunityBoardRows(rows);
+        renderRecentCompletedImpacts(rows);
         applyBoardStatusToFeed(rows);
         renderVerificationReceipt(rows);
         lastCommunityBoardRefreshMs = Date.now();
@@ -672,6 +695,7 @@
         console.error(err);
         const rows = mergedDispatchRows([]);
         renderCommunityBoardRows(rows);
+        renderRecentCompletedImpacts(rows);
         applyBoardStatusToFeed(rows);
         renderVerificationReceipt(rows);
         lastCommunityBoardRefreshMs = Date.now();
@@ -829,7 +853,7 @@
           <p class="desc">${descriptionValue}</p>
           <div class="hotspot-footer">
             <button class="boost-btn" data-count="1">Add My Voice (1)</button>
-            <span class="status orange">🟠 Routed to Recycler Network</span>
+            <span class="status orange">🟠 Routed to Center Queue</span>
           </div>
         </div>
       `;
@@ -886,7 +910,7 @@
 
       if (status) {
         status.className = 'status orange';
-        status.textContent = '🟠 Escalated to Recycler Network';
+        status.textContent = '🟠 Escalated to Center Queue';
       }
       loadCommunityBoard();
     });

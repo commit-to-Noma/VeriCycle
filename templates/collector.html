@@ -425,6 +425,144 @@
         outline-offset: 2px;
     }
 
+    .qr-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.55);
+        z-index: 1320;
+        padding: 1rem;
+    }
+    .qr-modal.open { display: flex; }
+    .qr-card {
+        width: min(700px, 100%);
+        background: #ffffff;
+        border: 1px solid #dbe4ea;
+        border-radius: 16px;
+        box-shadow: 0 20px 48px rgba(15, 23, 42, 0.25);
+        padding: 1.1rem;
+    }
+    .qr-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+    .qr-head h3 {
+        margin: 0;
+        color: #0b5d4a;
+    }
+    .qr-close {
+        width: 36px;
+        height: 36px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #1f2937;
+        font-size: 1rem;
+        font-weight: 800;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .qr-close:hover {
+        background: #e2e8f0;
+    }
+    .qr-close:focus-visible {
+        outline: 2px solid #16a34a;
+        outline-offset: 2px;
+    }
+    .qr-body {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 1rem;
+        align-items: start;
+        margin-top: 0.85rem;
+    }
+    .qr-image-wrap {
+        border: 1px solid #9ae6b4;
+        border-radius: 12px;
+        background: #ffffff;
+        padding: 0.7rem;
+        text-align: center;
+        box-shadow: 0 14px 28px rgba(22, 163, 74, 0.16);
+    }
+    .qr-image-wrap img {
+        width: 220px;
+        height: 220px;
+        object-fit: contain;
+    }
+    .qr-code-box {
+        border: 1px solid #dbe4ea;
+        border-radius: 10px;
+        background: #f8fafc;
+        padding: 0.55rem;
+        font-size: 0.74rem;
+        color: #334155;
+        max-height: 220px;
+        overflow: auto;
+        word-break: break-all;
+        line-height: 1.45;
+    }
+    .qr-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-top: 0.9rem;
+        flex-wrap: wrap;
+    }
+    .inline-btn {
+        border: 1px solid #16a34a;
+        background: #ffffff;
+        color: #166534;
+        border-radius: 10px;
+        padding: 0.52rem 0.9rem;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .inline-btn:hover {
+        background: #ecfdf5;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(22, 163, 74, 0.18);
+    }
+    .inline-btn:focus-visible {
+        outline: 2px solid #16a34a;
+        outline-offset: 2px;
+    }
+    .inline-btn.qr-copy-btn {
+        border-color: #0f766e;
+        color: #0f766e;
+        background: #f0fdfa;
+    }
+    .inline-btn.qr-done-btn {
+        border-color: #15803d;
+        background: linear-gradient(135deg, #16a34a, #0f766e);
+        color: #ffffff;
+    }
+    .inline-btn.qr-done-btn:hover {
+        background: linear-gradient(135deg, #15803d, #0d9488);
+    }
+
+    @media (max-width: 760px) {
+        .qr-card {
+            width: min(94vw, 700px);
+            padding: 1rem;
+        }
+        .qr-body {
+            grid-template-columns: 1fr;
+        }
+        .qr-image-wrap img {
+            width: min(64vw, 240px);
+            height: min(64vw, 240px);
+        }
+    }
+
     @media (max-width: 1100px) {
         .kpi-row { grid-template-columns: repeat(2, 1fr); }
         .bottom-grid { grid-template-columns: 1fr; }
@@ -461,6 +599,29 @@
         <div class="milestone-actions">
             <button type="button" class="btn-secondary milestone-continue" id="submission-success-continue">Continue</button>
             <a class="milestone-proof-primary" id="submission-success-proof-link" href="{{ url_for('proof_hub') }}">View Proof Hub</a>
+        </div>
+    </div>
+</div>
+
+<div id="qr-intent-modal" class="qr-modal" aria-hidden="true">
+    <div class="qr-card" role="dialog" aria-modal="true" aria-labelledby="qr-intent-title">
+        <div class="qr-head">
+            <h3 id="qr-intent-title">Deposit QR Intent</h3>
+            <button type="button" class="qr-close" id="qr-intent-close" aria-label="Close">✕</button>
+        </div>
+        <p class="item-meta" id="qr-intent-subtitle" style="margin:0.35rem 0 0;">Use this QR at the Center scanner to auto-load verification details.</p>
+        <div class="qr-body">
+            <div class="qr-image-wrap">
+                <img id="qr-intent-image" alt="QR intent code" src="" />
+            </div>
+            <div>
+                <div class="qr-code-box" id="qr-intent-code-box">QR intent payload will appear here.</div>
+                <p class="item-meta" style="margin-top:0.45rem;">Center can scan the code or paste the payload in Center QR scanner modal.</p>
+            </div>
+        </div>
+        <div class="qr-actions">
+            <button type="button" class="inline-btn qr-copy-btn" id="qr-copy-btn">Copy Payload</button>
+            <button type="button" class="inline-btn qr-done-btn" id="qr-close-btn">Done</button>
         </div>
     </div>
 </div>
@@ -632,11 +793,11 @@
         </section>
 
         <section class="tech-card action-center-card">
-            <button class="primary-cta" id="trigger-deposit-btn">Trigger Recycling Event</button>
+            <button class="primary-cta" id="generate-self-qr-btn">Generate Self-Deposit QR Intent</button>
             <div class="tech-card" style="padding:0.85rem;">
                 <h3 style="margin:0 0 0.5rem 0;">Recycler Verification</h3>
                 <div style="color:#64748b; font-size:0.9rem; background:rgba(0, 200, 100, 0.05); border-radius:8px; padding:0.85rem;">
-                    Use your recycler account ID during center intake. Collection state changes are captured in your assignment timeline.
+                    Use QR intent for both self-deposits and accepted pickups. Center scan auto-loads your recycler profile and source context.
                 </div>
             </div>
         </section>
@@ -656,6 +817,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const acceptedLoadMoreBtn = document.getElementById('accepted-load-more');
     const activityLoadMoreBtn = document.getElementById('activity-load-more');
     const activityTbody = document.getElementById('activity-tbody');
+    const qrIntentModal = document.getElementById('qr-intent-modal');
+    const qrIntentImage = document.getElementById('qr-intent-image');
+    const qrIntentCodeBox = document.getElementById('qr-intent-code-box');
+    const qrIntentSubtitle = document.getElementById('qr-intent-subtitle');
+    const qrIntentClose = document.getElementById('qr-intent-close');
+    const qrCloseBtn = document.getElementById('qr-close-btn');
+    const qrCopyBtn = document.getElementById('qr-copy-btn');
+    const generateSelfQrBtn = document.getElementById('generate-self-qr-btn');
     const demoChannel = typeof BroadcastChannel !== 'undefined'
         ? new BroadcastChannel('vericycle_demo')
         : null;
@@ -676,6 +845,22 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    async function fetchJsonSafe(url, options = {}, fallbackMessage = 'Request failed') {
+        const response = await fetch(url, options);
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) {
+            if (response.status === 404 && String(url).includes('/api/qr-intents/')) {
+                throw new Error('QR Intent API is unavailable on the running backend. Restart app.py and try again.');
+            }
+            throw new Error(`Service temporarily unavailable (HTTP ${response.status}). Please refresh and try again.`);
+        }
+        const payload = await response.json();
+        if (!response.ok || payload.ok === false || payload.success === false) {
+            throw new Error(payload.error || payload.message || fallbackMessage);
+        }
+        return payload;
     }
 
     function parseKgFromDesc(textValue) {
@@ -771,8 +956,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function refreshDashboardData() {
-        const response = await fetch('/api/my-dashboard-data');
-        currentData = await response.json();
+        currentData = await fetchJsonSafe('/api/my-dashboard-data', {}, 'Could not load dashboard data');
         applyKpiCards(currentData, acceptedRowsData);
         renderActivityTable(currentData.timeline || currentData.activities || []);
     }
@@ -782,6 +966,35 @@ document.addEventListener('DOMContentLoaded', function() {
         toastEl.textContent = message;
         requestAnimationFrame(() => toastEl.classList.add('show'));
         setTimeout(() => toastEl.classList.remove('show'), 3000);
+    }
+
+    function openQrModal() {
+        if (!qrIntentModal) return;
+        qrIntentModal.classList.add('open');
+        qrIntentModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeQrModal() {
+        if (!qrIntentModal) return;
+        qrIntentModal.classList.remove('open');
+        qrIntentModal.setAttribute('aria-hidden', 'true');
+    }
+
+    async function createQrIntent(payload, subtitleText) {
+        const data = await fetchJsonSafe('/api/qr-intents/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify(payload),
+        }, 'Unable to create QR intent');
+        const qrCodeValue = String(data.qr_intent_code || '');
+        if (qrIntentCodeBox) qrIntentCodeBox.textContent = qrCodeValue;
+        if (qrIntentSubtitle) qrIntentSubtitle.textContent = subtitleText;
+        if (qrIntentImage) {
+            const encoded = encodeURIComponent(qrCodeValue);
+            qrIntentImage.src = `https://quickchart.io/qr?size=220&text=${encoded}`;
+        }
+        openQrModal();
+        return data;
     }
 
     function showSubmissionSuccessModal(proofUrl = null) {
@@ -1003,12 +1216,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadPickupOpportunities() {
         try {
-            const res = await fetch('/api/opportunities/open');
-            if (!res.ok) {
-                oppContainer.innerHTML = '<p>Unable to load pickup opportunities.</p>';
-                return;
-            }
-            openRowsData = (await res.json()).rows || [];
+            const data = await fetchJsonSafe('/api/opportunities/open', {}, 'Unable to load pickup opportunities');
+            openRowsData = data.rows || [];
             openVisibleCount = OPEN_PAGE_SIZE;
             renderOpenRows();
         } catch (e) {
@@ -1041,8 +1250,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 : (row.status === 'in_transit' ? 'In Transit' : 'Submitted');
             const id = Number(row.assignment_id);
             const action = (row.status === 'accepted' || row.status === 'in_transit')
-                ? `<button class="btn-primary toggle-drop" data-id="${id}">Record Drop-off</button>`
-                : '<span class="item-meta">Awaiting center verification</span>';
+                ? `<div style="display:flex; gap:0.45rem; flex-wrap:wrap;"><button class="btn-primary toggle-drop" data-id="${id}">Record Drop-off</button><button class="inline-btn assignment-qr-btn" data-id="${id}">Generate Pickup QR Intent</button></div>`
+                : (row.status === 'submitted'
+                    ? `<div style="display:flex; gap:0.45rem; flex-wrap:wrap;"><span class="item-meta">Awaiting center verification</span><button class="inline-btn assignment-qr-btn" data-id="${id}">Generate Pickup QR Intent</button></div>`
+                    : '<span class="item-meta">Awaiting center verification</span>');
             const details = (row.status === 'accepted' || row.status === 'in_transit')
                 ? `
                     <div id="drop_${id}" class="drop-details">
@@ -1079,12 +1290,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadAcceptedAssignments() {
         try {
-            const res = await fetch('/api/opportunities/my-assignments');
-            if (!res.ok) {
-                acceptedContainer.innerHTML = '<p>Unable to load accepted jobs.</p>';
-                return;
-            }
-            acceptedRowsData = (await res.json()).rows || [];
+            const data = await fetchJsonSafe('/api/opportunities/my-assignments', {}, 'Unable to load accepted jobs');
+            acceptedRowsData = data.rows || [];
             acceptedVisibleCount = ACCEPTED_PAGE_SIZE;
             renderAcceptedRows();
         } catch (e) {
@@ -1094,64 +1301,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function acceptOpportunity(id) {
         try {
-            const res = await fetch(`/api/opportunities/${id}/accept`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            const data = await res.json();
-            if (!res.ok || !data.ok) {
-                showToast(data.error || 'Could not accept opportunity', 'error');
-                return;
-            }
+            await fetchJsonSafe(`/api/opportunities/${id}/accept`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } }, 'Could not accept opportunity');
             showToast('Pickup opportunity secured!');
             loadPickupOpportunities();
             loadAcceptedAssignments();
         } catch (e) {
-            showToast('Could not accept opportunity', 'error');
+            showToast(e.message || 'Could not accept opportunity', 'error');
         }
     }
 
     async function submitDropoff(id, material, weight) {
         showSubmissionSuccessModal('{{ url_for('proof_hub') }}');
         try {
-            const res = await fetch(`/api/assignments/${id}/submit`, {
+            const data = await fetchJsonSafe(`/api/assignments/${id}/submit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 body: JSON.stringify({ material_type: material, weight_kg: weight }),
-            });
-            const data = await res.json();
-            if (!data.ok) {
-                hideSubmissionSuccessModal();
-                showToast(data.error || 'Could not submit drop-off', 'error');
-                return;
-            }
+            }, 'Could not submit drop-off');
             showSubmissionSuccessModal(data.proof_bundle_url || '{{ url_for('proof_hub') }}');
             loadAcceptedAssignments();
         } catch (e) {
             hideSubmissionSuccessModal();
-            showToast('Could not submit drop-off', 'error');
+            showToast(e.message || 'Could not submit drop-off', 'error');
         }
     }
 
     async function markCollected(id) {
         try {
-            const res = await fetch(`/api/assignments/${id}/collect`, {
+            await fetchJsonSafe(`/api/assignments/${id}/collect`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 body: JSON.stringify({ collected: true }),
-            });
-            const data = await res.json();
-            if (!res.ok || !data.ok) {
-                showToast(data.error || 'Could not update collection status', 'error');
-                return;
-            }
+            }, 'Could not update collection status');
             showToast('Collection confirmed. Pickup is now in transit.');
             loadAcceptedAssignments();
         } catch (e) {
-            showToast('Could not update collection status', 'error');
+            showToast(e.message || 'Could not update collection status', 'error');
         }
     }
 
@@ -1177,9 +1368,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         const markCollectedBtn = event.target.closest('.mark-collected');
-        if (!markCollectedBtn) return;
-        const id = Number(markCollectedBtn.dataset.id);
-        markCollected(id);
+        if (markCollectedBtn) {
+            const id = Number(markCollectedBtn.dataset.id);
+            markCollected(id);
+            return;
+        }
+        const qrBtn = event.target.closest('.assignment-qr-btn');
+        if (!qrBtn) return;
+        const assignmentId = Number(qrBtn.dataset.id);
+        createQrIntent(
+            { source_type: 'pickup_assignment', assignment_id: assignmentId },
+            'Scan this at Center to verify an accepted/submitted pickup with auto-loaded context.'
+        ).catch((err) => showToast(err.message || 'Could not generate pickup QR', 'error'));
     });
 
     if (pickupSortSelect) {
@@ -1218,29 +1418,47 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function handleDeposit() {
-        const btn = document.getElementById('trigger-deposit-btn');
+    async function handleSelfDepositQr() {
+        if (!generateSelfQrBtn) return;
         try {
-            btn.disabled = true;
-            const res = await fetch('/api/simulate-deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-            const data = await res.json();
-            if (!res.ok) {
-                showToast(data.error || 'Failed to trigger event', 'error');
-                btn.disabled = false;
-                return;
-            }
-            showToast('Recycling event triggered successfully');
-            setTimeout(() => {
-                btn.disabled = false;
-                initializeDashboard();
-            }, 700);
-        } catch (e) {
-            showToast('Failed to trigger event', 'error');
-            btn.disabled = false;
+            generateSelfQrBtn.disabled = true;
+            await createQrIntent(
+                { source_type: 'self_deposit' },
+                'Scan this at Center for direct recycler deposit verification.'
+            );
+            showToast('Self-deposit QR intent generated');
+        } catch (err) {
+            showToast(err.message || 'Failed to generate QR intent', 'error');
+        } finally {
+            generateSelfQrBtn.disabled = false;
         }
     }
 
-    document.getElementById('trigger-deposit-btn').addEventListener('click', handleDeposit);
+    if (generateSelfQrBtn) {
+        generateSelfQrBtn.addEventListener('click', handleSelfDepositQr);
+    }
+
+    if (qrIntentClose) qrIntentClose.addEventListener('click', closeQrModal);
+    if (qrCloseBtn) qrCloseBtn.addEventListener('click', closeQrModal);
+    if (qrIntentModal) {
+        qrIntentModal.addEventListener('click', (event) => {
+            if (event.target === qrIntentModal) closeQrModal();
+        });
+    }
+    if (qrCopyBtn) {
+        qrCopyBtn.addEventListener('click', async () => {
+            const text = (qrIntentCodeBox && qrIntentCodeBox.textContent) ? qrIntentCodeBox.textContent.trim() : '';
+            if (!text) return;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                }
+                showToast('QR payload copied');
+            } catch (_) {
+                showToast('Copy not available', 'error');
+            }
+        });
+    }
 
     if (demoChannel) {
         demoChannel.addEventListener('message', (event) => {

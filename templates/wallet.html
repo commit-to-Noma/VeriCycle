@@ -84,10 +84,10 @@
     flex-wrap: wrap;
 }
 .redeem-cash-btn {
-    border: 1px solid #16a34a;
+    border: 1px solid #9a3412;
     border-radius: 999px;
-    background: #ecfdf5;
-    color: #166534;
+    background: linear-gradient(135deg, #f59e0b, #b45309);
+    color: #ffffff;
     padding: 0.42rem 0.85rem;
     font-size: 0.8rem;
     font-weight: 700;
@@ -96,19 +96,24 @@
 }
 .redeem-cash-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(22, 163, 74, 0.18);
+    box-shadow: 0 8px 18px rgba(180, 83, 9, 0.28);
 }
 .redeem-cash-btn:focus-visible {
-    outline: 2px solid #16a34a;
+    outline: 2px solid #f59e0b;
     outline-offset: 2px;
 }
 .redeem-cash-btn:disabled {
-    border-color: #cbd5e1;
-    background: #f8fafc;
-    color: #64748b;
+    border-color: #94a3b8;
+    background: #e2e8f0;
+    color: #334155;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+}
+.redeem-cash-btn.is-locked {
+    background: linear-gradient(135deg, #c2410c, #7c2d12);
+    border-color: #7c2d12;
+    color: #ffffff;
 }
 
 .wallet-grid {
@@ -159,7 +164,13 @@
     line-height: 1;
     margin-bottom: 0.35rem;
 }
-.balance-amount span { font-size: 1.1rem; font-weight: 600; color: #22c55e; margin-left: 0.3rem; }
+.eco-symbol {
+    font-size: 0.45em;
+    color: #64748b;
+    vertical-align: middle;
+    margin-left: 4px;
+    font-weight: 600;
+}
 .balance-rates {
     display: flex;
     gap: 1rem;
@@ -170,6 +181,21 @@
 }
 .balance-rate-item { font-size: 0.78rem; color: #475569; }
 .balance-rate-item strong { color: #0b5d4a; }
+.eco-help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
+    cursor: help;
+}
 
 /* Swap card */
 .swap-card { padding: 1.2rem; flex: 1; }
@@ -243,9 +269,9 @@
 }
 .swap-max-btn:hover { background: #dcfce7; }
 .swap-max-btn:disabled {
-    border-color: #cbd5e1;
-    background: #f1f5f9;
-    color: #64748b;
+    border-color: #94a3b8;
+    background: #e2e8f0;
+    color: #334155;
 }
 .swap-divider {
     display: flex;
@@ -318,14 +344,22 @@
 .swap-submit-btn:hover { opacity: 0.92; transform: translateY(-1px); }
 .swap-submit-btn:disabled {
     transform: none;
-    background: #94a3b8;
-    color: #ffffff;
-    border: 1px solid #64748b;
+    background: #e2e8f0;
+    color: #334155;
+    border: 1px solid #94a3b8;
+}
+
+/* 1. The Disabled Button Fix (Physical Feedback) */
+.btn-outline:disabled, .redeem-btn:disabled {
+    cursor: not-allowed !important;
+    opacity: 0.5;
+    background-color: #f9fafb;
+    color: #9ca3af;
+    border-color: #d1d5db;
+    transform: none !important;
 }
 
 .wallet-page button:disabled {
-    background: #94a3b8;
-    color: #ffffff;
     opacity: 1;
     cursor: not-allowed;
     box-shadow: none;
@@ -423,17 +457,24 @@
     font-size: 0.73rem;
     font-weight: 700;
     white-space: nowrap;
-    border: 1.5px solid #16a34a;
-    background: #f0fdf4;
-    color: #166534;
+    border: 1.5px solid #9a3412;
+    background: linear-gradient(135deg, #f59e0b, #b45309);
+    color: #ffffff;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: transform 0.12s ease, box-shadow 0.2s ease;
 }
-.voucher-redeem-btn:hover { background: #16a34a; color: #fff; }
+.voucher-redeem-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(180, 83, 9, 0.26);
+}
+.voucher-redeem-btn:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+}
 .voucher-redeem-btn:disabled {
-    border-color: #cbd5e1;
-    background: #f1f5f9;
-    color: #64748b;
+    border-color: #94a3b8;
+    background: #e2e8f0;
+    color: #334155;
 }
 
 .voucher-meta {
@@ -546,22 +587,25 @@
 .vb-m { flex: 2; }
 .vb-w { flex: 3; }
 .vb-g { flex: 1; background: transparent; }
+.voucher-box,
 .voucher-code-row {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.75rem;
     background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 0.6rem 0.8rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    margin-top: 1.5rem;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
 }
 #voucher-code {
     flex: 1;
-    font-family: ui-monospace, 'Courier New', monospace;
-    font-size: 0.9rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #0f172a;
-    letter-spacing: 0.04em;
+    letter-spacing: 1.5px;
 }
 .voucher-copy-btn {
     border: 1px solid #e2e8f0;
@@ -599,7 +643,9 @@
 .history-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 700px;
+    margin-top: 1rem;
+    table-layout: fixed;
+    min-width: 780px;
 }
 .history-table th,
 .history-table td {
@@ -617,6 +663,37 @@
 }
 .history-table td {
     color: #334155;
+}
+
+/* 2. Accounting-Grade Table Alignment */
+.history-table th:nth-child(1), .history-table td:nth-child(1) {
+    width: 18%;
+    text-align: left;
+}
+.history-table th:nth-child(2), .history-table td:nth-child(2) {
+    width: 25%;
+    text-align: left;
+}
+.history-table th:nth-child(3), .history-table td:nth-child(3) {
+    width: 13%;
+    text-align: left;
+}
+.history-table th:nth-child(4), .history-table td:nth-child(4) {
+    width: 16%;
+    text-align: right;
+    padding-right: 2rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: #16a34a;
+}
+.history-table th:nth-child(5), .history-table td:nth-child(5) {
+    width: 14%;
+    text-align: left;
+}
+.history-table th:nth-child(6), .history-table td:nth-child(6) {
+    width: 14%;
+    text-align: left;
+    padding-left: 1.5rem;
 }
 .history-table tbody tr:last-child td {
     border-bottom: none;
@@ -669,12 +746,12 @@
             <div class="balance-card">
                 <div class="balance-label">Available Balance</div>
                 <div class="balance-amount" id="wallet-balance-display" data-balance="{{ wallet_balance or 0 }}">
-                    {{ "{:,.0f}".format(wallet_balance or 0) }}<span>ECO</span>
+                    {{ "{:,.0f}".format(wallet_balance or 0) }}<span class="eco-symbol">ECO</span>
                 </div>
                 <div class="balance-rates">
                     <span class="balance-rate-item">1 ECO = <strong>0.0150 USDT</strong></span>
                     <span class="balance-rate-item">1 ECO = <strong>0.0202 HBAR</strong></span>
-                    <span class="balance-rate-item" title="EcoCoin is a verified digital asset pegged to your recycling activity." style="cursor:help; color:#94a3b8;">What is ECO? &#8505;</span>
+                    <span class="eco-help-icon" title="EcoCoin is a verified digital asset pegged to your recycling activity.">?</span>
                 </div>
             </div>
 
@@ -862,7 +939,7 @@
             <div class="vb vb-w"></div><div class="vb-g"></div>
             <div class="vb vb-t"></div>
         </div>
-        <div class="voucher-code-row">
+        <div class="voucher-box voucher-code-row">
             <span id="voucher-code">VOUCHER-XXXX-2026</span>
             <button class="voucher-copy-btn copy-btn" id="voucher-copy">Copy</button>
         </div>
@@ -923,12 +1000,20 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderBalance() {
         if (!balanceDisplay) return;
         balanceDisplay.dataset.balance = String(walletBalance);
-        balanceDisplay.innerHTML = `${walletBalance.toLocaleString('en-US', { maximumFractionDigits: 0 })}<span>ECO</span>`;
+        balanceDisplay.innerHTML = `${walletBalance.toLocaleString('en-US', { maximumFractionDigits: 0 })}<span class="eco-symbol">ECO</span>`;
         if (swapCard) swapCard.dataset.walletBalance = String(walletBalance);
         if (cashButton) {
-            cashButton.disabled = walletBalance < 20;
-            cashButton.title = walletBalance < 20 ? 'Minimum cash redeem is 20 ECO' : 'Redeem ECO to cash payout request';
+            cashButton.title = walletBalance < 20
+                ? `Minimum cash redeem is 20 ECO. Current balance: ${walletBalance.toFixed(0)} ECO.`
+                : 'Redeem ECO to cash payout request';
+            cashButton.classList.toggle('is-locked', walletBalance < 20);
         }
+    }
+
+    function parseVoucherEcoCost(valueLabel) {
+        const match = String(valueLabel || '').match(/(\d+)/);
+        const amount = Number(match ? match[1] : 0);
+        return Number.isFinite(amount) ? amount : 0;
     }
 
     function updateActionState() {
@@ -1054,6 +1139,11 @@ document.addEventListener('DOMContentLoaded', function () {
             var brand = row ? row.getAttribute('data-brand') : 'Voucher';
             var select = row ? row.querySelector('.voucher-amount-select') : null;
             var amount = select ? select.value : '';
+            var voucherEcoCost = parseVoucherEcoCost(amount);
+            if (voucherEcoCost > 0 && walletBalance < voucherEcoCost) {
+                showToast(`Insufficient ECO. ${amount} voucher requires about ${voucherEcoCost} ECO.`, 'error');
+                return;
+            }
             btn.disabled = true;
             try {
                 const data = await callApiJson('/api/wallet/redeem-voucher', {
@@ -1082,6 +1172,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     cashButton.addEventListener('click', async function () {
+        if (walletBalance < 20) {
+            showToast(`You need at least 20 ECO for cash redemption. Current balance: ${walletBalance.toFixed(0)} ECO.`, 'error');
+            return;
+        }
         const raw = window.prompt('Enter ECO amount to redeem as cash (minimum 20 ECO):', '50');
         if (raw === null) return;
         const ecoAmount = Number(raw);
