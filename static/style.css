@@ -7485,6 +7485,180 @@ body.home-light .modal-content .verify-form input {
     line-height: 1.35;
 }
 
+/* --- Admin monitor neutral framing override (remove green line/box accents) --- */
+.demo-banner {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.nav-button.active {
+    box-shadow: none;
+    border-color: rgba(148, 163, 184, 0.45);
+}
+
+.admin-ops-card,
+.admin-transaction-card,
+.admin-card-quick,
+.admin-layer,
+.selected-proof-panel,
+.flagged-event-card,
+.admin-simple-list p,
+.admin-detail-tab,
+.admin-detail-tab.active,
+.admin-card-details > summary,
+.admin-card-details[open] > summary,
+.admin-layer .pipeline-item,
+.admin-layer .pipeline-item.done,
+.admin-dashboard-header + .admin-ops-summary-row + .card,
+.admin-dashboard-header + .admin-ops-summary-row + .card + .card {
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    box-shadow: none !important;
+}
+
+.admin-ops-card:hover {
+    border-color: rgba(148, 163, 184, 0.45) !important;
+}
+
+.admin-card-details > summary,
+.admin-card-details[open] > summary,
+.admin-section-title,
+.ops-card-label,
+.ops-card-value,
+.admin-card-meta,
+.flagged-meta {
+    color: #cbd5e1 !important;
+}
+
+.admin-detail-tab.active {
+    background: rgba(148, 163, 184, 0.14) !important;
+    color: #e2e8f0 !important;
+}
+
+.status-badge-paid,
+.badge-verified,
+.badge-rewarded,
+.badge-attested {
+    background: rgba(148, 163, 184, 0.16) !important;
+    border-color: rgba(148, 163, 184, 0.45) !important;
+    color: #e2e8f0 !important;
+}
+
+.stakeholder-loop-card {
+    margin-bottom: 12px;
+}
+
+.stakeholder-timeline-card {
+    margin-bottom: 12px;
+}
+
+.stakeholder-timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.stakeholder-timeline-node {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 112px;
+    padding: 8px 10px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.34);
+}
+
+.timeline-role {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.timeline-event {
+    font-size: 0.88rem;
+    color: #e2e8f0;
+    font-weight: 700;
+}
+
+.timeline-arrow {
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.stakeholder-loop-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.stakeholder-loop-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.34);
+}
+
+.stakeholder-role {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.stakeholder-value {
+    font-size: 1.25rem;
+    line-height: 1;
+    color: #e2e8f0;
+    font-weight: 800;
+}
+
+.stakeholder-detail {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.selected-proof-card {
+    position: sticky;
+    top: calc(var(--nav-h) + 10px);
+    align-self: start;
+}
+
+@media (max-width: 1100px) {
+    .stakeholder-loop-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .selected-proof-card {
+        position: static;
+        top: auto;
+    }
+}
+
+@media (max-width: 680px) {
+    .stakeholder-timeline-row {
+        gap: 6px;
+    }
+
+    .stakeholder-timeline-node {
+        min-width: 100%;
+    }
+
+    .timeline-arrow {
+        display: none;
+    }
+
+    .stakeholder-loop-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* === Recycler Proof Success Modal Upgrade === */
 .proof-success-modal {
     max-width: 760px;

@@ -12,9 +12,9 @@
     color: #1a202c !important;
   }
   .community-shell {
-    max-width: 1120px;
+    max-width: 1180px;
     margin: 0 auto;
-    padding: 1.5rem 0 2.5rem;
+    padding: 1.75rem 0 2.7rem;
   }
   .community-header h2 {
     font-size: clamp(1.7rem, 3vw, 2.4rem);
@@ -25,20 +25,126 @@
     color: #64748b;
     margin: 0 0 1.1rem;
   }
+  .judge-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1.55rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.95rem;
+  }
+  .judge-topbar h1 {
+    margin: 0;
+    color: #065f46;
+    font-size: clamp(2rem, 4.4vw, 2.55rem);
+    font-weight: 800;
+    line-height: 1.08;
+  }
+  .judge-topbar p {
+    margin: 0.4rem 0 0;
+    color: #64748b;
+    font-size: 1.03rem;
+  }
+  .judge-primary-cta {
+    background: #16a34a;
+    color: #ffffff;
+    border: none;
+    padding: 0.82rem 1.35rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 8px 20px rgba(22, 163, 74, 0.24);
+  }
+  .judge-primary-cta:hover {
+    background: #15803d;
+  }
+  .judge-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    gap: 1.35rem;
+    align-items: start;
+    margin-bottom: 1.25rem;
+  }
+  .judge-main-column,
+  .judge-side-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .leaders-sticky {
+    position: sticky;
+    top: 88px;
+  }
+  .leaders-list {
+    display: grid;
+    gap: 0.78rem;
+    margin-top: 0.55rem;
+  }
+  .leader-row {
+    border: 1px solid #dbe4ea;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 0.62rem 0.72rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .leader-name {
+    color: #0f172a;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  .leader-meta {
+    color: #64748b;
+    font-size: 0.8rem;
+    margin-top: 0.1rem;
+  }
+  .leader-score {
+    color: #166534;
+    font-size: 0.86rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .ecosystem-panel {
+    margin-top: 0.4rem;
+  }
+  .ecosystem-impact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.1rem;
+    margin-top: 1rem;
+  }
+  .network-scale-banner {
+    background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+    border-radius: 12px;
+    padding: 1.15rem;
+    color: #ffffff;
+    margin-top: 0.8rem;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
   .panel {
     background: rgba(255,255,255,0.88);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(22,163,74,0.16);
-    border-radius: 14px;
+    border-radius: 16px;
     box-shadow: 0 2px 18px rgba(0,160,70,0.06);
-    padding: 1.2rem;
+    padding: 1.35rem;
     margin-bottom: 1rem;
   }
   .section-kicker {
     display: inline-block;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    font-size: 0.72rem;
+    font-size: 0.74rem;
     font-weight: 700;
     color: #16a34a;
     margin-bottom: 0.25rem;
@@ -54,10 +160,10 @@
     box-sizing: border-box;
     border: 1px solid #cbd5e1;
     border-radius: 10px;
-    padding: 0.62rem 0.75rem;
+    padding: 0.68rem 0.78rem;
     background: #f8fafc;
     color: #0f172a;
-    font-size: 0.9rem;
+    font-size: 0.93rem;
   }
   .field:focus {
     outline: none;
@@ -79,24 +185,26 @@
   .hotspot-card {
     background: white;
     border-radius: 1rem;
-    padding: 1.2rem;
-    margin-bottom: 1rem;
+    padding: 1.3rem;
+    margin-bottom: 1.05rem;
     border: 1px solid #e2e8f0;
   }
   .hotspot-card h3 {
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.45rem;
     color: #0f172a;
-    font-size: 1.2rem;
+    font-size: 1.26rem;
+    line-height: 1.2;
   }
   .location {
     color: #64748b;
-    margin: 0 0 0.45rem;
-    font-size: 0.9rem;
+    margin: 0 0 0.52rem;
+    font-size: 0.93rem;
   }
   .desc {
     color: #334155;
     margin: 0;
-    line-height: 1.45;
+    font-size: 0.96rem;
+    line-height: 1.52;
   }
   .hotspot-footer {
     display: flex;
@@ -105,6 +213,16 @@
     margin-top: 1rem;
     gap: 0.7rem;
     flex-wrap: wrap;
+  }
+  .hotspot-card.locked-by-verification {
+    opacity: 0.68;
+    filter: grayscale(0.22);
+  }
+  .resident-decision-summary {
+    margin-top: 0.58rem;
+    font-size: 0.82rem;
+    color: #475569;
+    font-weight: 700;
   }
   .boost-btn {
     background: #16a34a !important;
@@ -123,15 +241,15 @@
   }
   .status {
     font-weight: 700;
-    font-size: 0.86rem;
+    font-size: 0.9rem;
   }
   .status.yellow { color: #a16207; }
   .status.orange { color: #c2410c; }
   .status.red { color: #dc2626; }
   .status-board {
     display: grid;
-    gap: 0.55rem;
-    margin-top: 0.45rem;
+    gap: 0.62rem;
+    margin-top: 0.52rem;
   }
   .status-board-item {
     border: 1px solid #d1fae5;
@@ -146,13 +264,13 @@
     gap: 0.5rem;
   }
   .status-board-title {
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: #14532d;
   }
   .status-board-meta {
     color: #475569;
-    font-size: 0.79rem;
+    font-size: 0.82rem;
     margin-top: 0.2rem;
   }
   .status-pill {
@@ -221,7 +339,7 @@
   .community-faq-item summary {
     cursor: pointer;
     padding: 0.68rem 0.76rem;
-    font-size: 0.9rem;
+    font-size: 0.93rem;
     font-weight: 700;
     color: #334155;
   }
@@ -238,7 +356,7 @@
   .community-faq-answer p {
     margin: 0;
     color: #475569;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     line-height: 1.45;
   }
   .community-faq-answer ul {
@@ -248,10 +366,29 @@
   .community-faq-answer li {
     margin: 0.28rem 0;
     color: #475569;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     line-height: 1.42;
   }
   @media (max-width: 840px) {
+    .judge-topbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .judge-main-grid {
+      grid-template-columns: 1fr;
+    }
+    .leaders-sticky {
+      position: static;
+    }
+    .network-scale-banner {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .network-scale-banner .divider {
+      width: 100%;
+      height: 1px;
+      background-color: rgba(255,255,255,0.25);
+    }
     .report-grid {
       grid-template-columns: 1fr;
     }
@@ -265,175 +402,148 @@
   {% include '_navbar.html' %}
 
   <main class="container community-shell">
-    <section class="community-header">
-      <h2>Community Hub</h2>
-      <p>Community signal aggregation helps prioritize cleanup demand before routing to verified centers.</p>
+    <header class="judge-topbar">
+      <div>
+        <h1>Welcome, Noma!</h1>
+        <p>Active Zone: <strong style="color:#0f172a;">Roodepoort Central</strong></p>
+      </div>
+    </header>
+
+    <section class="panel ecosystem-panel" style="margin-top:0.15rem;">
+      <span class="section-kicker">Ecosystem Impact</span>
+      <h3 style="margin:0.2rem 0 0; color:#0b5d4a; text-align:center;">VeriCycle Network Scale</h3>
+
+      <div class="network-scale-banner">
+        <div style="text-align: center;">
+          <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">24</h4>
+          <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Hotspots Resolved</p>
+        </div>
+
+        <div class="divider" style="width: 1px; height: 40px; background-color: rgba(255,255,255,0.3);"></div>
+
+        <div style="text-align: center;">
+          <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">142</h4>
+          <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Active Neighbors</p>
+        </div>
+
+        <div class="divider" style="width: 1px; height: 40px; background-color: rgba(255,255,255,0.3);"></div>
+
+        <div style="text-align: center;">
+          <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">2,450<span style="font-size: 1rem;">kg</span></h4>
+          <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Waste Diverted</p>
+        </div>
+      </div>
+
+      <div class="ecosystem-impact-grid">
+        <div class="card tech-card" style="padding: 1.5rem; border-top: 4px solid #22c55e;">
+          <h3 style="margin-bottom: 0.25rem; display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 1.2rem;">
+            <span style="font-size: 1.4rem;">♻️</span> Local Recyclers
+          </h3>
+          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.4;">
+            The boots on the ground. Clearing neighborhood hotspots and driving the circular economy.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+              <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Street Waste Diverted</span>
+              <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">1,240 kg</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+              <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Active Hotspots Cleared</span>
+              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">24 Areas</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Wealth Generated (ECO)</span>
+              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">18,500 ECO</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card tech-card" style="padding: 1.5rem; border-top: 4px solid #0f172a;">
+          <h3 style="margin-bottom: 0.25rem; display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 1.2rem;">
+            <span style="font-size: 1.4rem;">🏢</span> Corporate Partners
+          </h3>
+          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.4;">
+            Honorable mention: Rosebank Retail Hub is at 88.5% of a 1,000kg monthly diversion goal.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+              <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Capital Injected Locally</span>
+              <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">R 3,450.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+              <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Monthly Goal Progress</span>
+              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">88.5% (885.5kg)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">ESG Lift (CO2e / Jobs)</span>
+              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">1,320kg / 14</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <div style="background: linear-gradient(135deg, #16a34a 0%, #059669 100%); border-radius: 12px; padding: 24px; color: white; margin-bottom: 24px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-      <div style="text-align: center;">
-        <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">24</h4>
-        <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Hotspots Resolved</p>
+    <section class="panel" style="margin-top:0.15rem;">
+      <span class="section-kicker">Verified Completion</span>
+      <h3 style="margin:0.2rem 0 0.55rem; color:#0b5d4a;">Top recent completed cleanup impacts</h3>
+      <div style="padding: 1rem; border-left: 4px solid #16a34a; background: #f0fdf4; border-radius: 6px; margin-bottom: 0.2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
+          <div>
+            <strong style="color: #065f46; display: block;">Illegal dumping cleared: Parkmore Storefront</strong>
+            <span style="font-size: 0.8rem; color: #166534;">Verified by Center • 42.0 kg Plastics Diverted</span>
+          </div>
+          <span style="background: #bbf7d0; color: #166534; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: bold;">+210 ECO Rewarded</span>
+        </div>
       </div>
+    </section>
 
-      <div style="width: 1px; height: 40px; background-color: rgba(255,255,255,0.3);"></div>
+    <div class="judge-main-grid">
+      <div class="judge-main-column">
+        <section class="panel">
+          <span class="section-kicker">Live Feed</span>
+          <h3 style="margin:0.2rem 0 0.9rem; color:#0b5d4a;">Active Neighborhood Hotspots</h3>
 
-      <div style="text-align: center;">
-        <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">142</h4>
-        <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Active Neighbors</p>
-      </div>
+          <div id="hotspot-feed-container">
 
-      <div style="width: 1px; height: 40px; background-color: rgba(255,255,255,0.3);"></div>
-
-      <div style="text-align: center;">
-        <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">850<span style="font-size: 1rem;">kg</span></h4>
-        <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Waste Diverted</p>
-      </div>
+      <div id="verification-card" style="border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+        <div>
+            <h4 style="margin: 0; color: #1e3a8a; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                <span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">Resident Action Required</span>
+                Center Reports: Cleanup Complete
+            </h4>
+            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #3b82f6; font-weight: 600;">
+                📍 Location: Parkmore Storefront
+            </p>
+        </div>
+        <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Today, 14:30</span>
     </div>
 
-    <section class="panel">
-      <span class="section-kicker">Report a Neighborhood Hotspot</span>
-      <h3 style="margin:0.2rem 0 0.6rem; color:#0b5d4a;">Report a Neighborhood Issue</h3>
-      <div class="report-grid">
-        <input class="field" type="text" id="hotspot-title" placeholder="Give this issue a short title...">
-        <input class="field" type="text" id="hotspot-location" placeholder="Enter street or landmark...">
-        <input class="field" type="text" id="hotspot-description" placeholder="Describe the issue...">
-      </div>
-      <button class="btn-primary" id="submit-hotspot-btn" type="button" style="margin-top:0.85rem;">Report a Neighborhood Issue</button>
-    </section>
+    <p style="font-size: 0.85rem; color: #475569; margin: 0 0 1rem 0; line-height: 1.4;">
+        The Verification Center reports this neighborhood hotspot has been cleared by a collector. As a local resident, please confirm the area is clean to finalize the trust sequence.
+    </p>
 
-    <section class="panel">
-      <span class="section-kicker">Community-Center Loop</span>
-      <h3 style="margin:0.2rem 0 0.45rem; color:#0b5d4a;">Priority dispatch and completion status</h3>
-      <p id="community-board-updated" style="margin:0; color:#64748b; font-size:0.82rem;">Updated just now</p>
-      <div id="community-board-list" class="status-board">
-        <p style="color:#64748b; font-size:0.85rem; margin:0;">Loading community status board...</p>
-      </div>
-      <h4 style="margin:0.95rem 0 0.45rem; color:#0b5d4a; font-size:0.95rem;">Top recent completed cleanup impacts</h4>
-      <div id="community-impact-list" class="status-board">
-        <p style="color:#64748b; font-size:0.85rem; margin:0;">No completed impacts yet.</p>
-      </div>
-    </section>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem; margin-bottom: 1rem;">
-      {% set mention = honorable_mention if honorable_mention is mapping else {} %}
-
-      <div class="card tech-card" style="padding: 1.5rem; border-top: 4px solid #22c55e;">
-        <h3 style="margin-bottom: 0.25rem; display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 1.2rem;">
-          <span style="font-size: 1.4rem;">♻️</span> Local Recyclers
-        </h3>
-        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.4;">
-          The boots on the ground. Clearing neighborhood hotspots and driving the circular economy.
-        </p>
-
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
-            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Street Waste Diverted</span>
-            <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">1,240 kg</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
-            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Active Hotspots Cleared</span>
-            <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">24 Areas</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Wealth Generated (ECO)</span>
-            <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">18,500 ECO</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card tech-card" style="padding: 1.5rem; border-top: 4px solid #0f172a;">
-        <h3 style="margin-bottom: 0.25rem; display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 1.2rem;">
-          <span style="font-size: 1.4rem;">🏢</span> Corporate Partners
-        </h3>
-        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.4;">
-          Honorable mention: {{ mention.get('name', 'Business Partner') }} is at {{ mention.get('goal_percent', 0) }}% of a 1,000kg monthly diversion goal.
-        </p>
-
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
-            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Capital Injected Locally</span>
-            <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">R {{ "{:,.1f}".format(mention.get('eco_funded_total', 0) or 0) }}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
-            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Monthly Goal Progress</span>
-            <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">{{ mention.get('goal_percent', 0) }}% ({{ "{:,.1f}".format(mention.get('goal_current_kg', 0) or 0) }}kg)</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">ESG Lift (CO2e / Jobs)</span>
-            <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">{{ "{:,.0f}".format(mention.get('co2e_averted_kg', 0) or 0) }}kg / {{ mention.get('micro_jobs_funded', 0) }}</span>
-          </div>
-        </div>
-      </div>
-
+    <div style="display: flex; gap: 10px;">
+        <button id="verification-yes-btn" style="background: #16a34a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(22,163,74,0.2);">
+            ✓ Yes, Area is Clean
+        </button>
+        <button id="verification-missed-btn" style="background: white; color: #dc2626; border: 1px solid #fca5a5; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: background 0.2s;">
+            ✕ Missed / Incomplete
+        </button>
     </div>
-
-    <section class="panel">
-      <span class="section-kicker">Need Help?</span>
-      <h3 style="margin:0.2rem 0 0.45rem; color:#0b5d4a;">Community FAQ</h3>
-      <div class="community-faq-grid">
-        <details class="community-faq-item" open>
-          <summary>What happens after I report a hotspot?</summary>
-          <div class="community-faq-answer">
-            <ul>
-              <li>Your report enters the community board.</li>
-              <li>Neighbors can add support to raise urgency.</li>
-              <li>High-priority hotspots route into center dispatch.</li>
-            </ul>
-          </div>
-        </details>
-        <details class="community-faq-item">
-          <summary>What does resident confirmation do?</summary>
-          <div class="community-faq-answer">
-            <ul>
-              <li>Center marks cleanup complete.</li>
-              <li>Residents confirm if cleanup actually happened.</li>
-              <li>Confirmed closes the event; missed reopens follow-up dispatch.</li>
-            </ul>
-          </div>
-        </details>
-        <details class="community-faq-item">
-          <summary>How are impacts shown here?</summary>
-          <div class="community-faq-answer">
-            <p>Top completed cleanups show location, hotspot type, and ECO-linked impact so residents can track proof-backed neighborhood progress.</p>
-          </div>
-        </details>
-        <details class="community-faq-item">
-          <summary>How can I help if I am not a recycler?</summary>
-          <div class="community-faq-answer">
-            <ul>
-              <li>Add your voice to active hotspots.</li>
-              <li>Confirm outcomes honestly after cleanups.</li>
-              <li>Keep report details specific for faster dispatch resolution.</li>
-            </ul>
-          </div>
-        </details>
-      </div>
-    </section>
-
-    <section class="panel">
-      <span class="section-kicker">Live Feed</span>
-      <h3 style="margin:0.2rem 0 0.9rem; color:#0b5d4a;">Active Neighborhood Hotspots</h3>
-
-      <div id="hotspot-feed-container">
-
-      <div id="verification-card" style="border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #eff6ff;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <h3 id="verification-card-title" style="color: #1e3a8a; font-weight: bold; font-size: 1.1rem; margin: 0;">Center Reports: Cleanup Complete</h3>
-          <span id="verification-status" style="font-weight: bold; color: #1d4ed8; font-size: 0.875rem;">Pending Verification</span>
-        </div>
-        <div class="resident-badge">✔ Verified Local</div>
-        <p id="verification-location" style="color: #6b7280; font-size: 0.875rem; margin-bottom: 8px;">Location: 14th Ave, Randburg (Scheduled for Thu 08:00-12:00)</p>
-        <p id="verification-note" style="color: #374151; margin-bottom: 16px;">The Verification Center reported this area as cleared. Please confirm if the waste was successfully collected.</p>
-        <div style="display: flex; gap: 12px; align-items: center;">
-          <button id="verification-yes-btn" style="background-color: #16a34a; color: white; padding: 6px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer;">✓ Yes, Collected</button>
-          <button id="verification-missed-btn" style="background-color: white; color: #dc2626; padding: 6px 16px; border-radius: 6px; border: 1px solid #dc2626; font-weight: bold; cursor: pointer;">✕ Missed / Incomplete</button>
-        </div>
-        <div id="verification-links" class="receipt-links" style="display:none;">
-          <a id="verification-proof-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Proof Bundle</a>
-          <a id="verification-hashscan-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Hedera Record</a>
-          <button id="after-photo-btn" class="after-photo-btn" type="button">View After Photo (demo)</button>
-        </div>
+    <div id="verification-links" class="receipt-links" style="display:none;">
+        <a id="verification-proof-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Proof Bundle</a>
+        <a id="verification-hashscan-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Hedera Record</a>
+        <button id="after-photo-btn" class="after-photo-btn" type="button">View After Photo (demo)</button>
+    </div>
+    <!-- Status elements for JS compatibility -->
+    <p id="verification-location" style="display: none;">📍 Location: Parkmore Storefront</p>
+    <p id="verification-note" style="display: none;">The Verification Center reports this hotspot has been cleared by a collector. Please confirm the area is clean to finalize the trust sequence.</p>
+    <span id="verification-status" style="display: none;">Pending Verification</span>
+    <h3 id="verification-card-title" style="display: none;">Center Reports: Cleanup Complete</h3>
       </div>
 
       <div class="hotspot-card">
@@ -482,8 +592,98 @@
         </div>
       </div>
 
+          </div>
+        </section>
+
       </div>
-    </section>
+
+      <aside class="judge-side-column">
+        <section class="panel leaders-sticky">
+          <span class="section-kicker">Local Green Leaders</span>
+          <h3 style="margin:0.2rem 0 0.5rem; color:#0b5d4a;">Neighborhood momentum</h3>
+          <p style="margin:0; color:#64748b; font-size:0.84rem;">Residents and collectors pushing the highest verified cleanup impact in your active zone.</p>
+          <div class="leaders-list">
+            <div class="leader-row">
+              <div>
+                <div class="leader-name">Sipho M. · Recycler</div>
+                <div class="leader-meta">Roodepoort Central</div>
+              </div>
+              <div class="leader-score">412 kg</div>
+            </div>
+            <div class="leader-row">
+              <div>
+                <div class="leader-name">Noma D. · Resident</div>
+                <div class="leader-meta">14 priority reports confirmed</div>
+              </div>
+              <div class="leader-score">14 actions</div>
+            </div>
+            <div class="leader-row">
+              <div>
+                <div class="leader-name">Rosebank Retail Hub</div>
+                <div class="leader-meta">Funded 14 Micro-jobs</div>
+              </div>
+              <div class="leader-score">88.5% to Goal</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="report-hotspot-panel">
+          <span class="section-kicker">Report a Neighborhood Hotspot</span>
+          <h3 style="margin:0.2rem 0 0.6rem; color:#0b5d4a;">Route a new cleanup request</h3>
+          <div class="report-grid">
+            <input class="field" type="text" id="hotspot-title" placeholder="Give this issue a short title...">
+            <input class="field" type="text" id="hotspot-location" placeholder="Enter street or landmark...">
+            <input class="field" type="text" id="hotspot-description" placeholder="Describe the issue...">
+          </div>
+          <button class="btn-primary" id="submit-hotspot-btn" type="button" style="margin-top:0.85rem;">Report a Neighborhood Issue</button>
+        </section>
+
+        <section class="panel">
+          <span class="section-kicker">Need Help?</span>
+          <h3 style="margin:0.2rem 0 0.45rem; color:#0b5d4a;">Community FAQ</h3>
+          <div class="community-faq-grid" style="grid-template-columns: 1fr;">
+            <details class="community-faq-item" open>
+              <summary>What happens after I report a hotspot?</summary>
+              <div class="community-faq-answer">
+                <ul>
+                  <li>Your report enters the community board.</li>
+                  <li>Neighbors can add support to raise urgency.</li>
+                  <li>High-priority hotspots route into center dispatch.</li>
+                </ul>
+              </div>
+            </details>
+            <details class="community-faq-item">
+              <summary>What does resident confirmation do?</summary>
+              <div class="community-faq-answer">
+                <ul>
+                  <li>Center marks cleanup complete.</li>
+                  <li>Residents confirm if cleanup actually happened.</li>
+                  <li>Confirmed closes the event; missed reopens follow-up dispatch.</li>
+                </ul>
+              </div>
+            </details>
+            <details class="community-faq-item">
+              <summary>How are impacts shown here?</summary>
+              <div class="community-faq-answer">
+                <p>Top completed cleanups show location, hotspot type, and ECO-linked impact so residents can track proof-backed neighborhood progress.</p>
+              </div>
+            </details>
+            <details class="community-faq-item">
+              <summary>How can I help if I am not a recycler?</summary>
+              <div class="community-faq-answer">
+                <ul>
+                  <li>Add your voice to active hotspots.</li>
+                  <li>Confirm outcomes honestly after cleanups.</li>
+                  <li>Keep report details specific for faster dispatch resolution.</li>
+                </ul>
+              </div>
+            </details>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+
   </main>
 
   <script>
@@ -506,9 +706,92 @@
     let activeVerificationHotspotKey = '';
     let communityBoardNeedsReset = true;
     const dispatchBoardStorageKey = 'vericycle.communityDispatchBoard';
+    const residentDecisionStorageKey = 'vericycle.communityResidentDecisions';
     const dispatchBoardChannel = typeof BroadcastChannel !== 'undefined'
       ? new BroadcastChannel('vericycle-community-dispatch')
       : null;
+
+    function readResidentDecisionCounts() {
+      try {
+        const raw = localStorage.getItem(residentDecisionStorageKey);
+        return raw ? JSON.parse(raw) : {};
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function writeResidentDecisionCounts(counts) {
+      try {
+        localStorage.setItem(residentDecisionStorageKey, JSON.stringify(counts || {}));
+      } catch (err) {
+        void err;
+      }
+    }
+
+    function getResidentDecisionForKey(hotspotKey) {
+      const counts = readResidentDecisionCounts();
+      const key = String(hotspotKey || '');
+      const value = counts[key] || {};
+      return {
+        confirmed: Number(value.confirmed || 0),
+        refused: Number(value.refused || 0),
+      };
+    }
+
+    function recordResidentDecision(hotspotKey, outcome) {
+      const counts = readResidentDecisionCounts();
+      const key = String(hotspotKey || '');
+      const current = counts[key] || { confirmed: 0, refused: 0 };
+      if (String(outcome || '').toLowerCase() === 'confirmed') {
+        current.confirmed = Number(current.confirmed || 0) + 1;
+      } else {
+        current.refused = Number(current.refused || 0) + 1;
+      }
+      counts[key] = current;
+      writeResidentDecisionCounts(counts);
+      return current;
+    }
+
+    function updateDecisionSummary(card, hotspotKey) {
+      if (!card) return;
+      const decision = getResidentDecisionForKey(hotspotKey);
+      let summary = card.querySelector('.resident-decision-summary');
+      if (!summary) {
+        summary = document.createElement('div');
+        summary.className = 'resident-decision-summary';
+        card.appendChild(summary);
+      }
+      summary.textContent = `Resident confirmations: ${decision.confirmed} · Refused: ${decision.refused}`;
+    }
+
+    function voteCountFromCard(card) {
+      const btn = card ? card.querySelector('.boost-btn') : null;
+      if (!btn) return 0;
+      return Number(btn.dataset.count || 0);
+    }
+
+    function isCardLocked(card) {
+      if (!card) return true;
+      if (card.dataset.lockedByVerification === '1') return true;
+      const btn = card.querySelector('.boost-btn');
+      if (!btn) return true;
+      return false;
+    }
+
+    function sortHotspotCards() {
+      const feed = document.getElementById('hotspot-feed-container');
+      if (!feed) return;
+
+      const cards = Array.from(feed.querySelectorAll('.hotspot-card'));
+      cards.sort((a, b) => {
+        const aLocked = isCardLocked(a) ? 1 : 0;
+        const bLocked = isCardLocked(b) ? 1 : 0;
+        if (aLocked !== bLocked) return aLocked - bLocked;
+        return voteCountFromCard(b) - voteCountFromCard(a);
+      });
+
+      cards.forEach((card) => feed.appendChild(card));
+    }
 
     function inferMaterialFromText(text) {
       const raw = String(text || '').toLowerCase();
@@ -639,6 +922,9 @@
         throw new Error('No hotspot receipt is active for confirmation.');
       }
 
+      const normalizedOutcome = String(outcome || '').toLowerCase();
+      recordResidentDecision(activeVerificationHotspotKey, normalizedOutcome);
+
       const res = await fetch('/api/community/hotspots/confirm', {
         method: 'POST',
         headers: {
@@ -692,6 +978,8 @@
       });
 
       feed.querySelectorAll('.hotspot-card').forEach((card) => {
+        card.dataset.lockedByVerification = '0';
+        card.classList.remove('locked-by-verification');
         const titleEl = card.querySelector('h3');
         const locationEl = card.querySelector('.location');
         const boostBtn = card.querySelector('.boost-btn');
@@ -705,30 +993,30 @@
         const normalizedStatus = String(row.status || '').toLowerCase();
         const residentConfirmationStatus = String(row.resident_confirmation_status || '').toLowerCase();
 
-        if (residentConfirmationStatus === 'confirmed' || normalizedStatus === 'confirmed') {
+        const isLockedByVerification = residentConfirmationStatus === 'confirmed' || normalizedStatus === 'confirmed' || residentConfirmationStatus === 'missed' || normalizedStatus === 'reopened';
+
+        if (isLockedByVerification) {
+          card.dataset.lockedByVerification = '1';
+          card.classList.add('locked-by-verification');
           boostBtn.disabled = true;
-          boostBtn.textContent = 'Resident Confirmed ✓';
+          boostBtn.textContent = residentConfirmationStatus === 'confirmed' || normalizedStatus === 'confirmed'
+            ? 'Resident Confirmed ✓'
+            : 'Verification Refused ✕';
           boostBtn.style.background = '#94a3b8';
           boostBtn.style.borderColor = '#64748b';
           boostBtn.style.cursor = 'default';
           boostBtn.style.opacity = '0.9';
           statusEl.className = 'status';
-          statusEl.style.color = '#166534';
-          statusEl.textContent = '✅ Confirmed by residents';
+          statusEl.style.color = residentConfirmationStatus === 'confirmed' || normalizedStatus === 'confirmed' ? '#166534' : '#9a3412';
+          statusEl.textContent = residentConfirmationStatus === 'confirmed' || normalizedStatus === 'confirmed'
+            ? '✅ Confirmed by residents'
+            : '⚠ Refused by residents';
+          updateDecisionSummary(card, key);
           return;
         }
 
-        if (residentConfirmationStatus === 'missed' || normalizedStatus === 'reopened') {
-          boostBtn.disabled = false;
-          boostBtn.textContent = 'Add My Voice (follow-up)';
-          boostBtn.style.background = '#16a34a';
-          boostBtn.style.borderColor = '#15803d';
-          boostBtn.style.cursor = 'pointer';
-          boostBtn.style.opacity = '1';
-          statusEl.className = 'status red';
-          statusEl.textContent = '🔴 Reopened for center follow-up';
-          return;
-        }
+        card.dataset.lockedByVerification = '0';
+        card.classList.remove('locked-by-verification');
 
         if (normalizedStatus === 'completed') {
           boostBtn.disabled = true;
@@ -756,6 +1044,8 @@
           return;
         }
       });
+
+      sortHotspotCards();
     }
 
     function renderCommunityBoardRows(rows) {
@@ -794,7 +1084,17 @@
         .slice(0, 3);
 
       if (!completedRows.length) {
-        communityImpactList.innerHTML = '<p style="color:#64748b; font-size:0.85rem; margin:0;">No completed impacts yet.</p>';
+        communityImpactList.innerHTML = `
+          <div style="padding: 1rem; border-left: 4px solid #16a34a; background: #f0fdf4; border-radius: 6px; margin-bottom: 0.2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
+              <div>
+                <strong style="color: #065f46; display: block;">Illegal dumping cleared: Parkmore Storefront</strong>
+                <span style="font-size: 0.8rem; color: #166534;">Verified by Center • 42.0 kg Plastics Diverted</span>
+              </div>
+              <span style="background: #bbf7d0; color: #166534; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: bold;">+210 ECO Rewarded</span>
+            </div>
+          </div>
+        `;
         return;
       }
 
@@ -1013,11 +1313,13 @@
         return;
       }
 
-      button.textContent = 'Supported ✓';
-      button.disabled = true;
-      button.style.background = '#15803d';
-      button.style.cursor = 'default';
-      button.style.opacity = '0.95';
+      const currentVotes = Number(button.dataset.count || 0);
+      const nextVotes = currentVotes + 1;
+      button.dataset.count = String(nextVotes);
+      button.textContent = `Add My Voice (${nextVotes})`;
+      button.style.background = '#16a34a';
+      button.style.cursor = 'pointer';
+      button.style.opacity = '1';
 
       const card = button.closest('.hotspot-card');
       const status = card ? card.querySelector('.status') : null;
@@ -1051,6 +1353,7 @@
         status.className = 'status orange';
         status.textContent = '🟠 Escalated to Center Queue';
       }
+      sortHotspotCards();
       loadCommunityBoard();
     });
 
