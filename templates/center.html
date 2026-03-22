@@ -728,9 +728,10 @@ body {
                 <h3>Center Verification Control</h3>
                 <p>Scan recycler ID, inspect the active pickup, and finalize verification plus anchoring from this lane.</p>
                 <div class="trust-strip" style="margin-top:0.25rem; margin-bottom:0.7rem; border-bottom:none; padding-bottom:0;">
-                    <span class="trust-chip">Live Reward Rate: Plastics 38 ECO/kg</span>
-                    <span class="trust-chip">Paper 30 ECO/kg</span>
-                    <span class="trust-chip">Metals 50 ECO/kg</span>
+                    <span class="trust-chip">Live Reward Rate: Plastics 5.0 ECO/kg (+25%)</span>
+                    <span class="trust-chip">Metals 16.0 ECO/kg (+15%)</span>
+                    <span class="trust-chip">Glass 1.2 ECO/kg (+50%)</span>
+                    <span class="trust-chip">1 ECO ≈ R1.00</span>
                 </div>
 
                 <form id="verify-form" action="/verify-and-anchor/direct" method="POST" class="verify-form">
@@ -740,7 +741,7 @@ body {
                     <button type="button" class="btn-primary-large btn-form scanner-activate-btn" id="scan-btn">
                         📷 Scan / Paste QR Intent
                     </button>
-                    <p id="scan-feedback" class="scan-note">Scan or paste QR intent to auto-load recycler and source context.</p>
+                    <p id="scan-feedback" class="scan-note">Scan or paste QR intent to auto-load recycler and source context. Total payout auto-calculates as kg x ECO/kg.</p>
 
                     <div id="verified-profile-card" class="verified-profile-card" aria-live="polite">
                         <div style="font-weight:800; color:#166534;">✅ Recycler Identified: <span id="verified-profile-id">0.0.7267109</span></div>
@@ -773,11 +774,11 @@ body {
                         </div>
 
                         <div class="reward-summary" id="reward-summary" style="display: none;">
-                            <p>Base Reward: <span id="reward-base">--</span></p>
-                            <p>Neighborhood Bonus (2.5%): <span id="reward-hood">+ --</span></p>
-                            <p>Bronze Tier Bonus (1.0%): <span id="reward-tier">+ --</span></p>
+                            <p>Rate: <span id="reward-rate">--</span></p>
+                            <p>Weight: <span id="reward-weight">--</span></p>
+                            <p>Formula: <span id="reward-formula">--</span></p>
                             <hr>
-                            <p class="total">Total Payout: <span id="reward-total">--</span><a id="hedera-link" class="mini-link" href="#" target="_blank" rel="noopener" style="display:none;">View on Hedera</a></p>
+                            <p class="total">Total Payout: <span id="reward-total">--</span> <span id="reward-total-zar" style="font-size:0.86rem; color:#64748b;">(~R0.00)</span><a id="hedera-link" class="mini-link" href="#" target="_blank" rel="noopener" style="display:none;">View on Hedera</a></p>
                         </div>
 
                         <button type="submit" class="btn-primary-large btn-form" id="verify-btn" disabled>
@@ -1034,10 +1035,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const materialType = document.getElementById('material-type');
     const weightInput = document.getElementById('weight-kg');
     const rewardSummary = document.getElementById('reward-summary');
-    const rewardBase = document.getElementById('reward-base');
-    const rewardHood = document.getElementById('reward-hood');
-    const rewardTier = document.getElementById('reward-tier');
+    const rewardRate = document.getElementById('reward-rate');
+    const rewardWeight = document.getElementById('reward-weight');
+    const rewardFormula = document.getElementById('reward-formula');
     const rewardTotal = document.getElementById('reward-total');
+    const rewardTotalZar = document.getElementById('reward-total-zar');
     const materialInput = document.getElementById('material-type');
     const weightKgInput = document.getElementById('weight-kg');
     const yesterdayWrap = document.getElementById('yesterday-wrap');
@@ -1798,13 +1800,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Prices for materials
     const prices = {
-        'paper & cardboard': 30,
-        'plastics': 38,
-        'glass': 20,
-        'metals': 50,
-        'e-waste': 55,
-        'organic waste': 16,
-        'mixed recyclables': 32
+        'paper & cardboard': 2.8,
+        'plastics': 5.0,
+        'glass': 1.2,
+        'metals': 16.0,
+        'e-waste': 35.0,
+        'organic waste': 2.0,
+        'mixed recyclables': 4.0
     };
 
     // --- NEW: FUNCTION TO SHOW THE BANNER ---
@@ -1851,20 +1853,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const base = prices[material] * weight;
-        const hoodBonus = base * 0.025; // 2.5% Neighborhood Bonus
-        const tierBonus = base * 0.01; // 1.0% Bronze Tier Bonus
-        calculatedTotal = Math.round(base + hoodBonus + tierBonus);
+        const rate = Number(prices[material] || prices['mixed recyclables']);
+        calculatedTotal = Number((rate * weight).toFixed(2));
 
         // Update the summary box
-        rewardBase.textContent = `${base.toFixed(2)} ECO`;
-        rewardHood.textContent = `+ ${hoodBonus.toFixed(2)} ECO`;
-        rewardTier.textContent = `+ ${tierBonus.toFixed(2)} ECO`;
-        rewardTotal.textContent = `${calculatedTotal} ECO`;
+        if (rewardRate) rewardRate.textContent = `${rate.toFixed(1)} ECO/kg`;
+        if (rewardWeight) rewardWeight.textContent = `${weight.toFixed(1)} kg`;
+        if (rewardFormula) rewardFormula.textContent = `${weight.toFixed(1)} x ${rate.toFixed(1)} = ${calculatedTotal.toFixed(2)} ECO`;
+        rewardTotal.textContent = `${calculatedTotal.toFixed(2)} ECO`;
+        if (rewardTotalZar) rewardTotalZar.textContent = `(~R${calculatedTotal.toFixed(2)})`;
         rewardSummary.style.display = 'block';
         
         // Update the button
-        verifyBtn.textContent = `Verify & Pay ${calculatedTotal} ECO`;
+        verifyBtn.textContent = `Verify & Pay ${calculatedTotal.toFixed(2)} ECO`;
         verifyBtn.disabled = false;
     }
 
@@ -1938,14 +1939,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const material = materialType.options[materialType.selectedIndex].text;
                 const proofUrl = data.proof_bundle_url || '#';
                 const txUrl = data.hashscan_url || '#';
-                addDirectRecentFallbackRow(material, weight, calculatedTotal, txUrl);
+                const approvedReward = Number(data.reward_amount || calculatedTotal || 0);
+                addDirectRecentFallbackRow(material, weight, approvedReward, txUrl);
 
                 if (hederaLink && txUrl !== '#') {
                     hederaLink.href = txUrl;
                     hederaLink.style.display = 'inline';
                 }
                 
-                showBanner('Verified -> Anchored -> Reward queued');
+                const approvedRate = Number(data.eco_rate_per_kg || prices[(materialType.value || '').toLowerCase()] || 0);
+                const approvedWeight = Number(data.weight_kg || weight || 0);
+                const payoutFormula = data.payout_formula || `${approvedWeight.toFixed(1)} kg x ${approvedRate.toFixed(1)} ECO/kg = ${approvedReward.toFixed(2)} ECO`;
+                showBanner(`Center approved: ${approvedReward.toFixed(2)} ECO (${payoutFormula})`);
                 // --- BROADCAST CHANNEL (Real-time signal) ---
                 const channel = new BroadcastChannel('vericycle_demo');
                 channel.postMessage({

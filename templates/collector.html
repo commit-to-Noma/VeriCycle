@@ -575,6 +575,22 @@
     .page-container {
         padding-bottom: 4rem;
     }
+
+    .eco-rate-strip {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .eco-rate-pill {
+        border: 1px solid #86efac;
+        background: #ecfdf5;
+        color: #166534;
+        font-size: 0.78rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 0.28rem 0.62rem;
+    }
 </style>
 
 <div class="toast-wrap"><div id="dashboard-toast" class="toast"></div></div>
@@ -640,6 +656,14 @@
 
     <div style="margin-bottom:1.5rem; padding:1rem; background:rgba(22,163,74,0.06); border-left:3px solid #16a34a; border-radius:8px; font-size:0.9rem; color:#0b5d4a;">
         <strong>💚 Your Impact:</strong> Every kg you recycle creates an immutable audit record. Your verified activities build multi-stakeholder proof that drives real environmental and economic value.
+    </div>
+
+    <div class="eco-rate-strip" aria-label="Live EcoCoin material rates">
+        <span class="eco-rate-pill">Plastics: 5.0 ECO/kg (+25%)</span>
+        <span class="eco-rate-pill">Metals: 16.0 ECO/kg (+15%)</span>
+        <span class="eco-rate-pill">Glass: 1.2 ECO/kg (+50%)</span>
+        <span class="eco-rate-pill">E-Waste: 35.0 ECO/kg (+40%)</span>
+        <span class="eco-rate-pill">1 ECO ≈ R1.00</span>
     </div>
 
     <div class="kpi-row">
@@ -788,7 +812,9 @@
             </details>
             <details class="faq-item">
                 <summary>How is my EcoCoin calculated?</summary>
-                <p>1 EcoCoin is rewarded for every 1 kg of verified material you drop off.</p>
+                <p>Payout is simple: verified kg x live ECO/kg rate for that material.</p>
+                <p>Example: Plastics 10kg x 5.0 ECO/kg = 50 ECO (~R50).</p>
+                <p>EcoCoin includes a premium vs street cash yards, typically +15% to +50% depending on material.</p>
             </details>
         </section>
 
@@ -837,6 +863,34 @@ document.addEventListener('DOMContentLoaded', function() {
     let openVisibleCount = OPEN_PAGE_SIZE;
     let acceptedVisibleCount = ACCEPTED_PAGE_SIZE;
     let activityVisibleCount = ACTIVITY_PAGE_SIZE;
+    const ECO_RATE_BY_KEY = {
+        'glass': 1.2,
+        'paper & cardboard': 2.8,
+        'plastics': 5.0,
+        'metals': 16.0,
+        'e-waste': 35.0,
+        'organic waste': 2.0,
+        'mixed recyclables': 4.0,
+    };
+    const ECO_PREMIUM_BY_KEY = {
+        'glass': '+50% vs cash yards',
+        'paper & cardboard': '+40% vs cash yards',
+        'plastics': '+25% vs cash yards',
+        'metals': '+15% vs cash yards',
+        'e-waste': '+40% vs cash yards',
+        'organic waste': '+25% vs cash yards',
+        'mixed recyclables': '+20% vs cash yards',
+    };
+    const CENTER_APPROVAL_STORAGE_KEY = 'vericycle.recycler.centerApprovalSeen';
+    let centerApprovalSeen = (() => {
+        try {
+            const raw = localStorage.getItem(CENTER_APPROVAL_STORAGE_KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return new Set(Array.isArray(parsed) ? parsed.map(String) : []);
+        } catch (_) {
+            return new Set();
+        }
+    })();
 
     function escapeHtml(value) {
         return String(value || '')
@@ -868,6 +922,55 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!match) return 0;
         const parsed = Number(match[1]);
         return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function materialKey(value) {
+        const normalized = String(value || '').toLowerCase().trim();
+        if (!normalized) return 'mixed recyclables';
+        if (normalized.includes('paper') || normalized.includes('cardboard')) return 'paper & cardboard';
+        if (normalized.includes('plastic')) return 'plastics';
+        if (normalized.includes('glass')) return 'glass';
+        if (normalized.includes('metal') || normalized.includes('can') || normalized.includes('aluminum')) return 'metals';
+        if (normalized.includes('e-waste') || normalized.includes('ewaste') || normalized.includes('electronic')) return 'e-waste';
+        if (normalized.includes('organic')) return 'organic waste';
+        return 'mixed recyclables';
+    }
+
+    function ecoRateForMaterial(materialLabel) {
+        const key = materialKey(materialLabel);
+        return Number(ECO_RATE_BY_KEY[key] || ECO_RATE_BY_KEY['mixed recyclables']);
+    }
+
+    function ecoPremiumForMaterial(materialLabel) {
+        const key = materialKey(materialLabel);
+        return ECO_PREMIUM_BY_KEY[key] || '+20% vs cash yards';
+    }
+
+    function persistCenterApprovalSeen() {
+        try {
+            localStorage.setItem(CENTER_APPROVAL_STORAGE_KEY, JSON.stringify(Array.from(centerApprovalSeen)));
+        } catch (_) {
+            // Ignore localStorage limitations in private mode.
+        }
+    }
+
+    function maybeNotifyCenterApprovals(rows) {
+        rows.forEach((row) => {
+            const approved = String(row.status || '').toLowerCase() === 'completed' && String(row.verification_status || '').toLowerCase() === 'verified';
+            if (!approved) return;
+
+            const key = String(row.linked_activity_id || row.assignment_id || '');
+            if (!key || centerApprovalSeen.has(key)) return;
+
+            const material = row.submitted_material_type || row.material_type || 'Mixed Recyclables';
+            const weight = Number(row.submitted_weight_kg ?? row.estimated_kg ?? 0);
+            const rate = Number(row.eco_rate_per_kg || ecoRateForMaterial(material));
+            const reward = Number(row.estimated_reward_eco || (weight * rate));
+            showToast(`Center approved your drop-off: ${weight.toFixed(1)}kg x ${rate.toFixed(1)} ECO/kg = ${reward.toFixed(2)} ECO`, 'success');
+
+            centerApprovalSeen.add(key);
+        });
+        persistCenterApprovalSeen();
     }
 
     function normalizeStageSet(row) {
@@ -1201,11 +1304,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const when = (row.requested_window || 'Today').toString();
             const distance = Number(row.distance_km || 0).toFixed(1);
             const estimatedReward = Number(row.estimated_reward_eco || 0).toFixed(1);
+            const ecoRate = Number(row.eco_rate_per_kg || ecoRateForMaterial(material)).toFixed(1);
+            const ecoPremium = String(row.eco_premium_label || ecoPremiumForMaterial(material));
             const extraMeta = row.priority === 'center'
                 ? '<p class="item-meta" style="color:#b91c1c; font-weight:700;">HIGH IMPACT: Heavy load requires center-priority routing</p>'
                 : '<p class="item-meta">Standard routing available for pickup</p>';
             const action = `<button class="btn-primary accept-btn" data-id="${Number(row.id)}">Accept</button>`;
-            const economics = `<p class="item-meta">Distance: ${distance} km · Est. reward: ${estimatedReward} ECO</p>`;
+            const economics = `<p class="item-meta">Distance: ${distance} km · Est. reward: ${estimatedReward} ECO · Rate: ${ecoRate} ECO/kg</p><p class="item-meta" style="color:#166534; font-weight:700;">Earn ${ecoPremium}</p>`;
             return cardHtml(source, weight, material, when, action, `${economics}${extraMeta}`);
         }).join('');
 
@@ -1244,16 +1349,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const weight = Number(row.estimated_kg || 0).toFixed(1);
             const material = (row.material_type || 'Mixed').toString();
             const distance = Number(row.distance_km || 0).toFixed(1);
-            const estimatedReward = Number(row.estimated_reward_eco || 0).toFixed(1);
+            const estimatedReward = Number(row.estimated_reward_eco || 0).toFixed(2);
+            const materialForRate = row.submitted_material_type || row.material_type || 'Mixed Recyclables';
+            const ecoRate = Number(row.eco_rate_per_kg || ecoRateForMaterial(materialForRate));
             const statusLabel = row.status === 'accepted'
                 ? 'Accepted'
-                : (row.status === 'in_transit' ? 'In Transit' : 'Submitted');
+                : (row.status === 'in_transit' ? 'In Transit' : (row.status === 'completed' ? 'Center Approved' : 'Submitted'));
             const id = Number(row.assignment_id);
             const action = (row.status === 'accepted' || row.status === 'in_transit')
                 ? `<div style="display:flex; gap:0.45rem; flex-wrap:wrap;"><button class="btn-primary toggle-drop" data-id="${id}">Record Drop-off</button><button class="inline-btn assignment-qr-btn" data-id="${id}">Generate Pickup QR Intent</button></div>`
                 : (row.status === 'submitted'
                     ? `<div style="display:flex; gap:0.45rem; flex-wrap:wrap;"><span class="item-meta">Awaiting center verification</span><button class="inline-btn assignment-qr-btn" data-id="${id}">Generate Pickup QR Intent</button></div>`
-                    : '<span class="item-meta">Awaiting center verification</span>');
+                    : '<span class="item-meta" style="color:#166534; font-weight:700;">Center Approved ✓</span>');
             const details = (row.status === 'accepted' || row.status === 'in_transit')
                 ? `
                     <div id="drop_${id}" class="drop-details">
@@ -1265,6 +1372,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `
                 : '';
+            const actualWeight = Number(row.submitted_weight_kg ?? row.estimated_kg ?? 0);
+            const formulaLine = `${actualWeight.toFixed(1)}kg x ${ecoRate.toFixed(1)} ECO/kg = ${estimatedReward} ECO`;
+            const approvalMeta = row.status === 'completed'
+                ? `<p class="item-meta" style="color:#166534; font-weight:700;">Center approved payout: ${formulaLine} (~R${estimatedReward})</p>`
+                : '';
             return `
                 <div class="list-item">
                     <div class="item-top">
@@ -1272,6 +1384,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p class="item-primary">${source} | ${weight}kg | ${statusLabel}</p>
                             <p class="item-meta">${material}</p>
                             <p class="item-meta">Distance: ${distance} km · Est. reward: ${estimatedReward} ECO</p>
+                            ${approvalMeta}
                         </div>
                         ${action}
                     </div>
@@ -1292,6 +1405,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const data = await fetchJsonSafe('/api/opportunities/my-assignments', {}, 'Unable to load accepted jobs');
             acceptedRowsData = data.rows || [];
+            maybeNotifyCenterApprovals(acceptedRowsData);
             acceptedVisibleCount = ACCEPTED_PAGE_SIZE;
             renderAcceptedRows();
         } catch (e) {

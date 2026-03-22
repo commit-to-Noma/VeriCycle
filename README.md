@@ -200,6 +200,26 @@ VeriCycle drives:
 
 EcoCoin is a reward token issued for verified recycling activity.
 
+## 🪙 Tokenomics: The EcoCoin (ECO) Advantage
+
+VeriCycle incentivizes informal recyclers by offering an Eco-Premium over traditional scrapyard cash rates.
+Because the platform captures immutable ESG data on Hedera, enterprise businesses pay for verified impact certificates.
+This secondary revenue stream subsidizes EcoCoin payouts and allows recyclers to earn around 20%-40% more value for key materials.
+
+Baseline valuation target in demo economics: **1 ECO ≈ R1.00 (ZAR) purchasing power**.
+
+| Material | Scrapyard Cash (Est. per kg) | VeriCycle Reward (ECO per kg) | Eco-Premium |
+| --- | --- | --- | --- |
+| Glass | R 0.50 - R 0.80 | 1.2 ECO | + 50% more value |
+| Paper & Cardboard | R 1.50 - R 2.00 | 2.8 ECO | + 40% more value |
+| Plastics (PET) | R 3.00 - R 4.00 | 5.0 ECO | + 25% more value |
+| Metals (Cans) | R 10.00 - R 14.00 | 16.0 ECO | + 15% more value |
+| E-Waste | R 20.00 - R 25.00 | 35.0 ECO | + 40% more value |
+
+Judge pitch for sustainability of payouts:
+
+> In the traditional system, middlemen take a large cut. VeriCycle removes that cut with direct digital rails and verifies every event using Hedera-backed proof. We monetize cryptographically verified ESG data for enterprise reporting, then pass that premium back to recyclers as higher EcoCoin payouts.
+
 It represents:
 - **Verified contribution** — proven participation in recycling
 - **Measurable environmental impact** — backed by on-ground verification

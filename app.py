@@ -505,8 +505,8 @@ def estimate_pickup_distance_km(location: str | None) -> float:
 
 def calculate_demo_reward_amount(material_type: str | None, weight_kg: float | int | None) -> float:
     safe_weight = max(0.0, float(weight_kg or 0.0))
-    rate_per_kg = float(eco_payout_spec(material_type).get("eco_per_kg", 0.0))
-    return round(safe_weight * rate_per_kg, 2)
+    payout_rate_per_kg = float(eco_payout_spec(material_type).get("eco_per_kg") or 0.0)
+    return round(safe_weight * payout_rate_per_kg, 2)
 
 
 def build_rewards_wallet_snapshot(user: User) -> dict:
@@ -3734,6 +3734,7 @@ def confirm_dropoff():
             if not collector or not can_accept_opportunity_recycler(collector):
                 return jsonify({'success': False, 'error': 'Collector not found'}), 404
 
+        payout_rate_per_kg = float(eco_payout_spec(material).get("eco_per_kg") or 0.0)
         reward_amount = calculate_demo_reward_amount(material, weight_value)
 
         if source_type == 'pickup_assignment':
@@ -3816,6 +3817,10 @@ def confirm_dropoff():
             "source_type": source_type,
             "assignment_id": assignment.id if assignment else None,
             "reward_amount": reward_amount,
+            "eco_rate_per_kg": payout_rate_per_kg,
+            "weight_kg": weight_value,
+            "material_type": material,
+            "payout_formula": f"{weight_value:.1f} kg x {payout_rate_per_kg:.1f} ECO/kg = {reward_amount:.2f} ECO",
             "proof_bundle_url": f"/api/proof-bundle/{activity.id}",
             "hashscan_url": hashscan_link(activity.hcs_tx_id or activity.logbook_tx_id or activity.hedera_tx_id)
             or hashscan_link(f"0.0.1001@1700000000.{activity.id:09d}")
