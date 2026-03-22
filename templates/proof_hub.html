@@ -203,6 +203,11 @@
     }
     .verify-message.good { color: #15803d; }
     .verify-message.bad { color: #b45309; }
+    .proof-row.hidden { display: none; }
+    .load-more-wrap {
+        margin-top: 0.8rem;
+        text-align: center;
+    }
 </style>
 
 <div class="audit-shell">
@@ -247,7 +252,7 @@
                 <tbody>
                     {% for row in rows %}
                     {% set tx = row.hedera_tx_id or row.hcs_tx_id or row.logbook_tx_id or '' %}
-                    <tr data-anchor="{{ tx|lower }}">
+                    <tr class="proof-row" data-anchor="{{ tx|lower }}">
                         <td class="audit-date" data-ts="{{ row.timestamp }}">{{ row.timestamp }}</td>
                         <td class="audit-event-id">#{{ row.id }}</td>
                         <td class="mat-weight" data-desc="{{ row.desc|e }}">{{ row.desc }}</td>
@@ -279,6 +284,9 @@
                     {% endif %}
                 </tbody>
             </table>
+        </div>
+        <div class="load-more-wrap">
+            <button id="loadMoreProof" class="btn-secondary" type="button" style="display:none;">Load More</button>
         </div>
     </section>
 
@@ -327,6 +335,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const kgLabel = Number.isFinite(kg) ? kg.toFixed(1) : match[1];
         cell.textContent = `${kgLabel}kg of ${material}`;
     });
+
+    const proofRows = Array.from(document.querySelectorAll('.proof-row'));
+    const loadMoreProofBtn = document.getElementById('loadMoreProof');
+    const initialVisibleRows = 6;
+
+    if (proofRows.length > initialVisibleRows && loadMoreProofBtn) {
+        proofRows.slice(initialVisibleRows).forEach((row) => row.classList.add('hidden'));
+        loadMoreProofBtn.style.display = 'inline-flex';
+        loadMoreProofBtn.onclick = () => {
+            document.querySelectorAll('.proof-row.hidden').forEach((el) => el.classList.remove('hidden'));
+            loadMoreProofBtn.style.display = 'none';
+        };
+    }
 
     button.addEventListener('click', function () {
         const value = (input.value || '').trim().toLowerCase();

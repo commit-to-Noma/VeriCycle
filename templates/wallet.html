@@ -77,6 +77,22 @@
     white-space: nowrap;
 }
 .status-badge::before { content: "●"; font-size: 0.55rem; }
+.wallet-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+.redeem-cash-btn {
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #475569;
+    padding: 0.42rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: not-allowed;
+}
 
 .wallet-grid {
     display: grid;
@@ -505,6 +521,41 @@
     margin-top: 0.65rem;
 }
 
+.rewards-history-card {
+    margin-top: 0.6rem;
+}
+.history-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #dbe4ea;
+    border-radius: 10px;
+    margin-top: 0.7rem;
+}
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+.history-table th,
+.history-table td {
+    padding: 0.7rem 0.72rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    font-size: 0.84rem;
+}
+.history-table th {
+    background: #f1f5f9;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.74rem;
+}
+.history-table td {
+    color: #334155;
+}
+.history-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
 @media (max-width: 900px) {
     .wallet-grid {
         grid-template-columns: 1fr;
@@ -532,7 +583,10 @@
             <h1 class="page-title">Rewards &amp; Exchange</h1>
             <p class="page-subtitle">Swap ECO for crypto, or instantly redeem sponsored vouchers.</p>
         </div>
-        <span class="status-badge">Live Rates Active</span>
+        <div class="wallet-header-actions">
+            <span class="status-badge">Live Rates Active</span>
+            <button class="redeem-cash-btn" disabled title="Coming soon via partners">Redeem to Cash</button>
+        </div>
     </div>
     <div class="trust-signals">
         <span>Secured by Hedera Hashgraph</span>
@@ -666,6 +720,47 @@
 
         </div>
     </div>
+
+    <section class="tech-card rewards-history-card">
+        <h3 style="margin:0; color:#0b5d4a;">EcoCoin Rewards History</h3>
+        <p style="margin:0.3rem 0 0; color:#64748b; font-size:0.86rem;">Verified reward payouts only. Anchors and payout statuses remain audit-visible for judges.</p>
+        <div class="history-table-wrap">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Activity</th>
+                        <th>Status</th>
+                        <th>Amount (ECO)</th>
+                        <th>Hedera</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2026-03-22 10:41</td>
+                        <td>Plastics drop-off · Randburg</td>
+                        <td>Rewarded</td>
+                        <td>+58.00</td>
+                        <td><a href="{{ url_for('proof_hub') }}">View proof</a></td>
+                    </tr>
+                    <tr>
+                        <td>2026-03-21 16:18</td>
+                        <td>Mixed recyclables · Sandton</td>
+                        <td>Anchored</td>
+                        <td>+42.00</td>
+                        <td><a href="{{ url_for('proof_hub') }}">View proof</a></td>
+                    </tr>
+                    <tr>
+                        <td>2026-03-20 09:05</td>
+                        <td>Paper &amp; cardboard · Rosebank</td>
+                        <td>Rewarded</td>
+                        <td>+31.00</td>
+                        <td><a href="{{ url_for('proof_hub') }}">View proof</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 </div>
 

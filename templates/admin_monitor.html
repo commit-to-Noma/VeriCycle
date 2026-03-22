@@ -71,6 +71,11 @@
 				<option value="all" selected>All</option>
 			</select>
 		</label>
+
+		<label class="admin-filter-row">
+			<input type="checkbox" id="liveSyncToggle" checked />
+			Live Sync
+		</label>
 	</div>
 
 	<div id="autoVerifyStatus" class="card auto-verify-status">Auto-verify pending...</div>
@@ -168,10 +173,12 @@ function loadQueueSummary() {
 		.then(r => r.json())
 		.then(q => {
 			const el = document.getElementById("queue-summary");
+			const stalled = Number(q.stalled_running ?? 0);
 			el.innerHTML = `
 				<h3>Queue Summary</h3>
 				<p>Queued: ${q.queued ?? 0} | Running: ${q.running ?? 0} | Failed: ${q.failed ?? 0} | Dead Letter: ${q.dead_letter ?? 0} | Completed: ${q.done ?? 0}</p>
-				<p>Stalled running: ${q.stalled_running ?? 0}</p>
+				<p>Stalled running: ${stalled}</p>
+				${stalled > 0 ? '<p><button class="btn-secondary" type="button" onclick="retryStalledPipeline()">Retry Pipeline</button></p>' : ''}
 			`;
 		})
 		.catch(() => {
@@ -233,6 +240,21 @@ function loadDeadLetter() {
 			if (el) el.innerHTML = "<h3>Dead Letter Queue</h3><p>Unable to load dead-letter queue.</p>";
 		});
 }
+
+function retryStalledPipeline() {
+	fetch('/admin/cleanup-stale-running', {
+		method: 'POST',
+		headers: { 'X-Requested-With': 'XMLHttpRequest' }
+	})
+		.then(() => {
+			setTimeout(() => {
+				loadQueueSummary();
+				loadActivities();
+			}, 700);
+		});
+}
+
+window.retryStalledPipeline = retryStalledPipeline;
 
 function loadAudit() {
 	fetch("/api/admin/audit-log")
@@ -1157,6 +1179,29 @@ document.getElementById("dateRange").addEventListener("change", () => {
 
 restoreDateRangeSelection();
 
+const liveSyncToggle = document.getElementById('liveSyncToggle');
+let adminLiveSyncInterval = null;
+
+function refreshAdminLiveState() {
+	if (!liveSyncToggle) return;
+	if (!liveSyncToggle.checked) {
+		if (adminLiveSyncInterval) {
+			clearInterval(adminLiveSyncInterval);
+			adminLiveSyncInterval = null;
+		}
+		return;
+	}
+	if (!adminLiveSyncInterval) {
+		adminLiveSyncInterval = setInterval(() => {
+			loadActivities();
+		}, 12000);
+	}
+}
+
+if (liveSyncToggle) {
+	liveSyncToggle.addEventListener('change', refreshAdminLiveState);
+}
+
 document.getElementById("createDemoDepositBtn").addEventListener("click", () => {
 	const btn = document.getElementById("createDemoDepositBtn");
 	if (btn) btn.disabled = true;
@@ -1200,6 +1245,7 @@ document.getElementById("generateEvidencePackBtn").addEventListener("click", () 
 });
 
 loadActivities();
+refreshAdminLiveState();
 
 
 function retry(id){

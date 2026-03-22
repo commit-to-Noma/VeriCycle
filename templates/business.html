@@ -272,6 +272,32 @@ body {
 
 /* Overflow wrapper for tables */
 .table-scroll { overflow-x: auto; }
+.event-row.hidden { display: none; }
+.load-more-wrap {
+    margin-top: 0.75rem;
+    text-align: center;
+}
+.goal-progress {
+    margin-top: 0.8rem;
+}
+.goal-progress-meta {
+    color: #334155;
+    font-size: 0.84rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+.goal-track {
+    height: 12px;
+    border-radius: 999px;
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+    overflow: hidden;
+}
+.goal-fill {
+    height: 100%;
+    width: 85%;
+    background: linear-gradient(90deg, #16a34a, #15803d);
+}
 
 @media (max-width: 1100px) {
     .hub-stat-grid { grid-template-columns: repeat(2, 1fr); }
@@ -337,6 +363,10 @@ body {
             {% endif %}
         </p>
         <p class="mockup-subtitle">Strongest live path: Create Pickup Request -> Submitted -> Verified -> Anchored -> Rewarded -> Proof Ready.</p>
+        <div class="goal-progress" aria-label="Monthly diversion goal progress">
+            <div class="goal-progress-meta">850kg / 1000kg monthly goal</div>
+            <div class="goal-track"><div class="goal-fill"></div></div>
+        </div>
     </article>
 </section>
 
@@ -383,7 +413,7 @@ body {
             </thead>
             <tbody>
                 {% for row in requests %}
-                <tr>
+                <tr class="event-row request-row">
                     <td>{{ row.created_at.strftime('%Y-%m-%d %H:%M') if row.created_at else '—' }}</td>
                     <td>
                         <strong>#{{ row.id }} · {{ row.material_type }}</strong>
@@ -422,6 +452,9 @@ body {
                 {% endfor %}
             </tbody>
         </table>
+        <div class="load-more-wrap">
+            <button id="loadMoreRequests" class="btn-secondary" type="button" style="display:none;">Load More</button>
+        </div>
     {% else %}
         <p class="hub-empty">No pickup requests yet. Use the create action above to seed your first business opportunity.</p>
     {% endif %}
@@ -448,7 +481,7 @@ body {
             </thead>
             <tbody>
                 {% for row in verified_rows %}
-                <tr>
+                <tr class="event-row verified-row">
                     <td>
                         <strong>#{{ row.id }} · {{ row.material_type }}</strong>
                         <div class="hub-record-meta">Recycler: {{ row.assigned_recycler_email or 'Assigned recycler not captured' }}</div>
@@ -494,6 +527,9 @@ body {
                 {% endfor %}
             </tbody>
         </table>
+        <div class="load-more-wrap">
+            <button id="loadMoreBusinessProof" class="btn-secondary" type="button" style="display:none;">Load More</button>
+        </div>
     {% else %}
         <div class="empty-state">
             No verified events yet. Completed pickups will appear here.
@@ -501,4 +537,26 @@ body {
     {% endif %}
 </section>
 </div><!-- /biz-shell -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const initialVisibleRows = 5;
+
+    function wireLoadMore(rowSelector, buttonId) {
+        const rows = Array.from(document.querySelectorAll(rowSelector));
+        const button = document.getElementById(buttonId);
+        if (!button || rows.length <= initialVisibleRows) return;
+
+        rows.slice(initialVisibleRows).forEach((row) => row.classList.add('hidden'));
+        button.style.display = 'inline-flex';
+        button.onclick = () => {
+            document.querySelectorAll(`${rowSelector}.hidden`).forEach((row) => row.classList.remove('hidden'));
+            button.style.display = 'none';
+        };
+    }
+
+    wireLoadMore('.request-row', 'loadMoreRequests');
+    wireLoadMore('.verified-row', 'loadMoreBusinessProof');
+});
+</script>
 {% endblock %}

@@ -491,8 +491,8 @@ body {
 .btn-primary-large:hover { background: #15803d !important; transform: translateY(-1px); }
 .btn-primary-large.btn-form { padding: 0.68rem 1.2rem; font-size: 0.95rem; width: 100%; }
 
-/* Success banner */
-#success-banner {
+/* Success toast */
+#center-toast {
     position: fixed;
     top: calc(var(--nav-h, 72px) + 12px);
     left: 50%;
@@ -502,8 +502,16 @@ body {
     color: #fff;
     font-weight: 600;
     background: #16a34a !important;
-    border-radius: 12px;
+    border-radius: 999px;
     box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);
+    display: none;
+}
+
+.center-queue-item {
+    transition: opacity 0.3s ease;
+}
+.center-queue-item.queue-item-verifying-out {
+    opacity: 0;
 }
 
 @media (max-width: 900px) {
@@ -730,9 +738,8 @@ body {
     </div>
 </section>
 
-    <div id="success-banner" style="display:none;">
-        <span id="success-banner-text">Verification Successful!</span>
-        <a id="success-banner-action" class="mini-link" href="#" style="display:none; margin-left:0.6rem; color:#dcfce7; text-decoration:underline;">View Proof</a>
+    <div id="center-toast" role="status" aria-live="polite" style="display:none;">
+        <span id="center-toast-text">Verified -> Anchored -> Reward queued</span>
     </div>
 
 <script>
@@ -797,7 +804,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const materialInput = document.getElementById('material-type');
     const weightKgInput = document.getElementById('weight-kg');
     const yesterdayWrap = document.getElementById('yesterday-wrap');
-    const bannerAction = document.getElementById('success-banner-action');
+    const centerToast = document.getElementById('center-toast');
+    const centerToastText = document.getElementById('center-toast-text');
     let calculatedTotal = 0;
     let selectedActiveAssignmentId = null;
     let scannedCollectorId = '';
@@ -1423,10 +1431,6 @@ document.addEventListener('DOMContentLoaded', function() {
         setTrustStep('verified', 'active');
         setTrustStep('anchored', 'waiting');
         const queueItem = buttonEl ? buttonEl.closest('.center-queue-item') : null;
-        const queueItemPreviousDisplay = queueItem ? queueItem.style.display : '';
-        if (queueItem) {
-            queueItem.style.display = 'none';
-        }
         if (activePickupProcessing) {
             activePickupProcessing.textContent = 'Processing collector pipeline... please wait.';
             activePickupProcessing.style.display = 'block';
@@ -1455,20 +1459,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     showBanner(data.error || 'Could not verify submitted pickup');
                     setQueueButtonState(buttonEl, 'Verify & Anchor', false);
                     resetTrustProgress();
-                    if (queueItem) {
-                        queueItem.style.display = queueItemPreviousDisplay;
-                    }
                 }
                 return;
             }
 
             const rewardText = Number(data.reward_amount || 0).toFixed(2);
-            const proofUrl = data.proof_bundle_url || (data.activity_id ? `/api/proof-bundle/${data.activity_id}` : '#');
-            showBanner(`Verified Lane Active. Record moved to Verified with ${rewardText} ECO pipeline reward.`, proofUrl);
+            showBanner(`Verified -> Anchored -> Reward queued (${rewardText} ECO)`);
             setQueueButtonState(buttonEl, 'Verified ✓', true);
             setTrustStep('anchored', 'active');
             setTimeout(() => setTrustStep('rewarded', 'active'), 220);
             setTimeout(() => setTrustStep('audit', 'active'), 440);
+            if (queueItem) {
+                queueItem.classList.add('queue-item-verifying-out');
+                setTimeout(() => {
+                    queueItem.style.display = 'none';
+                }, 320);
+            }
 
             // Keep list truthful: recent verifications load from attested backend records only.
             loadSubmittedAssignments();
@@ -1478,9 +1484,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showBanner('Could not verify submitted pickup');
             setQueueButtonState(buttonEl, 'Verify & Anchor', false);
             resetTrustProgress();
-            if (queueItem) {
-                queueItem.style.display = queueItemPreviousDisplay;
-            }
         } finally {
             submittedVerifyInFlight = false;
             if (activePickupProcessing) {
@@ -1521,27 +1524,16 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // --- NEW: FUNCTION TO SHOW THE BANNER ---
-    function showBanner(text, actionUrl = null) {
-        const banner = document.getElementById('success-banner');
-        const textNode = document.getElementById('success-banner-text');
-        if (textNode) {
-            textNode.textContent = text;
+    function showBanner(text) {
+        if (centerToastText) {
+            centerToastText.textContent = text;
         } else {
-            banner.textContent = text;
+            centerToast.textContent = text;
         }
-        if (bannerAction) {
-            if (actionUrl && actionUrl !== '#') {
-                bannerAction.href = actionUrl;
-                bannerAction.style.display = 'inline-block';
-            } else {
-                bannerAction.style.display = 'none';
-                bannerAction.href = '#';
-            }
-        }
-        banner.style.display = 'block';
+        centerToast.style.display = 'block';
         setTimeout(() => {
-            banner.style.display = 'none';
-        }, 2500); // Show for 2.5 seconds
+            centerToast.style.display = 'none';
+        }, 2600);
     }
 
     function addDirectRecentFallbackRow(materialLabel, weightValue, rewardValue, txUrl) {
@@ -1668,7 +1660,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     hederaLink.style.display = 'inline';
                 }
                 
-                showBanner("Verification Successful!");
+                showBanner('Verified -> Anchored -> Reward queued');
                 // --- BROADCAST CHANNEL (Real-time signal) ---
                 const channel = new BroadcastChannel('vericycle_demo');
                 channel.postMessage({

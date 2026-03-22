@@ -249,12 +249,87 @@ UNIFIED_MATERIAL_TAXONOMY = [
 DEMO_LOGIN_ALIASES = {
     "recycler1": "recycler@vericycle.com",
     "business1": "business@vericycle.com",
+    "resident1": "resident@vericycle.com",
     "center1": "center@vericycle.com",
     "admin1": "admin@vericycle.com",
 }
 
 DEMO_LOGIN_PASSWORD = "1234"
 DEMO_LOGIN_TARGET_EMAILS = set(DEMO_LOGIN_ALIASES.values())
+
+
+def ensure_demo_login_accounts() -> None:
+    """
+    Ensure judge demo accounts are always present in non-production mode.
+    This avoids on-camera login failures due to missing seed data.
+    """
+    if _is_prod:
+        return
+
+    demo_accounts = [
+        {
+            "email": "recycler@vericycle.com",
+            "role": "collector",
+            "full_name": "Demo Recycler",
+            "phone_number": "0000000000",
+            "id_number": "0000000000000",
+            "hedera_account_id": "0.0.7267109",
+        },
+        {
+            "email": "business@vericycle.com",
+            "role": "business",
+            "full_name": "Demo Business",
+            "phone_number": "0000000000",
+            "id_number": "1000000000000",
+            "hedera_account_id": "0.0.7300002",
+        },
+        {
+            "email": "center@vericycle.com",
+            "role": "center",
+            "full_name": "Demo Center",
+            "phone_number": "0000000000",
+            "id_number": "2000000000000",
+            "hedera_account_id": "0.0.7300003",
+        },
+        {
+            "email": "resident@vericycle.com",
+            "role": "resident",
+            "full_name": "Demo Resident",
+            "phone_number": "0000000000",
+            "id_number": "3000000000000",
+            "hedera_account_id": "0.0.7300004",
+        },
+        {
+            "email": "admin@vericycle.com",
+            "role": "admin",
+            "full_name": "Demo Admin",
+            "phone_number": "0000000000",
+            "id_number": "4000000000000",
+            "hedera_account_id": "0.0.7300001",
+        },
+    ]
+
+    created = 0
+    for account in demo_accounts:
+        existing = User.query.filter_by(email=account["email"]).first()
+        if existing:
+            continue
+
+        password_hash = bcrypt.generate_password_hash(DEMO_LOGIN_PASSWORD).decode("utf-8")
+        db.session.add(User(
+            email=account["email"],
+            password_hash=password_hash,
+            role=account["role"],
+            full_name=account["full_name"],
+            phone_number=account["phone_number"],
+            id_number=account["id_number"],
+            hedera_account_id=account["hedera_account_id"],
+        ))
+        created += 1
+
+    if created:
+        db.session.commit()
+        print(f"[DEMO] Seeded {created} missing demo login accounts", flush=True)
 
 
 def resolve_demo_login_alias(identifier: str | None) -> str:
@@ -1309,6 +1384,10 @@ with app.app_context():
         seed_layer0_if_empty()
     except Exception:
         pass
+    try:
+        ensure_demo_login_accounts()
+    except Exception as e:
+        print(f"[DEMO] Demo account seed skipped: {e}", flush=True)
 
 # -----------------------------------------------------------------
 # 4. HELPER FUNCTION FOR FLASK-LOGIN

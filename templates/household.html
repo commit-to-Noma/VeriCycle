@@ -181,6 +181,32 @@
   .receipt-link:hover {
     text-decoration: underline;
   }
+  .resident-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    border-radius: 999px;
+    padding: 0.18rem 0.58rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    margin-top: 0.4rem;
+  }
+  .after-photo-btn {
+    border: 1px solid #bbf7d0;
+    border-radius: 999px;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.65rem;
+    cursor: pointer;
+  }
+  .after-photo-btn:hover {
+    background: #dcfce7;
+  }
   @media (max-width: 840px) {
     .report-grid {
       grid-template-columns: 1fr;
@@ -253,6 +279,7 @@
           <h3 id="verification-card-title" style="color: #1e3a8a; font-weight: bold; font-size: 1.1rem; margin: 0;">Center Reports: Cleanup Complete</h3>
           <span id="verification-status" style="font-weight: bold; color: #1d4ed8; font-size: 0.875rem;">Pending Verification</span>
         </div>
+        <div class="resident-badge">✔ Verified Local</div>
         <p id="verification-location" style="color: #6b7280; font-size: 0.875rem; margin-bottom: 8px;">Location: 14th Ave, Randburg (Scheduled for Thu 08:00-12:00)</p>
         <p id="verification-note" style="color: #374151; margin-bottom: 16px;">The Verification Center reported this area as cleared. Please confirm if the waste was successfully collected.</p>
         <div style="display: flex; gap: 12px; align-items: center;">
@@ -262,6 +289,7 @@
         <div id="verification-links" class="receipt-links" style="display:none;">
           <a id="verification-proof-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Proof Bundle</a>
           <a id="verification-hashscan-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Hedera Record</a>
+          <button id="after-photo-btn" class="after-photo-btn" type="button">View After Photo (demo)</button>
         </div>
       </div>
 
@@ -327,6 +355,7 @@
     const verificationLinks = document.getElementById('verification-links');
     const verificationProofLink = document.getElementById('verification-proof-link');
     const verificationHashscanLink = document.getElementById('verification-hashscan-link');
+    const afterPhotoBtn = document.getElementById('after-photo-btn');
     const communityBoardList = document.getElementById('community-board-list');
     const communityBoardUpdated = document.getElementById('community-board-updated');
     let lastCommunityBoardRefreshMs = Date.now();
@@ -757,6 +786,12 @@
         } catch (err) {
           alert(err.message || 'Unable to save resident follow-up flag.');
         }
+      });
+    }
+
+    if (afterPhotoBtn) {
+      afterPhotoBtn.addEventListener('click', function () {
+        alert('After-photo proof is available in the demo media pack.');
       });
     }
 
