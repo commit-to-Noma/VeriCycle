@@ -285,6 +285,10 @@ class OpportunityAssignment(db.Model):
         default=lambda: datetime.now(timezone.utc)
     )
 
+    handover_confirmed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    handover_code = db.Column(db.String(80), nullable=True)
+    handover_confirmed_by_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+
     submitted_at = db.Column(db.DateTime(timezone=True), nullable=True)
     submitted_material_type = db.Column(db.String(80), nullable=True)
     submitted_weight_kg = db.Column(db.Float, nullable=True)
@@ -316,6 +320,11 @@ class OpportunityAssignment(db.Model):
     linked_activity = db.relationship(
         "Activity",
         backref=db.backref("opportunity_assignment", uselist=False)
+    )
+
+    handover_confirmed_by_user = db.relationship(
+        "User",
+        foreign_keys=[handover_confirmed_by_user_id]
     )
 
 

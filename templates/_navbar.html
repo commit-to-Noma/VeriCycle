@@ -22,7 +22,6 @@
             {% endif %}
             {% if current_effective_role != 'resident' %}
                 <a href="{{ url_for('proof_hub') }}" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
-                <a href="{{ url_for('proof_integrity') }}" class="nav-button {% if request.path.startswith('/proof-integrity') %}active{% endif %}">Proof Integrity Checker</a>
             {% endif %}
             <a href="{{ url_for('profile') }}" class="nav-button {% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
             <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>

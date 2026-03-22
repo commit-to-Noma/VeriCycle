@@ -295,6 +295,31 @@ DEMO_LOGIN_ALIASES = {
 DEMO_LOGIN_PASSWORD = "1234"
 DEMO_LOGIN_TARGET_EMAILS = set(DEMO_LOGIN_ALIASES.values())
 QR_INTENT_TTL_MINUTES = 180
+MICRO_LOAD_MAX_KG = 100.0
+DEMO_BUSINESS_TARGET_KG = 885.5
+DEMO_COLLECTOR_ALIASES = [
+    "Sipho M.",
+    "Collector #402",
+    "Noma N.",
+    "Ayanda K.",
+    "Collector #187",
+    "Lerato P.",
+]
+
+
+def build_handover_code(opportunity_id: int | None, assignment_id: int | None) -> str:
+    safe_opp = int(opportunity_id or 0)
+    safe_assignment = int(assignment_id or 0)
+    return f"VC-HO-{safe_opp:05d}-{safe_assignment:05d}"
+
+
+def routed_collector_label(weight_kg: float | None, seed: int | None = None) -> tuple[str, str]:
+    safe_weight = max(0.0, float(weight_kg or 0.0))
+    if safe_weight > MICRO_LOAD_MAX_KG:
+        return "VeriCycle Transport Fleet", "macro"
+
+    idx = int(seed or 0) % len(DEMO_COLLECTOR_ALIASES)
+    return DEMO_COLLECTOR_ALIASES[idx], "micro"
 
 
 def ensure_demo_login_accounts() -> None:
@@ -448,6 +473,290 @@ def _find_first_user_by_effective_role(target_role: str) -> User | None:
 def ensure_demo_pickup_flow_seed() -> None:
     """Disabled for clean-slate demos where all activity must be user-triggered."""
     return
+
+
+def ensure_demo_business_verified_transactions() -> None:
+    """Seed deterministic business demo history so dashboards open on a rich Day-28 state."""
+    if _is_prod:
+        return
+
+    business_user = (
+        User.query
+        .filter(func.lower(func.trim(User.role)) == 'business')
+        .order_by(User.id.asc())
+        .first()
+    )
+    recycler_user = _find_first_user_by_effective_role('recycler')
+    center_user = _find_first_user_by_effective_role('center')
+    if not business_user or not recycler_user or not center_user:
+        return
+
+    marker = '[DEMO-BIZ-DAY28-SEED]'
+
+    now_utc = datetime.now(timezone.utc)
+    seed_specs = [
+        {
+            'key': 'glass-linehaul-800kg',
+            'material': 'Glass',
+            'kg': 800.0,
+            'location': 'Thaska Bricks Yard, Midrand',
+            'window': 'Yesterday 07:00-11:00',
+            'verified_at': now_utc - timedelta(days=4, hours=2),
+        },
+        {
+            'key': 'plastics-backdoor-28kg',
+            'material': 'Plastics',
+            'kg': 28.0,
+            'location': 'Rosebank Retail Hub, Johannesburg',
+            'window': 'Tue 10:00-12:00',
+            'verified_at': now_utc - timedelta(days=3, hours=5),
+        },
+        {
+            'key': 'paper-pallet-22kg',
+            'material': 'Paper & Cardboard',
+            'kg': 22.0,
+            'location': 'Morningside Office Park, Sandton',
+            'window': 'Wed 08:00-10:00',
+            'verified_at': now_utc - timedelta(days=2, hours=7),
+        },
+        {
+            'key': 'plastics-storefront-14-5kg',
+            'material': 'Plastics',
+            'kg': 14.5,
+            'location': 'Braamfontein Food Court, Johannesburg',
+            'window': 'Thu 12:00-14:00',
+            'verified_at': now_utc - timedelta(days=1, hours=9),
+        },
+        {
+            'key': 'glass-office-9kg',
+            'material': 'Glass',
+            'kg': 9.0,
+            'location': 'Saxonwold Retail Strip, Johannesburg',
+            'window': 'Fri 09:00-11:00',
+            'verified_at': now_utc - timedelta(hours=18),
+        },
+        {
+            'key': 'metals-cafe-12kg',
+            'material': 'Metals',
+            'kg': 12.0,
+            'location': 'Rivonia Café Cluster, Sandton',
+            'window': 'Today 08:30-10:30',
+            'verified_at': now_utc - timedelta(hours=4),
+        },
+    ]
+
+    existing_day28 = (
+        PickupOpportunity.query
+        .filter_by(source_user_id=business_user.id, source_role='business')
+        .filter(PickupOpportunity.notes.ilike(f"%{marker}%"))
+        .all()
+    )
+    existing_flow_count = (
+        PickupOpportunity.query
+        .filter_by(source_user_id=business_user.id, source_role='business')
+        .filter(PickupOpportunity.notes.ilike('%[DEMO-BIZ-DAY28-FLOW]%'))
+        .count()
+    )
+    existing_day28_kg = round(
+        sum(max(0.0, float(row.estimated_kg or 0.0)) for row in existing_day28),
+        1,
+    )
+    if (
+        len(existing_day28) == len(seed_specs)
+        and abs(existing_day28_kg - DEMO_BUSINESS_TARGET_KG) < 0.01
+        and existing_flow_count == 1
+    ):
+        return
+
+    seeded_candidates = (
+        PickupOpportunity.query
+        .filter_by(source_user_id=business_user.id, source_role='business')
+        .filter(PickupOpportunity.notes.ilike('%[DEMO-BIZ-%'))
+        .all()
+    )
+
+    if seeded_candidates:
+        activity_ids_to_remove = set()
+        for row in seeded_candidates:
+            for assignment in list(row.assignments or []):
+                if assignment.linked_activity_id:
+                    activity_ids_to_remove.add(int(assignment.linked_activity_id))
+                db.session.delete(assignment)
+            db.session.delete(row)
+
+        if activity_ids_to_remove:
+            for activity_row in Activity.query.filter(Activity.id.in_(list(activity_ids_to_remove))).all():
+                db.session.delete(activity_row)
+
+        db.session.flush()
+
+    for spec in seed_specs:
+        unique_note = f"{marker}:{spec['key']}"
+        verified_at = spec['verified_at'].astimezone(timezone.utc)
+        submitted_at = verified_at - timedelta(hours=2)
+        handover_confirmed_at = verified_at - timedelta(hours=8)
+        accepted_at = handover_confirmed_at - timedelta(hours=2)
+        created_at = accepted_at - timedelta(hours=5)
+        spec_kg = float(spec['kg'])
+        routed_name, routed_mode = routed_collector_label(spec_kg, len(unique_note))
+
+        opportunity = PickupOpportunity(
+            source_role='business',
+            source_user_id=business_user.id,
+            material_type=canonical_material_label(spec['material']),
+            estimated_kg=spec_kg,
+            priority='center' if spec_kg > MICRO_LOAD_MAX_KG else 'standard',
+            location=spec['location'],
+            requested_window=spec['window'],
+            notes=(
+                f"{unique_note} Day-28 demo batch with digital handover chain. "
+                f"Routed to {routed_name} ({routed_mode} load)."
+            ),
+            status='completed',
+            created_at=created_at,
+        )
+        db.session.add(opportunity)
+        db.session.flush()
+
+        assignment = OpportunityAssignment(
+            opportunity_id=opportunity.id,
+            recycler_user_id=recycler_user.id,
+            status='completed',
+            accepted_at=accepted_at,
+            handover_confirmed_at=handover_confirmed_at,
+            handover_code=build_handover_code(opportunity.id, None),
+            handover_confirmed_by_user_id=business_user.id,
+            submitted_at=submitted_at,
+            submitted_material_type=canonical_material_label(spec['material']),
+            submitted_weight_kg=spec_kg,
+            submission_notes=(
+                f"Digital handover confirmed at source gate. Routed operator: {routed_name}. "
+                "Submitted with calibrated scale and contamination check complete."
+            ),
+            verified_by_center_id=center_user.id,
+            verified_at=verified_at,
+            verification_status='verified',
+            verification_notes='Center validated material and mass; record finalized.',
+        )
+        db.session.add(assignment)
+        db.session.flush()
+        assignment.handover_code = build_handover_code(opportunity.id, assignment.id)
+
+        reward_amount = calculate_demo_reward_amount(spec['material'], spec['kg'])
+        activity = Activity(
+            user_id=recycler_user.id,
+            timestamp=verified_at.isoformat(),
+            desc=f"Verified Business Pickup ({spec['kg']:.1f}kg of {canonical_material_label(spec['material'])})",
+            amount=float(reward_amount),
+            verified_status='verified',
+            status='verified',
+            pipeline_stage='attested',
+            logbook_status='anchored',
+            reward_status='paid',
+            logbook_finalized_at=verified_at,
+            review_status='approved',
+            reviewed_by_user_id=center_user.id,
+            reviewed_at=verified_at,
+            proof_hash=hashlib.sha256(f"demo-biz-{spec['key']}-{verified_at.isoformat()}".encode('utf-8')).hexdigest(),
+        )
+        db.session.add(activity)
+        db.session.flush()
+
+        activity.hcs_tx_id = f"0.0.1001@1700000100.{activity.id:09d}"
+        activity.logbook_tx_id = activity.hcs_tx_id
+        activity.hedera_tx_id = activity.hcs_tx_id
+        activity.hts_tx_id = f"0.0.1002@1700000200.{activity.id:09d}"
+        activity.reward_tx_id = activity.hts_tx_id
+
+        assignment.linked_activity_id = activity.id
+
+        create_verification_signal(
+            activity_id=activity.id,
+            signal_type='collector_submission',
+            source_role='operator',
+            source_user_id=recycler_user.id,
+            value='submitted',
+            is_positive=True,
+            metadata={
+                'weight_kg': spec['kg'],
+                'material_type': canonical_material_label(spec['material']),
+                'source_type': 'pickup_assignment',
+                'assignment_id': assignment.id,
+                'handover_code': assignment.handover_code,
+                'routed_collector': routed_name,
+                'routing_mode': routed_mode,
+            },
+        )
+        create_verification_signal(
+            activity_id=activity.id,
+            signal_type='center_verification',
+            source_role='center',
+            source_user_id=center_user.id,
+            value='verified',
+            is_positive=True,
+            metadata={
+                'verified_by': center_user.email,
+                'source': 'pickup_assignment',
+                'assignment_id': assignment.id,
+            },
+        )
+        add_schedule_match_signal(activity)
+
+    flow_specs = [
+        {
+            'key': 'flow-accepted-50kg',
+            'material': 'Plastics',
+            'kg': 50.0,
+            'location': 'Melrose Loading Dock, Johannesburg',
+            'window': 'Today 15:00-17:00',
+            'created_at': now_utc - timedelta(hours=2, minutes=10),
+            'status': 'accepted',
+        },
+    ]
+
+    for spec in flow_specs:
+        spec_kg = float(spec['kg'])
+        routed_name, routed_mode = routed_collector_label(spec_kg, len(spec['key']))
+        opportunity = PickupOpportunity(
+            source_role='business',
+            source_user_id=business_user.id,
+            material_type=canonical_material_label(spec['material']),
+            estimated_kg=spec_kg,
+            priority='standard',
+            location=spec['location'],
+            requested_window=spec['window'],
+            notes=(
+                f"[DEMO-BIZ-DAY28-FLOW]:{spec['key']} Active chain-of-custody stage. "
+                f"Routed to {routed_name} ({routed_mode} load)."
+            ),
+            status=spec['status'],
+            created_at=spec['created_at'],
+        )
+        db.session.add(opportunity)
+        db.session.flush()
+
+        assignment = OpportunityAssignment(
+            opportunity_id=opportunity.id,
+            recycler_user_id=recycler_user.id,
+            status=spec['status'],
+            accepted_at=spec['created_at'] + timedelta(minutes=12),
+            submitted_material_type=canonical_material_label(spec['material']),
+            submitted_weight_kg=spec_kg,
+            handover_code=build_handover_code(opportunity.id, None),
+        )
+        db.session.add(assignment)
+        db.session.flush()
+        assignment.handover_code = build_handover_code(opportunity.id, assignment.id)
+        if spec['status'] == 'in_transit':
+            assignment.handover_confirmed_at = assignment.accepted_at + timedelta(minutes=20)
+            assignment.handover_confirmed_by_user_id = business_user.id
+        if spec['status'] == 'submitted':
+            assignment.handover_confirmed_at = assignment.accepted_at + timedelta(minutes=15)
+            assignment.handover_confirmed_by_user_id = business_user.id
+            assignment.submitted_at = assignment.accepted_at + timedelta(minutes=55)
+            assignment.verification_status = 'pending'
+
+    db.session.commit()
 
 
 def normalize_material_key(material_type: str | None) -> str:
@@ -1544,6 +1853,15 @@ def ensure_activity_columns():
     if "submitted_at" not in assignment_existing:
         db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN submitted_at DATETIME"))
 
+    if "handover_confirmed_at" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN handover_confirmed_at DATETIME"))
+
+    if "handover_code" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN handover_code VARCHAR(80)"))
+
+    if "handover_confirmed_by_user_id" not in assignment_existing:
+        db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN handover_confirmed_by_user_id INTEGER"))
+
     if "submitted_material_type" not in assignment_existing:
         db.session.execute(text("ALTER TABLE opportunity_assignment ADD COLUMN submitted_material_type VARCHAR(80)"))
 
@@ -2594,6 +2912,7 @@ def business_dashboard():
         return redirect(url_for(access_denied_redirect_for(current_user)))
 
     ensure_demo_pickup_flow_seed()
+    ensure_demo_business_verified_transactions()
 
     requests = (
         PickupOpportunity.query
@@ -2608,7 +2927,19 @@ def business_dashboard():
         "active_requests": 0,
         "verified_records": 0,
         "proof_ready": 0,
+        "eco_funded_total": 0.0,
+        "capital_injected_zar": 0.0,
+        "co2e_averted_kg": 0.0,
+        "micro_jobs_funded": 0,
         "latest_verified_at": None,
+        "goal_target_kg": 1000.0,
+        "goal_current_kg": 0.0,
+        "goal_remaining_kg": 1000.0,
+        "goal_percent": 0,
+        "pickups_to_goal": 0,
+        "total_recycled_kg": 0.0,
+        "demo_seed_kg": 0.0,
+        "demo_seed_eco": 0.0,
     }
 
     for req in requests:
@@ -2639,10 +2970,69 @@ def business_dashboard():
         if req.notes and '[materials]' in req.notes:
             material_breakdown = req.notes.split('[materials]', 1)[1].split('\n', 1)[0].strip() or None
 
-        if req.status in {"open", "accepted"}:
-            summary["active_requests"] += 1
+        routed_weight_kg = None
+        if latest_assignment and latest_assignment.submitted_weight_kg is not None:
+            routed_weight_kg = float(latest_assignment.submitted_weight_kg)
+        elif req.estimated_kg is not None:
+            routed_weight_kg = float(req.estimated_kg)
+
+        routed_collector_name, routed_mode = routed_collector_label(routed_weight_kg, req.id)
+        collector_display_name = routed_collector_name
+        if latest_assignment and getattr(latest_assignment, "recycler_user", None):
+            if routed_mode == 'micro':
+                collector_display_name = routed_collector_name
+            else:
+                collector_display_name = "VeriCycle Transport Fleet"
+
+        handover_code = None
+        if latest_assignment:
+            handover_code = latest_assignment.handover_code or build_handover_code(req.id, latest_assignment.id)
+
+        chain_stage = 'Requested'
+        if linked_activity:
+            chain_stage = 'Verified'
+        elif latest_assignment and latest_assignment.status == 'submitted':
+            chain_stage = 'At Center Verification'
+        elif latest_assignment and latest_assignment.status == 'in_transit':
+            chain_stage = 'In Transit'
+        elif latest_assignment and latest_assignment.status == 'accepted' and latest_assignment.handover_confirmed_at:
+            chain_stage = 'Handover Confirmed'
+        elif latest_assignment and latest_assignment.status == 'accepted':
+            chain_stage = 'Accepted'
+
+        lifecycle_status_key = 'requested'
+        trust_status_label = 'Requested'
+        assignment_state = (latest_assignment.status or '').strip().lower() if latest_assignment else ''
+        request_state = (req.status or '').strip().lower()
+
+        if linked_activity or (latest_assignment and (latest_assignment.verification_status or '').strip().lower() == 'verified'):
+            lifecycle_status_key = 'verified'
+            trust_status_label = 'Verified'
+        elif assignment_state == 'submitted' or request_state == 'submitted':
+            lifecycle_status_key = 'submitted'
+            trust_status_label = 'Submitted'
+        elif assignment_state == 'in_transit' or request_state == 'in_transit':
+            lifecycle_status_key = 'in_transit'
+            trust_status_label = 'In Transit'
+        elif assignment_state == 'accepted' or request_state == 'accepted':
+            lifecycle_status_key = 'accepted'
+            trust_status_label = 'Awaiting Pickup'
+        elif request_state == 'open':
+            lifecycle_status_key = 'requested'
+            trust_status_label = 'Awaiting Pickup'
+
         if linked_activity:
             summary["verified_records"] += 1
+            summary["eco_funded_total"] += max(0.0, float(linked_activity.amount or 0.0))
+            verified_kg = 0.0
+            if latest_assignment and latest_assignment.submitted_weight_kg is not None:
+                verified_kg = max(0.0, float(latest_assignment.submitted_weight_kg or 0.0))
+            elif req.estimated_kg is not None:
+                verified_kg = max(0.0, float(req.estimated_kg or 0.0))
+            summary["goal_current_kg"] += verified_kg
+            if req.notes and '[DEMO-BIZ-DAY28-SEED]' in req.notes:
+                summary["demo_seed_kg"] += verified_kg
+                summary["demo_seed_eco"] += max(0.0, float(linked_activity.amount or 0.0))
             if linked_activity.proof_hash or linked_activity.hcs_tx_id or linked_activity.hedera_tx_id:
                 summary["proof_ready"] += 1
             if linked_activity.timestamp and (
@@ -2661,6 +3051,17 @@ def business_dashboard():
             "status": req.status,
             "status_label": request_status_label,
             "created_at": req.created_at,
+            "routed_weight_kg": round(max(0.0, float(routed_weight_kg or 0.0)), 1),
+            "routing_mode": routed_mode,
+            "collector_display_name": collector_display_name,
+            "is_macro_load": routed_mode == 'macro',
+            "handover_code": handover_code,
+            "handover_confirmed_at": latest_assignment.handover_confirmed_at if latest_assignment else None,
+            "chain_stage": chain_stage,
+            "lifecycle_status_key": lifecycle_status_key,
+            "trust_status_label": trust_status_label,
+            "verified_weight_kg": latest_assignment.submitted_weight_kg if latest_assignment else None,
+            "assignment_id": latest_assignment.id if latest_assignment else None,
             "assignment_status": latest_assignment.status if latest_assignment else None,
             "verification_status": latest_assignment.verification_status if latest_assignment else None,
             "assigned_recycler_email": (
@@ -2680,11 +3081,49 @@ def business_dashboard():
             "hts_tx_id": linked_activity.hts_tx_id if linked_activity else None,
         })
 
+    goal_target = float(summary["goal_target_kg"])
+    demo_seed_kg = max(0.0, float(summary.get("demo_seed_kg") or 0.0))
+    demo_seed_eco = max(0.0, float(summary.get("demo_seed_eco") or 0.0))
+    if demo_seed_kg > 0:
+        summary["goal_current_kg"] = demo_seed_kg
+        summary["eco_funded_total"] = demo_seed_eco
+
+    goal_current = max(0.0, float(summary["goal_current_kg"] or 0.0))
+    goal_remaining = max(0.0, goal_target - goal_current)
+    summary["goal_current_kg"] = round(goal_current, 1)
+    summary["total_recycled_kg"] = round(goal_current, 1)
+    summary["goal_remaining_kg"] = round(goal_remaining, 1)
+    summary["goal_percent"] = min(100, int(round((goal_current / goal_target) * 100))) if goal_target > 0 else 0
+    summary["eco_funded_total"] = round(float(summary["eco_funded_total"] or 0.0), 1)
+    summary["capital_injected_zar"] = round(float(summary["eco_funded_total"] or 0.0), 2)
+
+    # ESG conversion factors for executive reporting views.
+    # 1kg verified recycling -> ~1.85kg CO2e avoided (within 1.5-2.0 range).
+    summary["co2e_averted_kg"] = round(goal_current * 1.85, 0)
+    # Approximate livelihoods funded by ECO flow into recycler economy.
+    summary["micro_jobs_funded"] = int(max(0, math.ceil(float(summary["eco_funded_total"] or 0.0) / 200.0))) if summary["eco_funded_total"] else 0
+
+    verified_pickup_weights = [
+        max(0.0, float(row.get("verified_weight_kg") or row.get("estimated_kg") or 0.0))
+        for row in rows
+        if row.get("activity_id")
+    ]
+    avg_pickup_kg = (sum(verified_pickup_weights) / len(verified_pickup_weights)) if verified_pickup_weights else 45.0
+    summary["pickups_to_goal"] = int(math.ceil(goal_remaining / max(1.0, avg_pickup_kg))) if goal_remaining > 0 else 0
+
+    active_rows = [
+        row for row in rows
+        if not row.get("activity_id") and (str(row.get("status") or '').strip().lower() not in {'cancelled', 'completed'})
+    ]
     verified_rows = [row for row in rows if row["activity_id"]]
+
+    # Keep KPI mathematically aligned with records shown in active pipeline table.
+    summary["active_requests"] = len(active_rows)
+
     return render_template(
         'business.html',
         active_page='business',
-        requests=rows,
+        requests=active_rows,
         verified_rows=verified_rows,
         summary=summary,
     )
@@ -3049,6 +3488,8 @@ def api_accept_opportunity(opportunity_id):
         status='accepted',
     )
     db.session.add(assignment)
+    db.session.flush()
+    assignment.handover_code = build_handover_code(opportunity.id, assignment.id)
 
     opportunity.status = 'accepted'
     db.session.commit()
@@ -3058,7 +3499,45 @@ def api_accept_opportunity(opportunity_id):
         "assignment_id": assignment.id,
         "opportunity_id": opportunity.id,
         "status": assignment.status,
+        "handover_code": assignment.handover_code,
     })
+
+
+@app.post('/business/assignments/<int:assignment_id>/confirm-handover')
+@login_required
+def business_confirm_assignment_handover(assignment_id):
+    if effective_role(current_user) != 'business':
+        return redirect(url_for(access_denied_redirect_for(current_user)))
+
+    assignment = db.session.get(OpportunityAssignment, assignment_id)
+    if not assignment or not assignment.opportunity:
+        flash('Pickup assignment not found.', 'error')
+        return redirect(url_for('business_dashboard'))
+
+    opportunity = assignment.opportunity
+    if opportunity.source_role != 'business' or opportunity.source_user_id != current_user.id:
+        flash('You can only confirm handover for your own business requests.', 'error')
+        return redirect(url_for('business_dashboard'))
+
+    if assignment.status in {'cancelled', 'completed'}:
+        flash('This request can no longer accept handover confirmation.', 'warning')
+        return redirect(url_for('business_dashboard'))
+
+    if not assignment.handover_code:
+        assignment.handover_code = build_handover_code(opportunity.id, assignment.id)
+
+    if assignment.handover_confirmed_at is None:
+        assignment.handover_confirmed_at = datetime.now(timezone.utc)
+        assignment.handover_confirmed_by_user_id = current_user.id
+
+    if assignment.status == 'accepted':
+        assignment.status = 'in_transit'
+    if opportunity.status in {'open', 'accepted'}:
+        opportunity.status = 'in_transit'
+
+    db.session.commit()
+    flash(f"Handover confirmed ({assignment.handover_code}). Chain of custody is now in transit.", 'success')
+    return redirect(url_for('business_dashboard'))
 
 
 @app.get('/api/opportunities/my-assignments')
@@ -3126,6 +3605,13 @@ def api_submit_assignment(assignment_id):
     if assignment.status not in ('accepted', 'in_transit'):
         return jsonify({"ok": False, "error": "Assignment cannot be submitted from its current state"}), 409
 
+    opportunity = assignment.opportunity
+    if opportunity and opportunity.source_role == 'business' and assignment.handover_confirmed_at is None:
+        return jsonify({
+            "ok": False,
+            "error": "Business handover must be confirmed before submission",
+        }), 409
+
     data = request.get_json(silent=True) or request.form
 
     material_type = (data.get('material_type') or '').strip()
@@ -3180,6 +3666,12 @@ def api_mark_assignment_collected(assignment_id):
     opportunity = assignment.opportunity
     if not opportunity:
         return jsonify({"ok": False, "error": "Pickup opportunity not found"}), 400
+
+    if opportunity.source_role == 'business' and assignment.handover_confirmed_at is None:
+        return jsonify({
+            "ok": False,
+            "error": "Waiting for business handover confirmation before transit",
+        }), 409
 
     assignment.status = 'in_transit'
     opportunity.status = 'in_transit'
@@ -3238,6 +3730,8 @@ def api_center_submitted_assignments():
 def api_center_recent_verifications():
     if not can_verify_deposit_center(current_user):
         return jsonify({"rows": []}), 403
+
+    ensure_demo_business_verified_transactions()
 
     scope = (request.args.get('scope') or 'today').strip().lower()
     now_utc = datetime.now(timezone.utc)
@@ -3330,11 +3824,13 @@ def api_center_recent_verifications():
                 except (TypeError, ValueError):
                     weight_kg = None
 
+        routed_name, _ = routed_collector_label(weight_kg, assignment_id or row.id)
+
         payload.append({
             "activity_id": row.id,
             "timestamp": dt_utc.isoformat(),
             "time_label": dt_utc.strftime("%H:%M"),
-            "recycler_name": (recycler.full_name if recycler and recycler.full_name else (recycler.email if recycler else 'Recycler')),
+            "recycler_name": routed_name,
             "recycler_id": (recycler.hedera_account_id if recycler and recycler.hedera_account_id else None),
             "description": row.desc,
             "material_type": material_type,
@@ -3488,6 +3984,8 @@ def household_dashboard():
     if not can_create_opportunity_resident(current_user):
         return redirect(url_for(access_denied_redirect_for(current_user)))
 
+    ensure_demo_business_verified_transactions()
+
     # Attach user to default location if no profile exists
     profile = HouseholdProfile.query.filter_by(user_id=current_user.id).first()
     if not profile:
@@ -3513,6 +4011,44 @@ def household_dashboard():
         for s in schedules
     ]
 
+    top_business = (
+        User.query
+        .filter(func.lower(func.trim(User.role)) == 'business')
+        .order_by(User.id.asc())
+        .first()
+    )
+    honorable_mention = {
+        "name": "Business Partner",
+        "goal_target_kg": 1000.0,
+        "goal_current_kg": 0.0,
+        "goal_percent": 0,
+        "co2e_averted_kg": 0.0,
+        "micro_jobs_funded": 0,
+        "eco_funded_total": 0.0,
+    }
+    if top_business:
+        completed_assignments = (
+            OpportunityAssignment.query
+            .join(PickupOpportunity, OpportunityAssignment.opportunity_id == PickupOpportunity.id)
+            .filter(PickupOpportunity.source_role == 'business')
+            .filter(PickupOpportunity.source_user_id == top_business.id)
+            .filter(PickupOpportunity.notes.ilike('%[DEMO-BIZ-DAY28-SEED]%'))
+            .filter(OpportunityAssignment.linked_activity_id.isnot(None))
+            .all()
+        )
+        total_kg = sum(max(0.0, float(a.submitted_weight_kg or a.opportunity.estimated_kg or 0.0)) for a in completed_assignments)
+        total_eco = sum(max(0.0, float(a.linked_activity.amount or 0.0)) for a in completed_assignments if a.linked_activity)
+        goal_target = 1000.0
+        honorable_mention = {
+            "name": (top_business.full_name or top_business.email or "Business Partner").strip(),
+            "goal_target_kg": goal_target,
+            "goal_current_kg": round(total_kg, 1),
+            "goal_percent": min(100, int(round((total_kg / goal_target) * 100))) if goal_target > 0 else 0,
+            "co2e_averted_kg": round(total_kg * 1.85, 0),
+            "micro_jobs_funded": int(max(0, math.ceil(total_eco / 200.0))) if total_eco else 0,
+            "eco_funded_total": round(total_eco, 1),
+        }
+
     return render_template(
         "household.html",
         location=location,
@@ -3521,6 +4057,7 @@ def household_dashboard():
         recent_events=recent_events,
         locations=locations,
         selected_location_id=location.id,
+        honorable_mention=honorable_mention,
         active_page='household'
     )
 

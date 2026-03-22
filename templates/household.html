@@ -207,8 +207,55 @@
   .after-photo-btn:hover {
     background: #dcfce7;
   }
+  .community-faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+    margin-top: 0.55rem;
+  }
+  .community-faq-item {
+    border: 1px solid #dbe4ea;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+  .community-faq-item summary {
+    cursor: pointer;
+    padding: 0.68rem 0.76rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #334155;
+  }
+  .community-faq-item[open] summary {
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .community-faq-answer {
+    margin: 0.6rem 0.76rem 0.76rem;
+    padding: 0.62rem 0.72rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+  .community-faq-answer p {
+    margin: 0;
+    color: #475569;
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+  .community-faq-answer ul {
+    margin: 0;
+    padding-left: 1.05rem;
+  }
+  .community-faq-answer li {
+    margin: 0.28rem 0;
+    color: #475569;
+    font-size: 0.85rem;
+    line-height: 1.42;
+  }
   @media (max-width: 840px) {
     .report-grid {
+      grid-template-columns: 1fr;
+    }
+    .community-faq-grid {
       grid-template-columns: 1fr;
     }
   }
@@ -268,9 +315,101 @@
       </div>
     </section>
 
-    <div style="margin-bottom: 16px; font-size: 0.875rem; color: #374151;">
-      🏆 This Week's Top Voices: Sarah M., Thabo_99, GreenRandburg
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem; margin-bottom: 1rem;">
+      {% set mention = honorable_mention if honorable_mention is mapping else {} %}
+
+      <div class="card tech-card" style="padding: 1.5rem; border-top: 4px solid #22c55e;">
+        <h3 style="margin-bottom: 0.25rem; display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 1.2rem;">
+          <span style="font-size: 1.4rem;">♻️</span> Local Recyclers
+        </h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.4;">
+          The boots on the ground. Clearing neighborhood hotspots and driving the circular economy.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Street Waste Diverted</span>
+            <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">1,240 kg</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Active Hotspots Cleared</span>
+            <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">24 Areas</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Wealth Generated (ECO)</span>
+            <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">18,500 ECO</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card tech-card" style="padding: 1.5rem; border-top: 4px solid #0f172a;">
+        <h3 style="margin-bottom: 0.25rem; display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 1.2rem;">
+          <span style="font-size: 1.4rem;">🏢</span> Corporate Partners
+        </h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.4;">
+          Honorable mention: {{ mention.get('name', 'Business Partner') }} is at {{ mention.get('goal_percent', 0) }}% of a 1,000kg monthly diversion goal.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Capital Injected Locally</span>
+            <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">R {{ "{:,.1f}".format(mention.get('eco_funded_total', 0) or 0) }}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Monthly Goal Progress</span>
+            <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">{{ mention.get('goal_percent', 0) }}% ({{ "{:,.1f}".format(mention.get('goal_current_kg', 0) or 0) }}kg)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">ESG Lift (CO2e / Jobs)</span>
+            <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">{{ "{:,.0f}".format(mention.get('co2e_averted_kg', 0) or 0) }}kg / {{ mention.get('micro_jobs_funded', 0) }}</span>
+          </div>
+        </div>
+      </div>
+
     </div>
+
+    <section class="panel">
+      <span class="section-kicker">Need Help?</span>
+      <h3 style="margin:0.2rem 0 0.45rem; color:#0b5d4a;">Community FAQ</h3>
+      <div class="community-faq-grid">
+        <details class="community-faq-item" open>
+          <summary>What happens after I report a hotspot?</summary>
+          <div class="community-faq-answer">
+            <ul>
+              <li>Your report enters the community board.</li>
+              <li>Neighbors can add support to raise urgency.</li>
+              <li>High-priority hotspots route into center dispatch.</li>
+            </ul>
+          </div>
+        </details>
+        <details class="community-faq-item">
+          <summary>What does resident confirmation do?</summary>
+          <div class="community-faq-answer">
+            <ul>
+              <li>Center marks cleanup complete.</li>
+              <li>Residents confirm if cleanup actually happened.</li>
+              <li>Confirmed closes the event; missed reopens follow-up dispatch.</li>
+            </ul>
+          </div>
+        </details>
+        <details class="community-faq-item">
+          <summary>How are impacts shown here?</summary>
+          <div class="community-faq-answer">
+            <p>Top completed cleanups show location, hotspot type, and ECO-linked impact so residents can track proof-backed neighborhood progress.</p>
+          </div>
+        </details>
+        <details class="community-faq-item">
+          <summary>How can I help if I am not a recycler?</summary>
+          <div class="community-faq-answer">
+            <ul>
+              <li>Add your voice to active hotspots.</li>
+              <li>Confirm outcomes honestly after cleanups.</li>
+              <li>Keep report details specific for faster dispatch resolution.</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </section>
 
     <section class="panel">
       <span class="section-kicker">Live Feed</span>
