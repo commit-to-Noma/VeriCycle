@@ -5,10 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VeriCycle - Verified Value</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="preload" href="{{ url_for('static', filename='style.css') }}" as="style">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="light-theme home-light">
     <style>
+    /* Critical first-paint lock to avoid dark radar ring flash on initial load */
+    body.home-light .hero-proof.home-hero {
+        background:
+            radial-gradient(circle at 18% 18%, rgba(78, 181, 112, 0.16), transparent 28%),
+            radial-gradient(circle at 84% 30%, rgba(60, 160, 118, 0.14), transparent 24%),
+            linear-gradient(180deg, #fbfdfb 0%, #f2f8f4 56%, #edf5ef 100%) !important;
+    }
+    body.home-light .home-radar-ring {
+        border: 1.6px solid rgba(47, 143, 70, 0.22) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        mix-blend-mode: normal !important;
+    }
+
     /* Eco Glassmorphism Override for Homepage */
     body.home-light .stakeholder-card,
     body.home-light .step-card,

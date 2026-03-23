@@ -144,19 +144,21 @@
         justify-content: center;
     }
     .load-more-btn {
-        border: 2px solid #15803d;
+        border: 1px solid #86efac;
         border-radius: 999px;
-        background: #dcfce7;
-        color: #14532d;
-        padding: 0.5rem 0.95rem;
-        font-size: 0.82rem;
+        background: #ffffff;
+        color: #4ade80;
+        padding: 0.54rem 1.05rem;
+        font-size: 0.84rem;
         font-weight: 800;
-        letter-spacing: 0.02em;
+        letter-spacing: 0.025em;
         cursor: pointer;
-        box-shadow: 0 8px 18px rgba(22, 163, 74, 0.16);
+        box-shadow: 0 6px 14px rgba(22, 163, 74, 0.16);
     }
     .load-more-btn:hover {
-        background: #bbf7d0;
+        background: #f8fffb;
+        border-color: #4ade80;
+        color: #22c55e;
     }
     .list-item {
         border: 1px solid #e2e8f0;
@@ -249,16 +251,57 @@
     .table-wrap th:nth-child(4) {
         text-align: right;
     }
-    .status-pill {
+    .collector-shell .status-badge {
         display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 86px;
+        padding: 0.38rem 0.82rem;
         border-radius: 999px;
-        padding: 0.2rem 0.58rem;
-        font-size: 0.74rem;
-        font-weight: 700;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        border: 1px solid transparent;
+        line-height: 1;
+        white-space: nowrap;
     }
-    .status-verified { background: #dbeafe; color: #1d4ed8; }
-    .status-anchored { background: #dcfce7; color: #15803d; }
-    .status-pending { background: #fef9c3; color: #a16207; }
+    .collector-shell .status-pending {
+        background: #fef9c3;
+        border-color: #93c5fd;
+        color: #334155;
+    }
+    .collector-shell .status-submitted {
+        background: #dbeafe;
+        border-color: #60a5fa;
+        color: #1e3a8a;
+    }
+    .collector-shell .status-verified {
+        background: #dbeafe;
+        border-color: #93c5fd;
+        color: #1d4ed8;
+    }
+    .collector-shell .status-anchored {
+        background: #dcfce7;
+        border-color: #86efac;
+        color: #166534;
+    }
+    .collector-shell .status-rewarded,
+    .collector-shell .status-attested {
+        background: #ccfbf1;
+        border-color: #5eead4;
+        color: #115e59;
+    }
+    .collector-shell .status-needs-review {
+        background: #fffbeb;
+        border-color: #fbbf24;
+        color: #92400e;
+    }
+    .collector-shell .status-failed,
+    .collector-shell .status-rejected {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #991b1b;
+    }
     .hedera-link { color: #16a34a !important; font-weight: 500; text-decoration: none; font-size: 0.875rem; }
 
     .bottom-grid {
@@ -541,12 +584,106 @@
         background: #f0fdfa;
     }
     .inline-btn.qr-done-btn {
-        border-color: #15803d;
-        background: linear-gradient(135deg, #16a34a, #0f766e);
-        color: #ffffff;
+        border-color: #86efac;
+        background: #dcfce7;
+        color: #166534;
     }
     .inline-btn.qr-done-btn:hover {
-        background: linear-gradient(135deg, #15803d, #0d9488);
+        background: #bbf7d0;
+    }
+    .inline-btn.assignment-qr-btn {
+        border-color: #86efac;
+        background: #dcfce7;
+        color: #166534;
+        box-shadow: 0 6px 14px rgba(22, 163, 74, 0.16);
+    }
+    .inline-btn.assignment-qr-btn:hover {
+        background: #bbf7d0;
+    }
+
+    /* Recycler Hub button visibility lock to prevent ghosted controls. */
+    .collector-shell .btn-primary,
+    .collector-shell .btn-secondary,
+    .collector-shell .primary-cta,
+    .collector-shell .load-more-btn,
+    .collector-shell .inline-btn,
+    #submission-success-modal .btn-secondary,
+    #submission-success-modal .milestone-proof-primary,
+    #qr-intent-modal .inline-btn,
+    #qr-intent-modal .qr-close {
+        opacity: 1 !important;
+        filter: none !important;
+        visibility: visible;
+    }
+
+    .collector-shell .btn-primary,
+    .collector-shell a.btn-primary,
+    .collector-shell button.btn-primary {
+        background: #dcfce7 !important;
+        color: #166534 !important;
+        border: 1px solid #86efac !important;
+        box-shadow: 0 6px 14px rgba(22, 163, 74, 0.16);
+    }
+
+    .collector-shell .btn-primary:hover,
+    .collector-shell a.btn-primary:hover,
+    .collector-shell button.btn-primary:hover {
+        background: #bbf7d0 !important;
+    }
+
+    .collector-shell .btn-secondary {
+        background: #f0fdf4;
+        border: 1px solid #16a34a;
+        color: #166534;
+        margin-top: 0;
+    }
+
+    .collector-shell .btn-secondary:hover {
+        background: #dcfce7;
+        color: #14532d;
+    }
+
+    .collector-shell .btn-primary:disabled,
+    .collector-shell .primary-cta:disabled,
+    .collector-shell .inline-btn:disabled,
+    .collector-shell .load-more-btn:disabled {
+        opacity: 1 !important;
+        background: #ecfdf5 !important;
+        color: #166534 !important;
+        border-color: #86efac !important;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+
+    .collector-shell .primary-cta,
+    .collector-shell .load-more-btn,
+    .collector-shell .inline-btn,
+    .collector-shell .kpi-wallet-btn,
+    .collector-shell .accept-btn,
+    .collector-shell .toggle-drop,
+    .collector-shell .submit-drop,
+    .collector-shell .mark-collected,
+    .collector-shell .assignment-qr-btn {
+        background: #dcfce7 !important;
+        color: #166534 !important;
+        border: 1px solid #86efac !important;
+        text-shadow: none !important;
+    }
+
+    .collector-shell .load-more-btn {
+        background: #ffffff !important;
+    }
+
+    .collector-shell .primary-cta:hover,
+    .collector-shell .load-more-btn:hover,
+    .collector-shell .inline-btn:hover,
+    .collector-shell .kpi-wallet-btn:hover,
+    .collector-shell .accept-btn:hover,
+    .collector-shell .toggle-drop:hover,
+    .collector-shell .submit-drop:hover,
+    .collector-shell .mark-collected:hover,
+    .collector-shell .assignment-qr-btn:hover {
+        background: #bbf7d0 !important;
     }
 
     @media (max-width: 760px) {
@@ -576,10 +713,27 @@
         padding-bottom: 4rem;
     }
 
+    .impact-banner {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: rgba(22, 163, 74, 0.06);
+        border-left: 3px solid #16a34a;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #0b5d4a;
+        white-space: nowrap;
+        line-height: 1.25;
+    }
+    .impact-banner strong {
+        color: #14532d;
+    }
+
     .eco-rate-strip {
         display: flex;
         gap: 0.45rem;
         flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
         margin-bottom: 1rem;
     }
     .eco-rate-pill {
@@ -654,15 +808,15 @@
         </div>
     </div>
 
-    <div style="margin-bottom:1.5rem; padding:1rem; background:rgba(22,163,74,0.06); border-left:3px solid #16a34a; border-radius:8px; font-size:0.9rem; color:#0b5d4a;">
-        <strong>💚 Your Impact:</strong> Every kg you recycle creates an immutable audit record. Your verified activities build multi-stakeholder proof that drives real environmental and economic value.
+    <div class="impact-banner">
+        <strong>Your Impact:</strong> Turn every pickup into verified value with live ECO rates, instant QR intents, Hedera proof, and automatic rewards.
     </div>
 
     <div class="eco-rate-strip" aria-label="Live EcoCoin material rates">
-        <span class="eco-rate-pill">Plastics: 5.0 ECO/kg (+25%)</span>
-        <span class="eco-rate-pill">Metals: 16.0 ECO/kg (+15%)</span>
-        <span class="eco-rate-pill">Glass: 1.2 ECO/kg (+50%)</span>
-        <span class="eco-rate-pill">E-Waste: 35.0 ECO/kg (+40%)</span>
+        <span class="eco-rate-pill">Plastics: 5.0 ECO/kg</span>
+        <span class="eco-rate-pill">Metals: 16.0 ECO/kg</span>
+        <span class="eco-rate-pill">Glass: 1.2 ECO/kg</span>
+        <span class="eco-rate-pill">E-Waste: 35.0 ECO/kg</span>
         <span class="eco-rate-pill">1 ECO ≈ R1.00</span>
     </div>
 
@@ -764,10 +918,20 @@
                             <td class="activity-weight" data-desc="{{ act.desc|e }}">—</td>
                             <td class="col-amount-val">{% if weight_val %}{{ act.amount }}{% else %}—{% endif %}</td>
                             <td>
-                                {% if 'anchored' in status_raw %}
-                                    <span class="status-badge status-verified">Anchored</span>
+                                {% if 'failed' in status_raw or 'rejected' in status_raw %}
+                                    <span class="status-badge status-failed">Failed</span>
+                                {% elif 'needs_review' in status_raw or 'needs review' in status_raw or 'flagged' in status_raw %}
+                                    <span class="status-badge status-needs-review">Needs Review</span>
+                                {% elif 'attested' in status_raw %}
+                                    <span class="status-badge status-attested">Attested</span>
+                                {% elif 'rewarded' in status_raw or 'paid' in status_raw %}
+                                    <span class="status-badge status-rewarded">Rewarded</span>
+                                {% elif 'anchored' in status_raw or 'logged' in status_raw %}
+                                    <span class="status-badge status-anchored">Anchored</span>
                                 {% elif 'verified' in status_raw or status_raw == 'completed' %}
                                     <span class="status-badge status-verified">Verified</span>
+                                {% elif 'submitted' in status_raw or 'accepted' in status_raw or 'in_transit' in status_raw %}
+                                    <span class="status-badge status-submitted">Submitted</span>
                                 {% else %}
                                     <span class="status-badge status-pending">Pending</span>
                                 {% endif %}
@@ -856,6 +1020,7 @@ document.addEventListener('DOMContentLoaded', function() {
         : null;
     let currentData = {};
     let openRowsData = [];
+    let acceptedRowsAllData = [];
     let acceptedRowsData = [];
     const OPEN_PAGE_SIZE = 4;
     const ACCEPTED_PAGE_SIZE = 5;
@@ -1060,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function refreshDashboardData() {
         currentData = await fetchJsonSafe('/api/my-dashboard-data', {}, 'Could not load dashboard data');
-        applyKpiCards(currentData, acceptedRowsData);
+        applyKpiCards(currentData, acceptedRowsAllData);
         renderActivityTable(currentData.timeline || currentData.activities || []);
     }
 
@@ -1160,7 +1325,19 @@ document.addEventListener('DOMContentLoaded', function() {
             row?.reward_status,
         ].map((v) => String(v || '').toLowerCase());
 
-        if (values.some((v) => ['anchored', 'attested', 'logged', 'rewarded', 'paid'].includes(v))) {
+        if (values.some((v) => ['failed', 'rejected'].includes(v))) {
+            return 'Failed';
+        }
+        if (values.some((v) => ['needs_review', 'needs review', 'flagged'].includes(v))) {
+            return 'Needs Review';
+        }
+        if (values.some((v) => ['attested'].includes(v))) {
+            return 'Attested';
+        }
+        if (values.some((v) => ['rewarded', 'paid'].includes(v))) {
+            return 'Rewarded';
+        }
+        if (values.some((v) => ['anchored', 'logged'].includes(v))) {
             return 'Anchored';
         }
         if (values.some((v) => ['verified', 'completed'].includes(v))) {
@@ -1170,6 +1347,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return 'Submitted';
         }
         return 'Pending';
+    }
+
+    function timelineStatusClass(statusLabel) {
+        const value = String(statusLabel || '').toLowerCase();
+        if (value === 'failed') return 'status-failed';
+        if (value === 'needs review') return 'status-needs-review';
+        if (value === 'attested') return 'status-attested';
+        if (value === 'rewarded') return 'status-rewarded';
+        if (value === 'anchored') return 'status-anchored';
+        if (value === 'verified') return 'status-verified';
+        if (value === 'submitted') return 'status-submitted';
+        return 'status-pending';
     }
 
     function renderActivityTable(timelineRows) {
@@ -1194,7 +1383,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td class="activity-material">${escapeHtml(info.material)}</td>
                     <td class="activity-weight">${escapeHtml(info.weight)}</td>
                     <td class="col-amount-val">${Number.isFinite(amount) ? amount.toFixed(2) : '—'}</td>
-                    <td><span class="status-badge ${status === 'Anchored' || status === 'Verified' ? 'status-verified' : 'status-pending'}">${status}</span></td>
+                    <td><span class="status-badge ${timelineStatusClass(status)}">${status}</span></td>
                     <td>${tx ? `<a class="hedera-link" href="https://hashscan.io/testnet/transaction/${escapeHtml(tx)}" target="_blank" rel="noopener">${escapeHtml(txLabel)}</a>` : '—'}</td>
                 </tr>
             `;
@@ -1288,6 +1477,31 @@ document.addEventListener('DOMContentLoaded', function() {
         return sorted;
     }
 
+    function isActiveAcceptedStatus(statusValue) {
+        const status = String(statusValue || '').toLowerCase();
+        return ['accepted', 'in_transit', 'submitted'].includes(status);
+    }
+
+    function rowMostRecentTimestamp(row) {
+        const candidates = [
+            row?.completed_at,
+            row?.verified_at,
+            row?.submitted_at,
+            row?.collected_at,
+            row?.accepted_at,
+            row?.updated_at,
+            row?.created_at,
+        ];
+        let best = 0;
+        candidates.forEach((value) => {
+            const ts = new Date(value || 0).getTime();
+            if (Number.isFinite(ts) && ts > best) {
+                best = ts;
+            }
+        });
+        return best;
+    }
+
     function renderOpenRows() {
         const sorted = sortOpenRows(openRowsData);
         if (!sorted.length) {
@@ -1332,13 +1546,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderAcceptedRows() {
         const sorted = [...acceptedRowsData].sort((a, b) => {
-            const left = new Date(b?.submitted_at || b?.accepted_at || 0).getTime();
-            const right = new Date(a?.submitted_at || a?.accepted_at || 0).getTime();
-            return left - right;
+            const left = rowMostRecentTimestamp(b);
+            const right = rowMostRecentTimestamp(a);
+            if (left !== right) return left - right;
+            return Number(b?.assignment_id || 0) - Number(a?.assignment_id || 0);
         });
 
         if (!sorted.length) {
-            acceptedContainer.innerHTML = '<p>No accepted pickups yet.</p>';
+            acceptedContainer.innerHTML = '<p>No active pickups right now. Center-approved records move to Verified Recycling Activity.</p>';
             if (acceptedLoadMoreBtn) acceptedLoadMoreBtn.style.display = 'none';
             return;
         }
@@ -1397,15 +1612,16 @@ document.addEventListener('DOMContentLoaded', function() {
             acceptedLoadMoreBtn.style.display = sorted.length > acceptedVisibleCount ? 'inline-flex' : 'none';
         }
 
-        // Refresh KPI cards after assignment refresh to include submitted/in-transit weights.
-        applyKpiCards(currentData, acceptedRowsData);
+        // Use all assignment rows for KPI math while only rendering active rows.
+        applyKpiCards(currentData, acceptedRowsAllData);
     }
 
     async function loadAcceptedAssignments() {
         try {
             const data = await fetchJsonSafe('/api/opportunities/my-assignments', {}, 'Unable to load accepted jobs');
-            acceptedRowsData = data.rows || [];
-            maybeNotifyCenterApprovals(acceptedRowsData);
+            acceptedRowsAllData = data.rows || [];
+            maybeNotifyCenterApprovals(acceptedRowsAllData);
+            acceptedRowsData = acceptedRowsAllData.filter((row) => isActiveAcceptedStatus(row?.status));
             acceptedVisibleCount = ACCEPTED_PAGE_SIZE;
             renderAcceptedRows();
         } catch (e) {

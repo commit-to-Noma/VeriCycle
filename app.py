@@ -888,6 +888,9 @@ def build_rewards_wallet_snapshot(user: User) -> dict:
         elif state_hint in {"verified", "completed"}:
             status_text = "Verified"
 
+        tx_hashscan_url = hashscan_link(tx_id)
+        fallback_proof_url = f"/api/proof-bundle/{row.id}"
+
         history_rows.append({
             "created_at": parse_activity_dt(row),
             "date": row.timestamp,
@@ -895,8 +898,8 @@ def build_rewards_wallet_snapshot(user: User) -> dict:
             "status": status_text,
             "amount_eco": amount,
             "note": "ECO earned from verified recycling activity",
-            "link_url": f"/api/proof-bundle/{row.id}",
-            "link_label": "View proof",
+            "link_url": tx_hashscan_url or fallback_proof_url,
+            "link_label": "View on HashScan" if tx_hashscan_url else "View proof",
         })
 
     for tx in wallet_rows:
@@ -3584,15 +3587,29 @@ def api_accept_opportunity(opportunity_id):
     if not opportunity:
         return jsonify({"ok": False, "error": "Opportunity not found"}), 404
 
-    existing = OpportunityAssignment.query.filter_by(
-        opportunity_id=opportunity.id,
-        recycler_user_id=current_user.id,
-    ).first()
-    if existing:
-        return jsonify({"ok": True, "assignment_id": existing.id, "already_exists": True})
+    existing = (
+        OpportunityAssignment.query
+        .filter_by(
+            opportunity_id=opportunity.id,
+            recycler_user_id=current_user.id,
+        )
+        .order_by(OpportunityAssignment.id.desc())
+        .first()
+    )
+    if existing and (existing.status or '').strip().lower() in {'accepted', 'in_transit', 'submitted'}:
+        return jsonify({
+            "ok": True,
+            "assignment_id": existing.id,
+            "already_exists": True,
+            "status": existing.status,
+            "handover_code": existing.handover_code,
+        })
 
     if opportunity.status != 'open':
-        return jsonify({"ok": False, "error": "Opportunity is not open"}), 409
+        return jsonify({
+            "ok": False,
+            "error": "Opportunity is not open",
+        }), 409
 
     assignment = OpportunityAssignment(
         opportunity_id=opportunity.id,

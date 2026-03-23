@@ -119,27 +119,62 @@
 .wallet-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    align-items: stretch;
+    gap: 1.35rem;
+    align-items: start;
     margin-bottom: 2rem;
 }
 
 .wallet-left,
 .wallet-right {
-    height: 100%;
+    height: auto;
 }
 
 .wallet-left {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 1rem;
+    justify-content: flex-start;
+    gap: 0.85rem;
 }
 
 .wallet-right {
+    display: block;
+}
+
+.voucher-hub-card {
+    padding: 0.9rem;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.voucher-hub-heading {
+    margin: 0;
+    color: #0b5d4a;
+    font-size: 1.02rem;
+    font-weight: 800;
+    text-align: center;
+    width: 100%;
+}
+
+.voucher-hub-subheading {
+    margin: 0.35rem 0 0;
+    color: #64748b;
+    font-size: 0.84rem;
+    line-height: 1.4;
+    text-align: center;
+    width: 100%;
+}
+
+.voucher-hub-grid {
+    margin-top: 0.7rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 0.65rem;
+    width: 100%;
+    align-content: start;
 }
 
 /* Balance card */
@@ -216,7 +251,7 @@
 }
 
 /* Swap card */
-.swap-card { padding: 1.2rem; flex: 1; }
+.swap-card { padding: 1.1rem; flex: 0 0 auto; }
 .swap-card h3 {
     margin: 0 0 1rem 0;
     color: #0b5d4a;
@@ -274,9 +309,9 @@
     border-radius: 7px;
 }
 .swap-max-btn {
-    border: 1px solid #16a34a;
-    background: #ecfdf5;
-    color: #166534;
+    border: 1px solid #86efac;
+    background: #ffffff;
+    color: #4ade80;
     font-weight: 700;
     font-size: 0.75rem;
     cursor: pointer;
@@ -285,31 +320,39 @@
     border-radius: 5px;
     letter-spacing: 0.04em;
 }
-.swap-max-btn:hover { background: #dcfce7; }
+.swap-max-btn:hover {
+    background: #f8fffb;
+    border-color: #4ade80;
+    color: #22c55e;
+}
 .swap-max-btn:disabled {
-    border-color: #94a3b8;
-    background: #e2e8f0;
-    color: #334155;
+    border-color: #86efac !important;
+    background: #ffffff !important;
+    color: #4ade80 !important;
+    opacity: 1 !important;
+    filter: none !important;
 }
 .swap-divider {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0.55rem 0;
+    margin: 0.5rem 0;
 }
 .swap-arrow {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #22c55e;
-    color: #ffffff;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #86efac;
+    color: #16a34a;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0.5rem auto;
-    font-size: 1.08rem;
+    font-size: 1.2rem;
+    font-weight: 800;
     line-height: 1;
-    box-shadow: 0 6px 16px rgba(34,197,94,0.28);
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.14);
 }
 .swap-token-select {
     appearance: none;
@@ -349,26 +392,33 @@
     width: 100%;
     margin-top: 0.9rem;
     padding: 0.82rem;
-    border: none;
+    border: 1.5px solid #86efac;
     border-radius: 12px;
-    background: linear-gradient(135deg, #16a34a, #0b5d4a);
-    color: #fff;
+    background: #ffffff;
+    color: #4ade80;
     font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.1s;
     letter-spacing: 0.02em;
 }
-.swap-submit-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+.swap-submit-btn:hover {
+    background: #f8fffb;
+    border-color: #4ade80;
+    color: #22c55e;
+    transform: translateY(-1px);
+}
 .swap-submit-btn:disabled {
     transform: none;
-    background: #e2e8f0;
-    color: #334155;
-    border: 1px solid #94a3b8;
+    background: #ffffff !important;
+    color: #4ade80 !important;
+    border: 1.5px solid #86efac !important;
+    opacity: 1 !important;
+    filter: none !important;
 }
 
 /* 1. The Disabled Button Fix (Physical Feedback) */
-.btn-outline:disabled, .redeem-btn:disabled {
+.btn-outline:disabled {
     cursor: not-allowed !important;
     opacity: 0.5;
     background-color: #f9fafb;
@@ -399,9 +449,13 @@
     backdrop-filter: blur(14px);
     border: 1px solid rgba(22,163,74,0.15);
     border-radius: 14px;
-    padding: 0.9rem 0.95rem;
+    padding: 0.75rem 0.85rem;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    min-height: 0;
     transition: all 0.2s ease;
 }
 .voucher-card:hover,
@@ -412,8 +466,10 @@
 .voucher-cat-header {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     margin-bottom: 0.65rem;
+    width: 100%;
 }
 .logo-box {
     width: 42px;
@@ -442,22 +498,25 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #334155;
+    text-align: center;
 }
 .voucher-row-item {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.4rem;
-    padding: 0.35rem 0;
+    padding: 0.28rem 0;
     border-top: 1px solid #f1f5f9;
+    width: min(280px, 100%);
+    margin: 0 auto;
 }
 .voucher-brand {
-    flex: 1;
+    flex: 0 1 auto;
     font-weight: 600;
     color: #0f172a;
     font-size: 0.81rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 96px;
+    text-align: center;
 }
 .voucher-amt-select {
     border: 1px solid #e2e8f0;
@@ -475,31 +534,81 @@
     font-size: 0.73rem;
     font-weight: 700;
     white-space: nowrap;
-    border: 1.5px solid #9a3412;
-    background: linear-gradient(135deg, #f59e0b, #b45309);
-    color: #ffffff;
+    border: 1.5px solid #93c5fd;
+    background: #ffffff;
+    color: #60a5fa;
     cursor: pointer;
-    transition: transform 0.12s ease, box-shadow 0.2s ease;
+    box-shadow: 0 3px 8px rgba(147, 197, 253, 0.2);
+    transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
 }
 .voucher-redeem-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(180, 83, 9, 0.26);
+    box-shadow: 0 8px 18px rgba(96, 165, 250, 0.2);
+    border-color: #60a5fa;
+    color: #3b82f6;
+    background: #f8fbff;
 }
 .voucher-redeem-btn:focus-visible {
-    outline: 2px solid #f59e0b;
+    outline: 2px solid #60a5fa;
     outline-offset: 2px;
 }
 .voucher-redeem-btn:disabled {
-    border-color: #94a3b8;
-    background: #e2e8f0;
-    color: #334155;
+    border-color: #93c5fd !important;
+    background: #ffffff !important;
+    color: #60a5fa !important;
+    -webkit-text-fill-color: #60a5fa;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: 0 2px 8px rgba(147, 197, 253, 0.2);
+}
+
+/* Hard override layer: keep button colors visible in all states. */
+.wallet-page .voucher-row-item .voucher-redeem-btn,
+.wallet-page .voucher-row-item .voucher-redeem-btn:disabled,
+.wallet-page .voucher-row-item .voucher-redeem-btn:hover,
+.wallet-page .voucher-row-item .voucher-redeem-btn:focus,
+.wallet-page .voucher-row-item .voucher-redeem-btn:active {
+    background: #ffffff !important;
+    border: 1.5px solid #93c5fd !important;
+    color: #60a5fa !important;
+    -webkit-text-fill-color: #60a5fa !important;
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+.wallet-page .swap-input-row .swap-max-btn,
+.wallet-page .swap-input-row .swap-max-btn:disabled,
+.wallet-page .swap-input-row .swap-max-btn:hover,
+.wallet-page .swap-input-row .swap-max-btn:focus,
+.wallet-page .swap-input-row .swap-max-btn:active {
+    background: #ffffff !important;
+    border: 1.5px solid #86efac !important;
+    color: #4ade80 !important;
+    -webkit-text-fill-color: #4ade80 !important;
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+.wallet-page #swap-now.swap-submit-btn,
+.wallet-page #swap-now.swap-submit-btn:enabled,
+.wallet-page #swap-now.swap-submit-btn:disabled,
+.wallet-page #swap-now.swap-submit-btn:hover,
+.wallet-page #swap-now.swap-submit-btn:focus,
+.wallet-page #swap-now.swap-submit-btn:active {
+    background: #ffffff !important;
+    border: 1.5px solid #86efac !important;
+    color: #4ade80 !important;
+    -webkit-text-fill-color: #4ade80 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: 0 3px 8px rgba(134, 239, 172, 0.22) !important;
 }
 
 .voucher-meta {
     text-align: center;
     font-size: 0.78rem;
     color: #94a3b8;
-    margin-top: 1.5rem;
+    margin-top: 0.85rem;
     padding-top: 1rem;
     border-top: 1px solid #e2e8f0;
     grid-column: 1 / -1;
@@ -563,20 +672,28 @@
 }
 .voucher-modal-header h3 { margin: 0; color: #0b5d4a; font-size: 1.1rem; font-weight: 800; }
 .voucher-modal-close {
-    border: none;
-    background: #f1f5f9;
-    color: #64748b;
-    width: 28px;
-    height: 28px;
+    border: 1px solid #86efac !important;
+    background: #ffffff !important;
+    color: #15803d !important;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 1.05rem;
+    font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(134, 239, 172, 0.24);
+    opacity: 1 !important;
+    filter: none !important;
 }
-.voucher-modal-close:hover { background: #e2e8f0; }
+.voucher-modal-close:hover {
+    background: #f0fdf4 !important;
+    border-color: #22c55e !important;
+    color: #166534 !important;
+}
 .voucher-brand-badge {
     display: inline-block;
     background: #f0fdf4;
@@ -589,22 +706,43 @@
     margin-bottom: 0.9rem;
 }
 .voucher-barcode {
-    height: 60px;
-    border-radius: 8px;
+    height: 120px;
+    border-radius: 4px;
     overflow: hidden;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 6px 8px;
-    display: flex;
-    align-items: stretch;
-    gap: 2px;
-    margin-bottom: 0.9rem;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    padding: 10px 14px;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(1px, 1fr);
+    align-items: flex-end;
+    gap: 0;
+    margin-bottom: 0.55rem;
 }
-.vb { border-radius: 2px; background: #0f172a; }
-.vb-t { flex: 1; }
-.vb-m { flex: 2; }
-.vb-w { flex: 3; }
-.vb-g { flex: 1; background: transparent; }
+.vb {
+    background: #000000;
+    width: 100%;
+    height: 86%;
+    border-radius: 0;
+    display: inline-block;
+}
+.vb.vb-guard { height: 100%; }
+.vb-space {
+    display: inline-block;
+    width: 100%;
+    height: 86%;
+    background: transparent;
+}
+.voucher-barcode-label {
+    margin: 0 0 0.9rem;
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    color: #0f172a;
+    font-size: 2.15rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.14em;
+}
 .voucher-box,
 .voucher-code-row {
     display: flex;
@@ -626,27 +764,139 @@
     letter-spacing: 1.5px;
 }
 .voucher-copy-btn {
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    color: #475569;
+    border: 1.5px solid #86efac;
+    background: #ffffff;
+    color: #166534;
     border-radius: 7px;
     padding: 0.25rem 0.55rem;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
+    opacity: 1 !important;
+    filter: none !important;
 }
-.voucher-copy-btn:hover { background: #f1f5f9; }
+.voucher-copy-btn:hover {
+    background: #f0fdf4;
+    border-color: #4ade80;
+    color: #14532d;
+}
 .copy-btn {
     background: #dcfce7;
     color: #166534;
-    border-color: #bbf7d0;
+    border-color: #86efac;
+}
+
+.wallet-page #voucher-copy.voucher-copy-btn,
+.wallet-page #voucher-copy.voucher-copy-btn:enabled,
+.wallet-page #voucher-copy.voucher-copy-btn:disabled,
+.wallet-page #voucher-copy.voucher-copy-btn:hover,
+.wallet-page #voucher-copy.voucher-copy-btn:focus,
+.wallet-page #voucher-copy.voucher-copy-btn:active {
+    background: #dcfce7 !important;
+    border: 1.5px solid #86efac !important;
+    color: #166534 !important;
+    -webkit-text-fill-color: #166534 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: 0 3px 10px rgba(134, 239, 172, 0.22) !important;
 }
 .voucher-expiry {
     text-align: center;
     font-size: 0.75rem;
     color: #94a3b8;
     margin-top: 0.65rem;
+}
+
+.voucher-confirm-message {
+    margin: 0.2rem 0 0.95rem;
+    color: #334155;
+    line-height: 1.45;
+    font-size: 0.92rem;
+}
+
+.voucher-confirm-cost {
+    margin: 0;
+    padding: 0.55rem 0.7rem;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.voucher-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.55rem;
+    margin-top: 1rem;
+}
+
+.voucher-confirm-cancel,
+.voucher-confirm-ok {
+    border-radius: 999px;
+    padding: 0.42rem 0.95rem;
+    font-size: 0.84rem;
+    font-weight: 800;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.voucher-confirm-cancel {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155 !important;
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+.voucher-confirm-cancel:hover {
+    background: #f8fafc;
+}
+
+.voucher-confirm-ok {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%) !important;
+    border: 1.5px solid #86efac !important;
+    color: #166534 !important;
+    -webkit-text-fill-color: #166534 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: 0 4px 12px rgba(134, 239, 172, 0.24);
+}
+
+.voucher-confirm-ok:hover {
+    background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+}
+
+.wallet-page #voucher-confirm-cancel.voucher-confirm-cancel,
+.wallet-page #voucher-confirm-cancel.voucher-confirm-cancel:enabled,
+.wallet-page #voucher-confirm-cancel.voucher-confirm-cancel:disabled,
+.wallet-page #voucher-confirm-cancel.voucher-confirm-cancel:hover,
+.wallet-page #voucher-confirm-cancel.voucher-confirm-cancel:focus,
+.wallet-page #voucher-confirm-cancel.voucher-confirm-cancel:active {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155 !important;
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+.wallet-page #voucher-confirm-ok.voucher-confirm-ok,
+.wallet-page #voucher-confirm-ok.voucher-confirm-ok:enabled,
+.wallet-page #voucher-confirm-ok.voucher-confirm-ok:disabled,
+.wallet-page #voucher-confirm-ok.voucher-confirm-ok:hover,
+.wallet-page #voucher-confirm-ok.voucher-confirm-ok:focus,
+.wallet-page #voucher-confirm-ok.voucher-confirm-ok:active {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%) !important;
+    border: 1.5px solid #86efac !important;
+    color: #166534 !important;
+    -webkit-text-fill-color: #166534 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: 0 4px 12px rgba(134, 239, 172, 0.24) !important;
 }
 
 .rewards-history-card {
@@ -685,43 +935,66 @@
 
 /* 2. Accounting-Grade Table Alignment */
 .history-table th:nth-child(1), .history-table td:nth-child(1) {
-    width: 18%;
+    width: 19%;
     text-align: left;
 }
 .history-table th:nth-child(2), .history-table td:nth-child(2) {
-    width: 25%;
+    width: 31%;
     text-align: left;
 }
 .history-table th:nth-child(3), .history-table td:nth-child(3) {
-    width: 13%;
+    width: 16%;
     text-align: left;
+    padding-left: 1rem;
 }
 .history-table th:nth-child(4), .history-table td:nth-child(4) {
     width: 16%;
     text-align: right;
-    padding-right: 2rem;
+    padding-left: 1rem;
+    padding-right: 2.4rem;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     color: #16a34a;
 }
 .history-table th:nth-child(5), .history-table td:nth-child(5) {
-    width: 14%;
+    width: 18%;
     text-align: left;
-}
-.history-table th:nth-child(6), .history-table td:nth-child(6) {
-    width: 14%;
-    text-align: left;
-    padding-left: 1.5rem;
+    padding-left: 2rem;
 }
 .history-table tbody tr:last-child td {
     border-bottom: none;
+}
+
+.history-load-more-wrap {
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: center;
+}
+
+.history-load-more-btn {
+    border: 1px solid #86efac;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #4ade80;
+    padding: 0.52rem 1rem;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(22, 163, 74, 0.14);
+}
+
+.history-load-more-btn:hover {
+    background: #f8fffb;
+    border-color: #4ade80;
+    color: #22c55e;
 }
 
 @media (max-width: 900px) {
     .wallet-grid {
         grid-template-columns: 1fr;
     }
-    .wallet-right {
+    .voucher-hub-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -771,9 +1044,6 @@
                     <span class="balance-rate-item">1 ECO = <strong>0.0202 HBAR</strong></span>
                     <span class="eco-help-icon" title="EcoCoin is a verified digital asset pegged to your recycling activity.">?</span>
                 </div>
-                <div class="eco-live-rates">
-                    Current Live Rates: Plastics 5.0 ECO/kg (+25% vs cash) | Metals 16.0 ECO/kg (+15% vs cash) | Glass 1.2 ECO/kg (+50% vs cash)
-                </div>
                 <div class="eco-value-note">
                     EcoCoin valuation model: 1 ECO ≈ R1.00 purchasing power. Premium payouts are funded by verified ESG data value captured through immutable Hedera records.
                 </div>
@@ -806,100 +1076,105 @@
                     </div>
                 </div>
 
-                <p class="swap-rate-hint">Rate: 1 ECO = <strong id="rate-display">0.0150 USDT</strong></p>
                 <button id="swap-now" class="swap-submit-btn" type="button">Swap Now</button>
             </div>
         </div>
 
         <!-- RIGHT COLUMN -->
         <div class="wallet-right">
+            <section class="tech-card voucher-hub-card" aria-label="Voucher Hub">
+                <h3 class="voucher-hub-heading">Voucher Hub</h3>
+                <p class="voucher-hub-subheading">Trusted partner vouchers: choose a brand and amount, redeem instantly.</p>
 
-            <div class="voucher-card voucher-cat-card">
-                <div class="voucher-cat-header">
-                    <div class="logo-box" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M4 7h16v10H4z"></path><path d="M8 7v10"></path><path d="M12 10h5"></path><path d="M12 14h5"></path></svg>
+                <div class="voucher-hub-grid">
+                    <div class="voucher-card voucher-cat-card">
+                        <div class="voucher-cat-header">
+                            <div class="logo-box" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M4 7h16v10H4z"></path><path d="M8 7v10"></path><path d="M12 10h5"></path><path d="M12 14h5"></path></svg>
+                            </div>
+                            <span class="voucher-cat-name">Everyday Retail</span>
+                        </div>
+                        <div class="voucher-row-item" data-brand="Walmart / Makro">
+                            <span class="voucher-brand">Walmart</span>
+                            <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
+                            <button class="redeem-btn voucher-redeem-btn">Redeem</button>
+                        </div>
+                        <div class="voucher-row-item" data-brand="Shoprite / Checkers">
+                            <span class="voucher-brand">Shoprite</span>
+                            <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
+                            <button class="redeem-btn voucher-redeem-btn">Redeem</button>
+                        </div>
                     </div>
-                    <span class="voucher-cat-name">Everyday Retail</span>
-                </div>
-                <div class="voucher-row-item" data-brand="Walmart / Makro">
-                    <span class="voucher-brand">Walmart</span>
-                    <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
-                    <button class="redeem-btn voucher-redeem-btn">Redeem</button>
-                </div>
-                <div class="voucher-row-item" data-brand="Shoprite / Checkers">
-                    <span class="voucher-brand">Shoprite</span>
-                    <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
-                    <button class="redeem-btn voucher-redeem-btn">Redeem</button>
-                </div>
-            </div>
 
-            <div class="voucher-card voucher-cat-card">
-                <div class="voucher-cat-header">
-                    <div class="logo-box" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l2 10h8l2-10"></path><path d="M9 11h6"></path></svg>
+                    <div class="voucher-card voucher-cat-card">
+                        <div class="voucher-cat-header">
+                            <div class="logo-box" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l2 10h8l2-10"></path><path d="M9 11h6"></path></svg>
+                            </div>
+                            <span class="voucher-cat-name">Food &amp; Dining</span>
+                        </div>
+                        <div class="voucher-row-item" data-brand="Uber Eats">
+                            <span class="voucher-brand">Uber Eats</span>
+                            <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
+                            <button class="redeem-btn voucher-redeem-btn">Redeem</button>
+                        </div>
+                        <div class="voucher-row-item" data-brand="KFC">
+                            <span class="voucher-brand">KFC</span>
+                            <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
+                            <button class="redeem-btn voucher-redeem-btn">Redeem</button>
+                        </div>
                     </div>
-                    <span class="voucher-cat-name">Food &amp; Dining</span>
-                </div>
-                <div class="voucher-row-item" data-brand="Uber Eats">
-                    <span class="voucher-brand">Uber Eats</span>
-                    <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
-                    <button class="redeem-btn voucher-redeem-btn">Redeem</button>
-                </div>
-                <div class="voucher-row-item" data-brand="KFC">
-                    <span class="voucher-brand">KFC</span>
-                    <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
-                    <button class="redeem-btn voucher-redeem-btn">Redeem</button>
-                </div>
-            </div>
 
-            <div class="voucher-card voucher-cat-card">
-                <div class="voucher-cat-header">
-                    <div class="logo-box" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><rect x="5" y="6" width="14" height="10" rx="2"></rect><path d="M9 18h6"></path><path d="M10 10h4"></path></svg>
+                    <div class="voucher-card voucher-cat-card">
+                        <div class="voucher-cat-header">
+                            <div class="logo-box" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><rect x="5" y="6" width="14" height="10" rx="2"></rect><path d="M9 18h6"></path><path d="M10 10h4"></path></svg>
+                            </div>
+                            <span class="voucher-cat-name">Entertainment</span>
+                        </div>
+                        <div class="voucher-row-item" data-brand="PlayStation Store">
+                            <span class="voucher-brand">PlayStation</span>
+                            <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
+                            <button class="redeem-btn voucher-redeem-btn">Redeem</button>
+                        </div>
+                        <div class="voucher-row-item" data-brand="Netflix">
+                            <span class="voucher-brand">Netflix</span>
+                            <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
+                            <button class="redeem-btn voucher-redeem-btn">Redeem</button>
+                        </div>
                     </div>
-                    <span class="voucher-cat-name">Entertainment</span>
-                </div>
-                <div class="voucher-row-item" data-brand="PlayStation Store">
-                    <span class="voucher-brand">PlayStation</span>
-                    <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
-                    <button class="redeem-btn voucher-redeem-btn">Redeem</button>
-                </div>
-                <div class="voucher-row-item" data-brand="Netflix">
-                    <span class="voucher-brand">Netflix</span>
-                    <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
-                    <button class="redeem-btn voucher-redeem-btn">Redeem</button>
-                </div>
-            </div>
 
-            <div class="voucher-card voucher-cat-card">
-                <div class="voucher-cat-header">
-                    <div class="logo-box" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"></rect><path d="M3 10h18"></path><path d="M7 14h4"></path></svg>
+                    <div class="voucher-card voucher-cat-card">
+                        <div class="voucher-cat-header">
+                            <div class="logo-box" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"></rect><path d="M3 10h18"></path><path d="M7 14h4"></path></svg>
+                            </div>
+                            <span class="voucher-cat-name">Universal Prepaid</span>
+                        </div>
+                        <div class="voucher-row-item" data-brand="Visa Virtual Prepaid">
+                            <span class="voucher-brand">Visa</span>
+                            <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
+                            <button class="redeem-btn voucher-redeem-btn">Redeem</button>
+                        </div>
+                        <div class="voucher-row-item" data-brand="Mastercard Reward Card">
+                            <span class="voucher-brand">Mastercard</span>
+                            <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
+                            <button class="redeem-btn voucher-redeem-btn">Redeem</button>
+                        </div>
                     </div>
-                    <span class="voucher-cat-name">Universal Prepaid</span>
                 </div>
-                <div class="voucher-row-item" data-brand="Visa Virtual Prepaid">
-                    <span class="voucher-brand">Visa</span>
-                    <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
-                    <button class="redeem-btn voucher-redeem-btn">Redeem</button>
-                </div>
-                <div class="voucher-row-item" data-brand="Mastercard Reward Card">
-                    <span class="voucher-brand">Mastercard</span>
-                    <select class="voucher-amount-select voucher-amt-select"><option>R50</option><option>R100</option><option>R200</option></select>
-                    <button class="redeem-btn voucher-redeem-btn">Redeem</button>
-                </div>
-            </div>
 
-            <p class="voucher-meta">
-                Powered by partner network • Instant redemption
-            </p>
+                <p class="voucher-meta">
+                    Powered by partner network • Instant redemption
+                </p>
+            </section>
 
         </div>
     </div>
 
     <section class="tech-card rewards-history-card">
         <h3 style="margin:0; color:#0b5d4a;">EcoCoin Rewards History</h3>
-        <p style="margin:0.3rem 0 0; color:#64748b; font-size:0.86rem;">Verified reward payouts only. Anchors and payout statuses remain audit-visible for judges.</p>
+        <p style="margin:0.3rem 0 0; color:#64748b; font-size:0.86rem;">Track verified reward payouts with linked proof for each wallet activity.</p>
         <div class="history-table-wrap">
             <table class="history-table">
                 <thead>
@@ -908,7 +1183,6 @@
                         <th>Activity</th>
                         <th>Status</th>
                         <th>Amount (ECO)</th>
-                        <th>Note</th>
                         <th>Hedera</th>
                     </tr>
                 </thead>
@@ -920,7 +1194,6 @@
                             <td>{{ row.activity }}</td>
                             <td>{{ row.status }}</td>
                             <td>{{ "%+.2f"|format(row.amount_eco or 0) }}</td>
-                            <td>{{ row.note or '-' }}</td>
                             <td>
                                 {% if row.link_url %}
                                     <a href="{{ row.link_url }}">{{ row.link_label or 'View' }}</a>
@@ -931,10 +1204,13 @@
                         </tr>
                         {% endfor %}
                     {% else %}
-                        <tr><td colspan="6" style="color:#64748b;">No reward or redemption activity yet.</td></tr>
+                        <tr><td colspan="5" style="color:#64748b;">No reward or redemption activity yet.</td></tr>
                     {% endif %}
                 </tbody>
             </table>
+        </div>
+        <div class="history-load-more-wrap">
+            <button id="wallet-history-load-more" class="history-load-more-btn" type="button" style="display:none;">Load More</button>
         </div>
     </section>
 </div>
@@ -949,25 +1225,29 @@
         </div>
         <span id="voucher-brand-badge" class="voucher-brand-badge">Brand</span>
         <p id="voucher-value" style="margin: 0 0 0.8rem 0; color: #475569; font-size: 0.88rem;"></p>
-        <div class="voucher-barcode">
-            <div class="vb vb-t"></div><div class="vb-g"></div>
-            <div class="vb vb-w"></div><div class="vb-g"></div>
-            <div class="vb vb-m"></div><div class="vb-g"></div>
-            <div class="vb vb-t"></div><div class="vb-g"></div>
-            <div class="vb vb-w"></div><div class="vb-g"></div>
-            <div class="vb vb-t"></div><div class="vb-g"></div>
-            <div class="vb vb-m"></div><div class="vb-g"></div>
-            <div class="vb vb-w"></div><div class="vb-g"></div>
-            <div class="vb vb-t"></div><div class="vb-g"></div>
-            <div class="vb vb-m"></div><div class="vb-g"></div>
-            <div class="vb vb-w"></div><div class="vb-g"></div>
-            <div class="vb vb-t"></div>
-        </div>
+        <div id="voucher-barcode" class="voucher-barcode" aria-label="Voucher barcode"></div>
+        <p id="voucher-barcode-label" class="voucher-barcode-label">VC-0000-0000-0000</p>
         <div class="voucher-box voucher-code-row">
             <span id="voucher-code">VOUCHER-XXXX-2026</span>
             <button class="voucher-copy-btn copy-btn" id="voucher-copy">Copy</button>
         </div>
         <p class="voucher-expiry">Expires 90 days from redemption &bull; Single use only</p>
+    </div>
+</div>
+
+<!-- Voucher Confirm Modal -->
+<div id="voucher-confirm-modal" class="voucher-modal-backdrop" aria-hidden="true">
+    <div class="voucher-modal-card">
+        <div class="voucher-modal-header">
+            <h3>Confirm Voucher Redemption</h3>
+            <button id="voucher-confirm-close" class="voucher-modal-close" type="button" aria-label="Close confirmation">&times;</button>
+        </div>
+        <p id="voucher-confirm-message" class="voucher-confirm-message">Redeem this voucher?</p>
+        <p id="voucher-confirm-cost" class="voucher-confirm-cost">This will deduct ECO from your wallet.</p>
+        <div class="voucher-confirm-actions">
+            <button id="voucher-confirm-cancel" class="voucher-confirm-cancel" type="button">Cancel</button>
+            <button id="voucher-confirm-ok" class="voucher-confirm-ok" type="button">Redeem</button>
+        </div>
     </div>
 </div>
 
@@ -979,13 +1259,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const maxButton = document.getElementById('swap-max');
     const swapButton = document.getElementById('swap-now');
     const cashButton = document.getElementById('redeem-cash-btn');
-    const rateDisplay = document.getElementById('rate-display');
     const balanceDisplay = document.getElementById('wallet-balance-display');
     const historyTbody = document.getElementById('wallet-history-tbody');
+    const historyLoadMoreBtn = document.getElementById('wallet-history-load-more');
     const toast = document.getElementById('wallet-toast');
+    const voucherRows = Array.from(document.querySelectorAll('.voucher-row-item[data-brand]'));
 
     const swapCard = document.getElementById('swap-card');
     let walletBalance = Number(swapCard?.dataset.walletBalance || 0);
+    const HISTORY_PAGE_SIZE = 7;
+    let historyVisibleCount = HISTORY_PAGE_SIZE;
     const rates = { USDT: 0.015, HBAR: 0.0202 };
     const rateLabels = { USDT: 'USDT', HBAR: 'HBAR' };
 
@@ -1026,6 +1309,7 @@ document.addEventListener('DOMContentLoaded', function () {
         balanceDisplay.dataset.balance = String(walletBalance);
         balanceDisplay.innerHTML = `${walletBalance.toLocaleString('en-US', { maximumFractionDigits: 0 })}<span class="eco-symbol">ECO</span>`;
         if (swapCard) swapCard.dataset.walletBalance = String(walletBalance);
+        updateVoucherRedeemState();
     }
 
     function parseVoucherEcoCost(valueLabel) {
@@ -1038,13 +1322,30 @@ document.addEventListener('DOMContentLoaded', function () {
         const entered = Number(ecoPayInput.value || 0);
         swapButton.disabled = !(entered > 0 && entered <= walletBalance);
         maxButton.disabled = walletBalance <= 0;
+        updateVoucherRedeemState();
+    }
+
+    function updateVoucherRedeemState() {
+        voucherRows.forEach((row) => {
+            const btn = row.querySelector('.redeem-btn');
+            const select = row.querySelector('.voucher-amount-select');
+            if (!btn || !select) return;
+
+            const ecoCost = parseVoucherEcoCost(select.value);
+            const canRedeem = ecoCost > 0 && walletBalance >= ecoCost;
+            btn.disabled = !canRedeem;
+            btn.title = canRedeem
+                ? `Redeem for ${ecoCost.toFixed(0)} ECO`
+                : `Need ${ecoCost.toFixed(0)} ECO (available: ${walletBalance.toFixed(0)} ECO)`;
+        });
     }
 
     function renderHistory(rows) {
         if (!historyTbody) return;
         const list = Array.isArray(rows) ? rows : [];
         if (!list.length) {
-            historyTbody.innerHTML = '<tr><td colspan="6" style="color:#64748b;">No reward or redemption activity yet.</td></tr>';
+            historyTbody.innerHTML = '<tr><td colspan="5" style="color:#64748b;">No reward or redemption activity yet.</td></tr>';
+            if (historyLoadMoreBtn) historyLoadMoreBtn.style.display = 'none';
             return;
         }
         historyTbody.innerHTML = list.map((row) => {
@@ -1057,11 +1358,36 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${escapeHtml(row.activity || '-')}</td>
                     <td>${escapeHtml(row.status || '-')}</td>
                     <td>${formatAmount(row.amount_eco)}</td>
-                    <td>${escapeHtml(row.note || '-')}</td>
                     <td>${link}</td>
                 </tr>
             `;
         }).join('');
+
+        historyVisibleCount = HISTORY_PAGE_SIZE;
+        applyHistoryPagination();
+    }
+
+    function applyHistoryPagination() {
+        if (!historyTbody) return;
+        const rows = Array.from(historyTbody.querySelectorAll('tr'));
+        if (!rows.length) {
+            if (historyLoadMoreBtn) historyLoadMoreBtn.style.display = 'none';
+            return;
+        }
+
+        const hasNoDataMessage = rows.length === 1 && rows[0].children.length === 1;
+        if (hasNoDataMessage) {
+            if (historyLoadMoreBtn) historyLoadMoreBtn.style.display = 'none';
+            return;
+        }
+
+        rows.forEach((row, index) => {
+            row.style.display = index < historyVisibleCount ? '' : 'none';
+        });
+
+        if (historyLoadMoreBtn) {
+            historyLoadMoreBtn.style.display = rows.length > historyVisibleCount ? 'inline-flex' : 'none';
+        }
     }
 
     async function refreshSnapshot() {
@@ -1084,7 +1410,6 @@ document.addEventListener('DOMContentLoaded', function () {
         receiveAmountInput.classList.remove('swap-value-pulse');
         void receiveAmountInput.offsetWidth;
         receiveAmountInput.classList.add('swap-value-pulse');
-        rateDisplay.textContent = rate.toFixed(4) + ' ' + rateLabels[token];
         updateActionState();
     }
 
@@ -1103,6 +1428,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     ecoPayInput.addEventListener('input', recalcReceiveAmount);
     receiveTokenSelect.addEventListener('change', recalcReceiveAmount);
+    voucherRows.forEach((row) => {
+        const select = row.querySelector('.voucher-amount-select');
+        if (!select) return;
+        select.addEventListener('change', updateVoucherRedeemState);
+    });
     recalcReceiveAmount();
 
     maxButton.addEventListener('click', function () {
@@ -1145,10 +1475,116 @@ document.addEventListener('DOMContentLoaded', function () {
     var voucherBrandBadge = document.getElementById('voucher-brand-badge');
     var voucherValue = document.getElementById('voucher-value');
     var voucherCode = document.getElementById('voucher-code');
+    var voucherBarcode = document.getElementById('voucher-barcode');
+    var voucherBarcodeLabel = document.getElementById('voucher-barcode-label');
     var copyBtn = document.getElementById('voucher-copy');
+    var confirmModal = document.getElementById('voucher-confirm-modal');
+    var confirmClose = document.getElementById('voucher-confirm-close');
+    var confirmCancel = document.getElementById('voucher-confirm-cancel');
+    var confirmOk = document.getElementById('voucher-confirm-ok');
+    var confirmMessage = document.getElementById('voucher-confirm-message');
+    var confirmCost = document.getElementById('voucher-confirm-cost');
+    var pendingConfirmResolver = null;
 
     function buildVoucherCode() {
         return 'VOUCHER-' + Math.random().toString(36).slice(2, 6).toUpperCase() + '-2026';
+    }
+
+    function buildVoucherBarcodeLabel(codeText) {
+        const source = String(codeText || 'VOUCHER2026').toUpperCase();
+        let digits = '';
+        for (let i = 0; i < source.length; i++) {
+            digits += String(source.charCodeAt(i) % 10);
+        }
+        return (digits + '20492026').slice(0, 8);
+    }
+
+    function renderVoucherBarcode(codeText) {
+        if (!voucherBarcode) return;
+        const digits = buildVoucherBarcodeLabel(codeText);
+        const leftPatterns = {
+            '0': '0001101', '1': '0011001', '2': '0010011', '3': '0111101', '4': '0100011',
+            '5': '0110001', '6': '0101111', '7': '0111011', '8': '0110111', '9': '0001011'
+        };
+        const rightPatterns = {
+            '0': '1110010', '1': '1100110', '2': '1101100', '3': '1000010', '4': '1011100',
+            '5': '1001110', '6': '1010000', '7': '1000100', '8': '1001000', '9': '1110100'
+        };
+
+        const pushBits = (bitString, guard = false) => {
+            for (let i = 0; i < bitString.length; i++) {
+                if (bitString[i] === '1') {
+                    bars.push(`<span class="vb${guard ? ' vb-guard' : ''}"></span>`);
+                } else {
+                    bars.push('<span class="vb-space"></span>');
+                }
+            }
+        };
+
+        const bars = [];
+
+        bars.push('<span class="vb-space"></span><span class="vb-space"></span><span class="vb-space"></span>');
+        pushBits('101', true);
+
+        for (let i = 0; i < 4; i++) {
+            pushBits(leftPatterns[digits[i]] || leftPatterns['0']);
+        }
+
+        pushBits('01010', true);
+
+        for (let i = 4; i < 8; i++) {
+            pushBits(rightPatterns[digits[i]] || rightPatterns['0']);
+        }
+
+        pushBits('101', true);
+        bars.push('<span class="vb-space"></span><span class="vb-space"></span><span class="vb-space"></span>');
+
+        voucherBarcode.innerHTML = bars.join('');
+        if (voucherBarcodeLabel) {
+            voucherBarcodeLabel.textContent = digits;
+        }
+    }
+
+    function resolveVoucherConfirm(decision) {
+        if (typeof pendingConfirmResolver === 'function') {
+            pendingConfirmResolver(Boolean(decision));
+            pendingConfirmResolver = null;
+        }
+        if (confirmModal) {
+            confirmModal.classList.remove('is-open');
+            confirmModal.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    function askVoucherConfirm(brand, amount, voucherEcoCost) {
+        return new Promise((resolve) => {
+            if (!confirmModal) {
+                resolve(true);
+                return;
+            }
+
+            pendingConfirmResolver = resolve;
+            if (confirmCancel) {
+                confirmCancel.disabled = false;
+                confirmCancel.removeAttribute('disabled');
+            }
+            if (confirmOk) {
+                confirmOk.disabled = false;
+                confirmOk.removeAttribute('disabled');
+            }
+            if (confirmMessage) {
+                confirmMessage.textContent = `Redeem ${amount || 'selected'} voucher from ${brand}?`;
+            }
+            if (confirmCost) {
+                confirmCost.textContent = `This will deduct ${voucherEcoCost.toFixed(0)} ECO from your wallet.`;
+            }
+
+            confirmModal.classList.add('is-open');
+            confirmModal.setAttribute('aria-hidden', 'false');
+            if (confirmOk) {
+                confirmOk.focus();
+            }
+        });
     }
 
     document.querySelectorAll('.redeem-btn').forEach(function (btn) {
@@ -1160,8 +1596,15 @@ document.addEventListener('DOMContentLoaded', function () {
             var voucherEcoCost = parseVoucherEcoCost(amount);
             if (voucherEcoCost > 0 && walletBalance < voucherEcoCost) {
                 showToast(`Insufficient ECO. ${amount} voucher requires about ${voucherEcoCost} ECO.`, 'error');
+                updateVoucherRedeemState();
                 return;
             }
+
+            const confirmed = await askVoucherConfirm(brand, amount, voucherEcoCost);
+            if (!confirmed) {
+                return;
+            }
+
             btn.disabled = true;
             try {
                 const data = await callApiJson('/api/wallet/redeem-voucher', {
@@ -1178,13 +1621,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 voucherBrandBadge.textContent = brand;
                 voucherValue.textContent = amount ? amount + ' Reward Voucher' : 'Reward Voucher';
                 voucherCode.textContent = data.voucher_code || buildVoucherCode();
+                renderVoucherBarcode(voucherCode.textContent);
                 modal.classList.add('is-open');
                 copyBtn.textContent = 'Copy';
+                copyBtn.disabled = false;
+                copyBtn.removeAttribute('disabled');
                 showToast(data.message || 'Voucher redeemed');
             } catch (err) {
                 showToast(err.message || 'Voucher redeem failed', 'error');
             } finally {
-                btn.disabled = false;
+                updateVoucherRedeemState();
             }
         });
     });
@@ -1217,6 +1663,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    if (historyLoadMoreBtn) {
+        historyLoadMoreBtn.addEventListener('click', function () {
+            historyVisibleCount += HISTORY_PAGE_SIZE;
+            applyHistoryPagination();
+        });
+    }
+
     copyBtn.addEventListener('click', function () {
         if (navigator.clipboard) {
             navigator.clipboard.writeText(voucherCode.textContent).then(function () {
@@ -1230,8 +1683,35 @@ document.addEventListener('DOMContentLoaded', function () {
     closeButton.addEventListener('click', function () { modal.classList.remove('is-open'); });
     modal.addEventListener('click', function (e) { if (e.target === modal) modal.classList.remove('is-open'); });
 
+    if (confirmClose) {
+        confirmClose.addEventListener('click', function () { resolveVoucherConfirm(false); });
+    }
+    if (confirmCancel) {
+        confirmCancel.addEventListener('click', function () { resolveVoucherConfirm(false); });
+    }
+    if (confirmOk) {
+        confirmOk.addEventListener('click', function () { resolveVoucherConfirm(true); });
+    }
+    if (confirmModal) {
+        confirmModal.addEventListener('click', function (e) {
+            if (e.target === confirmModal) {
+                resolveVoucherConfirm(false);
+            }
+        });
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && confirmModal && confirmModal.classList.contains('is-open')) {
+            resolveVoucherConfirm(false);
+        }
+    });
+
+    renderVoucherBarcode(voucherCode ? voucherCode.textContent : 'VOUCHER-XXXX-2026');
+
     refreshSnapshot()
-        .then(() => updateActionState())
+        .then(() => {
+            updateActionState();
+        })
         .catch(() => {
             showToast('Wallet sync unavailable. Refresh the page.', 'error');
             updateActionState();
