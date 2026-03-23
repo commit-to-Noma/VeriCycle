@@ -33,13 +33,16 @@
         grid-template-columns: 1fr auto;
         gap: 0.6rem;
         margin-top: 0.7rem;
+        align-items: stretch;
     }
     .verify-input {
         border: 1px solid #cbd5e1;
         border-radius: 10px;
-        padding: 0.75rem 0.85rem;
+        padding: 0.72rem 0.85rem;
         color: #0f172a;
         background: #f8fafc;
+        min-height: 46px;
+        box-sizing: border-box;
     }
     .verify-input:focus {
         outline: none;
@@ -117,6 +120,7 @@
         color: #16a34a !important;
         text-decoration: none;
         font-weight: 700;
+        font-size: 0.86rem;
         white-space: nowrap;
     }
     .anchor-link:hover {
@@ -175,16 +179,23 @@
         background: #f1f5f9;
         color: #475569;
     }
+    .status-pill.anchored {
+        background: #ccfbf1;
+        color: #115e59;
+    }
     .evidence-btn {
         border: 1px solid #cbd5e1;
         border-radius: 8px;
         background: transparent;
         color: #1e293b !important;
         text-decoration: none;
-        padding: 0.35rem 0.55rem;
+        padding: 0.42rem 0.7rem;
         font-size: 0.8rem;
         font-weight: 600;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        box-sizing: border-box;
     }
     .evidence-btn:hover {
         background: #f8fafc;
@@ -199,6 +210,7 @@
         grid-template-columns: 1fr 1fr;
         gap: 1rem;
         margin-top: 0.75rem;
+        align-items: stretch;
     }
     @media (max-width: 860px) {
         .tools-grid {
@@ -210,6 +222,10 @@
         border-radius: 10px;
         background: #ffffff;
         padding: 0.8rem;
+        min-height: 190px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
     .auditor-tools .btn-secondary {
         background: #e2e8f0 !important;
@@ -249,12 +265,31 @@
     .load-more-wrap .btn-secondary:hover {
         background: #dcfce7 !important;
     }
+    @media (max-width: 860px) {
+        .verify-input-wrap {
+            grid-template-columns: 1fr;
+        }
+        .ledger-table {
+            min-width: 100%;
+            table-layout: auto;
+        }
+        .ledger-table th,
+        .ledger-table td {
+            padding: 0.66rem 0.5rem;
+            font-size: 0.8rem;
+        }
+        .ledger-table th:nth-child(2),
+        .ledger-table td:nth-child(2) {
+            display: none;
+        }
+    }
 </style>
 
 <div class="audit-shell">
-    <header class="audit-hero">
+    <header class="audit-hero judge-hero-card">
         <h1 class="page-title">VeriCycle Proof & Audit Hub</h1>
         <p class="page-subtitle">Immutable, Hedera-anchored evidence for ESG reporting and compliance.</p>
+        <span class="judge-demo-step">Step 3: Verify Hash</span>
         <span class="status-pill verified" style="margin-top:0.55rem;">Verified on Hedera</span>
     </header>
 
@@ -266,13 +301,12 @@
         Material taxonomy: Paper & Cardboard, Plastics, Glass, Metals, E-Waste, Organic Waste, Mixed Recyclables.
     </div>
 
-    <section class="tech-card verify-card">
+    <section class="tech-card verify-card judge-metric-card">
         <h3 class="section-heading" style="margin:0;">End-to-End Traceability</h3>
         <p style="color:#64748b; margin:0;">Every recycling event is recorded immutably on Hedera, verified by multiple stakeholders, and anchored with tamper-proof audit logs.</p>
-    </section>
         <div class="verify-input-wrap">
             <input id="hash-verify-input" class="verify-input" type="text" placeholder="Enter Hedera Transaction Hash to verify event authenticity.">
-            <button id="hash-verify-btn" class="btn-primary" style="border:none; border-radius:10px; padding:0.72rem 0.95rem; color:#fff; font-weight:700;">Verify</button>
+            <button id="hash-verify-btn" class="btn-primary judge-demo-cta" style="border:none; border-radius:10px; min-height:46px; padding:0.72rem 0.95rem; color:#fff; font-weight:700;">Verify</button>
         </div>
         <div id="verify-message" class="verify-message"></div>
     </section>
@@ -299,7 +333,7 @@
                         <td class="mat-weight" data-desc="{{ row.desc|e }}">{{ row.desc }}</td>
                         <td>
                             {% if tx %}
-                                <a class="anchor-link hedera-link" href="https://hashscan.io/testnet/transaction/{{ tx }}" target="_blank" rel="noopener">View on HashScan ↗</a>
+                                <a class="anchor-link hedera-link" href="https://hashscan.io/testnet/transaction/{{ tx }}" target="_blank" rel="noopener" title="{{ tx }}">{{ (tx|string)[:8] }}...{{ (tx|string)[-4:] }}</a>
                             {% else %}
                                 —
                             {% endif %}
@@ -307,7 +341,7 @@
                         <td class="evidence-cell">
                             {% if row.id %}
                                 {% if tx %}
-                                    <span class="status-pill verified">Verified</span>
+                                    <span class="status-pill anchored">Anchored</span>
                                 {% else %}
                                     <span class="status-pill pending">Pending</span>
                                 {% endif %}
@@ -426,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             button.disabled = false;
         }, 500);
+    });
 });
 </script>
 {% endblock %}

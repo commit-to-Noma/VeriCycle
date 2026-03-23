@@ -497,12 +497,14 @@
 </head>
 <body class="light-theme">
   {% include '_navbar.html' %}
+  {% set active_zone = (location.name if location and location.name else 'Community Zone') %}
 
   <main class="container community-shell">
-    <header class="judge-topbar">
+    <header class="judge-topbar judge-hero-card">
       <div>
-        <h1>Welcome, Noma!</h1>
-        <p>Active Zone: <strong style="color:#0f172a;">Roodepoort Central</strong></p>
+        <h1>Welcome, {{ (current_user.full_name or current_user.email.split('@')[0] or 'Resident') }}!</h1>
+        <p>Active Zone: <strong style="color:#0f172a;">{{ active_zone }}</strong></p>
+        <span class="judge-demo-step">Step 1: Report Hotspot</span>
       </div>
     </header>
 
@@ -532,7 +534,7 @@
       </div>
 
       <div class="ecosystem-impact-grid">
-        <div class="card tech-card" style="padding: 1.5rem; border-top: 4px solid #22c55e;">
+        <div class="card tech-card judge-metric-card" style="padding: 1.5rem; border-top: 4px solid #22c55e;">
           <h3 style="margin-bottom: 0.25rem; display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 1.2rem;">
             <span style="font-size: 1.4rem;">♻️</span> Local Recyclers
           </h3>
@@ -556,7 +558,7 @@
           </div>
         </div>
 
-        <div class="card tech-card" style="padding: 1.5rem; border-top: 4px solid #0f172a;">
+        <div class="card tech-card judge-metric-card" style="padding: 1.5rem; border-top: 4px solid #0f172a;">
           <h3 style="margin-bottom: 0.25rem; display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 1.2rem;">
             <span style="font-size: 1.4rem;">🏢</span> Corporate Partners
           </h3>
@@ -589,7 +591,7 @@
         <div style="padding: 1rem; border-left: 4px solid #16a34a; background: #f0fdf4; border-radius: 6px;">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
             <div>
-              <strong style="color: #065f46; display: block;">Illegal dumping cleared: Parkmore Storefront</strong>
+              <strong style="color: #065f46; display: block;">Illegal dumping cleared: {{ active_zone }} storefront</strong>
               <span style="font-size: 0.8rem; color: #166534;">Verified by Center • 42.0 kg Plastics Diverted</span>
             </div>
             <span style="background: #bbf7d0; color: #166534; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: bold;">+210 ECO Rewarded</span>
@@ -615,7 +617,7 @@
                 Center Reports: Cleanup Complete
             </h4>
             <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #3b82f6; font-weight: 600;">
-                📍 Location: Parkmore Storefront
+              📍 Location: {{ active_zone }} storefront
             </p>
         </div>
         <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Today, 14:30</span>
@@ -640,7 +642,7 @@
         <button id="after-photo-btn" class="after-photo-btn" type="button">View After Photo (demo)</button>
     </div>
     <!-- Status elements for JS compatibility -->
-    <p id="verification-location" style="display: none;">📍 Location: Parkmore Storefront</p>
+    <p id="verification-location" style="display: none;">📍 Location: {{ active_zone }} storefront</p>
     <p id="verification-note" style="display: none;">The Verification Center reports this hotspot has been cleared by a collector. Please confirm the area is clean to finalize the trust sequence.</p>
     <span id="verification-status" style="display: none;">Pending Verification</span>
     <h3 id="verification-card-title" style="display: none;">Center Reports: Cleanup Complete</h3>
@@ -648,7 +650,7 @@
 
       <div class="hotspot-card">
         <h3>Mixed collection overflow zone</h3>
-        <p class="location">Park Entrance, Roodepoort</p>
+        <p class="location">Park Entrance, {{ active_zone }}</p>
         <p class="desc">
           Mixed plastics, cartons, and old bags are stacking near the playground entrance.
         </p>
@@ -660,7 +662,7 @@
 
       <div class="hotspot-card">
         <h3>Community-agreed dirty hotspot</h3>
-        <p class="location">Sandton Drive</p>
+        <p class="location">Main Drive, {{ active_zone }}</p>
         <p class="desc">
           Residents across this route flagged persistent trash build-up after missed collection.
         </p>
@@ -672,7 +674,7 @@
 
       <div class="hotspot-card">
         <h3>Missed trash collection route</h3>
-        <p class="location">Corner Main St &amp; 4th Ave, Randburg</p>
+        <p class="location">Central Route, {{ active_zone }}</p>
         <p class="desc">
           Collection was skipped this week and curbside bags are now blocking the walkway.
         </p>
@@ -706,7 +708,7 @@
             <div class="leader-row">
               <div>
                 <div class="leader-name">Sipho M. · Recycler</div>
-                <div class="leader-meta">Roodepoort Central</div>
+                <div class="leader-meta">{{ active_zone }}</div>
               </div>
               <div class="leader-score">{{ "{:,.1f}".format(network_impact.waste_diverted_kg) }} kg</div>
             </div>
@@ -735,7 +737,7 @@
             <input class="field" type="text" id="hotspot-location" placeholder="Enter street or landmark...">
             <input class="field" type="text" id="hotspot-description" placeholder="Describe the issue...">
           </div>
-          <button class="btn-primary" id="submit-hotspot-btn" type="button" style="margin-top:0.85rem;">Report a Neighborhood Issue</button>
+          <button class="btn-primary judge-demo-cta" id="submit-hotspot-btn" type="button" style="margin-top:0.85rem;">Report a Neighborhood Issue</button>
           <details style="margin-top:0.7rem;">
             <summary style="font-size:0.78rem; color:#94a3b8; cursor:pointer; user-select:none;">Demo tools</summary>
             <button id="reset-demo-btn" type="button" style="margin-top:0.45rem; background:transparent; border:1px dashed #cbd5e1; color:#94a3b8; font-size:0.75rem; padding:0.3rem 0.55rem; border-radius:8px; cursor:pointer;">Reset Demo Board</button>
@@ -812,6 +814,11 @@
 
   <script>
   document.addEventListener('DOMContentLoaded', function () {
+    const activeZoneName = {{ active_zone|tojson }};
+    const activeZoneStorefront = `${activeZoneName} storefront`;
+    const activeZonePark = `Park Entrance, ${activeZoneName}`;
+    const activeZoneMainDrive = `Main Drive, ${activeZoneName}`;
+    const activeZoneRoute = `Central Route, ${activeZoneName}`;
     const verificationCard = document.getElementById('verification-card');
     const verificationCardTitle = document.getElementById('verification-card-title');
     const verificationLocation = document.getElementById('verification-location');
@@ -1129,9 +1136,9 @@
     function defaultCommunityDispatchRows() {
       return [
         {
-          hotspot_key: 'mixed-collection-overflow-zone::park-entrance-roodepoort',
+          hotspot_key: normalizeHotspotKey('Mixed collection overflow zone', activeZonePark),
           title: 'Mixed collection overflow zone',
-          location: 'Park Entrance, Roodepoort',
+          location: activeZonePark,
           status: 'open',
           priority: 'center',
           report_count: 58,
@@ -1140,9 +1147,9 @@
           can_prioritize: true,
         },
         {
-          hotspot_key: 'community-agreed-dirty-hotspot::sandton-drive',
+          hotspot_key: normalizeHotspotKey('Community-agreed dirty hotspot', activeZoneMainDrive),
           title: 'Community-agreed dirty hotspot',
-          location: 'Sandton Drive',
+          location: activeZoneMainDrive,
           status: 'open',
           priority: 'center',
           report_count: 27,
@@ -1151,9 +1158,9 @@
           can_prioritize: true,
         },
         {
-          hotspot_key: 'missed-trash-collection-route::corner-main-st-4th-ave-randburg',
+          hotspot_key: normalizeHotspotKey('Missed trash collection route', activeZoneRoute),
           title: 'Missed trash collection route',
-          location: 'Corner Main St & 4th Ave, Randburg',
+          location: activeZoneRoute,
           status: 'open',
           priority: 'standard',
           report_count: 12,
@@ -1361,7 +1368,7 @@
           <div style="padding: 1rem; border-left: 4px solid #16a34a; background: #f0fdf4; border-radius: 6px; margin-bottom: 0.2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
               <div>
-                <strong style="color: #065f46; display: block;">Illegal dumping cleared: Parkmore Storefront</strong>
+                <strong style="color: #065f46; display: block;">Illegal dumping cleared: ${escapeHtml(activeZoneStorefront)}</strong>
                 <span style="font-size: 0.8rem; color: #166534;">Verified by Center • 42.0 kg Plastics Diverted</span>
               </div>
               <span style="background: #bbf7d0; color: #166534; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: bold;">+210 ECO Rewarded</span>
@@ -1459,7 +1466,7 @@
         if (verificationCardTitle) verificationCardTitle.textContent = 'Center Reports: Cleanup Complete';
         verificationStatus.textContent = 'Pending Verification';
         verificationStatus.style.color = '#1d4ed8';
-        verificationLocation.textContent = 'Location: Waiting for next completed hotspot receipt';
+        verificationLocation.textContent = `Location: ${activeZoneName} waiting for next completed hotspot receipt`;
         verificationNote.textContent = 'Once the center verifies a community hotspot, the receipt, verifier, and proof links will appear here for resident confirmation.';
         verificationCard.style.background = '#eff6ff';
         verificationCard.style.border = '1px solid #93c5fd';

@@ -587,13 +587,14 @@ body {
     <span class="trust-chip"><span class="trust-chip-icon">◎</span>Proof and Hedera anchors visible when ready</span>
 </div>
 
-<div class="biz-hero">
+<div class="biz-hero judge-hero-card">
     <h2>Business Hub</h2>
     <p>Launch pickup requests, track recycler progress, and keep verified recycling records with proof and Hedera-backed audit links.</p>
+    <span class="judge-demo-step">Step 1: Publish Request</span>
 </div>
 
 <section class="hub-stat-grid">
-    <article class="card hub-stat-card">
+    <article class="card hub-stat-card judge-metric-card">
         <span class="section-kicker">Total Recycled</span>
         <strong>{{ "{:,.1f}".format(goal_current) }} kg</strong>
         <p>Verified material diverted through your business collection requests.</p>
@@ -608,17 +609,17 @@ body {
             </div>
         </div>
     </article>
-    <article class="card hub-stat-card">
+    <article class="card hub-stat-card judge-metric-card">
         <span class="section-kicker">Active Requests</span>
         <strong>{{ summary_data.get('active_requests', 0) }}</strong>
         <p>Requests currently pending center completion in your request table.</p>
     </article>
-    <article class="card hub-stat-card">
+    <article class="card hub-stat-card judge-metric-card">
         <span class="section-kicker">Verified Events</span>
         <strong>{{ summary_data.get('verified_records', 0) }}</strong>
         <p>Submitted requests confirmed by the verification flow.</p>
     </article>
-    <article class="card hub-stat-card">
+    <article class="card hub-stat-card judge-metric-card">
         <span class="section-kicker">ECO Funded</span>
         <strong>{{ "{:,.1f}".format(eco_funded_total) }} ECO</strong>
         <p>Total EcoCoin distributed directly to local recyclers.</p>
@@ -664,7 +665,7 @@ body {
         <h3>Publish a new business collection opportunity</h3>
         <p>Request pickup for recyclable material from your site so recyclers can accept the job, submit materials, and move the event into verified proof.</p>
         <div class="hub-cta-row">
-            <a href="{{ url_for('request_pickup') }}" class="btn-primary-large">Create Pickup Request</a>
+            <a href="{{ url_for('request_pickup') }}" class="btn-primary-large judge-demo-cta">Create Pickup Request</a>
             <a href="{{ url_for('proof_hub') }}" class="btn-secondary">Open Proof Hub</a>
         </div>
     </article>

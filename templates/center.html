@@ -703,15 +703,16 @@ body {
 }
 </style>
 <section class="center-shell">
-    <header class="card center-premium-header">
+    <header class="card center-premium-header judge-hero-card">
         <div>
             <span class="section-kicker">Verification Center</span>
             <h2>Premium Proof Intake Surface</h2>
             <p>Welcome, {{ current_user.email.split('@')[0] }}. Confirm direct recycler deposits, validate submitted pickup events, and keep reward outcomes audit-ready.</p>
+            <span class="judge-demo-step">Step 2: Scan Intent</span>
         </div>
         <div class="center-header-signal">
-            <span class="status-badge status-badge-paid">Verified Lane Active</span>
-            <span class="status-badge status-badge-pending">Submitted Queue Active</span>
+            <span class="status-badge status-badge-paid judge-signal-chip">Verified Lane Active</span>
+            <span class="status-badge status-badge-pending judge-signal-chip">Submitted Queue Active</span>
         </div>
     </header>
 
@@ -738,7 +739,7 @@ body {
                     <input type="hidden" id="collector-id-input" name="collector_id" value="">
                     <input type="hidden" id="qr-intent-code-input" name="qr_intent_code" value="">
 
-                    <button type="button" class="btn-primary-large btn-form scanner-activate-btn" id="scan-btn">
+                    <button type="button" class="btn-primary-large btn-form scanner-activate-btn judge-demo-cta" id="scan-btn">
                         📷 Scan / Paste QR Intent
                     </button>
                     <p id="scan-feedback" class="scan-note">Scan or paste QR intent to auto-load recycler and source context. Total payout auto-calculates as kg x ECO/kg.</p>

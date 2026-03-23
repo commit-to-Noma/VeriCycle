@@ -86,6 +86,20 @@ def main():
                 raise RuntimeError(f"opportunity accept failed: {accept_payload}")
             assignment_id = int(accept_payload["assignment_id"])
 
+        with app.test_client() as client:
+            login(client, business.email, "business")
+            handover_res = client.post(
+                f"/business/assignments/{assignment_id}/confirm-handover",
+                follow_redirects=False,
+            )
+            if handover_res.status_code not in (302, 303):
+                raise RuntimeError(
+                    f"business handover confirm returned {handover_res.status_code}: "
+                    f"{handover_res.get_data(as_text=True)[:300]}"
+                )
+
+        with app.test_client() as client:
+            login(client, recycler.email, "recycler")
             submit_res = client.post(
                 f"/api/assignments/{assignment_id}/submit",
                 json={
@@ -117,9 +131,8 @@ def main():
             for required_text in [
                 "Business Hub",
                 "Create Pickup Request",
-                "Recent Pickup Requests",
+                "Active Pickup Requests",
                 "Verified Events",
-                f"#{opportunity_id}",
             ]:
                 if required_text not in body:
                     raise RuntimeError(f"business page missing expected text: {required_text}")

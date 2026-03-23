@@ -354,6 +354,28 @@
     }
     .primary-cta:hover { background: #15803d; transform: translateY(-1px); }
 
+    .event-trigger-banner {
+        margin-top: 0.9rem;
+        margin-bottom: 0.9rem;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid #86efac;
+        background: linear-gradient(135deg, #ecfdf5, #dcfce7);
+        box-shadow: 0 10px 24px rgba(22, 163, 74, 0.18);
+    }
+    .event-trigger-banner .primary-cta {
+        min-height: 52px;
+        font-size: 1.02rem;
+        letter-spacing: 0.02em;
+    }
+    .event-trigger-note {
+        margin: 0.5rem 0 0;
+        color: #166534;
+        font-size: 0.84rem;
+        text-align: center;
+        font-weight: 600;
+    }
+
     .toast-wrap {
         position: fixed;
         top: 80px;
@@ -730,6 +752,22 @@
     @media (max-width: 700px) {
         .kpi-row { grid-template-columns: 1fr; }
         .item-top { flex-direction: column; align-items: flex-start; }
+        .table-wrap table {
+            table-layout: auto;
+        }
+        .table-wrap th,
+        .table-wrap td {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            padding: 0.62rem 0.55rem;
+            font-size: 0.8rem;
+        }
+        .table-wrap col.col-anchor,
+        .table-wrap th:nth-child(6),
+        .table-wrap td:nth-child(6) {
+            display: none;
+        }
     }
 
     .page-container {
@@ -820,12 +858,13 @@
 </div>
 
 <div class="collector-shell">
-    <div class="collector-header">
+    <div class="collector-header judge-hero-card">
         <div>
             <h2 class="page-title">Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
             <p class="page-subtitle"><strong>Recycler Hub</strong> · Find jobs, record drop-offs, and track verified recycling impact.</p>
+            <span class="judge-demo-step">Step 1: Trigger Event</span>
         </div>
-        <div class="status-chip" id="system-status-chip" title="5 Agents Online">
+        <div class="status-chip judge-signal-chip" id="system-status-chip" title="5 Agents Online">
             <span class="status-dot" id="system-health-dot"></span>
             <span id="system-health-text">System Operational</span>
         </div>
@@ -844,19 +883,19 @@
     </div>
 
     <div class="kpi-row">
-        <div class="tech-card kpi-card">
+        <div class="tech-card kpi-card judge-metric-card">
             <p class="kpi-head">Current Balance <span class="kpi-help" title="Available ECO from verified records.">?</span></p>
             <p class="kpi-number" id="kpi-ecocoin">{{ "{:,.0f}".format(wallet_balance or 0) }} ECO</p>
             <a href="/wallet" class="btn-primary kpi-wallet-btn">View Wallet</a>
         </div>
 
-        <div class="tech-card kpi-card">
+        <div class="tech-card kpi-card judge-metric-card">
             <p class="kpi-head">Total Recycled</p>
             <p class="kpi-number" id="kpi-kg">{{ "{:,.1f}".format(total_recycled_completed or 0) }} kg</p>
             <p class="kpi-note">Lifetime verified and anchored recycling weight.</p>
         </div>
 
-        <div class="tech-card kpi-card">
+        <div class="tech-card kpi-card judge-metric-card">
             <p class="kpi-head">Monthly Impact Target</p>
             <div class="ring-wrap">
                 <svg class="ring-svg" viewBox="0 0 120 120">
@@ -871,7 +910,7 @@
             <p class="kpi-note">Monthly verified recycling progress.</p>
         </div>
 
-        <div class="tech-card kpi-card">
+        <div class="tech-card kpi-card judge-metric-card">
             <p class="kpi-head">Neighborhood Goal</p>
             <div class="ring-wrap">
                 <svg class="ring-svg" viewBox="0 0 120 120">
@@ -974,6 +1013,11 @@
         <div class="load-more-wrap"><button id="activity-load-more" class="load-more-btn" type="button" style="display:none;">Load More</button></div>
     </div>
 
+    <section class="event-trigger-banner" aria-label="Recycling event trigger">
+        <button class="primary-cta judge-demo-cta" id="generate-self-qr-btn">Trigger Recycling Event</button>
+        <p class="event-trigger-note">Launch a self-deposit event and generate your center-ready QR intent instantly.</p>
+    </section>
+
     <div class="bottom-grid">
         <section class="faq-card">
             <h3 style="margin:0;">Need Help?</h3>
@@ -1006,7 +1050,6 @@
         </section>
 
         <section class="tech-card action-center-card">
-            <button class="primary-cta" id="generate-self-qr-btn">Generate Self-Deposit QR Intent</button>
             <div class="tech-card" style="padding:0.85rem;">
                 <h3 style="margin:0 0 0.5rem 0;">Recycler Verification</h3>
                 <div style="color:#64748b; font-size:0.9rem; background:rgba(0, 200, 100, 0.05); border-radius:8px; padding:0.85rem;">
@@ -1236,10 +1279,11 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('kpi-ecocoin').textContent = Number(data.total_eco).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' ECO';
         }
 
-        const totalRecycledForCard = Number(data?.total_recycled_completed ?? derived.personalKg ?? 0);
+        const canonicalKg = Number(data?.total_recycled_completed ?? 0);
+        const totalRecycledForCard = Number.isFinite(canonicalKg) ? canonicalKg : 0;
         document.getElementById('kpi-kg').textContent = totalRecycledForCard.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' kg';
 
-        const monthlyProgress = Number(data?.current_kg ?? derived.recentKg ?? 0);
+        const monthlyProgress = totalRecycledForCard;
         const monthlyTarget = Number(data?.monthly_goal ?? derived.monthlyGoal ?? 10);
 
         updateRing('personal-ring-fill', 'personal-goal-label', 'personal-percent', monthlyProgress, monthlyTarget, false);
@@ -1826,7 +1870,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(() => {
         refreshDashboardData();
         loadAcceptedAssignments();
-    }, 10000);
+    }, 3000);
 
     initializeDashboard();
 });

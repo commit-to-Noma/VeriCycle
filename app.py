@@ -1511,10 +1511,12 @@ def build_community_hotspot_board() -> list[dict]:
                 "resident_confirmation_status": None,
                 "resident_confirmation_at": None,
                 "resident_confirmation_by": None,
+                "estimated_kg": 0.0,
             }
 
         entry = grouped[key]
         entry["report_count"] += 1
+        entry["estimated_kg"] = max(float(entry.get("estimated_kg") or 0.0), float(row.estimated_kg or 0.0))
         if is_support:
             entry["support_count"] += 1
 
@@ -1598,6 +1600,65 @@ def build_community_hotspot_board() -> list[dict]:
         )
     )
     return payload
+
+
+def compute_local_community_impact_snapshot(location: Location | None) -> dict:
+    zone_name_parts = []
+    if location and getattr(location, "name", None):
+        zone_name_parts.append(str(location.name).strip())
+    if location and getattr(location, "city", None):
+        zone_name_parts.append(str(location.city).strip())
+    zone_name = ", ".join([part for part in zone_name_parts if part]) or "Active Zone"
+
+    if not location:
+        return {
+            "zone_name": zone_name,
+            "hotspots_resolved": 0,
+            "active_reports": 0,
+            "active_neighbors": 0,
+            "waste_diverted_kg": 0.0,
+            "eco_generated": 0.0,
+        }
+
+    raw_tokens = [
+        str(getattr(location, "name", "") or "").strip().lower(),
+        str(getattr(location, "city", "") or "").strip().lower(),
+    ]
+    location_tokens = [token for token in raw_tokens if token and len(token) >= 3]
+
+    def matches_zone(location_label: str | None) -> bool:
+        label = str(location_label or "").strip().lower()
+        if not label:
+            return False
+        return any(token in label for token in location_tokens)
+
+    local_rows = [
+        row for row in build_community_hotspot_board()
+        if matches_zone(row.get("location"))
+    ]
+
+    resolved_rows = [
+        row for row in local_rows
+        if str(row.get("status") or "").strip().lower() in {"completed", "confirmed"}
+    ]
+    active_rows = [
+        row for row in local_rows
+        if str(row.get("status") or "").strip().lower() not in {"completed", "confirmed", "cancelled"}
+    ]
+
+    active_reports = sum(max(0, int(row.get("report_count") or 0)) for row in active_rows)
+    active_neighbors = sum(max(0, int(row.get("support_count") or 0)) for row in local_rows)
+    waste_diverted_kg = round(sum(max(0.0, float(row.get("estimated_kg") or 0.0)) for row in resolved_rows), 1)
+    eco_generated = round(sum(max(0.0, float(row.get("reward_amount") or 0.0)) for row in resolved_rows), 1)
+
+    return {
+        "zone_name": zone_name,
+        "hotspots_resolved": len(resolved_rows),
+        "active_reports": active_reports,
+        "active_neighbors": active_neighbors,
+        "waste_diverted_kg": waste_diverted_kg,
+        "eco_generated": eco_generated,
+    }
 
 
 def role_home_endpoint_for(user) -> str:
@@ -3254,7 +3315,9 @@ def business_dashboard():
             lifecycle_status_key = 'requested'
             trust_status_label = 'Awaiting Pickup'
 
-        if linked_activity and is_activity_verified_canonical(linked_activity):
+        linked_states = activity_state_set(linked_activity)
+        esg_countable = bool(linked_activity and (is_activity_anchored_canonical(linked_activity) or 'completed' in linked_states))
+        if esg_countable:
             summary["verified_records"] += 1
             summary["eco_funded_total"] += max(0.0, float(linked_activity.amount or 0.0))
             verified_kg = 0.0
@@ -4299,6 +4362,7 @@ def household_dashboard():
         }
 
     network_impact = compute_network_impact_snapshot()
+    local_impact = compute_local_community_impact_snapshot(location)
 
     return render_template(
         "household.html",
@@ -4310,6 +4374,7 @@ def household_dashboard():
         selected_location_id=location.id,
         honorable_mention=honorable_mention,
         network_impact=network_impact,
+        local_impact=local_impact,
         active_page='household'
     )
 
