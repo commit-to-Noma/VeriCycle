@@ -8,6 +8,8 @@ It replaces risky cash-based reward flows with EcoCoin, creates immutable Proof 
 
 [![Built with Hedera](https://img.shields.io/badge/Built%20with-Hedera-000)](https://hedera.com) [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org) [![Flask](https://img.shields.io/badge/Flask-Web%20App-informational)](https://flask.palletsprojects.com)
 
+Live Demo URL: https://YOUR-DEPLOYED-URL
+
 ---
 
 ## Table of Contents
@@ -357,6 +359,10 @@ Copy `.env.example` to `.env` and fill in:
 SECRET_KEY=your_secret_key
 FLASK_ENV=development
 FLASK_DEBUG=1
+DATABASE_URL=
+NETWORK=testnet
+HEDERA_ACCOUNT_ID=0.0.xxxxx
+HEDERA_PRIVATE_KEY=302e...
 VERICYCLE_TOPIC_ID=your_topic_id
 OPERATOR_ID=your_operator_id
 OPERATOR_KEY=your_operator_key
@@ -409,18 +415,28 @@ python scripts/test_review_transitions.py
 python scripts/run_single_account_demo_check.py
 ```
 
+### Judge Demo Flow (Recommended)
+1. Community Hub: report hotspot and confirm resident verification prompt.
+2. Business Hub: create pickup request and confirm handover.
+3. Recycler Hub: trigger recycling event and submit assignment.
+4. Verification Center: scan/paste QR intent and verify submission.
+5. Proof Hub: verify HCS hash and show immutable record.
+6. Admin Monitor: show verified events and one anomaly with optional debug toggle.
+
 ---
 
 ## Deployment
 
 ### Docker
 ```bash
-gunicorn -w 4 -b 0.0.0.0:$PORT app:app
+gunicorn app:app --workers 3 --timeout 120 --bind 0.0.0.0:$PORT
 ```
 
 ### Production Checklist
 - [ ] Set `FLASK_ENV=production`
 - [ ] Configure secure SECRET_KEY and ENCRYPTION_KEY
+- [ ] Set `DATABASE_URL` and `NETWORK`
+- [ ] Set `HEDERA_ACCOUNT_ID` and `HEDERA_PRIVATE_KEY` (or OPERATOR aliases)
 - [ ] Use environment-managed Hedera credentials
 - [ ] Deploy with managed database (PostgreSQL)
 - [ ] Enable secret storage policies
@@ -478,6 +494,21 @@ VeriCycle runs a hybrid architecture:
 | Evidence Layer | Proof bundles, business sustainability records, recycler Proof of Income history |
 
 This separation keeps user experience simple while preserving cross-party trust and auditability.
+
+### Architecture Diagram
+```mermaid
+flowchart LR
+	A[Community and Business Requests] --> B[Recycler Submission]
+	B --> C[Center Verification]
+	C --> D[Collector Agent]
+	D --> E[Verifier Agent]
+	E --> F[Logbook Agent]
+	F --> G[Hedera HCS Anchor]
+	F --> H[Reward Agent]
+	H --> I[Hedera HTS Transfer]
+	I --> J[Compliance Agent]
+	J --> K[Proof Hub and Admin Monitor]
+```
 
 ---
 

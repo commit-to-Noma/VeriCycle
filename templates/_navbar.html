@@ -20,11 +20,16 @@
             {% elif current_effective_role == 'admin' %}
                 <a href="{{ url_for('admin_monitor') }}" class="nav-button {% if request.path.startswith('/admin/monitor') %}active{% endif %}">Admin Monitor</a>
             {% endif %}
-            {% if current_effective_role != 'resident' %}
-                <a href="{{ url_for('proof_hub') }}" class="nav-button {% if request.path.startswith('/proof-hub') %}active{% endif %}">Proof Hub</a>
+            {% if demo_role_switch_enabled and current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('demo_switch_role') }}" class="nav-role-switch-form">
+                    <label for="nav-role-switch" class="nav-role-switch-label">Switch Role</label>
+                    <select id="nav-role-switch" name="role" class="nav-role-switch" onchange="this.form.submit()">
+                        {% for value, label in demo_role_switch_options %}
+                            <option value="{{ value }}" {% if value == current_effective_role %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
             {% endif %}
-            <a href="{{ url_for('profile') }}" class="nav-button {% if request.path.startswith('/profile') %}active{% endif %}">Profile</a>
-            <a href="{{ url_for('logout') }}" class="nav-button">Log Out</a>
         </nav>
 
         <button class="nav-burger" id="navBurger" type="button" aria-label="Open menu" aria-controls="navDrawer" aria-expanded="false">
@@ -32,6 +37,11 @@
         </button>
     </div>
 </header>
+
+<div class="global-observer-strip" role="status" aria-live="polite">
+    <span class="global-observer-dot" aria-hidden="true"></span>
+    <span>Live Network Observer • Hedera Testnet</span>
+</div>
 
 <div class="nav-drawer-overlay" id="navDrawerOverlay"></div>
 
@@ -60,6 +70,17 @@
         {% if current_effective_role != 'resident' %}
             <a href="{{ url_for('proof_hub') }}">Proof Hub</a>
             <a href="{{ url_for('proof_integrity') }}">Proof Integrity Checker</a>
+        {% endif %}
+        {% if demo_role_switch_enabled and current_user.is_authenticated %}
+            <p class="drawer-section">Switch Role</p>
+            {% for value, label in demo_role_switch_options %}
+                {% if value != current_effective_role %}
+                    <form method="post" action="{{ url_for('demo_switch_role') }}" class="drawer-role-switch-form">
+                        <input type="hidden" name="role" value="{{ value }}">
+                        <button type="submit" class="drawer-role-switch-btn">{{ label }}</button>
+                    </form>
+                {% endif %}
+            {% endfor %}
         {% endif %}
         <a href="{{ url_for('profile') }}">Profile</a>
         <a href="{{ url_for('logout') }}">Log Out</a>

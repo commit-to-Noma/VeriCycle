@@ -738,6 +738,48 @@ img.logo {
     }
 }
 
+.nav-role-switch-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: 0.5rem;
+}
+
+.nav-role-switch-label {
+    font-size: 0.72rem;
+    color: #0f766e;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.nav-role-switch {
+    border: 1px solid #99f6e4;
+    background: #f0fdfa;
+    color: #134e4a;
+    border-radius: 999px;
+    padding: 0.35rem 0.65rem;
+    min-height: 36px;
+    font-weight: 700;
+}
+
+.drawer-role-switch-form {
+    margin: 0;
+}
+
+.drawer-role-switch-btn {
+    width: 100%;
+    border: 1px solid #ccfbf1;
+    background: #f0fdfa;
+    color: #0f766e;
+    border-radius: 8px;
+    min-height: 42px;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 /* --- Layout Container (fixed width, perfect fit) --- */
 .app-dashboard {
     max-width: 1200px;
@@ -12318,4 +12360,207 @@ body.light-theme .judge-demo-cta::after {
             radial-gradient(280px 160px at 8% 16%, rgba(22, 163, 74, 0.12), transparent 72%),
             radial-gradient(280px 170px at 96% 12%, rgba(14, 116, 144, 0.1), transparent 72%);
     }
+}
+
+/* Full-bleed role hero gradient (resident/business/recycler/center/admin) */
+body.light-theme .role-hero-band {
+    position: relative;
+    isolation: isolate;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible;
+    margin-top: 0 !important;
+}
+
+body.light-theme .role-hero-band::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: -10px;
+    width: 100vw;
+    height: 210px;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+        180deg,
+        rgba(15, 118, 110, 0.2) 0%,
+        rgba(20, 184, 166, 0.14) 40%,
+        rgba(20, 184, 166, 0.06) 72%,
+        rgba(20, 184, 166, 0) 100%
+    );
+}
+
+body.light-theme .role-hero-band.judge-hero-card,
+body.light-theme .role-hero-band.card,
+body.light-theme .role-hero-band.admin-dashboard-header {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+body.light-theme .role-hero-band .judge-demo-step {
+    display: block;
+    margin-top: 0.5rem;
+    padding: 0;
+    border: 0 !important;
+    border-radius: 0;
+    background: transparent !important;
+    box-shadow: none;
+    color: #0f766e;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+    body.light-theme .role-hero-band::before {
+        top: -8px;
+        height: 170px;
+    }
+}
+
+/* Role-focused navbar layout (final override) */
+.navbar .nav-shell {
+    width: 100% !important;
+    max-width: none !important;
+    justify-content: flex-start !important;
+    gap: 0.75rem !important;
+    padding: 0.85rem 0.5rem 0.85rem 0.35rem !important;
+}
+
+.navbar .logo-link {
+    margin-right: 0.25rem;
+}
+
+.navbar .nav-primary {
+    margin-left: auto !important;
+    flex: 0 1 auto !important;
+    justify-content: flex-end !important;
+    gap: 0.5rem !important;
+    overflow: visible !important;
+}
+
+.navbar .nav-primary .nav-button {
+    padding: 0.5rem 0.85rem !important;
+}
+
+.navbar .nav-role-switch-form {
+    margin-left: 0.15rem !important;
+}
+
+@media (max-width: 900px) {
+    .navbar .nav-shell {
+        padding-left: 0.3rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    .navbar .nav-primary {
+        gap: 0.35rem !important;
+    }
+
+    .navbar .nav-role-switch-label {
+        display: none;
+    }
+}
+
+/* Pastel first-impression palette (navbar + top hero only) */
+body.light-theme {
+    --vc-pastel-50: #f3fbf7;
+    --vc-pastel-100: #e8f6ef;
+    --vc-pastel-200: #d4eee2;
+    --vc-pastel-300: #b8e2d1;
+    --vc-pastel-600: #1d7f63;
+    --vc-pastel-700: #166a54;
+}
+
+body.light-theme .navbar,
+body.light-theme .public-header {
+    background: rgba(246, 252, 249, 0.9) !important;
+    border-bottom: 1px solid rgba(161, 211, 191, 0.55) !important;
+}
+
+body.light-theme .navbar .nav-button,
+body.light-theme .navbar .nav-role-switch-label,
+body.light-theme .navbar .logo-link,
+body.light-theme .navbar .logo-link span {
+    color: var(--vc-pastel-700) !important;
+}
+
+body.light-theme .navbar .nav-button:hover {
+    background: rgba(184, 226, 209, 0.38) !important;
+    border-color: rgba(120, 185, 158, 0.45) !important;
+}
+
+body.light-theme .navbar .nav-button.active {
+    background: var(--vc-pastel-300) !important;
+    border-color: rgba(93, 160, 132, 0.42) !important;
+    color: var(--vc-pastel-700) !important;
+}
+
+body.light-theme .navbar .nav-button.active::after {
+    background: #46b387 !important;
+}
+
+body.light-theme .navbar .nav-role-switch {
+    background: #eef8f3 !important;
+    border-color: rgba(120, 185, 158, 0.55) !important;
+    color: var(--vc-pastel-700) !important;
+}
+
+body.light-theme .navbar .nav-burger {
+    background: rgba(240, 250, 245, 0.9) !important;
+    border-color: rgba(120, 185, 158, 0.58) !important;
+    color: var(--vc-pastel-700) !important;
+}
+
+body.light-theme .role-hero-band::before {
+    background: linear-gradient(
+        180deg,
+        rgba(139, 205, 180, 0.33) 0%,
+        rgba(176, 227, 208, 0.23) 45%,
+        rgba(215, 240, 229, 0.1) 74%,
+        rgba(215, 240, 229, 0) 100%
+    ) !important;
+}
+
+body.light-theme .role-hero-band .judge-demo-step {
+    color: #2f5f4f !important;
+}
+
+/* Centralized observer strip for authenticated pages */
+.global-observer-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 28px;
+    padding: 0.1rem 0.7rem;
+    color: #334155;
+    font-size: 0.84rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    background: linear-gradient(180deg, #dfe4eb 0%, #d4dae3 100%);
+    border-top: 1px solid #c2cbd7;
+    border-bottom: 1px solid #bcc6d3;
+    border-left: 1px solid #c2cbd7;
+    border-right: 1px solid #bcc6d3;
+    border-radius: 999px;
+    width: fit-content;
+    max-width: calc(100% - 28px);
+    margin: 6px auto 10px;
+    position: relative;
+    z-index: 25;
+    box-shadow: 0 1px 3px rgba(51, 65, 85, 0.12);
+}
+
+.global-observer-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: radial-gradient(circle at 35% 35%, #8de6b1 0%, #55c382 58%, #2e9f60 100%);
+    box-shadow: 0 0 0 2px rgba(86, 180, 126, 0.22);
 }

@@ -308,7 +308,8 @@
             <input id="hash-verify-input" class="verify-input" type="text" placeholder="Enter Hedera Transaction Hash to verify event authenticity.">
             <button id="hash-verify-btn" class="btn-primary judge-demo-cta" style="border:none; border-radius:10px; min-height:46px; padding:0.72rem 0.95rem; color:#fff; font-weight:700;">Verify</button>
         </div>
-        <div id="verify-message" class="verify-message"></div>
+        <div id="verify-message" class="verify-message">Fetching live data...</div>
+        <p style="margin:0.4rem 0 0; color:#64748b; font-size:0.84rem;">Anchoring to Hedera events may take a few seconds while mirror consensus updates.</p>
     </section>
 
     <section class="tech-card ledger-card">
@@ -326,14 +327,15 @@
                 </thead>
                 <tbody>
                     {% for row in rows %}
-                    {% set tx = row.hedera_tx_id or row.hcs_tx_id or row.logbook_tx_id or '' %}
+                    {% set tx = normalize_tx_id(row.hedera_tx_id or row.hcs_tx_id or row.logbook_tx_id) %}
+                    {% set tx_url = hashscan_link(tx) if tx else None %}
                     <tr class="proof-row" data-anchor="{{ tx|lower }}">
                         <td class="audit-date" data-ts="{{ row.timestamp }}">{{ row.timestamp }}</td>
                         <td class="audit-event-id">#{{ row.id }}</td>
                         <td class="mat-weight" data-desc="{{ row.desc|e }}">{{ row.desc }}</td>
                         <td>
-                            {% if tx %}
-                                <a class="anchor-link hedera-link" href="https://hashscan.io/testnet/transaction/{{ tx }}" target="_blank" rel="noopener" title="{{ tx }}">{{ (tx|string)[:8] }}...{{ (tx|string)[-4:] }}</a>
+                            {% if tx and tx_url %}
+                                <a class="anchor-link hedera-link" href="{{ tx_url }}" target="_blank" rel="noopener" title="{{ tx }}">{{ tx }}</a>
                             {% else %}
                                 —
                             {% endif %}

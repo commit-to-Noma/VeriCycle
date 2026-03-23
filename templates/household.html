@@ -121,15 +121,24 @@
     margin-top: 1rem;
   }
   .network-scale-banner {
-    background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+    background: linear-gradient(135deg, #c9eada 0%, #a9dcc6 100%);
     border-radius: 12px;
     padding: 1.15rem;
-    color: #ffffff;
+    color: #135842;
     margin-top: 0.8rem;
     display: flex;
     justify-content: space-around;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    box-shadow: 0 6px 14px rgba(57, 111, 88, 0.12);
+    border: 1px solid rgba(116, 175, 149, 0.45);
+  }
+  .network-scale-banner h4,
+  .network-scale-banner p,
+  .network-scale-banner span {
+    color: #135842 !important;
+  }
+  .network-scale-banner .divider {
+    background-color: rgba(67, 125, 101, 0.32) !important;
   }
   .panel {
     background: rgba(255,255,255,0.88);
@@ -500,7 +509,7 @@
   {% set active_zone = (location.name if location and location.name else 'Community Zone') %}
 
   <main class="container community-shell">
-    <header class="judge-topbar judge-hero-card">
+    <header class="judge-topbar judge-hero-card role-hero-band">
       <div>
         <h1>Welcome, {{ (current_user.full_name or current_user.email.split('@')[0] or 'Resident') }}!</h1>
         <p>Active Zone: <strong style="color:#0f172a;">{{ active_zone }}</strong></p>

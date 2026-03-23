@@ -324,6 +324,7 @@ class RewardAgent:
                 flush=True
             )
             print(f"RewardAgent: reward transferred tx_id={reward_tx_id}", flush=True)
+            print(f"[HTS] Reward sent {float(activity.amount or 0):.2f} ECO tx_id={reward_tx_id}", flush=True)
             print(
                 f"[REWARD AGENT] commerce_fee: payer=RewardAgent payee=VerifierAgent amount={COMMERCE_FEE_AMOUNT:.2f} tx_id={reward_tx_id}",
                 flush=True,

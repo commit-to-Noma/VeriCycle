@@ -41,6 +41,7 @@ from collections import defaultdict
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import text, func, or_
 from urllib.parse import quote, urlencode
+from werkzeug.exceptions import HTTPException
 
 # -----------------------------------------------------------------
 # 1. APP CONFIGURATION
@@ -58,11 +59,19 @@ if not _secret:
         stacklevel=1
     )
 app.config['SECRET_KEY'] = _secret
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'vericycle.db')
+_database_url = (os.getenv('DATABASE_URL') or '').strip()
+if _database_url:
+    if _database_url.startswith('postgres://'):
+        _database_url = _database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = _database_url
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'vericycle.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Session / cookie security
 _is_prod = os.getenv('FLASK_ENV') == 'production' or os.getenv('RENDER') == 'true'
+_network_raw = (os.getenv('NETWORK') or 'testnet').strip().lower()
+NETWORK = _network_raw if _network_raw in {'testnet', 'mainnet'} else 'testnet'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = _is_prod  # HTTPS-only cookies in production
@@ -70,6 +79,18 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7  # 7-day sessions
 
 DEMO_MODE = os.getenv("DEMO_MODE", "0") == "1"
 print(f"[BOOT] DEMO_MODE={'1' if DEMO_MODE else '0'}", flush=True)
+
+if _is_prod:
+    required_env = {
+        'SECRET_KEY': os.getenv('SECRET_KEY') or os.getenv('FLASK_SECRET_KEY'),
+        'DATABASE_URL': os.getenv('DATABASE_URL'),
+        'NETWORK': os.getenv('NETWORK'),
+        'HEDERA_ACCOUNT_ID': os.getenv('HEDERA_ACCOUNT_ID') or os.getenv('OPERATOR_ID'),
+        'HEDERA_PRIVATE_KEY': os.getenv('HEDERA_PRIVATE_KEY') or os.getenv('OPERATOR_KEY'),
+    }
+    missing_keys = [key for key, value in required_env.items() if not str(value or '').strip()]
+    if missing_keys:
+        raise RuntimeError(f"Missing required production environment variables: {', '.join(missing_keys)}")
 
 # -----------------------------------------------------------------
 # 2. INITIALIZE TOOLS
@@ -401,6 +422,15 @@ def ensure_demo_login_accounts() -> None:
 def resolve_demo_login_alias(identifier: str | None) -> str:
     normalized = (identifier or "").strip().lower()
     return DEMO_LOGIN_ALIASES.get(normalized, normalized)
+
+
+DEMO_SWITCH_ROLE_TARGETS = {
+    "recycler": "recycler@vericycle.com",
+    "business": "business@vericycle.com",
+    "resident": "resident@vericycle.com",
+    "center": "center@vericycle.com",
+    "admin": "admin@vericycle.com",
+}
 
 
 def _qr_secret_bytes() -> bytes:
@@ -1306,22 +1336,23 @@ def seed_demo_data(force_reset: bool = False) -> None:
 
     changed = False
 
-    # Ensure at least one pending event is visible in center/admin flows.
-    pending_event = (
+    # Ensure at least two pending events are visible in center/admin flows.
+    pending_events = (
         Activity.query
         .filter(
             Activity.pipeline_stage.in_(['created', 'signals_collected', 'verified', 'logged']),
             ~Activity.status.in_(['rejected', 'failed'])
         )
         .order_by(Activity.id.desc())
-        .first()
+        .all()
     )
-    if not pending_event:
+    pending_needed = max(0, 2 - len(pending_events))
+    for idx in range(pending_needed):
         pending_activity = Activity(
             user_id=recycler_user.id,
-            timestamp=datetime.now(timezone.utc).isoformat(),
-            desc='Pending Verification Pickup (18.0kg of Plastics)',
-            amount=calculate_demo_reward_amount('Plastics', 18.0),
+            timestamp=(datetime.now(timezone.utc) - timedelta(minutes=idx * 5)).isoformat(),
+            desc=f'Pending Verification Pickup ({18.0 + idx:.1f}kg of Plastics)',
+            amount=calculate_demo_reward_amount('Plastics', 18.0 + idx),
             status='pending',
             verified_status='pending',
             pipeline_stage='created',
@@ -1329,6 +1360,45 @@ def seed_demo_data(force_reset: bool = False) -> None:
             reward_status=None,
         )
         db.session.add(pending_activity)
+        changed = True
+
+    # Ensure a minimum completed corpus exists so every dashboard has data on first load.
+    completed_events = (
+        Activity.query
+        .filter(Activity.pipeline_stage.in_(['verified', 'logged', 'rewarded', 'attested']))
+        .filter(~Activity.status.in_(['rejected', 'failed']))
+        .all()
+    )
+    completed_needed = max(0, 5 - len(completed_events))
+    for idx in range(completed_needed):
+        completed_kg = 14.0 + (idx * 2.0)
+        completed_at = datetime.now(timezone.utc) - timedelta(days=idx + 1)
+        completed = Activity(
+            user_id=recycler_user.id,
+            timestamp=completed_at.isoformat(),
+            desc=f'Verified Demo Pickup ({completed_kg:.1f}kg of Mixed Recyclables)',
+            amount=calculate_demo_reward_amount('Mixed Recyclables', completed_kg),
+            status='verified',
+            verified_status='verified',
+            pipeline_stage='attested',
+            proof_hash=hashlib.sha256(f"demo-complete-{idx}-{completed_at.isoformat()}".encode('utf-8')).hexdigest(),
+            trust_weight=0.92,
+            verifier_reputation=0.9,
+            confidence_score=0.95,
+            review_status='approved',
+            review_reason='auto_verified',
+            reviewed_by_user_id=center_user.id,
+            reviewed_at=completed_at,
+            logbook_status='anchored',
+            reward_status='paid',
+            hcs_tx_id=f"0.0.1001@1700000300.{(idx + 1):09d}",
+            logbook_tx_id=f"0.0.1001@1700000300.{(idx + 1):09d}",
+            hedera_tx_id=f"0.0.1001@1700000300.{(idx + 1):09d}",
+            hts_tx_id=f"0.0.1002@1700000400.{(idx + 1):09d}",
+            reward_tx_id=f"0.0.1002@1700000400.{(idx + 1):09d}",
+            compliance_tx_id=f"0.0.1003@1700000500.{(idx + 1):09d}",
+        )
+        db.session.add(completed)
         changed = True
 
     # Ensure at least one flagged event exists for admin anomaly review.
@@ -1705,6 +1775,15 @@ def inject_role_helpers():
         "role_home_endpoint": role_home_endpoint_for(current_user) if current_user.is_authenticated else None,
         "reward_status_label": reward_status_label,
         "hashscan_link": hashscan_link,
+        "normalize_tx_id": normalize_tx_id,
+        "demo_role_switch_enabled": (not _is_prod),
+        "demo_role_switch_options": [
+            ("resident", "Community"),
+            ("business", "Business"),
+            ("recycler", "Recycler"),
+            ("center", "Center"),
+            ("admin", "Admin"),
+        ],
     }
 
 
@@ -1775,7 +1854,7 @@ def add_schedule_match_signal(activity: Activity):
     )
 
 
-def hashscan_link(tx_id: str | None) -> str | None:
+def normalize_tx_id(tx_id: str | None) -> str | None:
     if not tx_id:
         return None
     normalized = str(tx_id).strip()
@@ -1790,7 +1869,14 @@ def hashscan_link(tx_id: str | None) -> str | None:
         return None
     if len(nanos) != 9:
         return None
-    return f"https://hashscan.io/testnet/transaction/{quote(normalized, safe='')}"
+    return normalized
+
+
+def hashscan_link(tx_id: str | None) -> str | None:
+    normalized = normalize_tx_id(tx_id)
+    if not normalized:
+        return None
+    return f"https://hashscan.io/{NETWORK}/transaction/{quote(normalized, safe='')}"
 
 
 PHASE5_DEMO_LABELS = {
@@ -2601,6 +2687,27 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+
+@app.post('/demo/switch-role')
+@login_required
+def demo_switch_role():
+    if _is_prod:
+        abort(404)
+
+    requested = normalize_role_value(request.form.get('role') or request.args.get('role') or '')
+    target_email = DEMO_SWITCH_ROLE_TARGETS.get(requested)
+    if not target_email:
+        flash('Invalid demo role selected.', 'error')
+        return redirect(url_for('home'))
+
+    target_user = User.query.filter_by(email=target_email).first()
+    if not target_user:
+        flash('Demo account missing for selected role.', 'error')
+        return redirect(url_for('home'))
+
+    login_user(target_user, remember=True)
+    return redirect(url_for(role_home_endpoint_for(target_user)))
 
 # -----------------------------------------------------------------
 # 6. MAIN PAGE ROUTES
@@ -5002,6 +5109,7 @@ def get_dashboard_data():
                 'reward_status': a.reward_status,
                 'reward_status_label': reward_status_label(a.reward_status, a.reward_last_error, a.pipeline_stage),
                 'reward_tx_id': a.reward_tx_id,
+                'hashscan_url': hashscan_link(a.hcs_tx_id or a.logbook_tx_id or a.hedera_tx_id),
                 'reward_last_error': a.reward_last_error,
                 'trust_weight': a.trust_weight,
                 'verifier_reputation': a.verifier_reputation,
@@ -6614,7 +6722,7 @@ def admin_agents():
                 'verified_status': act.verified_status,
                 'pipeline_stage': act.pipeline_stage,
                 'trust_weight': round(act.trust_weight, 3) if act.trust_weight else 0,
-                'hedera_tx_id': act.hedera_tx_id[:20] + '...' if act.hedera_tx_id and len(act.hedera_tx_id) > 20 else act.hedera_tx_id,
+                'hedera_tx_id': normalize_tx_id(act.hedera_tx_id),
                 'last_error': act.last_error,
                 'attempt_count': act.attempt_count
             })
@@ -6627,6 +6735,17 @@ def admin_agents():
     except Exception as e:
         print(f'Error in admin_agents: {e}')
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    if request.path.startswith('/api/'):
+        status_code = getattr(error, 'code', 500)
+        return jsonify({'status': 'error', 'message': str(error)}), status_code
+    if isinstance(error, HTTPException):
+        return error
+    app.logger.exception('Unhandled application error: %s', error)
+    return 'Internal Server Error', 500
 
 
 # -----------------------------------------------------------------

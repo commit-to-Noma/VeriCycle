@@ -332,6 +332,7 @@ class LogbookAgent:
                 print(f"[LOGBOOK AGENT] HCS submission successful", flush=True)
                 print(f"[LOGBOOK AGENT] Transaction ID: {tx_id}", flush=True)
                 print(f"LogbookAgent: anchored tx_id={tx_id}", flush=True)
+                print(f"[HCS] Anchored event {activity.id} tx_id={tx_id}", flush=True)
 
                 activity.hedera_tx_id = tx_id
                 activity.logbook_tx_id = tx_id

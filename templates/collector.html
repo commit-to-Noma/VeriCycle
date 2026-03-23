@@ -858,7 +858,7 @@
 </div>
 
 <div class="collector-shell">
-    <div class="collector-header judge-hero-card">
+    <div class="collector-header judge-hero-card role-hero-band">
         <div>
             <h2 class="page-title">Welcome back, {{ current_user.email.split('@')[0] }}!</h2>
             <p class="page-subtitle"><strong>Recycler Hub</strong> · Find jobs, record drop-offs, and track verified recycling impact.</p>
@@ -938,13 +938,13 @@
                 </select>
             </div>
         </div>
-        <div id="pickup-opportunities-list"><p>Loading opportunities...</p></div>
+        <div id="pickup-opportunities-list"><p>Fetching live data...</p></div>
         <div class="load-more-wrap"><button id="open-load-more" class="load-more-btn" type="button" style="display:none;">Load More</button></div>
     </div>
 
     <div class="tech-card section-card">
         <h3 class="section-title">My Accepted Pickups</h3>
-        <div id="accepted-pickups-list"><p>Loading accepted jobs...</p></div>
+        <div id="accepted-pickups-list"><p>Fetching live data...</p></div>
         <div class="load-more-wrap"><button id="accepted-load-more" class="load-more-btn" type="button" style="display:none;">Load More</button></div>
     </div>
 
@@ -999,8 +999,9 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if act.hedera_tx_id %}
-                                    <a class="hedera-link" href="https://hashscan.io/testnet/transaction/{{ act.hedera_tx_id }}" target="_blank" rel="noopener">{{ (act.hedera_tx_id|string)[:8] }}...{{ (act.hedera_tx_id|string)[-4:] }}</a>
+                                {% set act_tx = normalize_tx_id(act.hcs_tx_id or act.logbook_tx_id or act.hedera_tx_id) %}
+                                {% if act_tx and hashscan_link(act_tx) %}
+                                    <a class="hedera-link" href="{{ hashscan_link(act_tx) }}" target="_blank" rel="noopener">{{ act_tx }}</a>
                                 {% else %}
                                     —
                                 {% endif %}
@@ -1443,7 +1444,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const amount = Number(row?.amount || 0);
             const status = normalizeTimelineStatus(row);
             const tx = row?.hcs_tx_id || row?.hedera_tx_id || row?.logbook_tx_id || '';
-            const txLabel = tx ? `${String(tx).slice(0, 8)}...${String(tx).slice(-4)}` : '—';
+            const txPattern = /^0\.0\.\d+@\d+\.\d{9}$/;
+            const txIsValid = txPattern.test(String(tx || '').trim());
+            const txUrl = txIsValid ? (row?.hashscan_url || `https://hashscan.io/testnet/transaction/${encodeURIComponent(String(tx).trim())}`) : '';
             return `
                 <tr>
                     <td class="activity-date">${escapeHtml(formatTs(row?.timestamp))}</td>
@@ -1451,7 +1454,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td class="activity-weight">${escapeHtml(info.weight)}</td>
                     <td class="col-amount-val">${Number.isFinite(amount) ? amount.toFixed(2) : '—'}</td>
                     <td><span class="status-badge ${timelineStatusClass(status)}">${status}</span></td>
-                    <td>${tx ? `<a class="hedera-link" href="https://hashscan.io/testnet/transaction/${escapeHtml(tx)}" target="_blank" rel="noopener">${escapeHtml(txLabel)}</a>` : '—'}</td>
+                    <td>${(txIsValid && txUrl) ? `<a class="hedera-link" href="${escapeHtml(txUrl)}" target="_blank" rel="noopener">${escapeHtml(String(tx).trim())}</a>` : '—'}</td>
                 </tr>
             `;
         }).join('');

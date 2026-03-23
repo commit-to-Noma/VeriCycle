@@ -237,7 +237,7 @@
 }
 </style>
 
-<div class="dashboard-header admin-dashboard-header">
+<div class="dashboard-header admin-dashboard-header role-hero-band">
 	<div class="admin-header-title">
 		<h2>VeriCycle Autonomous Trust Monitor</h2>
 		<p class="admin-intro">Real-time verification of recycling events anchored on Hedera.</p>
@@ -298,11 +298,11 @@
 		<h2>Selected Event Proof</h2>
 		<div id="selected-proof-panel" class="selected-proof-panel">
 			<div class="proof-section">
-				<h4>Event #7 Proof</h4>
-				<p>Material: Metals</p>
-				<p>Weight: 12.0kg</p>
-				<p>Status: Flagged (Low Confidence)</p>
-				<p><a href="https://hashscan.io/testnet" target="_blank" rel="noopener">View on Hedera</a></p>
+				<h4>No event selected yet</h4>
+				<p>Material: No data yet</p>
+				<p>Weight: 0.0kg</p>
+				<p>Status: No data yet</p>
+				<p>Hedera link appears after selecting an event.</p>
 			</div>
 		</div>
 	</section>
@@ -327,8 +327,13 @@
 		</label>
 
 		<label class="admin-filter-row">
+			<input type="checkbox" id="showAllEvents" />
+			Show full feed
+		</label>
+
+		<label class="admin-filter-row">
 			<input type="checkbox" id="showDebug" />
-			Debug details
+			Toggle Debug Mode
 		</label>
 
 		<label class="admin-filter-row">
@@ -1092,6 +1097,7 @@ function renderActivities(data) {
 	const container = document.getElementById("activities");
 	const controls = document.getElementById("activity-controls");
 	const hideFailed = document.getElementById("hideFailed")?.checked;
+	const showAllEvents = document.getElementById("showAllEvents")?.checked;
 	const showDebug = document.getElementById("showDebug")?.checked;
 	const dateRange = document.getElementById("dateRange")?.value || "all";
 	if (!container) return;
@@ -1127,12 +1133,46 @@ function renderActivities(data) {
 		return (Number(right?.id) || 0) - (Number(left?.id) || 0);
 	});
 
-	const filtered = sorted.filter(a => {
+	const isRejected = (activity) => {
+		const states = new Set([
+			(activity?.status || '').toString().toLowerCase(),
+			(activity?.verified_status || '').toString().toLowerCase(),
+			(activity?.pipeline_stage || activity?.stage || '').toString().toLowerCase(),
+			(activity?.review_status || '').toString().toLowerCase(),
+		]);
+		return states.has('rejected') || states.has('failed');
+	};
+
+	const isVerified = (activity) => {
+		const states = new Set([
+			(activity?.status || '').toString().toLowerCase(),
+			(activity?.verified_status || '').toString().toLowerCase(),
+			(activity?.pipeline_stage || activity?.stage || '').toString().toLowerCase(),
+		]);
+		return !isRejected(activity) && ['verified', 'logged', 'rewarded', 'attested', 'anchored', 'paid'].some((s) => states.has(s));
+	};
+
+	const isAnomaly = (activity) => {
+		const states = new Set([
+			(activity?.pipeline_stage || activity?.stage || '').toString().toLowerCase(),
+			(activity?.review_status || '').toString().toLowerCase(),
+			(activity?.status || '').toString().toLowerCase(),
+		]);
+		return states.has('needs_review') || states.has('pending_review') || states.has('flagged');
+	};
+
+	let filtered = sorted.filter(a => {
 		const tasks = Array.isArray(a.tasks) ? a.tasks : [];
 		const hasFailedTask = tasks.some(t => (t.status || "").toLowerCase() === "failed");
 		if (hideFailed && hasFailedTask) return false;
 		return activityInRange(a, dateRange);
 	});
+
+	if (!showAllEvents) {
+		const verified = filtered.filter(isVerified);
+		const anomaly = filtered.find(isAnomaly);
+		filtered = anomaly ? [...verified, anomaly] : verified;
+	}
 
 	const visible = filtered.slice(0, visibleActivityCount);
 	activitiesById = new Map(sorted.map((activity) => [Number(activity?.id), activity]));
@@ -1543,6 +1583,10 @@ document.getElementById("showDebug").addEventListener("change", () => {
 	if (resetBtn) {
 		resetBtn.style.display = document.getElementById("showDebug")?.checked ? 'inline-flex' : 'none';
 	}
+});
+
+document.getElementById("showAllEvents")?.addEventListener("change", () => {
+	renderActivities(adminActivities);
 });
 
 document.getElementById("dateRange").addEventListener("change", () => {

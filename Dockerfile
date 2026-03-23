@@ -21,4 +21,4 @@ RUN npm install
 COPY . .
 
 # 7. Tell Render to run the app using Gunicorn
-CMD gunicorn -w 4 -b 0.0.0.0:$PORT app:app
+CMD gunicorn app:app --workers 3 --timeout 120 --bind 0.0.0.0:$PORT
