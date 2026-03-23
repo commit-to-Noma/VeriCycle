@@ -437,6 +437,7 @@ gunicorn app:app --workers 3 --timeout 120 --bind 0.0.0.0:$PORT
 - [ ] Configure secure SECRET_KEY and ENCRYPTION_KEY
 - [ ] Set `DATABASE_URL` and `NETWORK`
 - [ ] Set `HEDERA_ACCOUNT_ID` and `HEDERA_PRIVATE_KEY` (or OPERATOR aliases)
+- [ ] For hackathon visual/data parity with local demo, set `DEMO_MODE=1`
 - [ ] Use environment-managed Hedera credentials
 - [ ] Deploy with managed database (PostgreSQL)
 - [ ] Enable secret storage policies

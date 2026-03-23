@@ -78,6 +78,7 @@ app.config['SESSION_COOKIE_SECURE'] = _is_prod  # HTTPS-only cookies in producti
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7  # 7-day sessions
 
 DEMO_MODE = os.getenv("DEMO_MODE", "0") == "1"
+DEMO_FEATURES_ALLOWED = (not _is_prod) or DEMO_MODE
 print(f"[BOOT] DEMO_MODE={'1' if DEMO_MODE else '0'}", flush=True)
 
 if _is_prod:
@@ -350,7 +351,7 @@ def ensure_demo_login_accounts() -> None:
     Ensure judge demo accounts are always present in non-production mode.
     This avoids on-camera login failures due to missing seed data.
     """
-    if _is_prod:
+    if not DEMO_FEATURES_ALLOWED:
         return
 
     demo_accounts = [
@@ -509,7 +510,7 @@ def ensure_demo_pickup_flow_seed() -> None:
 
 def ensure_demo_business_verified_transactions() -> None:
     """Seed deterministic business demo history so dashboards open on a rich Day-28 state."""
-    if _is_prod:
+    if not DEMO_FEATURES_ALLOWED:
         return
 
     business_user = (
@@ -1246,7 +1247,7 @@ def _community_demo_type_label(title: str | None, location: str | None) -> str:
 
 
 def ensure_demo_community_hotspots(force_reset: bool = False) -> None:
-    if _is_prod:
+    if not DEMO_FEATURES_ALLOWED:
         return
 
     resident_user = (
@@ -1321,7 +1322,7 @@ def ensure_demo_community_hotspots(force_reset: bool = False) -> None:
 
 def seed_demo_data(force_reset: bool = False) -> None:
     """Seed a judge-ready dataset with completed, pending, flagged, and community records."""
-    if _is_prod:
+    if not DEMO_FEATURES_ALLOWED:
         return
 
     ensure_demo_login_accounts()
@@ -1468,7 +1469,7 @@ def seed_demo_data(force_reset: bool = False) -> None:
 
 
 def purge_stale_demo_seed_rows() -> None:
-    if _is_prod:
+    if not DEMO_FEATURES_ALLOWED:
         return
 
     demo_notes = {
@@ -1776,7 +1777,7 @@ def inject_role_helpers():
         "reward_status_label": reward_status_label,
         "hashscan_link": hashscan_link,
         "normalize_tx_id": normalize_tx_id,
-        "demo_role_switch_enabled": (not _is_prod),
+        "demo_role_switch_enabled": DEMO_FEATURES_ALLOWED,
         "demo_role_switch_options": [
             ("resident", "Community"),
             ("business", "Business"),
@@ -2618,7 +2619,7 @@ def login():
 
     user = User.query.filter_by(email=email).first()
     
-    demo_password_ok = (not _is_prod) and password == DEMO_LOGIN_PASSWORD and email in DEMO_LOGIN_TARGET_EMAILS
+    demo_password_ok = DEMO_FEATURES_ALLOWED and password == DEMO_LOGIN_PASSWORD and email in DEMO_LOGIN_TARGET_EMAILS
 
     if user and (bcrypt.check_password_hash(user.password_hash, password) or demo_password_ok):
         account_role = effective_role(user)
@@ -2692,7 +2693,7 @@ def logout():
 @app.post('/demo/switch-role')
 @login_required
 def demo_switch_role():
-    if _is_prod:
+    if not DEMO_FEATURES_ALLOWED:
         abort(404)
 
     requested = normalize_role_value(request.form.get('role') or request.args.get('role') or '')
