@@ -2120,7 +2120,7 @@ def ensure_activity_columns():
     commerce_tables = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_commerce_event'"))
     if not commerce_tables.scalar():
         db.session.execute(text("""
-            CREATE TABLE agent_commerce_event (
+            CREATE TABLE IF NOT EXISTS agent_commerce_event (
                 id INTEGER NOT NULL,
                 activity_id INTEGER NOT NULL,
                 payer_agent VARCHAR(64) NOT NULL,
@@ -2139,7 +2139,7 @@ def ensure_activity_columns():
     dlq_tables = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='dead_letter_task'"))
     if not dlq_tables.scalar():
         db.session.execute(text("""
-            CREATE TABLE dead_letter_task (
+            CREATE TABLE IF NOT EXISTS dead_letter_task (
                 id INTEGER NOT NULL,
                 task_id INTEGER NOT NULL,
                 activity_id INTEGER NOT NULL,
@@ -2158,7 +2158,7 @@ def ensure_activity_columns():
     audit_tables = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='admin_audit_log'"))
     if not audit_tables.scalar():
         db.session.execute(text("""
-            CREATE TABLE admin_audit_log (
+            CREATE TABLE IF NOT EXISTS admin_audit_log (
                 id INTEGER NOT NULL,
                 created_at DATETIME NOT NULL,
                 admin_email VARCHAR(120) NOT NULL,
@@ -2175,7 +2175,7 @@ def ensure_activity_columns():
     )
     if not signal_tables.scalar():
         db.session.execute(text("""
-            CREATE TABLE verification_signal (
+            CREATE TABLE IF NOT EXISTS verification_signal (
                 id INTEGER NOT NULL,
                 activity_id INTEGER NOT NULL,
                 signal_type VARCHAR(50) NOT NULL,
@@ -2197,7 +2197,7 @@ def ensure_activity_columns():
     )
     if not pickup_table.scalar():
         db.session.execute(text("""
-            CREATE TABLE pickup_opportunity (
+            CREATE TABLE IF NOT EXISTS pickup_opportunity (
                 id INTEGER NOT NULL,
                 source_role VARCHAR(20) NOT NULL,
                 source_user_id INTEGER NOT NULL,
@@ -2219,7 +2219,7 @@ def ensure_activity_columns():
     )
     if not assignment_table.scalar():
         db.session.execute(text("""
-            CREATE TABLE opportunity_assignment (
+            CREATE TABLE IF NOT EXISTS opportunity_assignment (
                 id INTEGER NOT NULL,
                 opportunity_id INTEGER NOT NULL,
                 recycler_user_id INTEGER NOT NULL,
@@ -2342,9 +2342,22 @@ def migrate_private_keys_to_encrypted():
     except Exception as e:
         print(f"[SECURITY] Private key migration skipped: {e}", flush=True)
 
+
+def safe_create_all():
+    try:
+        db.create_all()
+    except OperationalError as exc:
+        msg = str(exc).lower()
+        # SQLite in multi-process boot can race on table creation; continue if schema already exists.
+        if "already exists" in msg and "table" in msg:
+            print(f"[BACKEND] create_all already-exists race ignored: {exc}", flush=True)
+            db.session.rollback()
+            return
+        raise
+
 # Ensure tables exist (create after models are imported so metadata is registered)
 with app.app_context():
-    db.create_all()
+    safe_create_all()
     try:
         ensure_activity_columns()
         backfill_activity_proof_hashes()
