@@ -388,50 +388,78 @@
     }
     .milestone-modal.open { display: flex; }
     .milestone-card {
-        width: min(640px, 100%);
+        width: min(520px, 100%);
         background: #ffffff;
         border-radius: 14px;
         border: 1px solid #dbe4ea;
         box-shadow: 0 18px 45px rgba(15, 23, 42, 0.2);
-        padding: 1.2rem;
+        padding: 1.8rem;
+        text-align: center;
     }
     .milestone-card h3 {
-        margin: 0;
+        margin: 0 0 0.8rem;
         color: #0b5d4a;
-    }
-    .milestone-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.45rem;
-        margin: 0.8rem 0 0.95rem;
-    }
-    .milestone-chip {
-        display: inline-flex;
-        align-items: center;
-        border-radius: 999px;
-        padding: 0.25rem 0.62rem;
-        font-size: 0.76rem;
+        font-size: 1.35rem;
         font-weight: 700;
-        border: 1px solid #bbf7d0;
-        background: #ecfdf5;
+    }
+    .milestone-progress {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin: 1rem 0 1.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .milestone-step {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #dbeafe;
+        border: 2px solid #60a5fa;
+        color: #1d4ed8;
+        font-size: 0.7rem;
+        font-weight: 800;
+    }
+    .milestone-step.complete {
+        background: #dcfce7;
+        border-color: #22c55e;
         color: #166534;
     }
-    .milestone-chip.pending {
-        border-color: #e2e8f0;
-        background: #f8fafc;
-        color: #475569;
+    .milestone-step.active {
+        background: #fef9c3;
+        border-color: #eab308;
+        color: #78350f;
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .milestone-step-connector {
+        flex: 0 0 12px;
+        height: 2px;
+        background: #dbe4ea;
+    }
+    .milestone-step-connector.done {
+        background: #22c55e;
+    }
+    .milestone-label {
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .milestone-chips {
+        display: none;
     }
     .milestone-timeline {
-        margin: 0;
-        padding-left: 1.1rem;
-        color: #334155;
-    }
-    .milestone-timeline li {
-        margin-bottom: 0.34rem;
-        font-size: 0.87rem;
+        display: none;
     }
     .milestone-actions {
         display: flex;
+        justify-content: center;
         gap: 0.6rem;
         flex-wrap: wrap;
         margin-top: 1rem;
@@ -443,28 +471,23 @@
         justify-content: center;
     }
     .milestone-actions .milestone-continue {
-        background: #ffffff !important;
-        color: #15803d !important;
-        border: 1px solid #16a34a !important;
-    }
-    .milestone-actions .milestone-continue:hover {
-        background: #f0fdf4 !important;
-    }
-    .milestone-actions .milestone-proof-primary {
         background: #16a34a !important;
         color: #ffffff !important;
-        border: 1px solid #15803d !important;
+        border: 1px solid #16a34a !important;
         text-decoration: none;
-        padding: 0.55rem 0.9rem;
+        padding: 0.65rem 1.25rem;
         border-radius: 10px;
         font-weight: 700;
+        font-size: 0.95rem;
     }
-    .milestone-actions .milestone-proof-primary:hover {
+    .milestone-actions .milestone-continue:hover {
         background: #15803d !important;
     }
-    .milestone-actions .milestone-proof-primary:focus-visible,
+    .milestone-actions .milestone-proof-primary {
+        display: none !important;
+    }
     .milestone-actions .milestone-continue:focus-visible {
-        outline: 2px solid #16a34a;
+        outline: 2px solid #22c55e;
         outline-offset: 2px;
     }
 
@@ -1641,7 +1664,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function submitDropoff(id, material, weight) {
-        showSubmissionSuccessModal('{{ url_for('proof_hub') }}');
         try {
             const data = await fetchJsonSafe(`/api/assignments/${id}/submit`, {
                 method: 'POST',
@@ -1652,10 +1674,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ material_type: material, weight_kg: weight }),
             }, 'Could not submit drop-off');
             showSubmissionSuccessModal(data.proof_bundle_url || '{{ url_for('proof_hub') }}');
+            // Auto-close modal after 2.5 seconds
+            setTimeout(() => hideSubmissionSuccessModal(), 2500);
             showToast('Success: Anchored to Hedera');
             loadAcceptedAssignments();
         } catch (e) {
-            hideSubmissionSuccessModal();
             showToast(e.message || 'Could not submit drop-off', 'error');
         }
     }

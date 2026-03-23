@@ -312,18 +312,115 @@
     font-weight: 700;
     margin-top: 0.4rem;
   }
-  .after-photo-btn {
-    border: 1px solid #bbf7d0;
-    border-radius: 999px;
-    background: #f0fdf4;
-    color: #166534;
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 0.3rem 0.65rem;
-    cursor: pointer;
+  .receipt-links .after-photo-btn,
+  #verification-links .after-photo-btn,
+  #verification-links button.after-photo-btn[type="button"] {
+    border: 1px solid #93c5fd !important;
+    border-radius: 999px !important;
+    background: #dbeafe !important;
+    color: #1e3a8a !important;
+    font-size: 0.82rem !important;
+    font-weight: 800 !important;
+    padding: 0.42rem 0.88rem !important;
+    cursor: pointer !important;
+    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.2) !important;
+    opacity: 1 !important;
+    filter: none !important;
   }
-  .after-photo-btn:hover {
-    background: #dcfce7;
+  .receipt-links .after-photo-btn:hover,
+  #verification-links .after-photo-btn:hover,
+  #verification-links button.after-photo-btn[type="button"]:hover {
+    background: #bfdbfe !important;
+    border-color: #60a5fa !important;
+    color: #1e40af !important;
+  }
+  .receipt-links .after-photo-btn:focus-visible,
+  #verification-links .after-photo-btn:focus-visible,
+  #verification-links button.after-photo-btn[type="button"]:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+  .photo-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.62);
+  }
+  .photo-modal.open {
+    display: flex;
+  }
+  .photo-modal-panel {
+    width: min(980px, 100%);
+    max-height: 90vh;
+    overflow: auto;
+    background: #ffffff;
+    border: 1px solid #dbe4ea;
+    border-radius: 14px;
+    box-shadow: 0 22px 48px rgba(15, 23, 42, 0.35);
+    padding: 1rem;
+  }
+  .photo-modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.85rem;
+  }
+  .photo-modal-head h4 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.02rem;
+  }
+  .photo-modal-close {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 8px;
+    padding: 0.35rem 0.55rem;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .photo-modal-close:hover {
+    background: #e2e8f0;
+  }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem;
+  }
+  .photo-tile {
+    border: 1px solid #dbe4ea;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 0.55rem;
+  }
+  .photo-tile strong {
+    display: block;
+    color: #0f172a;
+    font-size: 0.86rem;
+    margin-bottom: 0.45rem;
+  }
+  .photo-tile img {
+    width: 100%;
+    max-height: 62vh;
+    object-fit: contain;
+    border-radius: 10px;
+    background: #e2e8f0;
+  }
+  .photo-missing {
+    margin-top: 0.7rem;
+    color: #9a3412;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+  @media (max-width: 860px) {
+    .photo-grid {
+      grid-template-columns: 1fr;
+    }
   }
   .community-faq-grid {
     display: grid;
@@ -488,13 +585,15 @@
     <section class="panel" style="margin-top:0.15rem;">
       <span class="section-kicker">Verified Completion</span>
       <h3 style="margin:0.2rem 0 0.55rem; color:#0b5d4a;">Top recent completed cleanup impacts</h3>
-      <div style="padding: 1rem; border-left: 4px solid #16a34a; background: #f0fdf4; border-radius: 6px; margin-bottom: 0.2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
-          <div>
-            <strong style="color: #065f46; display: block;">Illegal dumping cleared: Parkmore Storefront</strong>
-            <span style="font-size: 0.8rem; color: #166534;">Verified by Center • 42.0 kg Plastics Diverted</span>
+      <div id="completed-cleanup-container" style="display: flex; flex-direction: column; gap: 0.8rem;">
+        <div style="padding: 1rem; border-left: 4px solid #16a34a; background: #f0fdf4; border-radius: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
+            <div>
+              <strong style="color: #065f46; display: block;">Illegal dumping cleared: Parkmore Storefront</strong>
+              <span style="font-size: 0.8rem; color: #166534;">Verified by Center • 42.0 kg Plastics Diverted</span>
+            </div>
+            <span style="background: #bbf7d0; color: #166534; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: bold;">+210 ECO Rewarded</span>
           </div>
-          <span style="background: #bbf7d0; color: #166534; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: bold;">+210 ECO Rewarded</span>
         </div>
       </div>
     </section>
@@ -537,7 +636,7 @@
     <div id="verification-links" class="receipt-links" style="display:none;">
         <a id="verification-proof-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Proof Bundle</a>
         <a id="verification-hashscan-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Hedera Record</a>
-        <button id="after-photo-btn" class="after-photo-btn" type="button">View After Photo (demo)</button>
+        <button id="after-photo-btn" class="after-photo-btn" type="button">View Before/After Photos</button>
     </div>
     <!-- Status elements for JS compatibility -->
     <p id="verification-location" style="display: none;">📍 Location: Parkmore Storefront</p>
@@ -582,7 +681,7 @@
         </div>
       </div>
 
-      <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #f9fafb; opacity: 0.7;">
+      <div class="hotspot-card hotspot-card-view-only" data-view-only="1" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #f9fafb; opacity: 0.7;">
         <h3 style="color: #6b7280; font-weight: bold; font-size: 1.1rem; margin-bottom: 4px;">Blocked Storm Drain</h3>
         <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 8px;">Location: Pretoria CBD</p>
         <p style="color: #6b7280; margin-bottom: 16px;">Plastics blocking the main storm drain causing flooding.</p>
@@ -636,6 +735,10 @@
             <input class="field" type="text" id="hotspot-description" placeholder="Describe the issue...">
           </div>
           <button class="btn-primary" id="submit-hotspot-btn" type="button" style="margin-top:0.85rem;">Report a Neighborhood Issue</button>
+          <details style="margin-top:0.7rem;">
+            <summary style="font-size:0.78rem; color:#94a3b8; cursor:pointer; user-select:none;">Demo tools</summary>
+            <button id="reset-demo-btn" type="button" style="margin-top:0.45rem; background:transparent; border:1px dashed #cbd5e1; color:#94a3b8; font-size:0.75rem; padding:0.3rem 0.55rem; border-radius:8px; cursor:pointer;">Reset Demo Board</button>
+          </details>
         </section>
 
         <section class="panel">
@@ -686,6 +789,26 @@
 
   </main>
 
+  <div id="cleanup-photo-modal" class="photo-modal" aria-hidden="true">
+    <div class="photo-modal-panel" role="dialog" aria-modal="true" aria-labelledby="cleanup-photo-modal-title">
+      <div class="photo-modal-head">
+        <h4 id="cleanup-photo-modal-title">Hotspot Cleanup Proof Photos</h4>
+        <button id="cleanup-photo-modal-close" class="photo-modal-close" type="button" aria-label="Close photo viewer">Close</button>
+      </div>
+      <div class="photo-grid">
+        <div class="photo-tile">
+          <strong>Before</strong>
+          <img id="cleanup-before-image" alt="Hotspot before cleanup" src="{{ url_for('static', filename='images/before.jpg') }}">
+        </div>
+        <div class="photo-tile">
+          <strong>After</strong>
+          <img id="cleanup-after-image" alt="Hotspot after cleanup" src="{{ url_for('static', filename='images/after.jpg') }}">
+        </div>
+      </div>
+      <div id="cleanup-photo-missing" class="photo-missing" style="display:none;">One or more proof images are missing from static/images. Expected files: before.jpg and after.jpg.</div>
+    </div>
+  </div>
+
   <script>
   document.addEventListener('DOMContentLoaded', function () {
     const verificationCard = document.getElementById('verification-card');
@@ -699,6 +822,11 @@
     const verificationProofLink = document.getElementById('verification-proof-link');
     const verificationHashscanLink = document.getElementById('verification-hashscan-link');
     const afterPhotoBtn = document.getElementById('after-photo-btn');
+    const cleanupPhotoModal = document.getElementById('cleanup-photo-modal');
+    const cleanupPhotoModalClose = document.getElementById('cleanup-photo-modal-close');
+    const cleanupBeforeImage = document.getElementById('cleanup-before-image');
+    const cleanupAfterImage = document.getElementById('cleanup-after-image');
+    const cleanupPhotoMissing = document.getElementById('cleanup-photo-missing');
     const communityBoardList = document.getElementById('community-board-list');
     const communityImpactList = document.getElementById('community-impact-list');
     const communityBoardUpdated = document.getElementById('community-board-updated');
@@ -707,6 +835,8 @@
     let communityBoardNeedsReset = true;
     const dispatchBoardStorageKey = 'vericycle.communityDispatchBoard';
     const residentDecisionStorageKey = 'vericycle.communityResidentDecisions';
+    const hotspotvotesStorageKey = 'vericycle.hotspotVotes';
+    const userVotesStorageKey = 'vericycle.userVotedHotspots';
     const dispatchBoardChannel = typeof BroadcastChannel !== 'undefined'
       ? new BroadcastChannel('vericycle-community-dispatch')
       : null;
@@ -752,6 +882,135 @@
       return current;
     }
 
+    function getHotspotVoteCounts() {
+      try {
+        const raw = localStorage.getItem(hotspotvotesStorageKey);
+        return raw ? JSON.parse(raw) : {};
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function saveHotspotVoteCounts(counts) {
+      try {
+        localStorage.setItem(hotspotvotesStorageKey, JSON.stringify(counts || {}));
+      } catch (err) {
+        void err;
+      }
+    }
+
+    function getUserVotedHotspots() {
+      try {
+        const raw = localStorage.getItem(userVotesStorageKey);
+        return raw ? JSON.parse(raw) : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function saveUserVotedHotspots(hotspots) {
+      try {
+        localStorage.setItem(userVotesStorageKey, JSON.stringify(hotspots || []));
+      } catch (err) {
+        void err;
+      }
+    }
+
+    function hasUserVotedOnHotspot(hotspotKey) {
+      return getUserVotedHotspots().includes(String(hotspotKey || ''));
+    }
+
+    function recordUserVoteOnHotspot(hotspotKey) {
+      const voted = getUserVotedHotspots();
+      const key = String(hotspotKey || '');
+      if (!voted.includes(key)) {
+        voted.push(key);
+        saveUserVotedHotspots(voted);
+      }
+    }
+
+    function getHotspotVoteTally(hotspotKey) {
+      const counts = getHotspotVoteCounts();
+      const key = String(hotspotKey || '');
+      const tally = counts[key] || { yes: 0, missed: 0 };
+      return {
+        yes: Number(tally.yes || 0),
+        missed: Number(tally.missed || 0),
+      };
+    }
+
+    function recordHotspotVote(hotspotKey, voteType) {
+      const counts = getHotspotVoteCounts();
+      const key = String(hotspotKey || '');
+      const current = counts[key] || { yes: 0, missed: 0 };
+      if (String(voteType || '').toLowerCase() === 'yes') {
+        current.yes = Number(current.yes || 0) + 1;
+      } else {
+        current.missed = Number(current.missed || 0) + 1;
+      }
+      counts[key] = current;
+      saveHotspotVoteCounts(counts);
+      return current;
+    }
+
+    function calculateVotePercentage(tally) {
+      const total = tally.yes + tally.missed;
+      if (total === 0) return 0;
+      return Math.round((tally.yes / total) * 100);
+    }
+
+    function moveHotspotToCompleted(card, title, location, tally) {
+      const container = document.getElementById('completed-cleanup-container');
+      if (!container) return;
+
+      const material = card.dataset.material || 'Mixed Materials';
+      const kg = card.dataset.kg || '25';
+      const eco = Math.round(kg * 5);
+      
+      const completedHTML = `
+        <div data-demo-generated="1" style="padding: 1rem; border-left: 4px solid #16a34a; background: #f0fdf4; border-radius: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
+            <div>
+              <strong style="color: #065f46; display: block;">${title}: ${location}</strong>
+              <span style="font-size: 0.8rem; color: #166534;">Verified by ${tally.yes} residents • ${kg} kg ${material} Diverted</span>
+            </div>
+            <span style="background: #bbf7d0; color: #166534; padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: bold;">+${eco} ECO Rewarded</span>
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', completedHTML);
+      card.style.display = 'none';
+    }
+
+    function resetCommunityDemoState() {
+      try {
+        localStorage.removeItem(hotspotvotesStorageKey);
+        localStorage.removeItem(userVotesStorageKey);
+        localStorage.removeItem(residentDecisionStorageKey);
+      } catch (err) {
+        void err;
+      }
+
+      document.querySelectorAll('#hotspot-feed-container .hotspot-card[data-newly-created="1"]').forEach((card) => {
+        card.remove();
+      });
+
+      document.querySelectorAll('#completed-cleanup-container [data-demo-generated="1"]').forEach((entry) => {
+        entry.remove();
+      });
+
+      const titleInput = document.getElementById('hotspot-title');
+      const locationInput = document.getElementById('hotspot-location');
+      const descInput = document.getElementById('hotspot-description');
+      if (titleInput) titleInput.value = '';
+      if (locationInput) locationInput.value = '';
+      if (descInput) descInput.value = '';
+
+      sortHotspotCards();
+      loadCommunityBoard();
+    }
+
     function updateDecisionSummary(card, hotspotKey) {
       if (!card) return;
       const decision = getResidentDecisionForKey(hotspotKey);
@@ -784,9 +1043,22 @@
 
       const cards = Array.from(feed.querySelectorAll('.hotspot-card'));
       cards.sort((a, b) => {
+        // View-only cards go to the bottom
+        const aViewOnly = a.dataset.viewOnly === '1' ? 1 : 0;
+        const bViewOnly = b.dataset.viewOnly === '1' ? 1 : 0;
+        if (aViewOnly !== bViewOnly) return aViewOnly - bViewOnly;
+
+        // Locked cards (verification pending) go near top
         const aLocked = isCardLocked(a) ? 1 : 0;
         const bLocked = isCardLocked(b) ? 1 : 0;
         if (aLocked !== bLocked) return aLocked - bLocked;
+
+        // "Routed to Center Queue" (newly created) go next, sorted by votes desc
+        const aRouted = (a.querySelector('.status') || {}).textContent.includes('Routed to Center Queue') ? 0 : 1;
+        const bRouted = (b.querySelector('.status') || {}).textContent.includes('Routed to Center Queue') ? 0 : 1;
+        if (aRouted !== bRouted) return aRouted - bRouted;
+
+        // All others sorted by vote count descending
         return voteCountFromCard(b) - voteCountFromCard(a);
       });
 
@@ -1232,6 +1504,19 @@
       if (verificationHashscanLink) verificationHashscanLink.href = completedRow.hashscan_url || '#';
     }
 
+    function openCleanupPhotoModal() {
+      if (!cleanupPhotoModal) return;
+      cleanupPhotoModal.classList.add('open');
+      cleanupPhotoModal.setAttribute('aria-hidden', 'false');
+      if (cleanupPhotoMissing) cleanupPhotoMissing.style.display = 'none';
+    }
+
+    function closeCleanupPhotoModal() {
+      if (!cleanupPhotoModal) return;
+      cleanupPhotoModal.classList.remove('open');
+      cleanupPhotoModal.setAttribute('aria-hidden', 'true');
+    }
+
     if (verificationYesBtn && verificationMissedBtn && verificationStatus && verificationNote && verificationCard) {
       verificationYesBtn.addEventListener('click', async function () {
         try {
@@ -1254,7 +1539,46 @@
 
     if (afterPhotoBtn) {
       afterPhotoBtn.addEventListener('click', function () {
-        alert('After-photo proof is available in the demo media pack.');
+        openCleanupPhotoModal();
+      });
+    }
+
+    if (cleanupPhotoModalClose) {
+      cleanupPhotoModalClose.addEventListener('click', function () {
+        closeCleanupPhotoModal();
+      });
+    }
+
+    if (cleanupPhotoModal) {
+      cleanupPhotoModal.addEventListener('click', function (event) {
+        if (event.target === cleanupPhotoModal) {
+          closeCleanupPhotoModal();
+        }
+      });
+    }
+
+    if (cleanupBeforeImage) {
+      cleanupBeforeImage.addEventListener('error', function () {
+        if (cleanupPhotoMissing) cleanupPhotoMissing.style.display = '';
+      });
+    }
+
+    if (cleanupAfterImage) {
+      cleanupAfterImage.addEventListener('error', function () {
+        if (cleanupPhotoMissing) cleanupPhotoMissing.style.display = '';
+      });
+    }
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && cleanupPhotoModal && cleanupPhotoModal.classList.contains('open')) {
+        closeCleanupPhotoModal();
+      }
+    });
+
+    const resetDemoBtn = document.getElementById('reset-demo-btn');
+    if (resetDemoBtn) {
+      resetDemoBtn.addEventListener('click', function () {
+        resetCommunityDemoState();
       });
     }
 
@@ -1272,6 +1596,11 @@
 
       const inferredMaterial = inferMaterialFromText(`${titleValue} ${descriptionValue}`);
       const inferredKg = inferEstimatedKg(`${titleValue} ${descriptionValue}`);
+      const hotspotKey = normalizeHotspotKey(titleValue, locationValue);
+
+      // Record creator's vote automatically
+      recordUserVoteOnHotspot(hotspotKey);
+      recordHotspotVote(hotspotKey, 'yes');
 
       try {
         await createCommunityOpportunity({
@@ -1286,18 +1615,27 @@
       }
 
       const newCardHTML = `
-        <div class="hotspot-card">
+        <div class="hotspot-card" data-newly-created="1" data-material="${inferredMaterial}" data-kg="${inferredKg}">
           <h3>${titleValue}</h3>
           <p class="location">${locationValue}</p>
           <p class="desc">${descriptionValue}</p>
           <div class="hotspot-footer">
-            <button class="boost-btn" data-count="1">Add My Voice (1)</button>
+            <button class="boost-btn" data-count="1" style="background: #a3a3a3; color: #ffffff; font-weight: 700; cursor: default;" disabled>✓ 1 Yes | 0 Missed</button>
             <span class="status orange">🟠 Routed to Center Queue</span>
           </div>
         </div>
       `;
 
-      document.getElementById('hotspot-feed-container').insertAdjacentHTML('afterbegin', newCardHTML);
+      // Insert after the verification card (if it exists) or at the beginning
+      const verificationCard = document.getElementById('verification-card');
+      const feed = document.getElementById('hotspot-feed-container');
+      if (verificationCard && verificationCard.nextSibling) {
+        verificationCard.insertAdjacentHTML('afterend', newCardHTML);
+      } else if (verificationCard) {
+        verificationCard.insertAdjacentHTML('afterend', newCardHTML);
+      } else {
+        feed.insertAdjacentHTML('afterbegin', newCardHTML);
+      }
 
       document.getElementById('hotspot-title').value = '';
       document.getElementById('hotspot-location').value = '';
@@ -1309,27 +1647,54 @@
       const button = event.target.closest('.boost-btn');
       if (!button) return;
 
+      const card = button.closest('.hotspot-card');
+      if (!card) return;
+
+      const title = (card.querySelector('h3') || {}).textContent || 'Community Cleanup Request';
+      const location = (card.querySelector('.location') || {}).textContent || '';
+      const desc = (card.querySelector('.desc') || {}).textContent || '';
+      const hotspotKey = normalizeHotspotKey(title, location);
+
+      // Check if user already voted
+      if (hasUserVotedOnHotspot(hotspotKey)) {
+        button.style.background = '#a3a3a3';
+        button.textContent = '✓ Your Voice Added';
+        button.disabled = true;
+        return;
+      }
+
       if (button.disabled) {
         return;
       }
 
-      const currentVotes = Number(button.dataset.count || 0);
-      const nextVotes = currentVotes + 1;
-      button.dataset.count = String(nextVotes);
-      button.textContent = `Add My Voice (${nextVotes})`;
+      // Record user vote
+      recordUserVoteOnHotspot(hotspotKey);
+
+      // Record vote and get tally
+      const tally = recordHotspotVote(hotspotKey, 'yes');
+      const percentage = calculateVotePercentage(tally);
+
+      // Update button display with vote tally
+      button.textContent = `${tally.yes} Yes | ${tally.missed} Missed`;
       button.style.background = '#16a34a';
       button.style.cursor = 'pointer';
       button.style.opacity = '1';
+      button.disabled = true;
+      button.style.color = '#ffffff';
+      button.style.fontWeight = '700';
 
-      const card = button.closest('.hotspot-card');
+      // Store vote counts on card for sorting
+      card.dataset.yesVotes = String(tally.yes);
+      card.dataset.missedVotes = String(tally.missed);
+
       const status = card ? card.querySelector('.status') : null;
 
+      // Route to center if not already routed
       if (card && card.dataset.routedToCenter !== '1') {
-        const title = (card.querySelector('h3') || {}).textContent || 'Community Cleanup Request';
-        const desc = (card.querySelector('.desc') || {}).textContent || '';
-        const location = (card.querySelector('.location') || {}).textContent || '';
         const inferredMaterial = inferMaterialFromText(`${title} ${desc}`);
         const inferredKg = inferEstimatedKg(`${title} ${desc}`);
+        card.dataset.material = inferredMaterial;
+        card.dataset.kg = String(inferredKg);
         try {
           await createCommunityOpportunity({
             material_type: inferredMaterial,
@@ -1339,13 +1704,7 @@
           });
           card.dataset.routedToCenter = '1';
         } catch (err) {
-          button.disabled = false;
-          button.textContent = 'Add My Voice (retry)';
-          button.style.background = '';
-          button.style.cursor = '';
-          button.style.opacity = '';
-          alert(err.message || 'Unable to route support escalation right now.');
-          return;
+          // Continue even if route fails
         }
       }
 
@@ -1353,6 +1712,12 @@
         status.className = 'status orange';
         status.textContent = '🟠 Escalated to Center Queue';
       }
+
+      // Check if reached 60% threshold (minimum 3 votes to move)
+      if (percentage >= 60 && tally.yes >= 3) {
+        moveHotspotToCompleted(card, title, location, tally);
+      }
+
       sortHotspotCards();
       loadCommunityBoard();
     });

@@ -1,11 +1,31 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+/* ADMIN MONITOR - KILL ALL GREEN */
+.admin-ops-card { background: #ffffff !important; border: 1px solid #e5e7eb !important; }
+.admin-ops-card:hover { background: #ffffff !important; border-color: #d1d5db !important; }
+.admin-transaction-card { background: #ffffff !important; border: 1px solid #e5e7eb !important; }
+.admin-transaction-card:hover { background: #ffffff !important; border-color: #d1d5db !important; }
+.stakeholder-timeline-node { background: #ffffff !important; border: 1px solid #e5e7eb !important; }
+.stakeholder-timeline-node:hover { background: #ffffff !important; border-color: #d1d5db !important; }
+.stakeholder-loop-item { background: #ffffff !important; border: 1px solid #e5e7eb !important; }
+.stakeholder-loop-item:hover { background: #ffffff !important; border-color: #d1d5db !important; }
+.selected-proof-panel { background: #ffffff !important; border: 1px solid #e5e7eb !important; }
+.event-card-header,
+.proof-section,
+.admin-detail-tabs,
+.flagged-header-row { border-color: #e5e7eb !important; }
+.timeline-role, .timeline-event, .stakeholder-role, .stakeholder-value, .ops-card-label, .ops-card-value,
+.event-card-title, .event-meta-inline { color: #1e293b !important; }
+.badge-verified, .badge-anchored, .badge-rewarded, .badge-attested, .status-badge-paid { background: rgba(209, 213, 219, 0.12) !important; border-color: #d1d5db !important; color: #4b5563 !important; }
+.timeline-arrow { color: #cbd5e1 !important; opacity: 0.5 !important; }
+</style>
+
 <div class="dashboard-header admin-dashboard-header">
 	<div class="admin-header-title">
-		<h2>VeriCycle OpenClaw Agent Observer</h2>
-		<p class="admin-intro">Observe autonomous OpenClaw agents validating events, anchoring consensus on Hedera, and settling micro-fees across the verification society.</p>
-		<p>Humans observe outcomes while agents execute the trust pipeline end-to-end.</p>
+		<h2>VeriCycle Autonomous Trust Monitor</h2>
+		<p class="admin-intro">Real-time verification of recycling events anchored on Hedera.</p>
 	</div>
 </div>
 
@@ -48,8 +68,6 @@
 	<div id="activities"></div>
 	<div id="activity-controls" class="card activity-controls"></div>
 </section>
-
-<h2 class="admin-section-title">Agent Trust Anomalies</h2>
 
 <section class="admin-review-grid">
 	<section class="card">
@@ -309,7 +327,7 @@ function activityStatusBadges(activity) {
 function renderActivityBadgeRow(activity) {
 	const badges = activityStatusBadges(activity)
 		.map((b) => `<span class="status-badge stream-badge ${b.className}">${b.label}</span>`)
-		.join("");
+		.join(' → ');
 	if (!badges) return "";
 	return `<div class="activity-badge-row">${badges}</div>`;
 }
@@ -334,10 +352,6 @@ function renderProofPanel(bundle) {
 	const panel = document.getElementById("selected-proof-panel");
 	if (!panel) return;
 
-	const signals = bundle.signals.length
-		? `<ul class="proof-list">${bundle.signals.map((s) => `<li><strong>${escapeHtml(toTitleCase(s.signal_type || "signal"))}</strong> · ${escapeHtml(toTitleCase(s.source_role || "unknown"))} · ${s.is_positive ? "positive" : "negative"} · value ${escapeHtml(s.value ?? "—")} · weight ${escapeHtml(s.weight ?? "0")}</li>`).join("")}</ul>`
-		: "<p>No signals recorded.</p>";
-
 	const approvals = bundle.agentApprovals.length
 		? `<ul class="proof-list">${bundle.agentApprovals.map((a) => `<li><strong>${escapeHtml(a.agent || "Agent")}</strong>: ${escapeHtml(normalizeStatusLabel(a.status || "pending"))}</li>`).join("")}</ul>`
 		: "<p>No agent approvals recorded.</p>";
@@ -347,34 +361,25 @@ function renderProofPanel(bundle) {
 			<h4>Event Summary</h4>
 			<div class="proof-grid">
 				<div><strong>Event ID:</strong> ${escapeHtml(bundle.eventId)}</div>
-				<div><strong>Description:</strong> ${escapeHtml(bundle.description)}</div>
-				<div><strong>Amount:</strong> ${escapeHtml(bundle.amount ?? "—")}</div>
+				<div><strong>Status:</strong> ${escapeHtml(bundle.reviewStatus)}</div>
 				<div><strong>Confidence:</strong> ${formatConfidenceScore(bundle.confidenceScore)}</div>
 			</div>
 		</div>
 
 		<div class="proof-section">
-			<h4>Verification Summary</h4>
+			<h4>Verification Links</h4>
 			<div class="proof-grid">
-				<div><strong>Review status:</strong> ${escapeHtml(toTitleCase((bundle.reviewStatus || "—").replaceAll("_", " ")))}</div>
-				<div><strong>Review reason:</strong> ${escapeHtml(bundle.reviewReason)}</div>
-				<div><strong>HCS tx ID:</strong> ${escapeHtml(bundle.hcsTxId)}</div>
-				<div><strong>HTS tx ID:</strong> ${escapeHtml(bundle.htsTxId)}</div>
+				<div><strong>HCS tx:</strong> ${escapeHtml(bundle.hcsTxId)}</div>
+				<div><strong>HTS tx:</strong> ${escapeHtml(bundle.htsTxId)}</div>
 			</div>
 		</div>
 
 		<div class="proof-section">
-			<h4>Evidence Signals</h4>
-			${signals}
-		</div>
-
-		<div class="proof-section">
-			<h4>Agent Decisions</h4>
+			<h4>Agent Approvals</h4>
 			${approvals}
 		</div>
 
 		<div class="proof-section">
-			<h4>Proof Integrity</h4>
 			<div><strong>Proof hash:</strong> <span class="proof-hash">${escapeHtml(bundle.proofHash)}</span></div>
 		</div>
 	`;
@@ -416,43 +421,30 @@ function loadFlaggedEvents() {
 			if (!list || !empty) return;
 
 			list.innerHTML = '';
-			const rows = (data.rows || []).slice(0, 1);
+			const rows = (data.rows || []).slice(0, 5);
 			if (!rows.length) {
 				empty.style.display = 'none';
-				list.innerHTML = `
-					<div style="border-left: 3px solid #eab308; padding-left: 10px; margin-bottom: 10px;">
-						<div style="font-weight: 600; color: #0f172a;">Event #7: Verified Business Pickup</div>
-						<div style="font-size: 0.8rem; color: #64748b;">Confidence Trigger: 0.0 (System Mismatch)</div>
-						<button type="button" onclick="openProofBundleInPanel(7, '/api/proof-bundle/7')" style="margin-top: 5px; background: transparent; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Review Evidence</button>
-					</div>
-				`;
-				openProofBundleInPanel(7, '/api/proof-bundle/7');
+				list.innerHTML = '<p style="color: #aaa;">No anomalies currently awaiting review.</p>';
 				return;
 			}
 
 			empty.style.display = 'none';
 			rows.forEach((row) => {
-				const signalsHtml = (row.signals || []).map((s) =>
-					`<span class="signal-chip">${escapeHtml(toTitleCase((s.signal_type || 'signal').replaceAll('_', ' ')))} · ${s.is_positive ? 'positive' : 'negative'} · w=${escapeHtml(s.weight ?? 0)}</span>`
-				).join('');
 				const timestamp = row.timestamp ? new Date(row.timestamp).toLocaleString() : '—';
 
 				const card = document.createElement('div');
 				card.className = 'flagged-event-card';
 				card.innerHTML = `
 					<div class="flagged-header-row">
-						<div><strong>Event #${row.id}</strong></div>
+						<div><strong>⚠️ Event #${row.id}</strong></div>
 						<span class="status-badge stream-badge badge-needs-review">Needs Review</span>
 					</div>
-					<div class="flagged-meta">${escapeHtml(row.desc || 'No description')}</div>
-					<div class="flagged-meta">Confidence: ${formatConfidenceScore(row.confidence_score)} · Review reason: ${escapeHtml(row.review_reason || 'conflicting_or_insufficient_signals')}</div>
-					<div class="flagged-meta">Timestamp: ${escapeHtml(timestamp)} · Amount: ${escapeHtml(row.amount ?? '—')}</div>
-					<div class="flagged-signals">${signalsHtml || '<span class="signal-chip">No signals</span>'}</div>
-					<div class="actions flagged-actions">
+					<div class="flagged-meta"><strong>Reason:</strong> ${escapeHtml(row.review_reason || 'conflicting_or_insufficient_signals')}</div>
+					<div class="flagged-meta"><strong>Confidence:</strong> ${formatConfidenceScore(row.confidence_score)} · <strong>Amount:</strong> ${escapeHtml(row.amount ?? '—')}</div>
+					<div class="flagged-actions" style="display: flex; gap: 8px; margin-top: 10px;">
 						<button class="btn-secondary" onclick="openProofBundleInPanel(${row.id}, '${row.proof_bundle_url}')">View Proof</button>
-						<a href="${row.proof_bundle_url}" target="_blank" rel="noopener">Open Proof Bundle</a>
-						<button class="btn-primary" onclick="approveFlaggedEvent(${row.id})">Override: Approve</button>
-						<button class="btn-danger" onclick="rejectFlaggedEvent(${row.id})">Override: Reject</button>
+						<button class="btn-primary" onclick="approveFlaggedEvent(${row.id})">Approve</button>
+						<button class="btn-danger" onclick="rejectFlaggedEvent(${row.id})">Reject</button>
 					</div>
 				`;
 				list.appendChild(card);
@@ -466,9 +458,7 @@ function loadFlaggedEvents() {
 		.catch((err) => {
 			const list = document.getElementById('flagged-events-list');
 			const empty = document.getElementById('flagged-events-empty');
-			const msg = (err && String(err.message || '').includes('status_403'))
-				? 'Unable to load agent trust anomalies (requires admin or center role).'
-				: 'Unable to load agent trust anomalies.';
+			const msg = 'Unable to load agent trust anomalies.';
 			if (list) list.innerHTML = `<p>${msg}</p>`;
 			if (empty) empty.style.display = 'none';
 		});
@@ -609,10 +599,6 @@ function settlementBadgeClass(activity) {
 
 function renderAdminSummaryPanels(filtered, showDebug) {
 	const rows = Array.isArray(filtered) ? filtered : [];
-	const commerceEvents = rows
-		.flatMap(a => Array.isArray(a.commerce_events) ? a.commerce_events.map(ev => ({ ...ev, activity_id: a.id })) : [])
-		.sort((left, right) => (Number(right?.id) || 0) - (Number(left?.id) || 0))
-		.slice(0, 8);
 
 	const sortedByNewest = [...rows].sort((a, b) => {
 		const aTs = new Date(a?.timestamp || "").getTime();
@@ -630,7 +616,7 @@ function renderAdminSummaryPanels(filtered, showDebug) {
 		Resident: sortedByNewest.find((activity) => {
 			const review = (activity?.review_status || "").toString().toLowerCase();
 			const confidence = Number(activity?.confidence_score);
-			return Number(activity?.id) === 7 || review.includes("pending") || (!review && Number.isFinite(confidence) && confidence < 0.45);
+			return review.includes("pending") || (!review && Number.isFinite(confidence) && confidence < 0.45);
 		})
 	};
 
@@ -662,66 +648,59 @@ function renderAdminSummaryPanels(filtered, showDebug) {
 			value: rows.filter((activity) => {
 				const review = (activity?.review_status || "").toString().toLowerCase();
 				const confidence = Number(activity?.confidence_score);
-				return Number(activity?.id) === 7 || review.includes("pending") || (!review && Number.isFinite(confidence) && confidence < 0.45);
+				return review.includes("pending") || (!review && Number.isFinite(confidence) && confidence < 0.45);
 			}).length,
 			detail: "trust checks pending"
 		}
 	];
 
-	const societyStats = [
-		"<p><strong>Collector Agent</strong> · Reputation: 0.89 (High Trust)</p>",
-		"<p><strong>Verifier Agent</strong> · Reputation: 0.97 (Authoritative)</p>",
-		"<p><strong>Logbook Agent</strong> · Reputation: 0.99 (Immutable)</p>",
-		"<p><strong>Reward Agent</strong> · Reputation: 0.95 (Audited)</p>"
-	];
-
 	return `
 		<p class="section-label">Autonomous Verification Pipeline</p>
 		<div class="card stakeholder-timeline-card">
-			<h3>Cross-Stakeholder Timeline</h3>
-			<p style="margin:0 0 10px 0; color:#a8b3c2;">Latest event trace across all four stakeholders.</p>
+			<h3>Live Trust Flow</h3>
 			<div class="stakeholder-timeline-row">
-				${timelineItems.map((item, idx) => `
-					<div class="stakeholder-timeline-node">
-						<span class="timeline-role">${item.role}</span>
-						<span class="timeline-event">${item.event ? `Event #${item.event.id}` : "No event"}</span>
-					</div>
-					${idx < timelineItems.length - 1 ? '<span class="timeline-arrow">-></span>' : ''}
-				`).join("")}
+				${timelineItems.map((item, idx) => {
+					const isDone = item.event ? true : false;
+					const statusIcon = isDone ? '✅' : '⏳';
+					return `
+						<div class="stakeholder-timeline-node">
+							<span class="timeline-status">${statusIcon}</span>
+							<span class="timeline-role">${item.role}</span>
+						</div>
+						${idx < timelineItems.length - 1 ? '<span class="timeline-arrow">→</span>' : ''}
+					`;
+				}).join("")}
 			</div>
 		</div>
 		<div class="card stakeholder-loop-card">
-			<h3>Stakeholder Outcome Loop</h3>
-			<p style="margin:0 0 10px 0; color:#a8b3c2;">Business -> Collector -> Center -> Resident trust confirmation.</p>
 			<div class="stakeholder-loop-grid">
 				${stakeholderLoop.map((item) => `
 					<div class="stakeholder-loop-item">
 						<span class="stakeholder-role">${item.role}</span>
 						<span class="stakeholder-value">${item.value}</span>
-						<span class="stakeholder-detail">${item.detail}</span>
 					</div>
 				`).join("")}
 			</div>
 		</div>
 		<div class="admin-panels-grid">
-			<div class="card">
-				<h3>Agent Commerce Ledger</h3>
-				<p style="margin:0 0 8px 0; color:#a8b3c2;">Verifier fees and inter-agent settlements proving value exchange.</p>
-				<div class="admin-simple-list">
-					${commerceEvents.length ? commerceEvents.map(ev => {
-						const amount = Number(ev.amount || 0).toFixed(2);
-						const tx = ev.tx_id ? txLink(ev.tx_id, "Open") : "—";
-						return `<p>#${ev.activity_id} · ${ev.payer_agent} → ${ev.payee_agent} · ${ev.reason || "Transfer"} · ${amount} ECO · ${tx}</p>`;
-					}).join("") : "<p>No commerce transactions yet.</p>"}
-				</div>
+			<div class="card" id="queue-summary">
+				<h3>Queue Summary</h3>
+				<p>Loading queue state...</p>
 			</div>
 
-			<div class="card">
-				<h3>Agent Society Overview</h3>
-				<p style="margin:0 0 8px 0; color:#a8b3c2;">Per-agent throughput and real-time reputation signals.</p>
-				<div class="admin-simple-list">
-					${societyStats.join("")}
-				</div>
+			<div class="card" id="ops-alerts">
+				<h3>Live Ops Alerts</h3>
+				<p>Loading alerts...</p>
+			</div>
+
+			<div class="card" id="dead-letter-card">
+				<h3>Dead Letter Queue</h3>
+				<p>Loading dead-letter queue...</p>
+			</div>
+
+			<div class="card" id="audit-card">
+				<h3>Admin Audit Trail</h3>
+				<p>Loading audit events...</p>
 			</div>
 		</div>
 	`;
@@ -763,6 +742,10 @@ function renderActivities(data) {
 		const summaryContainer = document.getElementById("agent-society-dashboard");
 		if (summaryContainer) {
 			summaryContainer.innerHTML = renderAdminSummaryPanels([], showDebug);
+			loadQueueSummary();
+			loadOpsAlerts();
+			loadDeadLetter();
+			loadAudit();
 		}
 		container.innerHTML = "<div class='card'><p>No activities yet. Create a deposit from /collector, then refresh.</p></div>";
 		return;
@@ -788,12 +771,15 @@ function renderActivities(data) {
 	const summaryContainer = document.getElementById("agent-society-dashboard");
 	if (summaryContainer) {
 		summaryContainer.innerHTML = renderAdminSummaryPanels(filtered, showDebug);
+		loadQueueSummary();
+		loadOpsAlerts();
+		loadDeadLetter();
+		loadAudit();
 	}
 	container.innerHTML = "";
 
 	visible.forEach(a => {
 		const tasks = Array.isArray(a.tasks) ? a.tasks : [];
-		const isForcedAnomaly = Number(a.id) === 7;
 
 		const parsedTime = new Date(a.timestamp);
 		const exactTime = Number.isNaN(parsedTime.getTime())
@@ -830,13 +816,9 @@ function renderActivities(data) {
 		}).join("");
 
 		const statusLabel = escapeHtml(a.display_status || normalizeStatusLabel(a.status || a.verified_status || rewardStatus || logbookStatus || "pending"));
-		const confidenceLabel = isForcedAnomaly ? "0.0" : formatConfidenceScore(a.confidence_score);
-		const reviewLabel = isForcedAnomaly
-			? "Pending Admin Action"
-			: escapeHtml(toTitleCase((a.review_status || "none").replaceAll("_", " ")));
-		const statusBadgeMarkup = isForcedAnomaly
-			? '<span style="background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 999px; font-weight: bold; font-size: 0.75rem;">⚠️ Flagged</span>'
-			: `<span class="status-badge ${settlementBadgeClass(a)}">${statusLabel}</span>`;
+		const confidenceLabel = formatConfidenceScore(a.confidence_score);
+		const reviewLabel = escapeHtml(toTitleCase((a.review_status || "none").replaceAll("_", " ")));
+		const statusBadgeMarkup = `<span class="status-badge ${settlementBadgeClass(a)}">${statusLabel}</span>`;
 		const evidenceLayer = `
 			<div class="admin-layer">
 				<h4>Core Evidence Links</h4>
@@ -893,22 +875,23 @@ function renderActivities(data) {
 
 		const html = `
 			<div class="card admin-transaction-card">
-				<h3>Agent Handoff: Event #${a.id}</h3>
-				<div class="admin-card-quick">
-					<div class="admin-card-meta"><strong>${escapeHtml(a.desc || "Not specified")}</strong></div>
-					<div class="admin-card-meta">${escapeHtml(exactTime)} · Amount ${escapeHtml(a.amount ?? "—")}</div>
-					<div class="admin-card-meta">
-						${statusBadgeMarkup}
-						<span><strong>Confidence:</strong> ${confidenceLabel}</span>
-						<span><strong>Review:</strong> ${reviewLabel}</span>
-					</div>
+				<div class="event-card-header">
+					<div class="event-card-title">Event #${a.id}</div>
+					${statusBadgeMarkup}
+					<span class="event-meta-inline">${escapeHtml(a.amount ?? "—")} ${escapeHtml(a.desc || "").substring(0, 30) || "Material"}</span>
+					<span class="event-meta-inline confidence-score">Confidence: ${confidenceLabel}</span>
 				</div>
-				<details class="admin-card-details" id="details_${a.id}">
-					<summary>Open full pipeline and evidence</summary>
-					<div class="admin-detail-tabs" id="card_tabs_${a.id}">
+
+				<div class="event-card-actions" style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+					<button class="btn-secondary" onclick="openProofBundleInPanel(${a.id}, '${a.proof}')">View Proof</button>
+					<details class="event-pipeline-details">
+						<summary class="btn-secondary">Full Pipeline</summary>
+						<div style="margin-top: 12px;">
+							<div class="admin-detail-tabs" id="card_tabs_${a.id}">
+						<div class="admin-detail-tabs" id="card_tabs_${a.id}">
 						<button type="button" class="admin-detail-tab active" data-tab="pipeline" onclick="switchAdminCardTab(${a.id}, 'pipeline')">Pipeline</button>
 						<button type="button" class="admin-detail-tab" data-tab="evidence" onclick="switchAdminCardTab(${a.id}, 'evidence')">Evidence</button>
-						<button type="button" class="admin-detail-tab" data-tab="debug" onclick="switchAdminCardTab(${a.id}, 'debug')">Debug</button>
+						<button type="button" class="admin-detail-tab admin-detail-tab-debug" data-tab="debug" onclick="switchAdminCardTab(${a.id}, 'debug')" style="display:none;" id="debug-tab-${a.id}">Debug</button>
 
 						<div class="admin-detail-pane" data-tab="pipeline" style="display:block;">
 							${pipelineLayer}
@@ -919,8 +902,9 @@ function renderActivities(data) {
 						<div class="admin-detail-pane" data-tab="debug" style="display:none;">
 							${rawLayer}
 						</div>
-					</div>
-				</details>
+						</div>
+					</details>
+				</div>
 			</div>
 		`;
 
@@ -932,6 +916,10 @@ function renderActivities(data) {
 					loadDecisionFeed(a.id);
 				}
 			});
+		}
+		const debugTab = document.getElementById(`debug-tab-${a.id}`);
+		if (debugTab && document.getElementById("showDebug")?.checked) {
+			debugTab.style.display = 'block';
 		}
 	});
 
@@ -1130,6 +1118,10 @@ document.getElementById("showDebug").addEventListener("change", () => {
 	renderActivities(adminActivities);
 	restoreProofStatusesFromCache();
 	runAutoVerify();
+	// Toggle debug tabs visibility
+	document.querySelectorAll('.admin-detail-tab-debug').forEach(tab => {
+		tab.style.display = document.getElementById("showDebug")?.checked ? 'block' : 'none';
+	});
 	const resetBtn = document.getElementById('resetDemoBtn');
 	if (resetBtn) {
 		resetBtn.style.display = document.getElementById("showDebug")?.checked ? 'inline-flex' : 'none';

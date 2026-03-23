@@ -331,7 +331,7 @@
             </div>
             <form method="POST" action="{{ url_for('login') }}" class="home-auth-form" id="homeAuthForm">
                 <input type="hidden" name="auth_source" value="home-modal">
-                <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+                <input type="hidden" name="next" id="homeAuthNext" value="{{ request.args.get('next', '') }}">
                 <input type="hidden" name="role" id="homeAuthRoleHidden" value="">
                 <label class="sr-only" for="homeAuthEmail">Email address</label>
                 <input id="homeAuthEmail" type="email" name="email" placeholder="Email address" required>
@@ -613,6 +613,7 @@
                 const signupRoleSelect = document.getElementById('homeSignupRole');
                 const signupRoleSelectWrap = document.getElementById('homeAuthRoleSelectWrap');
                 const signupRoleHidden = document.getElementById('homeAuthRoleHidden');
+                const authNextHidden = document.getElementById('homeAuthNext');
                 const signupRoleConfirmation = document.getElementById('homeAuthRoleConfirmation');
                 const roleLabels = {
                     recycler: 'Recycler',
@@ -664,11 +665,14 @@
                     }
                 }
 
-                function openAuthModal(mode, roleValue) {
+                function openAuthModal(mode, roleValue, nextPath) {
                     if (!authOverlay) {
                         return;
                     }
                     lockedSignupRole = mode === 'signup' && roleValue ? roleValue : '';
+                    if (authNextHidden) {
+                        authNextHidden.value = nextPath || '{{ request.args.get("next", "") }}';
+                    }
                     if (signupRoleSelect) {
                         signupRoleSelect.value = roleValue || '';
                     }
@@ -745,7 +749,8 @@
                         }
                         const mode = trigger.getAttribute('data-auth-mode') || 'login';
                         const roleValue = trigger.getAttribute('data-auth-role') || '';
-                        openAuthModal(mode, roleValue);
+                        const nextPath = trigger.getAttribute('data-auth-next') || '{{ request.args.get("next", "") }}';
+                        openAuthModal(mode, roleValue, nextPath);
                     });
                 });
 

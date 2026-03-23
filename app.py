@@ -217,6 +217,8 @@ def can_verify_deposit_center(user):
 
 
 def can_access_activity_proof(user, activity: Activity | None) -> bool:
+    if is_open_admin_monitor_mode():
+        return bool(activity)
     if not user or not getattr(user, "is_authenticated", False) or not activity:
         return False
     if activity.user_id == user.id or is_admin_user(user) or is_center_user(user):
@@ -4632,7 +4634,6 @@ def run_collector_agent(activity_id):
 
 
 @app.route('/api/simulate-deposit', methods=['POST'])
-@login_required
 def simulate_deposit():
     """
     Creates a pending activity for a simulated drop-off.
@@ -4640,6 +4641,10 @@ def simulate_deposit():
     Returns the updated dashboard data.
     """
     try:
+        actor = resolve_monitor_actor("recycler")
+        if not actor:
+            return jsonify({'success': False, 'error': 'No demo actor account available'}), 400
+
         # Demo deposit values (reduced for verification demo: ensure total_amount <= 200)
         weight = 10.0
         # Reduced base amount for demo so Agent validation passes
@@ -4651,7 +4656,7 @@ def simulate_deposit():
         # Create activity record (use timezone-aware UTC timestamp)
         from datetime import datetime, timezone
         activity = Activity(
-            user_id=current_user.id,
+            user_id=actor.id,
             timestamp=datetime.now(timezone.utc).isoformat(),
             desc=f"Verified Drop-off ({weight}kg of Cans)",
             amount=total_amount,
@@ -4667,7 +4672,7 @@ def simulate_deposit():
             activity_id=activity.id,
             signal_type="collector_submission",
             source_role="operator",
-            source_user_id=current_user.id,
+            source_user_id=actor.id,
             value="submitted",
             is_positive=True,
             metadata={"weight_kg": weight}
@@ -4679,7 +4684,7 @@ def simulate_deposit():
             "vericycle_version": "hackathon-2026",
             "activity_id": activity.id,
             "timestamp": activity.timestamp,
-            "user": current_user.email,
+            "user": actor.email,
             "description": activity.desc,
             "amount": float(activity.amount) if activity.amount is not None else None,
             "stage": "recorded",
@@ -4690,7 +4695,7 @@ def simulate_deposit():
         activity_id = activity.id
         print(f"\n{'='*80}", flush=True)
         print(f"[BACKEND] POST /api/simulate-deposit called", flush=True)
-        print(f"[BACKEND] New activity created: ID={activity_id}, user={current_user.email}, amount={total_amount}", flush=True)
+        print(f"[BACKEND] New activity created: ID={activity_id}, user={actor.email}, amount={total_amount}", flush=True)
         print(f"{'='*80}\n", flush=True)
         
         # Enqueue pipeline tasks in the persistent queue
@@ -5114,7 +5119,6 @@ def download_income_report_pdf():
 
 
 @app.get('/api/proof-bundle/<int:activity_id>')
-@login_required
 def download_proof_bundle(activity_id):
     activity = db.session.get(Activity, activity_id)
     if not activity:
@@ -5234,6 +5238,8 @@ def _compute_proof_sha256(payload_data: dict):
 
 def can_review_events():
     try:
+        if is_open_admin_monitor_mode():
+            return True
         # Exception handling can be reviewed by centers and admins.
         return current_user.is_authenticated and (is_center_user(current_user) or is_admin_user(current_user))
     except Exception:
@@ -5242,19 +5248,55 @@ def can_review_events():
 
 def can_access_oversight():
     try:
+        if is_open_admin_monitor_mode():
+            return True
         return current_user.is_authenticated
     except Exception:
         return False
 
 
+def is_open_admin_monitor_mode() -> bool:
+    # Demo policy: Admin Monitor is intentionally open for judging and stakeholder walkthroughs.
+    return True
+
+
+def can_manage_admin_monitor_actions() -> bool:
+    if is_open_admin_monitor_mode():
+        return True
+    try:
+        return current_user.is_authenticated and (is_admin_user(current_user) or is_center_user(current_user))
+    except Exception:
+        return False
+
+
+def resolve_monitor_actor(preferred_role: str = "admin"):
+    """Return a stable actor when monitor actions are triggered without login."""
+    try:
+        if getattr(current_user, "is_authenticated", False):
+            return current_user
+    except Exception:
+        pass
+
+    if preferred_role == "recycler":
+        for email in ("recycler@vericycle.com", "collector@vericycle.com"):
+            user = User.query.filter_by(email=email).first()
+            if user:
+                return user
+    for email in ("admin@vericycle.com", "center@vericycle.com"):
+        user = User.query.filter_by(email=email).first()
+        if user:
+            return user
+    return User.query.order_by(User.id.asc()).first()
+
+
 @app.get('/api/proof-bundle-generated')
-@login_required
 def download_generated_proof_bundle():
     activity_id = request.args.get('activity_id', '')
     timestamp = request.args.get('timestamp', '')
     desc = request.args.get('desc', '')
     amount_raw = request.args.get('amount', '0')
-    user_email = request.args.get('user_email') or current_user.email
+    fallback_actor = resolve_monitor_actor("admin")
+    user_email = request.args.get('user_email') or getattr(current_user, 'email', None) or getattr(fallback_actor, 'email', 'admin@vericycle.com')
 
     try:
         amount = float(amount_raw)
@@ -5300,13 +5342,14 @@ def download_generated_proof_bundle():
 
 
 @app.get('/api/proof-verify/<int:activity_id>')
-@login_required
 def verify_proof_bundle(activity_id):
     activity = db.session.get(Activity, activity_id)
     if not activity:
         abort(404)
-    if (activity.user_id != current_user.id) and (not is_admin_user()) and (not can_review_events()):
-        abort(403)
+    if not is_open_admin_monitor_mode():
+        current_user_id = getattr(current_user, 'id', None)
+        if (activity.user_id != current_user_id) and (not is_admin_user()) and (not can_review_events()):
+            abort(403)
 
     payload_data = _build_proof_payload(activity=activity)
     recomputed_hash = _compute_proof_sha256(payload_data)
@@ -5492,18 +5535,13 @@ def log_agent_event(activity_id: int, agent_name: str, level: str, pipeline_stag
 
 
 @app.route('/admin/monitor')
-@login_required
 def admin_monitor():
-    if not is_admin_user():
-        flash('Admin access only.', 'error')
-        return redirect(url_for(access_denied_redirect_for(current_user)))
     return render_template('admin_monitor.html', active_page='admin_monitor')
 
 
 @app.post('/admin/reset-demo')
-@login_required
 def reset_demo():
-    if not is_admin_user():
+    if not can_manage_admin_monitor_actions():
         abort(403)
 
     try:
@@ -5669,9 +5707,8 @@ def api_admin_apply_demo_profile():
 
 
 @app.post('/api/admin/generate-evidence-pack')
-@login_required
 def api_admin_generate_evidence_pack():
-    if not is_admin_user():
+    if not can_manage_admin_monitor_actions():
         abort(403)
 
     body = request.get_json(silent=True) or {}
@@ -5700,9 +5737,8 @@ def api_admin_generate_evidence_pack():
 
 
 @app.get('/api/admin/evidence-pack/<path:file_name>')
-@login_required
 def api_admin_download_evidence_pack(file_name):
-    if not is_admin_user():
+    if not can_manage_admin_monitor_actions():
         abort(403)
     safe_name = os.path.basename(file_name)
     full_path = os.path.join(basedir, "artifacts", safe_name)
@@ -5728,7 +5764,6 @@ def normalize_status_label_for_api(activity: Activity) -> str:
 
 
 @app.route('/api/admin/activities')
-@login_required
 def api_admin_activities():
     if not can_review_events():
         abort(403)
@@ -5839,7 +5874,6 @@ def api_admin_activities():
 
 
 @app.get('/api/review/events')
-@login_required
 def api_review_events():
     if not can_review_events():
         abort(403)
@@ -5885,10 +5919,13 @@ def api_review_events():
 
 
 @app.post('/api/review/events/<int:activity_id>/approve')
-@login_required
 def api_review_event_approve(activity_id):
-    if not can_review_events():
+    if not can_manage_admin_monitor_actions():
         abort(403)
+
+    actor = resolve_monitor_actor("admin")
+    actor_id = getattr(actor, "id", None)
+    actor_email = getattr(actor, "email", "admin@vericycle.com")
 
     activity = db.session.get(Activity, activity_id)
     if not activity:
@@ -5899,7 +5936,7 @@ def api_review_event_approve(activity_id):
 
     activity.review_status = "approved"
     activity.review_reason = None
-    activity.reviewed_by_user_id = current_user.id
+    activity.reviewed_by_user_id = actor_id
     activity.reviewed_at = datetime.now(timezone.utc)
 
     activity.status = "verified"
@@ -5915,7 +5952,7 @@ def api_review_event_approve(activity_id):
         "info",
         activity.pipeline_stage,
         None,
-        f"Event approved by {current_user.email}; LogbookAgent queued={queued}"
+        f"Event approved by {actor_email}; LogbookAgent queued={queued}"
     )
     audit_admin_action("approve_review_event", "activity", str(activity.id), f"queued_logbook={queued}")
     db.session.commit()
@@ -5924,10 +5961,13 @@ def api_review_event_approve(activity_id):
 
 
 @app.post('/api/review/events/<int:activity_id>/reject')
-@login_required
 def api_review_event_reject(activity_id):
-    if not can_review_events():
+    if not can_manage_admin_monitor_actions():
         abort(403)
+
+    actor = resolve_monitor_actor("admin")
+    actor_id = getattr(actor, "id", None)
+    actor_email = getattr(actor, "email", "admin@vericycle.com")
 
     activity = db.session.get(Activity, activity_id)
     if not activity:
@@ -5941,7 +5981,7 @@ def api_review_event_reject(activity_id):
 
     activity.review_status = "rejected"
     activity.review_reason = reason
-    activity.reviewed_by_user_id = current_user.id
+    activity.reviewed_by_user_id = actor_id
     activity.reviewed_at = datetime.now(timezone.utc)
 
     activity.status = "rejected"
@@ -5957,7 +5997,7 @@ def api_review_event_reject(activity_id):
         "info",
         activity.pipeline_stage,
         None,
-        f"Event rejected by {current_user.email}: {reason}"
+        f"Event rejected by {actor_email}: {reason}"
     )
     audit_admin_action("reject_review_event", "activity", str(activity.id), reason)
     db.session.commit()
@@ -5966,7 +6006,6 @@ def api_review_event_reject(activity_id):
 
 
 @app.route('/api/admin/queue')
-@login_required
 def api_admin_queue():
     if not can_review_events():
         abort(403)
@@ -5993,7 +6032,6 @@ def api_admin_queue():
 
 
 @app.route('/api/admin/alerts')
-@login_required
 def api_admin_alerts():
     if not can_review_events():
         abort(403)
@@ -6059,7 +6097,6 @@ def api_admin_alerts():
 
 
 @app.route('/api/admin/dead-letter')
-@login_required
 def api_admin_dead_letter():
     if not can_review_events():
         abort(403)
@@ -6089,9 +6126,8 @@ def api_admin_dead_letter():
 
 
 @app.post('/admin/requeue-dead-letter/<int:dead_letter_id>')
-@login_required
 def admin_requeue_dead_letter(dead_letter_id):
-    if not is_admin_user():
+    if not can_manage_admin_monitor_actions():
         abort(403)
 
     row = db.session.get(DeadLetterTask, dead_letter_id)
@@ -6114,7 +6150,6 @@ def admin_requeue_dead_letter(dead_letter_id):
 
 
 @app.get('/api/admin/audit-log')
-@login_required
 def api_admin_audit_log():
     if not can_review_events():
         abort(403)
@@ -6137,7 +6172,6 @@ def api_admin_audit_log():
 
 
 @app.route('/api/admin/activity-events/<int:activity_id>')
-@login_required
 def api_admin_activity_events(activity_id):
     if not can_review_events():
         abort(403)
@@ -6173,7 +6207,6 @@ def api_admin_activity_events(activity_id):
 
 
 @app.route('/api/admin/commerce-events/<int:activity_id>')
-@login_required
 def api_admin_commerce_events(activity_id):
     if not can_review_events():
         abort(403)
@@ -6260,9 +6293,8 @@ def admin_clear_logs():
 
 
 @app.post('/admin/cleanup-stale-running')
-@login_required
 def admin_cleanup_stale_running():
-    if not is_admin_user():
+    if not can_manage_admin_monitor_actions():
         abort(403)
 
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=5)
@@ -6305,14 +6337,14 @@ def admin_rerun(activity_id):
 
 
 @app.route('/admin/retry-logbook/<int:activity_id>', methods=['GET', 'POST'])
-@login_required
 def admin_retry_logbook(activity_id):
     activity = db.session.get(Activity, activity_id)
     if not activity:
         abort(404)
 
-    if activity.user_id != current_user.id and not can_verify_deposit_center(current_user):
-        abort(403)
+    if not is_open_admin_monitor_mode():
+        if activity.user_id != getattr(current_user, 'id', None) and not can_verify_deposit_center(current_user):
+            abort(403)
 
     if activity.hedera_tx_id:
         log_agent_event(activity_id, "Admin", "info", activity.pipeline_stage, activity.hedera_tx_id, "LOGBOOK RETRY ignored (already logged)")

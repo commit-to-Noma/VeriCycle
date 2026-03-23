@@ -6151,16 +6151,18 @@ body{
     display: flex;
     align-items: center;
     gap: 0.85rem;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.09);
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
     border-radius: 12px;
     padding: 1rem 1.25rem;
     transition: border-color 0.2s, background 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
 }
 
 .admin-ops-card:hover {
-    background: rgba(255,255,255,0.07);
-    border-color: rgba(76,175,80,0.35);
+    background: #ffffff !important;
+    border-color: #d1d5db !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
 }
 
 .ops-card-icon { font-size: 1.6rem; flex-shrink: 0; }
@@ -6182,7 +6184,7 @@ body{
 .ops-card-value {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #e0e0e0;
+    color: #1e293b !important;
     line-height: 1;
 }
 
@@ -7511,22 +7513,26 @@ body.home-light .modal-content .verify-form input {
 .admin-layer .pipeline-item.done,
 .admin-dashboard-header + .admin-ops-summary-row + .card,
 .admin-dashboard-header + .admin-ops-summary-row + .card + .card {
-    border-color: rgba(148, 163, 184, 0.35) !important;
-    box-shadow: none !important;
+    border-color: #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
 }
 
 .admin-ops-card:hover {
-    border-color: rgba(148, 163, 184, 0.45) !important;
+    border-color: #d1d5db !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
 }
 
 .admin-card-details > summary,
 .admin-card-details[open] > summary,
 .admin-section-title,
 .ops-card-label,
-.ops-card-value,
 .admin-card-meta,
 .flagged-meta {
-    color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+.ops-card-value {
+    color: #1e293b !important;
 }
 
 .admin-detail-tab.active {
@@ -7564,28 +7570,30 @@ body.home-light .modal-content .verify-form input {
     gap: 2px;
     min-width: 112px;
     padding: 8px 10px;
-    border: 1px solid rgba(148, 163, 184, 0.35);
+    border: 1px solid #e5e7eb !important;
     border-radius: 10px;
-    background: rgba(15, 23, 42, 0.34);
+    background: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
 }
 
 .timeline-role {
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #94a3b8;
+    color: #475569 !important;
     font-weight: 700;
 }
 
 .timeline-event {
     font-size: 0.88rem;
-    color: #e2e8f0;
+    color: #1e293b !important;
     font-weight: 700;
 }
 
 .timeline-arrow {
-    color: #94a3b8;
+    color: #cbd5e1 !important;
     font-weight: 700;
+    opacity: 0.5 !important;
 }
 
 .stakeholder-loop-grid {
@@ -7599,23 +7607,24 @@ body.home-light .modal-content .verify-form input {
     flex-direction: column;
     gap: 3px;
     padding: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.35);
+    border: 1px solid #e5e7eb !important;
     border-radius: 10px;
-    background: rgba(15, 23, 42, 0.34);
+    background: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
 }
 
 .stakeholder-role {
     font-size: 0.76rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #94a3b8;
+    color: #475569 !important;
     font-weight: 700;
 }
 
 .stakeholder-value {
     font-size: 1.25rem;
     line-height: 1;
-    color: #e2e8f0;
+    color: #1e293b !important;
     font-weight: 800;
 }
 
@@ -11550,5 +11559,488 @@ body.light-theme .section-subtitle {
     body.light-theme .section-heading,
     body.light-theme .section-title {
         font-size: 1.28rem;
+    }
+}
+
+/* ========================================
+ADMIN MONITOR REDESIGN (v2 - Producer Focus)
+======================================== */
+
+/* --- SECTION SPACING --- */
+.admin-ops-summary-row {
+    margin: 2rem 0 2.5rem 0 !important;
+    gap: 1.2rem !important;
+}
+
+.admin-ops-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+}
+
+.card {
+    margin-bottom: 2rem !important;
+}
+
+.admin-review-grid {
+    gap: 2rem !important;
+    margin: 2rem 0 !important;
+}
+
+/* --- HERO SECTION --- */
+.admin-dashboard-header {
+    margin-bottom: 2.5rem !important;
+}
+
+.admin-header-title h2 {
+    font-size: 2rem !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+}
+
+.admin-header-title .admin-intro {
+    font-size: 1rem !important;
+    color: #64748b !important;
+    margin: 0 !important;
+}
+
+/* --- METRICS CARDS --- */
+.admin-ops-card {
+    padding: 1.5rem 1.75rem !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+.admin-ops-card:hover {
+    background: #ffffff !important;
+    border-color: #d1d5db !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+.ops-card-value {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+}
+
+/* --- TIMELINE REDESIGN --- */
+.stakeholder-timeline-card {
+    padding: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+.stakeholder-timeline-row {
+    gap: 0.75rem !important;
+    align-items: center !important;
+    padding: 1rem 0 !important;
+}
+
+.stakeholder-timeline-node {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    padding: 0.8rem 1rem !important;
+    border-radius: 10px !important;
+    text-align: center !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+.stakeholder-timeline-node:hover {
+    border-color: #d1d5db !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+.timeline-status {
+    font-size: 1.3rem !important;
+    display: block !important;
+    margin-bottom: 0.4rem !important;
+}
+
+.timeline-role {
+    font-weight: 600 !important;
+    color: #0f766e !important;
+}
+
+.timeline-arrow {
+    color: #cbd5e1 !important;
+    font-size: 1.2rem !important;
+    opacity: 0.5 !important;
+}
+
+/* --- STAKEHOLDER LOOP --- */
+.stakeholder-loop-card {
+    padding: 0 !important;
+    border: none !important;
+    background: none !important;
+    margin: 0 0 2rem 0 !important;
+}
+
+.stakeholder-loop-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1rem !important;
+}
+
+.stakeholder-loop-item {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    text-align: center !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+.stakeholder-loop-item:hover {
+    border-color: #d1d5db !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+.stakeholder-role {
+    display: block !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.stakeholder-value {
+    display: block !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+}
+
+/* --- EVENT CARDS (VERIFICATION FEED) --- */
+.admin-transaction-card {
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    overflow: hidden !important;
+    border: 1px solid #e5e7eb !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    transition: all 0.3s ease !important;
+}
+
+.admin-transaction-card:hover {
+    border-color: #d1d5db !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+.event-card-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding-bottom: 1rem !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    flex-wrap: wrap !important;
+}
+
+.event-card-title {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    min-width: 80px !important;
+}
+
+.event-meta-inline {
+    font-size: 0.9rem !important;
+    color: #64748b !important;
+    flex: 1 1 auto !important;
+    min-width: 100px !important;
+}
+
+.event-meta-inline.confidence-score {
+    text-align: right !important;
+    white-space: nowrap !important;
+}
+
+.event-card-actions {
+    display: flex !important;
+    gap: 0.75rem !important;
+    margin-top: 1rem !important;
+    flex-wrap: wrap !important;
+}
+
+.event-pipeline-details {
+    display: inline !important;
+}
+
+.event-pipeline-details summary {
+    cursor: pointer !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+.event-pipeline-details summary::-webkit-details-marker {
+    display: none !important;
+}
+
+/* --- STATUS BADGES (STANDARDIZE COLORS) --- */
+.status-badge {
+    padding: 0.375rem 0.75rem !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+}
+
+.badge-verified,
+.status-badge-paid {
+    background: rgba(34, 197, 94, 0.12) !important;
+    color: #16a34a !important;
+    border: 1px solid rgba(34, 197, 94, 0.2) !important;
+}
+
+.badge-anchored {
+    background: rgba(34, 197, 94, 0.12) !important;
+    color: #16a34a !important;
+    border: 1px solid rgba(34, 197, 94, 0.2) !important;
+}
+
+.badge-rewarded {
+    background: rgba(34, 197, 94, 0.12) !important;
+    color: #16a34a !important;
+    border: 1px solid rgba(34, 197, 94, 0.2) !important;
+}
+
+.badge-attested {
+    background: rgba(34, 197, 94, 0.12) !important;
+    color: #16a34a !important;
+    border: 1px solid rgba(34, 197, 94, 0.2) !important;
+}
+
+.badge-needs-review {
+    background: rgba(234, 179, 8, 0.18) !important;
+    color: #eab308 !important;
+    border: 1px solid rgba(234, 179, 8, 0.35) !important;
+}
+
+.status-badge-pending {
+    background: rgba(148, 163, 184, 0.12) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+}
+
+.status-badge-failed {
+    background: rgba(239, 68, 68, 0.18) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+
+.status-badge-fallback {
+    background: rgba(234, 179, 8, 0.18) !important;
+    color: #eab308 !important;
+    border: 1px solid rgba(234, 179, 8, 0.35) !important;
+}
+
+.activity-badge-row {
+    margin: 0.75rem 0 !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+}
+
+/* --- FLAGGED EVENTS (TRUST ANOMALIES) --- */
+.flagged-event-card {
+    background: #fef2f2 !important;
+    border: 1px solid #fee2e2 !important;
+    border-radius: 10px !important;
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.flagged-event-card:hover {
+    border-color: #fecaca !important;
+    background: #fef2f2 !important;
+}
+
+.flagged-header-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    border-bottom: 1px solid #fee2e2 !important;
+}
+
+.flagged-meta {
+    font-size: 0.9rem !important;
+    color: #cbd5e1 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.flagged-actions {
+    display: flex !important;
+    gap: 0.75rem !important;
+}
+
+/* --- PIPELINE DETAILS (DEBUG PANES) --- */
+.admin-detail-tabs {
+    display: flex !important;
+    gap: 0.5rem !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    margin-bottom: 1rem !important;
+    flex-wrap: wrap !important;
+}
+
+.admin-detail-tab {
+    padding: 0.75rem 1rem !important;
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    border-bottom: 2px solid transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+.admin-detail-tab:hover {
+    color: #cbd5e1 !important;
+}
+
+.admin-detail-tab.active {
+    color: #4CAF50 !important;
+    border-bottom-color: #4CAF50 !important;
+    background: rgba(76, 175, 80, 0.06) !important;
+}
+
+.admin-detail-pane {
+    animation: fadeInUp 0.3s ease !important;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0 !important;
+        transform: translateY(10px) !important;
+    }
+    to {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+    }
+}
+
+/* --- PROOF PANEL --- */
+.selected-proof-panel {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+.proof-section {
+    margin-bottom: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+.proof-section:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+.proof-section h4 {
+    font-size: 0.95rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-weight: 700 !important;
+    color: #4CAF50 !important;
+    margin: 0 0 0.75rem 0 !important;
+}
+
+.proof-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 1rem !important;
+}
+
+.proof-grid div {
+    font-size: 0.9rem !important;
+}
+
+.proof-hash {
+    font-family: monospace !important;
+    font-size: 0.75rem !important;
+    word-break: break-all !important;
+    color: #94a3b8 !important;
+}
+
+/* --- PIPELINE ITEMS --- */
+.pipeline-item {
+    background: #f9fafb !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.pipeline-item.done {
+    background: #f0fdf4 !important;
+    border-color: #d1fae5 !important;
+}
+
+.pipeline-checks {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+}
+
+/* --- BUTTONS --- */
+.btn-secondary {
+    padding: 0.625rem 1rem !important;
+    font-size: 0.9rem !important;
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #ef4444 !important;
+    padding: 0.625rem 1.25rem !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: rgba(239, 68, 68, 0.5) !important;
+}
+
+/* --- RESPONSIVE ADJUSTMENTS --- */
+@media (max-width: 768px) {
+    .stakeholder-loop-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .admin-ops-summary-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .event-card-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    .event-meta-inline.confidence-score {
+        text-align: left !important;
+    }
+    
+    .proof-grid {
+        grid-template-columns: 1fr !important;
     }
 }
