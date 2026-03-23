@@ -20,6 +20,221 @@
 .event-card-title, .event-meta-inline { color: #1e293b !important; }
 .badge-verified, .badge-anchored, .badge-rewarded, .badge-attested, .status-badge-paid { background: rgba(209, 213, 219, 0.12) !important; border-color: #d1d5db !important; color: #4b5563 !important; }
 .timeline-arrow { color: #cbd5e1 !important; opacity: 0.5 !important; }
+
+/* Center the Live Trust Flow cards and contents */
+.stakeholder-timeline-row {
+	display: flex !important;
+	justify-content: center !important;
+	align-items: center !important;
+	flex-wrap: wrap !important;
+	gap: 0.75rem !important;
+}
+
+.stakeholder-timeline-node {
+	display: flex !important;
+	flex-direction: column !important;
+	justify-content: center !important;
+	align-items: center !important;
+	text-align: center !important;
+	min-width: 170px !important;
+}
+
+.timeline-status {
+	display: block !important;
+	line-height: 1 !important;
+	margin-bottom: 0.35rem !important;
+	color: #334155 !important;
+}
+
+/* COMPREHENSIVE FULL PIPELINE LIGHT MODE ENFORCEMENT */
+.event-pipeline-details[open] {
+	display: block !important;
+	width: 100% !important;
+	margin-top: 0.5rem !important;
+	padding: 0 !important;
+}
+
+.event-pipeline-details[open] > div {
+	background: #f9fafb !important;
+	border: 2px solid #cbd5e1 !important;
+	border-radius: 16px !important;
+	padding: 24px !important;
+	box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+	max-width: 100%;
+	margin: 0 auto;
+}
+
+.event-pipeline-details[open] .admin-detail-tabs {
+	display: flex !important;
+	gap: 8px !important;
+	background: transparent !important;
+	border-bottom: 2px solid #e5e7eb !important;
+	padding-bottom: 12px !important;
+	margin-bottom: 20px !important;
+}
+
+.event-pipeline-details[open] .admin-detail-tab {
+	background: #ffffff !important;
+	border: 2px solid #e2e8f0 !important;
+	color: #475569 !important;
+	padding: 10px 16px !important;
+	border-radius: 8px !important;
+	cursor: pointer !important;
+	font-weight: 600 !important;
+	transition: all 0.2s ease !important;
+}
+
+.event-pipeline-details[open] .admin-detail-tab:hover {
+	background: #f0f4f8 !important;
+	border-color: #cbd5e1 !important;
+}
+
+.event-pipeline-details[open] .admin-detail-tab.active {
+	background: #2563eb !important;
+	border-color: #2563eb !important;
+	color: #ffffff !important;
+}
+
+.event-pipeline-details[open] .admin-detail-pane {
+	display: none !important;
+}
+
+.event-pipeline-details[open] .admin-detail-pane[style*="display:block"] {
+	display: block !important;
+}
+
+.event-pipeline-details[open] .admin-detail-pane.active {
+	display: block !important;
+}
+
+.event-pipeline-details[open] .admin-layer,
+.event-pipeline-details[open] .debug-details,
+.event-pipeline-details[open] .debug-details pre,
+.event-pipeline-details[open] .event-summary-block {
+	background: #ffffff !important;
+	border: 1px solid #e5e7eb !important;
+	border-radius: 12px !important;
+	padding: 16px !important;
+	margin-bottom: 16px !important;
+	color: #1f2937 !important;
+}
+
+.event-pipeline-details[open] .admin-layer h4,
+.event-pipeline-details[open] .admin-layer p,
+.event-pipeline-details[open] .debug-details summary,
+.event-pipeline-details[open] .debug-details p,
+.event-pipeline-details[open] .pipeline-item,
+.event-pipeline-details[open] .pipeline-item span,
+.event-pipeline-details[open] .pipeline-item strong {
+	color: #1f2937 !important;
+	background: transparent !important;
+}
+
+.event-pipeline-details[open] .admin-layer h4 {
+	font-size: 1.1rem !important;
+	font-weight: 700 !important;
+	margin-bottom: 12px !important;
+	margin-top: 0 !important;
+}
+
+.event-pipeline-details[open] .admin-layer p {
+	margin: 8px 0 !important;
+	line-height: 1.6 !important;
+	font-size: 0.95rem !important;
+}
+
+.event-pipeline-details[open] .pipeline-item {
+	background: #f3f4f6 !important;
+	border: 1px solid #e5e7eb !important;
+	border-radius: 8px !important;
+	padding: 12px !important;
+	margin: 8px 0 !important;
+}
+
+.event-pipeline-details[open] .pipeline-item.done {
+	border-color: #22c55e !important;
+}
+
+.event-pipeline-details[open] a {
+	color: #2563eb !important;
+	text-decoration: underline !important;
+	font-weight: 600 !important;
+}
+
+/* Judge Mode Top 5 Panel */
+.judge-mode-panel {
+	background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%) !important;
+	border: 2px solid #3b82f6 !important;
+	padding: 20px !important;
+	border-radius: 14px !important;
+}
+
+.judge-panel-header {
+	font-size: 1.2rem;
+	font-weight: 700;
+	color: #1f2937;
+	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.judge-events-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+}
+
+.judge-event-card {
+	background: #ffffff;
+	border: 2px solid #3b82f6;
+	border-radius: 10px;
+	padding: 14px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.judge-event-card:hover {
+	box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+	transform: translateY(-2px);
+}
+
+.judge-event-title {
+	font-weight: 700;
+	color: #1f2937;
+	font-size: 0.95rem;
+}
+
+.judge-event-desc {
+	color: #6b7280;
+	font-size: 0.85rem;
+	line-height: 1.4;
+}
+
+.explorer-badge-complete {
+	background: #dcfce7 !important;
+	color: #166534 !important;
+	border: 1px solid #22c55e !important;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	align-self: flex-start;
+}
+
+.explorer-badge-partial {
+	background: #fef3c7 !important;
+	color: #92400e !important;
+	border: 1px solid #fcd34d !important;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	align-self: flex-start;
+}
 </style>
 
 <div class="dashboard-header admin-dashboard-header">
@@ -28,6 +243,9 @@
 		<p class="admin-intro">Real-time verification of recycling events anchored on Hedera.</p>
 	</div>
 </div>
+
+<!-- Judge Mode Top 5 Pinned Events Strip -->
+<div id="judge-mode-top5" class="card judge-mode-panel" style="margin-bottom: 20px; display: none;"></div>
 
 <!-- Elite Ops Summary Row -->
 <section class="admin-ops-summary-row">
@@ -123,7 +341,7 @@
 		</label>
 
 		<label class="admin-filter-row">
-			<input type="checkbox" id="liveSyncToggle" checked />
+			<input type="checkbox" id="liveSyncToggle" />
 			Live Sync
 		</label>
 	</div>
@@ -136,6 +354,7 @@
 let demoMode = true;
 const ACTIVITY_PAGE_SIZE = 8;
 let visibleActivityCount = ACTIVITY_PAGE_SIZE;
+let activitiesById = new Map();
 const DATE_RANGE_STORAGE_KEY = "vericycle_admin_date_range";
 
 function restoreDateRangeSelection() {
@@ -333,6 +552,12 @@ function renderActivityBadgeRow(activity) {
 }
 
 function normalizeProofBundle(payload, fallbackActivityId) {
+	const fallbackActivity = activitiesById.get(Number(fallbackActivityId)) || {};
+	const fallbackHcs = fallbackActivity?.hcs_tx_id || fallbackActivity?.logbook_tx_id || fallbackActivity?.hedera_tx_id;
+	const fallbackHts = fallbackActivity?.hts_tx_id || fallbackActivity?.reward_tx_id;
+	const fallbackCompliance = fallbackActivity?.compliance_tx_id;
+	const fallbackLinks = fallbackActivity?.hashscan_links || {};
+	const payloadLinks = payload?.hashscan_links || {};
 	return {
 		eventId: payload?.activity_id ?? fallbackActivityId ?? "—",
 		description: payload?.description || "—",
@@ -342,8 +567,14 @@ function normalizeProofBundle(payload, fallbackActivityId) {
 		reviewReason: payload?.review_reason || "—",
 		signals: Array.isArray(payload?.signals) ? payload.signals : [],
 		agentApprovals: Array.isArray(payload?.agent_approvals) ? payload.agent_approvals : [],
-		hcsTxId: payload?.hcs_tx_id || payload?.hedera_tx_id || "—",
-		htsTxId: payload?.hts_tx_id || payload?.reward_tx_id || "—",
+		hcsTxId: payload?.hcs_tx_id || payload?.hedera_tx_id || fallbackHcs || "—",
+		htsTxId: payload?.hts_tx_id || payload?.reward_tx_id || fallbackHts || "—",
+		complianceTxId: payload?.compliance_tx_id || fallbackCompliance || "—",
+		hashscanLinks: {
+			hcs: payloadLinks?.hcs || fallbackLinks?.hcs || null,
+			hts: payloadLinks?.hts || fallbackLinks?.hts || null,
+			compliance: payloadLinks?.compliance || fallbackLinks?.compliance || null,
+		},
 		proofHash: payload?.proof_hash || payload?.proof_sha256 || "—"
 	};
 }
@@ -369,8 +600,9 @@ function renderProofPanel(bundle) {
 		<div class="proof-section">
 			<h4>Verification Links</h4>
 			<div class="proof-grid">
-				<div><strong>HCS tx:</strong> ${escapeHtml(bundle.hcsTxId)}</div>
-				<div><strong>HTS tx:</strong> ${escapeHtml(bundle.htsTxId)}</div>
+				<div><strong>HCS tx:</strong> ${txLink(bundle.hcsTxId, bundle.hcsTxId)}</div>
+				<div><strong>HTS tx:</strong> ${txLink(bundle.htsTxId, bundle.htsTxId)}</div>
+				<div><strong>Compliance tx:</strong> ${txLink(bundle.complianceTxId, bundle.complianceTxId)}</div>
 			</div>
 		</div>
 
@@ -386,6 +618,11 @@ function renderProofPanel(bundle) {
 }
 
 function openProofBundleInPanel(activityId, proofUrl) {
+	if (!activityId || !proofUrl) {
+		console.warn('openProofBundleInPanel: missing activityId or proofUrl', { activityId, proofUrl });
+		return Promise.resolve();
+	}
+
 	const panel = document.getElementById("selected-proof-panel");
 	if (panel) panel.innerHTML = `<p>Loading proof for event #${escapeHtml(activityId)}...</p>`;
 
@@ -398,9 +635,10 @@ function openProofBundleInPanel(activityId, proofUrl) {
 			return JSON.parse(text);
 		})
 		.then((payload) => {
-			renderProofPanel(normalizeProofBundle(payload, activityId));
+			if (panel) renderProofPanel(normalizeProofBundle(payload, activityId));
 		})
-		.catch(() => {
+		.catch((err) => {
+			console.error('Proof load error:', err);
 			if (panel) {
 				panel.innerHTML = "<p>Unable to load proof bundle in panel.</p>";
 			}
@@ -512,6 +750,67 @@ function rejectFlaggedEvent(activityId) {
 let adminActivities = [];
 let proofVerifyCache = new Map();
 let autoVerifyRunCounter = 0;
+const adminUiState = {
+	openDetailsIds: new Set(),
+	activeTabs: new Map(),
+	lastInteractionAt: 0,
+};
+
+function registerAdminInteraction() {
+	adminUiState.lastInteractionAt = Date.now();
+}
+
+function captureAdminUiState() {
+	adminUiState.openDetailsIds.clear();
+	adminUiState.activeTabs.clear();
+
+	document.querySelectorAll('.event-pipeline-details').forEach((detailsEl) => {
+		const activityId = Number(detailsEl.dataset.activityId || 0);
+		if (!activityId) return;
+		if (detailsEl.open) {
+			adminUiState.openDetailsIds.add(activityId);
+		}
+
+		const root = document.getElementById(`card_tabs_${activityId}`);
+		const activeTab = root?.querySelector('.admin-detail-tab.active')?.dataset?.tab;
+		if (activeTab) {
+			adminUiState.activeTabs.set(activityId, activeTab);
+		}
+	});
+}
+
+function restoreAdminUiState() {
+	adminUiState.openDetailsIds.forEach((activityId) => {
+		const detailsEl = document.getElementById(`details_${activityId}`);
+		if (!detailsEl) return;
+		detailsEl.open = true;
+		const tab = adminUiState.activeTabs.get(activityId) || 'pipeline';
+		switchAdminCardTab(activityId, tab);
+	});
+}
+
+function handleActivityDetailsToggle(el, activityId) {
+	registerAdminInteraction();
+	if (!el) return;
+	if (el.open) {
+		adminUiState.openDetailsIds.add(activityId);
+		if (!adminUiState.activeTabs.has(activityId)) {
+			adminUiState.activeTabs.set(activityId, 'pipeline');
+		}
+		scrollPipelineIntoView(el);
+		loadDecisionFeed(activityId);
+		return;
+	}
+	adminUiState.openDetailsIds.delete(activityId);
+}
+
+function shouldPauseLiveRefresh() {
+	const now = Date.now();
+	if (now - adminUiState.lastInteractionAt < 8000) return true;
+	if (document.querySelector('.event-pipeline-details[open]')) return true;
+	if (document.querySelector('.event-pipeline-details:focus-within')) return true;
+	return false;
+}
 
 function paintProofStatus(id, result) {
 	const el = document.getElementById("proof_" + id);
@@ -541,9 +840,57 @@ function restoreProofStatusesFromCache() {
 	});
 }
 
+function normalizeTxIdValue(value) {
+	const normalized = String(value ?? "").trim();
+	if (!normalized) return "";
+	const lower = normalized.toLowerCase();
+	if (lower === "none" || lower === "null" || lower === "undefined" || lower === "nan") return "";
+	return normalized;
+}
+
+function isLikelyHederaTxId(txId) {
+	const value = normalizeTxIdValue(txId);
+	const match = value.match(/^0\.0\.(\d+)@(\d+)\.(\d+)$/);
+	if (!match) return false;
+	const seconds = Number(match[2]);
+	const nanos = match[3];
+	if (!Number.isFinite(seconds)) return false;
+	if (seconds < 1_500_000_000 || seconds > 4_102_444_800) return false;
+	if (nanos.length !== 9) return false;
+	return true;
+}
+
 function txLink(txId, label = "View on Hedera") {
-	if (!txId) return "—";
-	return `<a href="https://hashscan.io/testnet/transaction/${txId}" target="_blank" rel="noopener">${label}</a>`;
+	const normalized = normalizeTxIdValue(txId);
+	if (!normalized) return "—";
+	if (!isLikelyHederaTxId(normalized)) return escapeHtml(normalized);
+	return `<a href="https://hashscan.io/testnet/transaction/${encodeURIComponent(normalized)}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`;
+}
+
+function complianceTxHtml(activity) {
+	const complianceTx = normalizeTxIdValue(activity?.compliance_tx_id);
+	if (!complianceTx) return "—";
+	if (isLikelyHederaTxId(complianceTx)) return txLink(complianceTx);
+	const proofUrl = String(activity?.proof || "").trim();
+	if (!proofUrl) return `${escapeHtml(complianceTx)} (off-chain)`;
+	return `${escapeHtml(complianceTx)} (off-chain) · <a href="#" onclick="openProofBundleInPanel(${activity.id}, '${proofUrl}'); return false;">View attestation</a>`;
+}
+
+function scrollPipelineIntoView(el) {
+	setTimeout(() => {
+		el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}, 50);
+}
+
+function proofLinkScore(activity) {
+	const hcs = normalizeTxIdValue(activity?.hcs_tx_id || activity?.logbook_tx_id || activity?.hedera_tx_id);
+	const hts = normalizeTxIdValue(activity?.hts_tx_id || activity?.reward_tx_id);
+	const compliance = normalizeTxIdValue(activity?.compliance_tx_id);
+	let score = 0;
+	if (isLikelyHederaTxId(hcs)) score += 1;
+	if (isLikelyHederaTxId(hts)) score += 1;
+	if (compliance) score += 1;
+	return score;
 }
 
 function isTreasuryRefillRequired(rewardLastError) {
@@ -569,8 +916,8 @@ function rewardOutcomeLabel(activity) {
 }
 
 function rewardOutcomeHtml(activity) {
-	const htsTx = activity?.hts_tx_id || activity?.reward_tx_id;
-	if (((activity?.reward_status || "").toString().toLowerCase() === "paid") && htsTx) {
+	const htsTx = normalizeTxIdValue(activity?.hts_tx_id || activity?.reward_tx_id);
+	if (htsTx) {
 		return txLink(htsTx);
 	}
 	return escapeHtml(rewardOutcomeLabel(activity) || "—");
@@ -661,7 +1008,7 @@ function renderAdminSummaryPanels(filtered, showDebug) {
 			<div class="stakeholder-timeline-row">
 				${timelineItems.map((item, idx) => {
 					const isDone = item.event ? true : false;
-					const statusIcon = isDone ? '✅' : '⏳';
+					const statusIcon = isDone ? '✓' : '...';
 					return `
 						<div class="stakeholder-timeline-node">
 							<span class="timeline-status">${statusIcon}</span>
@@ -707,25 +1054,41 @@ function renderAdminSummaryPanels(filtered, showDebug) {
 }
 
 function switchAdminCardTab(activityId, tabName) {
+	registerAdminInteraction();
 	const root = document.getElementById(`card_tabs_${activityId}`);
-	if (!root) return;
+	if (!root) {
+		console.warn(`Admin tab root not found: card_tabs_${activityId}`);
+		return false;
+	}
 
-	root.querySelectorAll('.admin-detail-tab').forEach((btn) => {
+	const tabs = root.querySelectorAll('.admin-detail-tab');
+	const panes = root.querySelectorAll('.admin-detail-pane');
+	if (tabs.length === 0 || panes.length === 0) {
+		console.warn(`No tabs or panes found for card_tabs_${activityId}`);
+		return false;
+	}
+
+	tabs.forEach((btn) => {
 		const isActive = btn.dataset.tab === tabName;
 		btn.classList.toggle('active', isActive);
 	});
 
-	root.querySelectorAll('.admin-detail-pane').forEach((pane) => {
+	panes.forEach((pane) => {
 		const isActive = pane.dataset.tab === tabName;
 		pane.style.display = isActive ? 'block' : 'none';
+			pane.classList.toggle('active', isActive);
 	});
+
+	adminUiState.activeTabs.set(activityId, tabName);
 
 	if (tabName === 'debug') {
 		loadDecisionFeed(activityId);
 	}
+	return true;
 }
 
 function renderActivities(data) {
+	captureAdminUiState();
 	const container = document.getElementById("activities");
 	const controls = document.getElementById("activity-controls");
 	const hideFailed = document.getElementById("hideFailed")?.checked;
@@ -752,6 +1115,10 @@ function renderActivities(data) {
 	}
 
 	const sorted = [...data].sort((left, right) => {
+		const leftScore = proofLinkScore(left);
+		const rightScore = proofLinkScore(right);
+		if (rightScore !== leftScore) return rightScore - leftScore;
+
 		const leftTs = new Date(left?.timestamp || "").getTime();
 		const rightTs = new Date(right?.timestamp || "").getTime();
 		const leftSafe = Number.isNaN(leftTs) ? 0 : leftTs;
@@ -768,6 +1135,24 @@ function renderActivities(data) {
 	});
 
 	const visible = filtered.slice(0, visibleActivityCount);
+	activitiesById = new Map(sorted.map((activity) => [Number(activity?.id), activity]));
+
+	// Render Judge Mode Top 5 if we have proof-complete events
+	const judgeTop5 = sorted.filter(a => proofLinkScore(a) >= 2).slice(0, 5);
+	const judgeContainer = document.getElementById('judge-mode-top5');
+	if (judgeContainer) {
+		if (judgeTop5.length > 0) {
+			judgeContainer.innerHTML = `<div class="judge-panel-header">🏛️ Judge Mode Verified Events (Full Explorer Links)</div><div class="judge-events-grid">${judgeTop5.map((a) => {
+				const badgeClass = proofLinkScore(a) === 3 ? 'explorer-badge-complete' : 'explorer-badge-partial';
+				const badgeText = proofLinkScore(a) === 3 ? '✓ EXPLORER READY' : '◐ PARTIAL';
+				return `<div class="judge-event-card" onclick="const el = document.getElementById('event-${a.id}'); if(el) { el.scrollIntoView({behavior:'smooth', block:'start'}); location.hash = 'event-${a.id}'; }"><div class="judge-event-title">Event #${a.id}</div><div class="judge-event-desc">${escapeHtml((a.desc || '').substring(0, 50))}</div><span class="${badgeClass}">${badgeText}</span></div>`;
+			}).join('')}</div>`;
+			judgeContainer.style.display = 'block';
+		} else {
+			judgeContainer.style.display = 'none';
+		}
+	}
+
 	const summaryContainer = document.getElementById("agent-society-dashboard");
 	if (summaryContainer) {
 		summaryContainer.innerHTML = renderAdminSummaryPanels(filtered, showDebug);
@@ -807,11 +1192,11 @@ function renderActivities(data) {
 
 		const pipelineRows = steps.map(step => {
 			const done = stepDone(a, tasks, step.key);
-			const statusBadge = done ? "✅" : "⏳";
+			const statusBadge = done ? "✓" : "...";
 			let txRef = "—";
 			if (step.key === "LogbookAgent") txRef = txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id);
 			if (step.key === "RewardAgent") txRef = rewardOutcomeHtml(a);
-			if (step.key === "ComplianceAgent") txRef = a.compliance_tx_id || "done";
+			if (step.key === "ComplianceAgent") txRef = a.compliance_tx_id ? complianceTxHtml(a) : (done ? "done" : "—");
 			return `<div class="pipeline-item ${done ? "done" : ""}"><strong>${statusBadge} ${step.label}</strong><br><span>${exactTime}</span><br><span>TX: ${txRef}</span></div>`;
 		}).join("");
 
@@ -822,9 +1207,10 @@ function renderActivities(data) {
 		const evidenceLayer = `
 			<div class="admin-layer">
 				<h4>Core Evidence Links</h4>
-				<p style="margin:0 0 8px 0;">HCS Anchor: ${txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id)}</p>
-				<p style="margin:0 0 8px 0;">HTS Reward: ${rewardOutcomeHtml(a)}</p>
-				<p style="margin:0 0 8px 0;">Compliance TX: ${a.compliance_tx_id || "—"}</p>
+				<p style="margin:0 0 8px 0; color:#64748b;"><strong>HCS Anchor:</strong> ${txLink(a.hcs_tx_id || a.logbook_tx_id || a.hedera_tx_id)}</p>
+				<p style="margin:0 0 8px 0; color:#64748b;"><strong>HTS Reward:</strong> ${rewardOutcomeHtml(a)}</p>
+				<p style="margin:0 0 8px 0; color:#64748b;"><strong>Compliance TX:</strong> ${complianceTxHtml(a)}</p>
+				${logbookStatus && logbookStatus !== "pending" ? "" : `<p style="margin:8px 0 0 0; font-size:0.9rem; color:#9ca3af;">⏱️ Transaction IDs will appear once anchoring completes</p>`}
 				<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
 					<button class="btn-secondary" onclick="openProofBundleInPanel(${a.id}, '${a.proof}')">View Proof</button>
 					<button class="btn-primary" onclick="verifyProof(${a.id})">Verify Proof Hash</button>
@@ -839,7 +1225,7 @@ function renderActivities(data) {
 				<h4>Pipeline Overview</h4>
 				<div class="event-summary-block">
 					<div style="font-weight:700; font-size:16px; margin-bottom:6px;">${escapeHtml(a.desc || "Not specified")}</div>
-					<div style="color:#a8b3c2; margin-bottom:10px;">Amount: ${escapeHtml(a.amount ?? "—")} · Date/Time: ${escapeHtml(exactTime)}</div>
+					<div style="color:#64748b; margin-bottom:10px;">Amount: ${escapeHtml(a.amount ?? "—")} · Date/Time: ${escapeHtml(exactTime)}</div>
 					<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
 						${statusBadgeMarkup}
 						<span><strong>Confidence:</strong> ${confidenceLabel}</span>
@@ -860,34 +1246,39 @@ function renderActivities(data) {
 					<p>trust_weight: ${(a.trust_weight ?? 0).toFixed(2)} · verifier_reputation: ${(a.verifier_reputation ?? 0).toFixed(2)} · reputation_delta: ${((a.reputation_delta ?? 0) >= 0 ? "+" : "") + (a.reputation_delta ?? 0).toFixed(2)}</p>
 					<p>verification_confidence: ${formatConfidenceScore(a.confidence_score)} · lifecycle_confidence: ${formatConfidenceScore(a.lifecycle_confidence_score)}</p>
 					${(logbookStatus === "offchain_final" || logbookStatus === "failed" || (!demoMode && (!logbookStatus || logbookStatus === "pending"))) ? `<p><button class="btn-secondary" onclick="retry(${a.id})">Retry Hedera Log</button></p>` : ""}
-					${(showDebug && a.logbook_last_error) ? `<p style="color:#f9c27a;">Debug: ${a.logbook_last_error}</p>` : ""}
-					${(showDebug && rewardStatus === "finalized_no_transfer") ? `<p style="color:#f9c27a;">System detail: ${rewardOutcomeLabel(a)}</p>` : ""}
+					${(showDebug && a.logbook_last_error) ? `<p style="color:#b45309;">Debug: ${a.logbook_last_error}</p>` : ""}
+					${(showDebug && rewardStatus === "finalized_no_transfer") ? `<p style="color:#b45309;">System detail: ${rewardOutcomeLabel(a)}</p>` : ""}
 					<h4>Agent Pipeline Log</h4>
 					${tasks.map(t => `<p>${escapeHtml(t.agent)} : ${escapeHtml(normalizeStatusLabel(t.status))}${showDebug && t.error ? ` (${escapeHtml(t.error)})` : ""}</p>`).join("") || "<p>No pipeline logs yet.</p>"}
 					<h4>Agent Decision Feed</h4>
-					<p style="margin:0 0 8px 0; color:#a8b3c2;">Chronological reasons and stage transitions</p>
+					<p style="margin:0 0 8px 0; color:#64748b;">Chronological reasons and stage transitions</p>
 					<div id="feed_${a.id}" class="decision-feed">Loading decisions...</div>
 					<p style="margin-top:8px;"><button class="btn-secondary" onclick="refreshFeed(${a.id})">Refresh Feed</button></p>
-					<pre style="white-space:pre-wrap; max-height:220px; overflow:auto; border:1px solid #2a3340; padding:8px; border-radius:6px;">${JSON.stringify(a, null, 2)}</pre>
+					<pre style="white-space:pre-wrap; max-height:220px; overflow:auto; border:1px solid #cbd5e1; background:#ffffff; color:#1e293b; padding:8px; border-radius:6px;">${JSON.stringify(a, null, 2)}</pre>
 				</details>
 			</div>
 		`;
 
+		const explorerBadge = proofLinkScore(a) >= 2 
+			? `<span style="margin-left: 8px; padding: 4px 8px; background: #dcfce7; color: #166534; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">✓ EXPLORER LINKS</span>`
+			: '';
+
 		const html = `
-			<div class="card admin-transaction-card">
+			<div class="card admin-transaction-card" id="event-${a.id}">
 				<div class="event-card-header">
-					<div class="event-card-title">Event #${a.id}</div>
+					<div style="display: flex; align-items: center; gap: 8px;">
+						<div class="event-card-title">Event #${a.id}</div>
+						${explorerBadge}
+					</div>
 					${statusBadgeMarkup}
 					<span class="event-meta-inline">${escapeHtml(a.amount ?? "—")} ${escapeHtml(a.desc || "").substring(0, 30) || "Material"}</span>
 					<span class="event-meta-inline confidence-score">Confidence: ${confidenceLabel}</span>
 				</div>
 
-				<div class="event-card-actions" style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-					<button class="btn-secondary" onclick="openProofBundleInPanel(${a.id}, '${a.proof}')">View Proof</button>
-					<details class="event-pipeline-details">
-						<summary class="btn-secondary">Full Pipeline</summary>
-						<div style="margin-top: 12px;">
-							<div class="admin-detail-tabs" id="card_tabs_${a.id}">
+				<div class="event-card-actions" style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+					<details class="event-pipeline-details" id="details_${a.id}" data-activity-id="${a.id}" ontoggle="handleActivityDetailsToggle(this, ${a.id})">
+						<summary class="btn-secondary" style="cursor: pointer;">Full Pipeline</summary>
+						<div style="margin-top: 16px;">
 						<div class="admin-detail-tabs" id="card_tabs_${a.id}">
 						<button type="button" class="admin-detail-tab active" data-tab="pipeline" onclick="switchAdminCardTab(${a.id}, 'pipeline')">Pipeline</button>
 						<button type="button" class="admin-detail-tab" data-tab="evidence" onclick="switchAdminCardTab(${a.id}, 'evidence')">Evidence</button>
@@ -903,25 +1294,20 @@ function renderActivities(data) {
 							${rawLayer}
 						</div>
 						</div>
+						</div>
 					</details>
 				</div>
 			</div>
 		`;
 
 		container.insertAdjacentHTML("beforeend", html);
-		const detailEl = document.getElementById(`details_${a.id}`);
-		if (detailEl) {
-			detailEl.addEventListener("toggle", () => {
-				if (detailEl.open) {
-					loadDecisionFeed(a.id);
-				}
-			});
-		}
 		const debugTab = document.getElementById(`debug-tab-${a.id}`);
 		if (debugTab && document.getElementById("showDebug")?.checked) {
 			debugTab.style.display = 'block';
 		}
 	});
+
+	restoreAdminUiState();
 
 	if (controls) {
 		const remaining = Math.max(0, filtered.length - visible.length);
@@ -929,7 +1315,7 @@ function renderActivities(data) {
 		if (remaining > 0) {
 			controls.style.display = "block";
 			controls.innerHTML = `<p style="margin:0 0 8px 0;">${shownText}</p>
-			<button class="btn-secondary" onclick="loadMoreActivities()">Load older transactions (${remaining} remaining)</button>`;
+			<button class="btn-secondary" id="loadMoreBtn" onclick="loadMoreActivities(this)">Load older transactions (${remaining} remaining)</button>`;
 		} else if (filtered.length > ACTIVITY_PAGE_SIZE) {
 			controls.style.display = "block";
 			controls.innerHTML = `<p style="margin:0;">${shownText}</p>`;
@@ -937,7 +1323,11 @@ function renderActivities(data) {
 	}
 }
 
-function loadMoreActivities() {
+function loadMoreActivities(btn) {
+	if (btn) {
+		btn.disabled = true;
+		btn.textContent = 'Loading...';
+	}
 	visibleActivityCount += ACTIVITY_PAGE_SIZE;
 	renderActivities(adminActivities);
 	restoreProofStatusesFromCache();
@@ -1058,13 +1448,39 @@ function updateOpsSummary(activities) {
 	});
 
 	const safeValue = (n) => (Number(n) > 0 ? String(n) : '—');
-	const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-	el('admin-active-events', safeValue(verified));
-	el('admin-hcs-count', safeValue(hcs));
-	el('admin-hts-count', safeValue(hts));
-	el('admin-health-status', list.length ? 'Operational' : 'Awaiting Data');
+	applyOpsSummaryValues({
+		verified,
+		hcs_anchored: hcs,
+		hts_rewarded: hts,
+		health: list.length ? 'Operational' : 'Awaiting Data'
+	});
 	const hCard = document.getElementById('ops-system-health-card');
 	if (hCard) hCard.querySelector('.ops-card-icon').textContent = '🟢';
+}
+
+function applyOpsSummaryValues(summary) {
+	const safeValue = (n) => (Number(n) > 0 ? String(n) : '—');
+	const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+	el('admin-active-events', safeValue(summary?.verified));
+	el('admin-hcs-count', safeValue(summary?.hcs_anchored));
+	el('admin-hts-count', safeValue(summary?.hts_rewarded));
+	el('admin-health-status', summary?.health || 'Awaiting Data');
+	const hCard = document.getElementById('ops-system-health-card');
+	if (hCard) hCard.querySelector('.ops-card-icon').textContent = '🟢';
+}
+
+function loadOpsSummaryFromServer(fallbackActivities) {
+	fetch('/api/admin/metrics-summary')
+		.then((r) => {
+			if (!r.ok) throw new Error(`status_${r.status}`);
+			return r.json();
+		})
+		.then((summary) => {
+			applyOpsSummaryValues(summary || {});
+		})
+		.catch(() => {
+			updateOpsSummary(fallbackActivities || []);
+		});
 }
 
 function resetDemo() {
@@ -1085,13 +1501,14 @@ function resetDemo() {
 }
 
 function loadActivities() {
+	registerAdminInteraction();
 	fetch("/api/admin/activities")
 		.then(r => r.json())
 		.then(data => {
 			adminActivities = Array.isArray(data) ? data : [];
 			visibleActivityCount = ACTIVITY_PAGE_SIZE;
 			renderActivities(adminActivities);
-			updateOpsSummary(adminActivities);
+			loadOpsSummaryFromServer(adminActivities);
 			runAutoVerify();
 			loadFlaggedEvents();
 		})
@@ -1152,10 +1569,19 @@ function refreshAdminLiveState() {
 	}
 	if (!adminLiveSyncInterval) {
 		adminLiveSyncInterval = setInterval(() => {
+			if (shouldPauseLiveRefresh()) return;
 			loadActivities();
 		}, 12000);
 	}
 }
+
+document.addEventListener('click', (event) => {
+	const target = event.target;
+	if (!(target instanceof Element)) return;
+	if (target.closest('.admin-detail-tab, .event-pipeline-details, .btn-secondary, .btn-primary, .btn-danger, a')) {
+		registerAdminInteraction();
+	}
+}, true);
 
 if (liveSyncToggle) {
 	liveSyncToggle.addEventListener('change', refreshAdminLiveState);
@@ -1326,3 +1752,7 @@ fetch("/api/proof-bundle/" + id)
 
 </script>
 {% endblock %}
+
+.event-pipeline-details[open] .admin-detail-pane.active {
+	display: block !important;
+}

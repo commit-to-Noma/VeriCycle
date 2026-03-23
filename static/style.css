@@ -4583,10 +4583,10 @@ body.light-theme .chart-card:hover {
 }
 
 .admin-layer {
-    border: 1px solid #334155;
+    border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: var(--space-16);
-    background: #0f172a;
+    background: #f8fafc;
 }
 
 .admin-layer h4 {
@@ -4600,13 +4600,16 @@ body.light-theme .chart-card:hover {
 }
 
 .pipeline-item {
-    border: 1px solid #334155;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: var(--space-8);
+    background: #ffffff;
+    color: #334155;
 }
 
 .pipeline-item.done {
-    border-color: #10B981;
+    border-color: #bbf7d0;
+    background: #f0fdf4;
 }
 
 .admin-panels-grid {
@@ -4700,8 +4703,8 @@ body.light-theme .chart-card:hover {
     margin-right: 8px;
     vertical-align: text-bottom;
     border-radius: 4px;
-    border: 1px solid #475569;
-    background: #0f172a;
+    border: 1px solid #94a3b8;
+    background: #ffffff;
     cursor: pointer;
     transition: border-color 140ms ease, background-color 140ms ease;
 }
@@ -4713,16 +4716,16 @@ body.light-theme .chart-card:hover {
 }
 
 #dateRange {
-    background: #1e293b;
-    color: #e2e8f0;
-    border: 1px solid #334155;
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
     padding: 6px 10px;
 }
 
 #dateRange option {
-    background: #0f172a;
-    color: #e2e8f0;
+    background: #ffffff;
+    color: #1e293b;
 }
 
 .mirror-json,
@@ -5181,7 +5184,7 @@ main.container-wide.app-dashboard{
 .admin-layer{
     margin-top: 14px;
     padding-top: 14px;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    border-top: 1px solid #e2e8f0;
 }
 
 .selected-proof-card{
@@ -5189,10 +5192,10 @@ main.container-wide.app-dashboard{
 }
 
 .selected-proof-panel{
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 12px;
-    background: rgba(255,255,255,0.02);
+    background: #ffffff;
 }
 
 .proof-grid{
@@ -5215,18 +5218,20 @@ main.container-wide.app-dashboard{
     font-family: "Fira Code", "Cascadia Code", "Courier New", monospace;
     font-size: 12px;
     word-break: break-all;
-    color: #c7d2fe;
+    color: #64748b;
 }
 
 .admin-simple-list p{
     margin: 0 0 8px 0;
     padding: 10px 12px;
-    background: rgba(255,255,255,0.03);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
 }
 
 .debug-details{
-    background: rgba(255,255,255,0.03);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 10px 12px;
 }
@@ -5234,7 +5239,7 @@ main.container-wide.app-dashboard{
 .debug-details summary{
     cursor: pointer;
     font-weight: 600;
-    color: var(--muted);
+    color: #334155;
 }
 
 .debug-details pre{
@@ -5243,8 +5248,9 @@ main.container-wide.app-dashboard{
     overflow: auto;
     padding: 12px;
     border-radius: 12px;
-    background: rgba(0,0,0,0.32);
-    color: #dbe7ff;
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
     font-family: "Fira Code", "Cascadia Code", "Courier New", monospace;
     font-size: 12px;
     white-space: pre-wrap;
@@ -5729,32 +5735,33 @@ main.container-wide.app-dashboard{
     margin-top: 18px;
     padding: 18px;
     border-radius: 18px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
 }
 
 .admin-layer{
     margin-top: 14px;
     padding-top: 14px;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    border-top: 1px solid #e2e8f0;
 }
 
 .admin-simple-list p{
     margin: 0 0 10px 0;
     padding: 10px 12px;
     border-radius: 12px;
-    background: rgba(255,255,255,0.03);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
 }
 
 .debug-details summary{
     cursor: pointer;
-    color: #e5edf7;
+    color: #334155;
     font-weight: 600;
 }
 
 .help-grid details{
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 12px 14px;
 }
@@ -5762,11 +5769,11 @@ main.container-wide.app-dashboard{
 .help-grid summary{
     cursor: pointer;
     font-weight: 600;
-    color: #e5edf7;
+    color: #334155;
 }
 
 .help-grid details[open]{
-    background: rgba(255,255,255,0.05);
+    background: #ffffff;
 }
 
 .mirror-json,
@@ -5787,7 +5794,7 @@ body{
 .admin-section-title{
     margin: 0 0 12px 0;
     font-size: 1.1rem;
-    color: #a8b3c2;
+    color: #334155;
 }
 
 .admin-filter-row{
@@ -6947,9 +6954,9 @@ main input:disabled {
 .admin-detail-tab {
     margin-right: 8px;
     margin-bottom: 8px;
-    border: 1px solid rgba(148, 163, 184, 0.32);
-    background: rgba(15, 23, 42, 0.42);
-    color: #c7d2e1;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
     min-height: 30px;
     padding: 0 11px;
     border-radius: 9px;
@@ -6959,9 +6966,9 @@ main input:disabled {
 }
 
 .admin-detail-tab.active {
-    border-color: rgba(45, 212, 191, 0.48);
-    background: rgba(13, 148, 136, 0.18);
-    color: #ccfbf1;
+    border-color: #94a3b8;
+    background: #f8fafc;
+    color: #0f172a;
 }
 
 .admin-detail-pane {
@@ -7537,7 +7544,7 @@ body.home-light .modal-content .verify-form input {
 
 .admin-detail-tab.active {
     background: rgba(148, 163, 184, 0.14) !important;
-    color: #e2e8f0 !important;
+    color: #1e293b !important;
 }
 
 .status-badge-paid,
@@ -7546,7 +7553,7 @@ body.home-light .modal-content .verify-form input {
 .badge-attested {
     background: rgba(148, 163, 184, 0.16) !important;
     border-color: rgba(148, 163, 184, 0.45) !important;
-    color: #e2e8f0 !important;
+    color: #334155 !important;
 }
 
 .stakeholder-loop-card {
@@ -10638,6 +10645,83 @@ body.home-light .impact-growth #feed .feed-time {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* --- Admin monitor: hard neutral override for borders/glow/focus --- */
+.admin-ops-summary-row > .card,
+.admin-review-grid > .card,
+#activities > .card,
+.admin-command-center.card,
+.metric-card,
+.event-card,
+.admin-ops-card,
+.admin-transaction-card,
+.flagged-event-card,
+.stakeholder-timeline-node,
+.stakeholder-loop-item,
+.selected-proof-panel {
+    border-color: #e5e7eb !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Top metrics */
+.metric-card,
+.admin-ops-card {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+.metric-card.green,
+.metric-card.success,
+.admin-ops-card.green,
+.admin-ops-card.success,
+.admin-ops-card.healthy,
+.admin-ops-card.ok {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Verification feed cards */
+.event-card,
+.admin-transaction-card,
+.flagged-event-card {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border-radius: 12px;
+}
+
+.event-card.success,
+.event-card.verified,
+.admin-transaction-card.success,
+.admin-transaction-card.verified,
+.admin-transaction-card.badge-verified,
+.admin-transaction-card.badge-attested,
+.admin-transaction-card.badge-rewarded {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Remove glow styles and green focus rings inside admin monitor surfaces */
+.admin-ops-summary-row *:focus,
+#activities *:focus,
+.admin-review-grid *:focus,
+.admin-command-center *:focus,
+.selected-proof-panel *:focus {
+    outline: 2px solid #d1d5db !important;
+    box-shadow: none !important;
+}
+
+/* Eliminate explicit green-glow utility combinations used by some cards */
+.metric-card[style*="#22c55e"],
+.event-card[style*="#22c55e"],
+.admin-ops-card[style*="#22c55e"],
+.admin-transaction-card[style*="#22c55e"] {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
 body.home-light .impact-growth #feed li.feed-slide-new {
     animation: feed-fade-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -11877,7 +11961,7 @@ ADMIN MONITOR REDESIGN (v2 - Producer Focus)
 
 .flagged-meta {
     font-size: 0.9rem !important;
-    color: #cbd5e1 !important;
+    color: #475569 !important;
     margin-bottom: 0.5rem !important;
 }
 
@@ -11899,7 +11983,7 @@ ADMIN MONITOR REDESIGN (v2 - Producer Focus)
     padding: 0.75rem 1rem !important;
     background: transparent !important;
     border: none !important;
-    color: #94a3b8 !important;
+    color: #64748b !important;
     font-weight: 600 !important;
     cursor: pointer !important;
     border-bottom: 2px solid transparent !important;
@@ -11907,13 +11991,13 @@ ADMIN MONITOR REDESIGN (v2 - Producer Focus)
 }
 
 .admin-detail-tab:hover {
-    color: #cbd5e1 !important;
+    color: #334155 !important;
 }
 
 .admin-detail-tab.active {
-    color: #4CAF50 !important;
-    border-bottom-color: #4CAF50 !important;
-    background: rgba(76, 175, 80, 0.06) !important;
+    color: #0f172a !important;
+    border-bottom-color: #94a3b8 !important;
+    background: #f8fafc !important;
 }
 
 .admin-detail-pane {

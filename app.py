@@ -40,7 +40,7 @@ import threading
 from collections import defaultdict
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import text, func, or_
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 # -----------------------------------------------------------------
 # 1. APP CONFIGURATION
@@ -992,6 +992,115 @@ def humanize_status_token(value: str | None) -> str:
     return re.sub(r"[_-]+", " ", token).title()
 
 
+def activity_state_set(activity: Activity | None) -> set[str]:
+    if not activity:
+        return set()
+    return {
+        (activity.status or "").strip().lower(),
+        (activity.verified_status or "").strip().lower(),
+        (activity.pipeline_stage or "").strip().lower(),
+        (activity.logbook_status or "").strip().lower(),
+        (activity.reward_status or "").strip().lower(),
+    }
+
+
+def is_activity_rejected_or_failed(activity: Activity | None) -> bool:
+    states = activity_state_set(activity)
+    return "failed" in states or "rejected" in states
+
+
+def is_activity_verified_canonical(activity: Activity | None) -> bool:
+    if not activity or is_activity_rejected_or_failed(activity):
+        return False
+    states = activity_state_set(activity)
+    return bool(states & {"verified", "anchored", "completed", "logged", "rewarded", "attested", "paid"})
+
+
+def is_activity_in_pipeline_canonical(activity: Activity | None) -> bool:
+    if not activity or is_activity_rejected_or_failed(activity):
+        return False
+    states = activity_state_set(activity)
+    return bool(states & {"submitted", "in_transit", "accepted", "verified", "anchored", "completed", "logged", "rewarded", "attested", "paid"})
+
+
+def is_activity_anchored_canonical(activity: Activity | None) -> bool:
+    if not activity:
+        return False
+    states = activity_state_set(activity)
+    return bool(
+        activity.hcs_tx_id
+        or activity.logbook_tx_id
+        or activity.hedera_tx_id
+        or (states & {"anchored", "offchain_final", "demo_skipped"})
+    )
+
+
+def is_activity_rewarded_canonical(activity: Activity | None) -> bool:
+    if not activity:
+        return False
+    states = activity_state_set(activity)
+    return bool(
+        activity.hts_tx_id
+        or activity.reward_tx_id
+        or (states & {"paid", "finalized_no_transfer"})
+    )
+
+
+def parse_weight_kg_from_text(text_value: str | None) -> float:
+    match = re.search(r'(\d+\.?\d*)\s*kg', str(text_value or ''), re.IGNORECASE)
+    if not match:
+        return 0.0
+    try:
+        return max(0.0, float(match.group(1)))
+    except Exception:
+        return 0.0
+
+
+def assignment_weight_kg_for_metrics(assignment: OpportunityAssignment | None) -> float:
+    if not assignment:
+        return 0.0
+    if assignment.submitted_weight_kg is not None:
+        return max(0.0, float(assignment.submitted_weight_kg))
+    opp = assignment.opportunity
+    if opp and opp.estimated_kg is not None:
+        return max(0.0, float(opp.estimated_kg))
+    return 0.0
+
+
+def compute_network_impact_snapshot() -> dict:
+    activities = Activity.query.all()
+    verified = [a for a in activities if is_activity_verified_canonical(a)]
+
+    waste_diverted_kg = round(sum(parse_weight_kg_from_text(a.desc) for a in verified), 1)
+    eco_generated = round(sum(max(0.0, float(a.amount or 0.0)) for a in verified), 1)
+    active_neighbors = len({int(a.user_id) for a in verified if a.user_id is not None})
+
+    hotspots_resolved = 0
+    active_reports = 0
+    try:
+        board_rows = build_community_hotspot_board()
+        hotspots_resolved = sum(
+            1
+            for row in board_rows
+            if str(row.get("status") or "").strip().lower() in {"completed", "confirmed"}
+        )
+        active_reports = sum(max(0, int(row.get("report_count") or 0)) for row in board_rows)
+    except Exception:
+        hotspots_resolved = 0
+        active_reports = 0
+
+    micro_jobs_funded = int(max(0, math.ceil(eco_generated / 200.0))) if eco_generated else 0
+
+    return {
+        "hotspots_resolved": hotspots_resolved,
+        "active_neighbors": active_neighbors,
+        "active_reports": active_reports,
+        "waste_diverted_kg": waste_diverted_kg,
+        "eco_generated": eco_generated,
+        "micro_jobs_funded": micro_jobs_funded,
+    }
+
+
 def pickup_request_status_label(
     request_status: str | None,
     assignment_status: str | None = None,
@@ -1608,7 +1717,19 @@ def add_schedule_match_signal(activity: Activity):
 def hashscan_link(tx_id: str | None) -> str | None:
     if not tx_id:
         return None
-    return f"https://hashscan.io/testnet/transaction/{tx_id}"
+    normalized = str(tx_id).strip()
+    if not normalized:
+        return None
+    match = re.match(r"^0\.0\.(\d+)@(\d+)\.(\d+)$", normalized)
+    if not match:
+        return None
+    seconds = int(match.group(2))
+    nanos = match.group(3)
+    if seconds < 1_500_000_000 or seconds > 4_102_444_800:
+        return None
+    if len(nanos) != 9:
+        return None
+    return f"https://hashscan.io/testnet/transaction/{quote(normalized, safe='')}"
 
 
 PHASE5_DEMO_LABELS = {
@@ -3004,12 +3125,7 @@ def resident_impact():
     if not is_resident_user(current_user):
         return redirect(url_for(access_denied_redirect_for(current_user)))
 
-    # Demo-focused summary for residents: keeps impact narrative separate from private pickup dispatch.
-    impact_snapshot = {
-        "hotspots_resolved": 24,
-        "active_neighbors": 142,
-        "waste_diverted_kg": 850,
-    }
+    impact_snapshot = compute_network_impact_snapshot()
     return render_template('resident_impact.html', active_page='resident-impact', impact_snapshot=impact_snapshot)
 
 
@@ -3138,7 +3254,7 @@ def business_dashboard():
             lifecycle_status_key = 'requested'
             trust_status_label = 'Awaiting Pickup'
 
-        if linked_activity:
+        if linked_activity and is_activity_verified_canonical(linked_activity):
             summary["verified_records"] += 1
             summary["eco_funded_total"] += max(0.0, float(linked_activity.amount or 0.0))
             verified_kg = 0.0
@@ -3199,12 +3315,6 @@ def business_dashboard():
         })
 
     goal_target = float(summary["goal_target_kg"])
-    demo_seed_kg = max(0.0, float(summary.get("demo_seed_kg") or 0.0))
-    demo_seed_eco = max(0.0, float(summary.get("demo_seed_eco") or 0.0))
-    if demo_seed_kg > 0:
-        summary["goal_current_kg"] = demo_seed_kg
-        summary["eco_funded_total"] = demo_seed_eco
-
     goal_current = max(0.0, float(summary["goal_current_kg"] or 0.0))
     goal_remaining = max(0.0, goal_target - goal_current)
     summary["goal_current_kg"] = round(goal_current, 1)
@@ -3232,7 +3342,10 @@ def business_dashboard():
         row for row in rows
         if not row.get("activity_id") and (str(row.get("status") or '').strip().lower() not in {'cancelled', 'completed'})
     ]
-    verified_rows = [row for row in rows if row["activity_id"]]
+    verified_rows = [
+        row for row in rows
+        if row["activity_id"] and is_activity_verified_canonical(db.session.get(Activity, row["activity_id"]))
+    ]
 
     # Keep KPI mathematically aligned with records shown in active pipeline table.
     summary["active_requests"] = len(active_rows)
@@ -4163,12 +4276,17 @@ def household_dashboard():
             .join(PickupOpportunity, OpportunityAssignment.opportunity_id == PickupOpportunity.id)
             .filter(PickupOpportunity.source_role == 'business')
             .filter(PickupOpportunity.source_user_id == top_business.id)
-            .filter(PickupOpportunity.notes.ilike('%[DEMO-BIZ-DAY28-SEED]%'))
             .filter(OpportunityAssignment.linked_activity_id.isnot(None))
             .all()
         )
-        total_kg = sum(max(0.0, float(a.submitted_weight_kg or a.opportunity.estimated_kg or 0.0)) for a in completed_assignments)
-        total_eco = sum(max(0.0, float(a.linked_activity.amount or 0.0)) for a in completed_assignments if a.linked_activity)
+        total_kg = 0.0
+        total_eco = 0.0
+        for a in completed_assignments:
+            linked = a.linked_activity
+            if not is_activity_verified_canonical(linked):
+                continue
+            total_kg += assignment_weight_kg_for_metrics(a)
+            total_eco += max(0.0, float(linked.amount or 0.0))
         goal_target = 1000.0
         honorable_mention = {
             "name": (top_business.full_name or top_business.email or "Business Partner").strip(),
@@ -4180,6 +4298,8 @@ def household_dashboard():
             "eco_funded_total": round(total_eco, 1),
         }
 
+    network_impact = compute_network_impact_snapshot()
+
     return render_template(
         "household.html",
         location=location,
@@ -4189,6 +4309,7 @@ def household_dashboard():
         locations=locations,
         selected_location_id=location.id,
         honorable_mention=honorable_mention,
+        network_impact=network_impact,
         active_page='household'
     )
 
@@ -4737,48 +4858,19 @@ def get_dashboard_data():
     recent_cutoff = now_utc - timedelta(days=30)
 
     def parse_kg_from_desc(text_value):
-        match = re.search(r'(\d+\.?\d*)\s*kg', str(text_value or ''), re.IGNORECASE)
-        if not match:
-            return 0.0
-        try:
-            return float(match.group(1))
-        except Exception:
-            return 0.0
-
-    def activity_stage_set(activity):
-        return {
-            (activity.verified_status or '').strip().lower(),
-            (activity.status or '').strip().lower(),
-            (activity.pipeline_stage or '').strip().lower(),
-            (activity.logbook_status or '').strip().lower(),
-            (activity.reward_status or '').strip().lower(),
-        }
+        return parse_weight_kg_from_text(text_value)
 
     def counts_for_balance(activity):
-        states = activity_stage_set(activity)
-        if 'failed' in states or 'rejected' in states:
-            return False
-        return bool(states & {'verified', 'anchored', 'completed', 'logged', 'rewarded', 'attested', 'paid'})
+        return is_activity_verified_canonical(activity)
 
     def counts_for_progress(activity):
-        states = activity_stage_set(activity)
-        if 'failed' in states or 'rejected' in states:
-            return False
-        return bool(states & {'submitted', 'in_transit', 'accepted', 'verified', 'anchored', 'completed', 'logged', 'rewarded', 'attested', 'paid'})
+        return is_activity_in_pipeline_canonical(activity)
 
     def counts_for_completed(activity):
-        states = activity_stage_set(activity)
-        if 'failed' in states or 'rejected' in states:
-            return False
-        return bool(states & {'verified', 'anchored', 'completed', 'logged', 'rewarded', 'attested', 'paid'})
+        return is_activity_verified_canonical(activity)
 
     def assignment_weight_kg(assignment):
-        if assignment.submitted_weight_kg is not None:
-            return float(assignment.submitted_weight_kg)
-        opp = assignment.opportunity
-        if opp and opp.estimated_kg is not None:
-            return float(opp.estimated_kg)
-        return 0.0
+        return assignment_weight_kg_for_metrics(assignment)
 
     def parse_timestamp_utc(value):
         if not value:
@@ -5197,7 +5289,10 @@ def _build_proof_payload(activity=None, fallback_activity_id='', fallback_timest
     effective_amount = activity.amount if activity and activity.amount is not None else fallback_amount
     effective_stage = "recorded"
     effective_hedera_tx_id = activity.hedera_tx_id if activity else None
+    effective_hcs_tx_id = (activity.hcs_tx_id or activity.logbook_tx_id or activity.hedera_tx_id) if activity else None
     effective_reward_tx_id = activity.reward_tx_id if activity else None
+    effective_hts_tx_id = (activity.hts_tx_id or activity.reward_tx_id) if activity else None
+    effective_compliance_tx_id = activity.compliance_tx_id if activity else None
     effective_reward_status = activity.reward_status if activity else None
     signal_rows = []
     if activity:
@@ -5220,8 +5315,16 @@ def _build_proof_payload(activity=None, fallback_activity_id='', fallback_timest
         "amount": float(effective_amount) if effective_amount is not None else None,
         "stage": effective_stage,
         "hedera_tx_id": effective_hedera_tx_id,
+        "hcs_tx_id": effective_hcs_tx_id,
         "reward_status": effective_reward_status,
         "reward_tx_id": effective_reward_tx_id,
+        "hts_tx_id": effective_hts_tx_id,
+        "compliance_tx_id": effective_compliance_tx_id,
+        "hashscan_links": {
+            "hcs": hashscan_link(effective_hcs_tx_id),
+            "hts": hashscan_link(effective_hts_tx_id),
+            "compliance": hashscan_link(effective_compliance_tx_id),
+        },
         "agent_approvals": agent_approvals,
         "signals": signal_rows,
         "confidence_score": activity.confidence_score if activity else None,
@@ -5763,11 +5866,30 @@ def normalize_status_label_for_api(activity: Activity) -> str:
     return "Pending"
 
 
+@app.route('/api/admin/metrics-summary')
+def api_admin_metrics_summary():
+    if not can_review_events():
+        abort(403)
+
+    activities = Activity.query.all()
+    verified_count = sum(1 for a in activities if is_activity_verified_canonical(a))
+    anchored_count = sum(1 for a in activities if is_activity_anchored_canonical(a))
+    rewarded_count = sum(1 for a in activities if is_activity_rewarded_canonical(a))
+
+    return jsonify({
+        "verified": verified_count,
+        "hcs_anchored": anchored_count,
+        "hts_rewarded": rewarded_count,
+        "total": len(activities),
+        "health": "Operational" if activities else "Awaiting Data",
+    })
+
+
 @app.route('/api/admin/activities')
 def api_admin_activities():
     if not can_review_events():
         abort(403)
-    activities = Activity.query.order_by(Activity.timestamp.asc()).all()
+    activities = Activity.query.order_by(Activity.timestamp.desc(), Activity.id.desc()).all()
 
     activity_ids = [a.id for a in activities]
     tasks_by_activity = defaultdict(list)
@@ -5851,6 +5973,11 @@ def api_admin_activities():
             'logbook_tx_id': activity.logbook_tx_id,
             'logbook_last_error': activity.logbook_last_error,
             'logbook_finalized_at': activity.logbook_finalized_at.isoformat() if activity.logbook_finalized_at else None,
+            'hashscan_links': {
+                'hcs': hashscan_link(activity.hcs_tx_id or activity.logbook_tx_id or activity.hedera_tx_id),
+                'hts': hashscan_link(activity.hts_tx_id or activity.reward_tx_id),
+                'compliance': hashscan_link(activity.compliance_tx_id),
+            },
             'commerce_events': [
                 {
                     'id': event.id,

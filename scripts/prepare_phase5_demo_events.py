@@ -225,14 +225,17 @@ def main():
                 f"status={rejected.status}, confidence={rejected.confidence_score})"
             )
 
-        rejected.review_status = "rejected"
-        rejected.review_reason = "manager_rejected_after_review"
-        rejected.reviewed_by_user_id = reviewer.id
-        rejected.reviewed_at = datetime.now(timezone.utc)
-        rejected.status = "rejected"
-        rejected.verified_status = "rejected"
-        rejected.pipeline_stage = "rejected"
-        rejected.last_error = rejected.review_reason
+        # Keep this event as an active anomaly for the live Admin Monitor close.
+        # The final demo script expects a clickable flagged card (Event #9) in
+        # the "Agent Trust Anomalies" panel, which only lists needs_review rows.
+        rejected.review_status = "pending_review"
+        rejected.review_reason = "conflicting_or_insufficient_signals"
+        rejected.reviewed_by_user_id = None
+        rejected.reviewed_at = None
+        rejected.status = "needs_review"
+        rejected.verified_status = "pending"
+        rejected.pipeline_stage = "needs_review"
+        rejected.last_error = None
         rejected.hcs_tx_id = None
         rejected.hedera_tx_id = None
         rejected.logbook_tx_id = None

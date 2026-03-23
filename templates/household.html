@@ -512,21 +512,21 @@
 
       <div class="network-scale-banner">
         <div style="text-align: center;">
-          <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">24</h4>
+          <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">{{ "{:,.0f}".format(network_impact.hotspots_resolved) }}</h4>
           <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Hotspots Resolved</p>
         </div>
 
         <div class="divider" style="width: 1px; height: 40px; background-color: rgba(255,255,255,0.3);"></div>
 
         <div style="text-align: center;">
-          <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">142</h4>
+          <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">{{ "{:,.0f}".format(network_impact.active_neighbors) }}</h4>
           <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Active Neighbors</p>
         </div>
 
         <div class="divider" style="width: 1px; height: 40px; background-color: rgba(255,255,255,0.3);"></div>
 
         <div style="text-align: center;">
-          <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">2,450<span style="font-size: 1rem;">kg</span></h4>
+          <h4 style="font-size: 2rem; font-weight: bold; margin: 0;">{{ "{:,.1f}".format(network_impact.waste_diverted_kg) }}<span style="font-size: 1rem;">kg</span></h4>
           <p style="font-size: 0.875rem; margin: 0; opacity: 0.9;">Waste Diverted</p>
         </div>
       </div>
@@ -543,15 +543,15 @@
           <div style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
               <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Street Waste Diverted</span>
-              <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">1,240 kg</span>
+              <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">{{ "{:,.1f}".format(network_impact.waste_diverted_kg) }} kg</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
               <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Active Hotspots Cleared</span>
-              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">24 Areas</span>
+              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">{{ "{:,.0f}".format(network_impact.hotspots_resolved) }} Areas</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Wealth Generated (ECO)</span>
-              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">18,500 ECO</span>
+              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">{{ "{:,.1f}".format(network_impact.eco_generated) }} ECO</span>
             </div>
           </div>
         </div>
@@ -561,21 +561,21 @@
             <span style="font-size: 1.4rem;">🏢</span> Corporate Partners
           </h3>
           <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.4;">
-            Honorable mention: Rosebank Retail Hub is at 88.5% of a 1,000kg monthly diversion goal.
+            Honorable mention: {{ honorable_mention.name }} is at {{ honorable_mention.goal_percent }}% of a {{ "{:,.0f}".format(honorable_mention.goal_target_kg) }}kg monthly diversion goal.
           </p>
 
           <div style="display: flex; flex-direction: column; gap: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
               <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Capital Injected Locally</span>
-              <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">R 3,450.00</span>
+              <span style="font-size: 1.1rem; color: #16a34a; font-weight: 800;">R {{ "{:,.2f}".format(honorable_mention.eco_funded_total) }}</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
               <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">Monthly Goal Progress</span>
-              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">88.5% (885.5kg)</span>
+              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">{{ honorable_mention.goal_percent }}% ({{ "{:,.1f}".format(honorable_mention.goal_current_kg) }}kg)</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">ESG Lift (CO2e / Jobs)</span>
-              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">1,320kg / 14</span>
+              <span style="font-size: 1.1rem; color: #0f172a; font-weight: 800;">{{ "{:,.0f}".format(honorable_mention.co2e_averted_kg) }}kg / {{ honorable_mention.micro_jobs_funded }}</span>
             </div>
           </div>
         </div>
@@ -624,6 +624,7 @@
     <p style="font-size: 0.85rem; color: #475569; margin: 0 0 1rem 0; line-height: 1.4;">
         The Verification Center reports this neighborhood hotspot has been cleared by a collector. As a local resident, please confirm the area is clean to finalize the trust sequence.
     </p>
+    <span class="resident-badge">✔ Verified Local</span>
 
     <div style="display: flex; gap: 10px;">
         <button id="verification-yes-btn" style="background: #16a34a; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(22,163,74,0.2);">
@@ -636,7 +637,7 @@
     <div id="verification-links" class="receipt-links" style="display:none;">
         <a id="verification-proof-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Proof Bundle</a>
         <a id="verification-hashscan-link" class="receipt-link" href="#" target="_blank" rel="noopener">View Hedera Record</a>
-        <button id="after-photo-btn" class="after-photo-btn" type="button">View Before/After Photos</button>
+        <button id="after-photo-btn" class="after-photo-btn" type="button">View After Photo (demo)</button>
     </div>
     <!-- Status elements for JS compatibility -->
     <p id="verification-location" style="display: none;">📍 Location: Parkmore Storefront</p>
@@ -707,21 +708,21 @@
                 <div class="leader-name">Sipho M. · Recycler</div>
                 <div class="leader-meta">Roodepoort Central</div>
               </div>
-              <div class="leader-score">412 kg</div>
+              <div class="leader-score">{{ "{:,.1f}".format(network_impact.waste_diverted_kg) }} kg</div>
             </div>
             <div class="leader-row">
               <div>
                 <div class="leader-name">Noma D. · Resident</div>
-                <div class="leader-meta">14 priority reports confirmed</div>
+                <div class="leader-meta">{{ "{:,.0f}".format(network_impact.active_reports) }} priority reports confirmed</div>
               </div>
-              <div class="leader-score">14 actions</div>
+              <div class="leader-score">{{ "{:,.0f}".format(network_impact.active_reports) }} actions</div>
             </div>
             <div class="leader-row">
               <div>
-                <div class="leader-name">Rosebank Retail Hub</div>
-                <div class="leader-meta">Funded 14 Micro-jobs</div>
+                <div class="leader-name">{{ honorable_mention.name }}</div>
+                <div class="leader-meta">Funded {{ honorable_mention.micro_jobs_funded }} Micro-jobs</div>
               </div>
-              <div class="leader-score">88.5% to Goal</div>
+              <div class="leader-score">{{ honorable_mention.goal_percent }}% to Goal</div>
             </div>
           </div>
         </section>
