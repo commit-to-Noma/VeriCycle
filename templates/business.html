@@ -581,16 +581,16 @@ body {
 {% set goal_percent = summary_data.get('goal_percent', 0) %}
 {% set eco_funded_total = (summary_data.get('eco_funded_total', 0) or 0)|float %}
 {% set capital_injected = (summary_data.get('capital_injected_zar', eco_funded_total) or eco_funded_total)|float %}
-<div class="trust-strip business-trust-strip">
-    <span class="trust-chip"><span class="trust-chip-icon">✓</span>Business-owned records tied to source requests</span>
-    <span class="trust-chip"><span class="trust-chip-icon">⎈</span>Verification center handoff is role-gated</span>
-    <span class="trust-chip"><span class="trust-chip-icon">◎</span>Proof and Hedera anchors visible when ready</span>
-</div>
-
 <div class="biz-hero judge-hero-card role-hero-band">
     <h2>Business Hub</h2>
     <p>Launch pickup requests, track recycler progress, and keep verified recycling records with proof and Hedera-backed audit links.</p>
     <span class="judge-demo-step">Step 1: Publish Request</span>
+</div>
+
+<div class="trust-strip business-trust-strip">
+    <span class="trust-chip"><span class="trust-chip-icon">✓</span>Business-owned records tied to source requests</span>
+    <span class="trust-chip"><span class="trust-chip-icon">⎈</span>Verification center handoff is role-gated</span>
+    <span class="trust-chip"><span class="trust-chip-icon">◎</span>Proof and Hedera anchors visible when ready</span>
 </div>
 
 <section class="hub-stat-grid">

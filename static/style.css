@@ -6560,7 +6560,17 @@ main.container-wide.app-dashboard,
 /* --- Winner Polish: Business Hub + Verification Center --- */
 .business-trust-strip {
     justify-content: flex-start;
-    margin-bottom: 1rem;
+    margin-top: 0 !important;
+    margin-bottom: 0.55rem;
+}
+
+.biz-shell {
+    padding-top: 0 !important;
+}
+
+.biz-shell .biz-hero {
+    margin-top: 0 !important;
+    margin-bottom: 0.65rem !important;
 }
 
 .hub-pipeline-brief {
@@ -12551,7 +12561,7 @@ body.light-theme .role-hero-band .judge-demo-step {
     border-radius: 999px;
     width: fit-content;
     max-width: calc(100% - 28px);
-    margin: 6px auto 10px;
+    margin: 2px auto 4px;
     position: relative;
     z-index: 25;
     box-shadow: 0 1px 3px rgba(51, 65, 85, 0.12);
@@ -12563,4 +12573,16 @@ body.light-theme .role-hero-band .judge-demo-step {
     border-radius: 999px;
     background: radial-gradient(circle at 35% 35%, #8de6b1 0%, #55c382 58%, #2e9f60 100%);
     box-shadow: 0 0 0 2px rgba(86, 180, 126, 0.22);
+}
+
+/* Disable legacy top background overlays (they caused floating green blocks/overlap) */
+body.light-theme .collector-shell::before,
+body.light-theme .center-shell::before,
+body.light-theme .biz-shell::before,
+body.light-theme .community-shell::before,
+body.light-theme .audit-shell::before,
+body.light-theme .wallet-page::before {
+    content: none !important;
+    display: none !important;
+    background: none !important;
 }
