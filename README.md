@@ -427,6 +427,8 @@ pytest -q
 
 ### Demo Accounts
 
+When `DEMO_MODE=1`, these demo accounts are automatically seeded on app startup (including Render redeploys).
+
 | Email | Password | Role |
 |-------|----------|------|
 | `admin@vericycle.com` | `Admin123!` | Administrator |
