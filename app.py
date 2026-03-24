@@ -317,6 +317,54 @@ UNIFIED_MATERIAL_TAXONOMY = [
     "Mixed Recyclables",
 ]
 
+DEMO_LOGIN_SEED_ACCOUNTS = [
+    {
+        "email": "admin@vericycle.com",
+        "password": "Admin123!",
+        "role": "admin",
+        "full_name": "Demo Admin",
+        "phone_number": "0000000000",
+        "id_number": "4000000000000",
+        "hedera_account_id": "0.0.7300001",
+    },
+    {
+        "email": "recycler@vericycle.com",
+        "password": "Recycler123!",
+        "role": "collector",
+        "full_name": "Demo Recycler",
+        "phone_number": "0000000000",
+        "id_number": "0000000000000",
+        "hedera_account_id": "0.0.7267109",
+    },
+    {
+        "email": "business@vericycle.com",
+        "password": "Business123!",
+        "role": "business",
+        "full_name": "Demo Business",
+        "phone_number": "0000000000",
+        "id_number": "1000000000000",
+        "hedera_account_id": "0.0.7300002",
+    },
+    {
+        "email": "resident@vericycle.com",
+        "password": "Resident123!",
+        "role": "resident",
+        "full_name": "Demo Resident",
+        "phone_number": "0000000000",
+        "id_number": "3000000000000",
+        "hedera_account_id": "0.0.7300004",
+    },
+    {
+        "email": "center@vericycle.com",
+        "password": "Center123!",
+        "role": "center",
+        "full_name": "Demo Center",
+        "phone_number": "0000000000",
+        "id_number": "2000000000000",
+        "hedera_account_id": "0.0.7300003",
+    },
+]
+
 DEMO_LOGIN_ALIASES = {
     "recycler1": "recycler@vericycle.com",
     "business1": "business@vericycle.com",
@@ -325,8 +373,9 @@ DEMO_LOGIN_ALIASES = {
     "admin1": "admin@vericycle.com",
 }
 
+# Keep a short universal fallback password for local demo convenience.
 DEMO_LOGIN_PASSWORD = "1234"
-DEMO_LOGIN_TARGET_EMAILS = set(DEMO_LOGIN_ALIASES.values())
+DEMO_LOGIN_TARGET_EMAILS = {account["email"] for account in DEMO_LOGIN_SEED_ACCOUNTS}
 QR_INTENT_TTL_MINUTES = 180
 MICRO_LOAD_MAX_KG = 100.0
 DEMO_BUSINESS_TARGET_KG = 885.5
@@ -363,70 +412,55 @@ def ensure_demo_login_accounts() -> None:
     if not DEMO_FEATURES_ALLOWED:
         return
 
-    demo_accounts = [
-        {
-            "email": "recycler@vericycle.com",
-            "role": "collector",
-            "full_name": "Demo Recycler",
-            "phone_number": "0000000000",
-            "id_number": "0000000000000",
-            "hedera_account_id": "0.0.7267109",
-        },
-        {
-            "email": "business@vericycle.com",
-            "role": "business",
-            "full_name": "Demo Business",
-            "phone_number": "0000000000",
-            "id_number": "1000000000000",
-            "hedera_account_id": "0.0.7300002",
-        },
-        {
-            "email": "center@vericycle.com",
-            "role": "center",
-            "full_name": "Demo Center",
-            "phone_number": "0000000000",
-            "id_number": "2000000000000",
-            "hedera_account_id": "0.0.7300003",
-        },
-        {
-            "email": "resident@vericycle.com",
-            "role": "resident",
-            "full_name": "Demo Resident",
-            "phone_number": "0000000000",
-            "id_number": "3000000000000",
-            "hedera_account_id": "0.0.7300004",
-        },
-        {
-            "email": "admin@vericycle.com",
-            "role": "admin",
-            "full_name": "Demo Admin",
-            "phone_number": "0000000000",
-            "id_number": "4000000000000",
-            "hedera_account_id": "0.0.7300001",
-        },
-    ]
-
     created = 0
-    for account in demo_accounts:
+    updated = 0
+
+    for account in DEMO_LOGIN_SEED_ACCOUNTS:
         existing = User.query.filter_by(email=account["email"]).first()
-        if existing:
+        desired_hash = bcrypt.generate_password_hash(account["password"]).decode("utf-8")
+
+        if not existing:
+            db.session.add(User(
+                email=account["email"],
+                password_hash=desired_hash,
+                role=account["role"],
+                full_name=account["full_name"],
+                phone_number=account["phone_number"],
+                id_number=account["id_number"],
+                hedera_account_id=account["hedera_account_id"],
+            ))
+            created += 1
             continue
 
-        password_hash = bcrypt.generate_password_hash(DEMO_LOGIN_PASSWORD).decode("utf-8")
-        db.session.add(User(
-            email=account["email"],
-            password_hash=password_hash,
-            role=account["role"],
-            full_name=account["full_name"],
-            phone_number=account["phone_number"],
-            id_number=account["id_number"],
-            hedera_account_id=account["hedera_account_id"],
-        ))
-        created += 1
+        # Keep existing rows, but heal critical fields so redeploys always restore demo login access.
+        changed = False
+        if not bcrypt.check_password_hash(existing.password_hash, account["password"]):
+            existing.password_hash = desired_hash
+            changed = True
+        if existing.role != account["role"]:
+            existing.role = account["role"]
+            changed = True
+        if not (existing.full_name or "").strip():
+            existing.full_name = account["full_name"]
+            changed = True
+        if not (existing.phone_number or "").strip():
+            existing.phone_number = account["phone_number"]
+            changed = True
+        if not (existing.id_number or "").strip():
+            existing.id_number = account["id_number"]
+            changed = True
+        if not (existing.hedera_account_id or "").strip():
+            existing.hedera_account_id = account["hedera_account_id"]
+            changed = True
 
-    if created:
+        if changed:
+            updated += 1
+
+    if created or updated:
         db.session.commit()
-        print(f"[DEMO] Seeded {created} missing demo login accounts", flush=True)
+        print(f"[DEMO] Demo accounts seeded successfully (created={created}, updated={updated})", flush=True)
+    else:
+        print("[DEMO] Demo accounts seeded successfully", flush=True)
 
 
 def resolve_demo_login_alias(identifier: str | None) -> str:
