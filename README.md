@@ -8,21 +8,31 @@ It replaces risky cash-based reward flows with EcoCoin, creates immutable Proof 
 
 [![Built with Hedera](https://img.shields.io/badge/Built%20with-Hedera-000)](https://hedera.com) [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org) [![Flask](https://img.shields.io/badge/Flask-Web%20App-informational)](https://flask.palletsprojects.com)
 
-Live Demo URL: https://YOUR-DEPLOYED-URL
+Live Demo URL: https://vericycle-ds85.onrender.com
+
+Demo Video: https://youtu.be/OK8ozBTMZew?si=fj14lCACsipX6Wag
+
+GitHub Repository: https://github.com/commit-to-Noma/VeriCycle
+
+LinkedIn: https://www.linkedin.com/in/nomathemba-ncube/
 
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [What This Is (In 60 Seconds)](#what-this-is-in-60-seconds)
 - [The Problem](#the-problem)
 - [The Solution](#the-solution)
 - [Why Blockchain](#why-blockchain-why-not-web2-alone)
 - [Why Hedera](#why-hedera)
 - [Who Benefits](#who-benefits)
 - [Key Features](#product-mvp)
+- [Demo Flow (End-to-End)](#demo-flow-end-to-end)
+- [What to Look For](#what-to-look-for)
 - [Technology Stack](#tech-stack)
 - [Quick Start](#setup)
+- [Deployment](#deployment)
 - [Roadmap](#roadmap)
 - [Vision](#vision)
 - [Architecture](#architecture)
@@ -38,6 +48,26 @@ VeriCycle enables:
 - **Proof of Income** for informal recyclers
 - **Verified sustainability records** for businesses
 - **Auditable recycling evidence** for communities and municipalities
+
+## What This Is (In 60 Seconds)
+
+VeriCycle is a multi-stakeholder verification system for recycling.
+
+It connects:
+- Recyclers (who collect materials)
+- Businesses (who request pickups)
+- Communities (who report issues)
+- Centers (who verify deposits)
+
+Each recycling event becomes:
+-> Verified by a center  
+-> Processed by autonomous agents  
+-> Anchored on Hedera (HCS)  
+-> Rewarded via EcoCoin (HTS)  
+-> Stored as Proof of Income and ESG data
+
+The result:
+A trust layer for real-world recycling.
 
 ---
 
@@ -152,7 +182,7 @@ Hedera consumes **~0.000003 kWh per transaction**:
 | Bitcoin | 885 kWh |
 | Ethereum | 102 kWh |
 
-👉 **Hedera is 295 million times more efficient than Bitcoin.**
+👉 **Hedera is orders of magnitude more energy efficient than traditional blockchains like Bitcoin.**
 
 ### Value for Hedera
 
@@ -241,7 +271,7 @@ It represents:
 
 ## Product (MVP)
 
-A **fully working system**, not a concept or prototype.
+A fully functional, end-to-end system demonstrating real-world recycling verification across all stakeholders.
 
 ### Role-Based Dashboards
 - **Recycler** → Accept/submit opportunities
@@ -261,28 +291,34 @@ A **fully working system**, not a concept or prototype.
 - Admin monitoring and audit tools
 - QR-assisted workflows
 
-### Demo Flow
+## Demo Flow (End-to-End)
 
-1. **Business** creates pickup request
-2. **Recycler** accepts or submits materials independently
-3. **Recycler** delivers to center
-4. **Center** verifies deposit (weight, material type)
-5. **Agent pipeline** processes event through verification stages
-6. **Hedera** anchors transaction with immutable proof
-7. **System** generates proof bundle
-8. **Business & Recycler** view verified results
-9. **EcoCoin** reward recorded or issued
+1. Log in as **Business**  
+	-> Create a pickup request
+2. Log in as **Recycler**  
+	-> Accept request and submit materials
+3. Log in as **Center**  
+	-> Verify deposit (weight + material)
+4. System automatically:  
+	-> Anchors event on Hedera (HCS)  
+	-> Issues EcoCoin reward (HTS)
+5. View results:  
+	-> Recycler sees Proof of Income  
+	-> Business sees verified ESG record
+6. Admin Monitor:  
+	-> Observe full pipeline and verification trace
 
-## Demo Flow (Recommended for Judges)
+## What to Look For
 
-1. Business creates request
-2. Recycler accepts and submits
-3. Center verifies
-4. Hedera anchor created (HCS)
-5. Rewards issued (HTS)
-6. Proof accessible via HashScan
+When reviewing VeriCycle, focus on:
 
-This sequence keeps the narrative clean across all 4 stakeholders (Business, Recycler, Center, Community) while showing the core Proof of Income value proposition end-to-end.
+- End-to-end verification across multiple stakeholders
+- Hedera integration (HCS + HTS)
+- Proof generation and auditability
+- Real-world usability (not just blockchain mechanics)
+- Economic impact: Proof of Income + ESG data
+
+The system is designed to demonstrate trust, transparency, and verifiability in real-world coordination.
 
 ---
 
@@ -415,22 +451,18 @@ python scripts/test_review_transitions.py
 python scripts/run_single_account_demo_check.py
 ```
 
-### Judge Demo Flow (Recommended)
-1. Community Hub: report hotspot and confirm resident verification prompt.
-2. Business Hub: create pickup request and confirm handover.
-3. Recycler Hub: trigger recycling event and submit assignment.
-4. Verification Center: scan/paste QR intent and verify submission.
-5. Proof Hub: verify HCS hash and show immutable record.
-6. Admin Monitor: show verified events and one anomaly with optional debug toggle.
-
----
-
 ## Deployment
 
-### Docker
+### Run in Production (Example)
 ```bash
 gunicorn app:app --workers 3 --timeout 120 --bind 0.0.0.0:$PORT
 ```
+
+### Recommended Platforms
+- Railway
+- Render
+- Fly.io
+- AWS / GCP (advanced)
 
 ### Production Checklist
 - [ ] Set `FLASK_ENV=production`
